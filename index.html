@@ -2066,6 +2066,168 @@
             font-size: 14px !important;
             letter-spacing: 0.5px;
         }
+    
+        /* === AUTO-BACKUP === */
+        .backup-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 6px;
+            transition: border-color .2s;
+        }
+        .backup-row:hover { border-color: var(--cyan); }
+        .backup-date { font-size: 12px; font-weight: 600; }
+        .backup-meta { font-size: 10px; color: var(--text3); margin-top: 2px; }
+
+    
+        /* === VISUAL POLISH === */
+
+        /* Smoother page transitions */
+        .page { animation: none; }
+        .page.on { animation: pageIn .25s ease-out; }
+        @keyframes pageIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Modal entrance */
+        .overlay .modal {
+            animation: modalIn .2s ease-out;
+        }
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(.96) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        /* Refined table rows */
+        table tbody tr {
+            transition: background .15s ease;
+        }
+        table tbody tr:hover {
+            background: var(--surface2) !important;
+        }
+
+        /* Better stat cards */
+        .stat-card {
+            transition: transform .2s ease, border-color .2s ease;
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--border2);
+        }
+
+        /* Subtle card lift */
+        .setting-card {
+            transition: border-color .2s ease;
+        }
+        .setting-card:hover {
+            border-color: var(--border2);
+        }
+
+        /* Smoother sidebar navigation */
+        .navlink {
+            transition: all .2s cubic-bezier(.4,0,.2,1);
+        }
+
+        /* Better toast animation */
+        .toast {
+            animation: toastIn .3s cubic-bezier(.4,0,.2,1);
+        }
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(40px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* Refined scrollbar */
+        ::-webkit-scrollbar-thumb {
+            border-radius: 4px;
+            background: rgba(72,202,228,.2);
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(72,202,228,.35);
+        }
+
+        /* Better input focus */
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--cyan) !important;
+            box-shadow: 0 0 0 2px rgba(72,202,228,.12);
+            outline: none;
+        }
+
+        /* Day cards subtle hover */
+        .day-card {
+            transition: transform .15s ease, border-color .15s ease;
+        }
+        .day-card:hover {
+            transform: translateY(-1px);
+            border-color: var(--border2);
+        }
+
+        /* Client table name styling */
+        .cname {
+            font-weight: 600;
+            letter-spacing: .01em;
+        }
+
+        /* Payment badge polish */
+        .badge {
+            letter-spacing: .5px;
+            text-transform: uppercase;
+            font-size: 10px;
+        }
+
+        /* Better empty states */
+        .empty {
+            padding: 40px 20px;
+            opacity: .6;
+        }
+        .empty i {
+            font-size: 28px;
+            margin-bottom: 8px;
+            opacity: .4;
+        }
+
+        /* Refined filter bar */
+        .filters {
+            gap: 8px;
+        }
+        .fsel {
+            transition: border-color .2s;
+        }
+        .fsel:hover {
+            border-color: var(--border2);
+        }
+
+        /* Header subtle depth */
+        header {
+            box-shadow: 0 1px 12px rgba(0,0,0,.2);
+        }
+
+        /* Sidebar subtle depth */
+        .sidebar {
+            box-shadow: 1px 0 8px rgba(0,0,0,.15);
+        }
+
+        /* Confirm dialog polish */
+        .confirm-box {
+            animation: modalIn .2s ease-out;
+        }
+
+        /* Chart container breathing room */
+        canvas {
+            border-radius: 8px;
+        }
+
+        /* Keyboard focus visible */
+        button:focus-visible, .btn:focus-visible, .navlink:focus-visible {
+            outline: 2px solid var(--cyan);
+            outline-offset: 2px;
+        }
+
     </style>
 </head>
 
@@ -2645,6 +2807,13 @@
                     <input type="file" id="importBackupBtn" style="display:none;" accept=".json"
                         onchange="importBackup(event)" />
                 </div>
+            </div>
+            <div class="setting-card">
+                <div class="setting-card-title"><i class="fas fa-clock-rotate-left"></i> <span>Auto-Backups</span></div>
+                <p style="font-size:12px;color:var(--text3);margin-bottom:10px;">
+                    Automatic snapshots saved every 10 changes. Last 5 kept.
+                </p>
+                <div id="backupList"></div>
             </div>
             <div class="setting-card">
                 <div class="setting-card-title"><i class="fas fa-cloud"></i> <span data-t="set.firebase">Cloud
@@ -3472,6 +3641,8 @@
             renderAll();
             if (!appData.serviceLogs) appData.serviceLogs = [];
             renderServiceLog();
+            renderBackupList();
+            migratePhotos();
             setupClientAutocomplete('pr-clientName', 'pr-clientId');
             setupClientAutocomplete('sl-clientName', 'sl-clientId');
             if (currentPage === 'ai') initChat();
@@ -3508,7 +3679,7 @@
 
         function openIDB() {
             return new Promise(resolve => {
-                const req = indexedDB.open('rdcrm', 1);
+                const req = indexedDB.open('dccrm', 1);
                 req.onupgradeneeded = e => { e.target.result.createObjectStore('data'); };
                 req.onsuccess = e => { db = e.target.result; resolve(db); };
                 req.onerror = () => resolve(null);
@@ -3531,6 +3702,196 @@
                     req.onerror = () => resolve(null);
                 } catch (e) { resolve(null); }
             });
+        }
+
+
+        // ═══════════════════════════════════════════════
+        //  PHOTO STORAGE (IndexedDB)
+        // ═══════════════════════════════════════════════
+        function openPhotoDB() {
+            return new Promise(resolve => {
+                const req = indexedDB.open('dccrm-photos', 1);
+                req.onupgradeneeded = e => {
+                    e.target.result.createObjectStore('photos');
+                };
+                req.onsuccess = e => resolve(e.target.result);
+                req.onerror = () => resolve(null);
+            });
+        }
+
+        async function savePhoto(clientId, dataUrl) {
+            try {
+                const pdb = await openPhotoDB();
+                if (!pdb) return false;
+                const tx = pdb.transaction('photos', 'readwrite');
+                tx.objectStore('photos').put(dataUrl, clientId);
+                return true;
+            } catch(e) { return false; }
+        }
+
+        async function getPhoto(clientId) {
+            try {
+                const pdb = await openPhotoDB();
+                if (!pdb) return null;
+                return new Promise(resolve => {
+                    const tx = pdb.transaction('photos', 'readonly');
+                    const req = tx.objectStore('photos').get(clientId);
+                    req.onsuccess = () => resolve(req.result || null);
+                    req.onerror = () => resolve(null);
+                });
+            } catch(e) { return null; }
+        }
+
+        async function deletePhoto(clientId) {
+            try {
+                const pdb = await openPhotoDB();
+                if (!pdb) return;
+                const tx = pdb.transaction('photos', 'readwrite');
+                tx.objectStore('photos').delete(clientId);
+            } catch(e) {}
+        }
+
+        // Migrate existing base64 photos from appData to IDB
+        async function migratePhotos() {
+            let migrated = 0;
+            for (const c of appData.clients) {
+                if (c.photo && c.photo.startsWith('data:')) {
+                    await savePhoto(c.id, c.photo);
+                    c.photo = 'idb:' + c.id;
+                    migrated++;
+                }
+            }
+            if (migrated > 0) {
+                scheduleSave();
+                console.log('Migrated ' + migrated + ' photos to IndexedDB');
+            }
+        }
+
+        // Load a photo for display - returns data URL
+        async function resolvePhoto(photoRef) {
+            if (!photoRef) return null;
+            if (photoRef.startsWith('data:')) return photoRef;
+            if (photoRef.startsWith('idb:')) {
+                const id = photoRef.slice(4);
+                return await getPhoto(id);
+            }
+            return photoRef;
+        }
+
+        // ═══════════════════════════════════════════════
+        //  AUTO-BACKUP SYSTEM
+        // ═══════════════════════════════════════════════
+        let _saveCount = 0;
+        const BACKUP_INTERVAL = 10; // auto-backup every N saves
+        const MAX_BACKUPS = 5;
+
+        function openBackupDB() {
+            return new Promise(resolve => {
+                const req = indexedDB.open('dccrm-backups', 1);
+                req.onupgradeneeded = e => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains('backups')) {
+                        db.createObjectStore('backups', { keyPath: 'id', autoIncrement: true });
+                    }
+                };
+                req.onsuccess = e => resolve(e.target.result);
+                req.onerror = () => resolve(null);
+            });
+        }
+
+        async function autoBackup() {
+            try {
+                const bdb = await openBackupDB();
+                if (!bdb) return;
+                const tx = bdb.transaction('backups', 'readwrite');
+                const store = tx.objectStore('backups');
+                const snapshot = {
+                    timestamp: new Date().toISOString(),
+                    label: new Date().toLocaleString(),
+                    data: JSON.stringify(appData),
+                    clients: appData.clients.length,
+                    payments: appData.payments.length
+                };
+                store.add(snapshot);
+                // Prune old backups (keep MAX_BACKUPS)
+                const getAll = store.getAll();
+                getAll.onsuccess = () => {
+                    const all = getAll.result;
+                    if (all.length > MAX_BACKUPS) {
+                        const toDelete = all.slice(0, all.length - MAX_BACKUPS);
+                        const dtx = bdb.transaction('backups', 'readwrite');
+                        const ds = dtx.objectStore('backups');
+                        toDelete.forEach(b => ds.delete(b.id));
+                    }
+                };
+                console.log('Auto-backup saved');
+            } catch(e) { console.error('Backup failed:', e); }
+        }
+
+        async function listBackups() {
+            try {
+                const bdb = await openBackupDB();
+                if (!bdb) return [];
+                return new Promise(resolve => {
+                    const tx = bdb.transaction('backups', 'readonly');
+                    const req = tx.objectStore('backups').getAll();
+                    req.onsuccess = () => resolve(req.result || []);
+                    req.onerror = () => resolve([]);
+                });
+            } catch(e) { return []; }
+        }
+
+        async function restoreFromBackup(id) {
+            try {
+                const bdb = await openBackupDB();
+                if (!bdb) return;
+                const tx = bdb.transaction('backups', 'readonly');
+                const req = tx.objectStore('backups').get(id);
+                req.onsuccess = () => {
+                    if (req.result) {
+                        appData = JSON.parse(req.result.data);
+                        scheduleSave();
+                        renderAll();
+                        if (appData.serviceLogs) renderServiceLog();
+                        toast(lang === 'es' ? 'Respaldo restaurado ✓' : 'Backup restored ✓', 'success');
+                        renderBackupList();
+                    }
+                };
+            } catch(e) { toast('Restore failed', 'error'); }
+        }
+
+        async function renderBackupList() {
+            const list = document.getElementById('backupList');
+            if (!list) return;
+            const backups = await listBackups();
+            if (!backups.length) {
+                list.innerHTML = '<div style="color:var(--text3);font-size:12px;padding:8px 0;">' +
+                    (lang === 'es' ? 'Sin respaldos automáticos aún' : 'No auto-backups yet') + '</div>';
+                return;
+            }
+            list.innerHTML = backups.reverse().map(b => {
+                const d = new Date(b.timestamp);
+                const timeAgo = getTimeAgo(d);
+                return '<div class="backup-row">' +
+                    '<div class="backup-info">' +
+                    '<div class="backup-date">' + d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) + '</div>' +
+                    '<div class="backup-meta">' + b.clients + ' clients · ' + b.payments + ' payments · ' + timeAgo + '</div>' +
+                    '</div>' +
+                    '<button class="btn btn-s btn-sm" onclick="confirmAction(\'' +
+                    (lang==='es'?'¿Restaurar respaldo?':'Restore backup?') + '\',\'' +
+                    (lang==='es'?'Esto reemplazará todos los datos actuales.':'This will replace all current data.') + '\',()=>restoreFromBackup(' + b.id + '))"><i class="fas fa-undo"></i> ' +
+                    (lang === 'es' ? 'Restaurar' : 'Restore') + '</button></div>';
+            }).join('');
+        }
+
+        function getTimeAgo(date) {
+            const mins = Math.floor((Date.now() - date.getTime()) / 60000);
+            if (mins < 1) return 'just now';
+            if (mins < 60) return mins + 'm ago';
+            const hrs = Math.floor(mins / 60);
+            if (hrs < 24) return hrs + 'h ago';
+            const days = Math.floor(hrs / 24);
+            return days + 'd ago';
         }
 
         let appData = {
@@ -3685,6 +4046,8 @@
         function scheduleSave() {
             appData.updatedAt = new Date().toISOString();
             dirty = true;
+            _saveCount++;
+            if (_saveCount % BACKUP_INTERVAL === 0) autoBackup();
             setSaveState('saving');
             clearTimeout(saveTimer);
             saveTimer = setTimeout(saveData, 800);
@@ -3771,8 +4134,12 @@
             document.getElementById('f-notes').value = c.notes || '';
             document.getElementById('f-photo').value = c.photo || '';
             if (c.photo) {
-                document.getElementById('imgPreviewImg').src = c.photo;
-                document.getElementById('imgPreview').style.display = 'block';
+                resolvePhoto(c.photo).then(url => {
+                    if (url) {
+                        document.getElementById('imgPreviewImg').src = url;
+                        document.getElementById('imgPreview').style.display = 'block';
+                    }
+                });
             }
             openModal('clientModal');
         }
@@ -3833,6 +4200,7 @@
                 lang === 'es' ? '\u00bfEliminar cliente?' : 'Delete Client?',
                 lang === 'es' ? 'Esta acci\u00f3n no se puede deshacer. Los pagos del cliente tambi\u00e9n se eliminar\u00e1n.' : 'This cannot be undone. The client\'s payment history will also be removed.',
                 () => {
+                    deletePhoto(id); // Clean up IDB photo
                     appData.clients = appData.clients.filter(x => x.id !== id);
                     appData.payments = appData.payments.filter(x => x.clientId !== id);
                     if (appData.serviceLogs) appData.serviceLogs = appData.serviceLogs.filter(x => x.clientId !== id);
@@ -3857,7 +4225,13 @@
             const pays = appData.payments.filter(p => p.clientId === id).sort((a, b) => new Date(b.date) - new Date(a.date));
             const totalPaid = pays.reduce((s, p) => s + p.amount, 0);
             let html = '';
-            if (c.photo) html += `<img class="client-img" src="${esc(c.photo)}" alt="Client photo"/>`;
+            if (c.photo) {
+                html += `<img class="client-img" id="viewClientPhoto" src="" alt="Client photo" style="display:none"/>`;
+                resolvePhoto(c.photo).then(url => {
+                    const img = document.getElementById('viewClientPhoto');
+                    if (img && url) { img.src = url; img.style.display = ''; }
+                });
+            }
             html += `<div class="detail-grid">
   <div class="dfield"><div class="dfield-label">Name</div><div class="dfield-val">${esc(c.firstName)} ${esc(c.lastName)}</div></div>
   <div class="dfield"><div class="dfield-label">Phone</div><div class="dfield-val">${esc(c.phone) || '\u2014'}</div></div>
@@ -3966,7 +4340,14 @@
                     const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
                     document.getElementById('imgPreviewImg').src = dataUrl;
                     document.getElementById('imgPreview').style.display = 'block';
-                    document.getElementById('f-photo').value = dataUrl;
+                    // Store in IDB, save reference in form
+                    const cid = document.getElementById('f-id').value || '_pending_' + Date.now();
+                    if (!document.getElementById('f-id').value) document.getElementById('f-id').value = cid;
+                    savePhoto(cid, dataUrl).then(() => {
+                        document.getElementById('f-photo').value = 'idb:' + cid;
+                    }).catch(() => {
+                        document.getElementById('f-photo').value = dataUrl; // fallback to inline
+                    });
                 };
                 img.src = e.target.result;
             };
@@ -4277,7 +4658,7 @@
             document.getElementById('clients-tbody').innerHTML = clients.map(c => `
   <tr>
     <td onclick="viewClient('${c.id}')" style="cursor:pointer">
-      ${c.photo ? `<img src="${esc(c.photo)}" style="width:30px;height:30px;border-radius:50%;object-fit:cover;margin-right:8px;vertical-align:middle;border:1px solid var(--border)"/>` : ''}
+      ${c.photo ? `<img data-photo-ref="${esc(c.photo)}" data-client-id="${c.id}" class="client-avatar" src="" style="width:30px;height:30px;border-radius:50%;object-fit:cover;margin-right:8px;vertical-align:middle;border:1px solid var(--border);display:none"/>` : ''}
       <div class="cname" style="display:inline-block">${esc(c.firstName)} ${esc(c.lastName)}</div>
       ${c.notes ? `<div class="csub">${esc(c.notes.slice(0, 40))}${c.notes.length > 40 ? '...' : ''}</div>` : ''}
     </td>
@@ -4293,6 +4674,12 @@
       <button class="btn btn-d btn-icon btn-sm" onclick="deleteClient('${c.id}')" title="Delete"><i class="fas fa-trash"></i></button>
     </div></td>
   </tr>`).join('');
+            // Async-load IDB photos into table avatars
+            document.querySelectorAll('.client-avatar[data-photo-ref]').forEach(img => {
+                resolvePhoto(img.dataset.photoRef).then(url => {
+                    if (url) { img.src = url; img.style.display = ''; }
+                });
+            });
         }
 
         function renderSchedule() {
