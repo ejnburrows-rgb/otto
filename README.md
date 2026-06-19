@@ -39,6 +39,12 @@ static host, or install it to a phone's home screen.
 | **Payroll intake** | Import an Excel/CSV payroll file → each row becomes a structured, searchable payroll record |
 | **Drawing → estimate** | Upload AutoCAD/PDF → reads it → drafts a materials list & scope (NVIDIA) → owner reviews & confirms |
 | **AI search** | "Ask OTTO" now also searches emails, documents, and payroll |
+| **Worker accountability** | Check-in/out (work-only GPS), before/after photos, short checklist, consent |
+| **Owner hub** | 4 tiles + 5 exception tags + daily summary + AI activity + consent + audit |
+| **Per-project AI** | Each job has its own AI context; answers from job data, clarifies once, escalates |
+| **Versioned documents** | Contracts / proposals / plans with version + approval history |
+| **Alerts & audit** | Typed alerts (severity/status/source/owner) + full audit trail |
+| **Backups** | Verified, versioned snapshots + scheduled restore tests + log |
 
 ## Workflows wired in
 - **New call → customer + job.** Logging a call matches an existing customer
@@ -122,6 +128,40 @@ re-keying into spreadsheets.
 All of the above feed **Ask OTTO**, so the owner can ask questions across any
 saved email, document, or payroll record.
 
+## Accountability layer (workers, owner hub, AI, safety)
+A field-service layer that keeps workers accountable without adding friction.
+
+- **Worker app.** PIN login; field workers get a **Spanish-first consent screen**
+  on first login (work-only GPS, photos, checklists — no personal tracking).
+  Inside a job: **Check in / Check out** (GPS captured only between the two),
+  **before/after photos**, and a **short checklist**. Off-site check-ins, missing
+  photos, missing checklists and late check-outs raise alerts automatically.
+- **Owner hub** (owner/office home). Four tiles only — **jobs today, workers on
+  site, exceptions, ready to close** — and five exception tags — **off-site,
+  missing photo, missing checklist, late check-out, AI escalated**. Everything
+  else is drill-down. Plus a one-tap **daily summary**, an **AI activity** panel,
+  **consent status** per worker, and the **audit trail**.
+- **Project AI.** Every job has its own AI context (overview, goal, phase, rules,
+  FAQ) on the job's **🤖 Project AI** tab. It answers *as the owner would, from
+  that job's data first*; if unsure it asks **one** clarifying question, and the
+  worker can escalate to the owner in one tap (logged + alerted).
+- **Documents.** Contracts, proposals and plans are first-class, **versioned**
+  records — uploading the same name creates a new version (never overwrites),
+  with an **approval history**; updates raise an alert.
+- **Alerts.** Typed, with severity / status / source / timestamp / assigned
+  owner; in-app first (email/SMS for critical items needs a provider — see notes).
+- **Backups.** Automatic + manual snapshots kept as multiple **versioned** copies
+  (offsite via cloud sync when configured), each **verified** by checksum, with
+  **scheduled restore tests** and a full backup/restore log. Contracts/proposals/
+  plans are never overwritten.
+- **Security.** Role-based access; optional **extra owner/admin code (MFA)** at
+  login; audit logging of key actions; work-only (not continuous) location.
+
+> Honest scope: this is a client-side PWA. True email/SMS delivery, real
+> server-side MFA, and immutable offsite storage need a backend/provider — the
+> app implements the in-app equivalents and the data model + hooks to wire them
+> up. Automatic email capture already has a webhook (`api/inbound-email.js`).
+
 ## Cloud sync (optional)
 **Settings → Cloud Sync** accepts a Firebase project ID + web API key to share
 data across devices via Firestore. Without it, everything still works fully on
@@ -138,7 +178,9 @@ python3 -m http.server 8000   # then open http://localhost:8000
 ## Data model
 `customers · jobs · calls · notes · photos · documents · estimates · invoices ·
 payments · checks · followups · workflows · sops · users · locations · folders ·
-emails · payroll`
+emails · payroll · projects · job_events · job_checklists · ai_conversations ·
+ai_escalations · consent_records · contracts · proposals · plans · alerts ·
+backups · daily_summaries · audit_log`
 
 Photos and files are stored as blobs in IndexedDB and linked to their job;
 everything else is JSON, backed up to localStorage and exportable to JSON/CSV.
