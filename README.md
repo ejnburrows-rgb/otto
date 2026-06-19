@@ -1,20 +1,90 @@
-# Dream Cooling CRM Pro v1.1
+# OTTO Plumbing CRM
 
-HVAC/Cooling service CRM for Dream Cooling. Single-page application with client management, service logs, scheduling, payments, and AI-powered check scanning.
+The operating system for **Auto Plumbing / O.T.T.O. Plumbing** — a bilingual
+(English / Spanish), mobile-first, minimal CRM built for a 15-person plumbing
+crew and a hands-on owner. Not a generic CRM: it is shaped around how a
+plumbing company actually runs a day.
 
-## Features
-- Client management with contact details and service history
-- Service log tracking with technician assignments
-- Weekly calendar/scheduling view
-- Payment tracking with CSV import/export
-- AI check scanning (Anthropic Claude) and client photo parsing
-- Weather widget (Open-Meteo)
-- Bilingual EN/ES support
-- PIN-protected access with rate limiting
-- Firebase Firestore cloud sync + localStorage backup
-- Built-in chat assistant
+It is a single-file Progressive Web App (`index.html`) plus a manifest and a
+service worker. No build step, no server required. Open it, deploy it to any
+static host, or install it to a phone's home screen.
 
-## Deployment
-Static single-file HTML app. Deploy to Vercel, Netlify, or any static host.
+## Why it's built this way
+- **Non-technical first.** Big obvious buttons, one clear action per screen,
+  no deep menus, no jargon. Every screen reads in under 5 seconds.
+- **Bilingual from day one.** English default with a full Spanish toggle in the
+  top bar. Each user also has a default language, so a Spanish-speaking field
+  worker lands in Spanish automatically. Labels are native, not machine-literal.
+- **Works on the phone, in the field, offline.** Installable PWA, service-worker
+  shell cache, data stored locally in IndexedDB and mirrored to localStorage,
+  with optional cloud sync.
 
-## NBO — Novo Business Order
+## What it does (mapped to the brief)
+| Requirement | Where it lives |
+|---|---|
+| Customers, Jobs, Calls, Notes | Core records + job folders |
+| Photos auto-attached to the right job | Camera button on every job → stored in that job's folder |
+| Documents, scans, **AutoCAD** files | Job → Documents tab (upload / scan / CAD `.dwg .dxf`) |
+| Estimates, Invoices, Payments, **Checks** | Money tab + top-level lists |
+| Follow-ups & Workflows | Auto-created (e.g. completing a job schedules a 7‑day follow-up) |
+| SOP / Knowledge base | Knowledge section, bilingual entries, searchable |
+| **Voice input** (EN/ES) | Microphone button on every text field + standalone voice notes |
+| **OCR** for checks/invoices/receipts/paperwork | Scan buttons → reads the image → pre-fills a check/invoice |
+| **Internal chatbot** | "Ask OTTO" answers from jobs, customers, notes, invoices, and SOPs |
+| **GPS / location** | "Share my location" → team map with latest position per worker |
+| **QuickBooks** | One-tap CSV export of invoices and payments in QuickBooks import format |
+| **Role-based access** | Owner / Office / Field worker / Accounting, with tailored nav + permissions |
+| Replace Excel | Reports dashboard + CSV export of every record type |
+
+## Workflows wired in
+- **New call → customer + job.** Logging a call matches an existing customer
+  (or creates one), optionally spins up a job, and runs the "New Service Call"
+  workflow.
+- **Photo / voice note → job.** Field workers pick a job once, then snap photos
+  or dictate notes straight into that job's folder.
+- **Scan a check → payment.** OCR reads the check and offers to record it as a
+  check + payment against an invoice.
+- **Complete a job → follow-up + office notice.** Status changes notify the
+  office and auto-schedule a customer follow-up.
+- **Ask a question → answered from the record**, or pointed to the office/owner
+  when the data isn't there — turning repeat phone calls into searchable knowledge.
+
+## Roles & sign-in
+Four seeded users (PIN `1234` each — change them in **Team**):
+- **Owner** — everything.
+- **Office** — everything except team management.
+- **Field worker** — jobs, customers, follow-ups, knowledge, assistant. Simplest screen.
+- **Accounting** — customers, estimates, invoices, payments, checks, reports.
+
+## AI features (optional key)
+Voice-to-text uses the browser's speech recognition and needs no key. OCR and
+the smartest assistant answers use the Anthropic API. Add a key in
+**Settings → Artificial Intelligence** (stored only on that device). Without a
+key, the assistant falls back to a local keyword search over your records, and
+scanning lets you type the details in.
+
+## Cloud sync (optional)
+**Settings → Cloud Sync** accepts a Firebase project ID + web API key to share
+data across devices via Firestore. Without it, everything still works fully on
+the device.
+
+## Run / deploy
+```bash
+# locally
+python3 -m http.server 8000   # then open http://localhost:8000
+
+# or just open index.html, or deploy the folder to Vercel / Netlify / any static host
+```
+
+## Data model
+`customers · jobs · calls · notes · photos · documents · estimates · invoices ·
+payments · checks · followups · workflows · sops · users · locations · folders`
+
+Photos and files are stored as blobs in IndexedDB and linked to their job;
+everything else is JSON, backed up to localStorage and exportable to JSON/CSV.
+
+## Files
+- `index.html` — the entire application.
+- `manifest.json`, `sw.js` — PWA install + offline shell.
+- `legacy/dream-cooling-crm.html` — the previous Dream Cooling (HVAC) app this
+  branch replaced, kept for reference.
