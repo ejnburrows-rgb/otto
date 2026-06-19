@@ -56,12 +56,26 @@ Four seeded users (PIN `1234` each — change them in **Team**):
 - **Field worker** — jobs, customers, follow-ups, knowledge, assistant. Simplest screen.
 - **Accounting** — customers, estimates, invoices, payments, checks, reports.
 
-## AI features (optional key)
-Voice-to-text uses the browser's speech recognition and needs no key. OCR and
-the smartest assistant answers use the Anthropic API. Add a key in
-**Settings → Artificial Intelligence** (stored only on that device). Without a
-key, the assistant falls back to a local keyword search over your records, and
-scanning lets you type the details in.
+## AI features (one key, all devices)
+Voice-to-text uses the browser's speech recognition and needs no key. OCR
+(reading checks/invoices) and the smartest assistant answers use the Anthropic
+API through a small serverless proxy (`api/claude.js`), so the key lives on the
+server and never in the browser.
+
+**Recommended setup (one time):** add your Anthropic key as an environment
+variable in Vercel, then redeploy.
+1. Vercel → the project → **Settings → Environment Variables**
+2. Add `ANTHROPIC_API_KEY` = `sk-ant-…` (Production + Preview)
+3. Redeploy (or push). AI now works on every worker's device with nothing to
+   paste in the app.
+
+The client falls back gracefully: server proxy → a personal key entered in
+**Settings → Artificial Intelligence** (device-only) → local keyword search over
+your records. Without any key, scanning simply lets you type the details in.
+
+> Self-hosting elsewhere? Any platform that runs the `api/claude.js` function
+> works, or set a personal key in Settings. Opening `index.html` directly (no
+> server) still runs everything except the AI calls.
 
 ## Cloud sync (optional)
 **Settings → Cloud Sync** accepts a Firebase project ID + web API key to share
@@ -85,6 +99,7 @@ everything else is JSON, backed up to localStorage and exportable to JSON/CSV.
 
 ## Files
 - `index.html` — the entire application.
+- `api/claude.js` — Vercel serverless proxy to the Anthropic API (keeps the key server-side).
 - `manifest.json`, `sw.js` — PWA install + offline shell.
 - `legacy/dream-cooling-crm.html` — the previous Dream Cooling (HVAC) app this
   branch replaced, kept for reference.

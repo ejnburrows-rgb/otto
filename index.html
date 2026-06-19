@@ -1464,8 +1464,8 @@
 
     html += `<div class="section-title"><i class="fas fa-robot"></i> ${lang === 'es' ? 'Inteligencia Artificial' : 'Artificial Intelligence'}</div>
       <div class="card" style="padding:14px">
-        <div class="muted" style="margin-bottom:10px">${lang === 'es' ? 'Clave para voz a texto, escaneo (OCR) y el asistente. Se guarda solo en este dispositivo.' : 'Key for voice-to-text, scanning (OCR) and the assistant. Stored only on this device.'}</div>
-        <div class="field"><label>Anthropic API Key</label><input id="set-aikey" type="password" value="${esc(localStorage.getItem('otto_ai_key') || '')}" placeholder="sk-ant-..."></div>
+        <div class="muted" style="margin-bottom:10px">${lang === 'es' ? 'Recomendado: configura la clave UNA vez en Vercel (variable ANTHROPIC_API_KEY) y la IA funciona en todos los dispositivos sin escribir nada aquí. La clave de abajo es opcional, solo para este dispositivo.' : 'Recommended: set the key ONCE in Vercel (ANTHROPIC_API_KEY env var) and AI works on every device with nothing typed here. The key below is an optional, device-only fallback.'}</div>
+        <div class="field"><label>${lang === 'es' ? 'Clave Anthropic (opcional, este dispositivo)' : 'Anthropic API Key (optional, this device)'}</label><input id="set-aikey" type="password" value="${esc(localStorage.getItem('otto_ai_key') || '')}" placeholder="sk-ant-..."></div>
         <button class="btn block" onclick="saveAIKey()"><i class="fas fa-check"></i> ${t('save')}</button>
       </div>`;
 
@@ -1556,20 +1556,36 @@
 
   /* ============================ OCR (Claude vision) ============================ */
   function aiKey() { return localStorage.getItem('otto_ai_key') || ''; }
-  async function aiVision(dataUrl, prompt) {
-    const key = aiKey(); if (!key) { toast(t('noKey'), 'error'); return null; }
+  // Calls Claude through the server proxy first (key in Vercel env, nothing in
+  // the browser). Falls back to a personal key from Settings, then to nothing.
+  // Returns the parsed Anthropic message object, or null if AI is unavailable.
+  async function callClaude(body) {
+    // 1) Server-side proxy — preferred. 503 = no server key configured.
     try {
-      const mt = dataUrl.startsWith('data:image/png') ? 'image/png' : 'image/jpeg';
-      const b64 = dataUrl.split(',')[1];
-      const r = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1024, messages: [{ role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: mt, data: b64 } }, { type: 'text', text: prompt }] }] })
-      });
-      if (!r.ok) return null;
-      const d = await r.json(); const txt = d.content[0].text; const m = txt.match(/\{[\s\S]*\}/);
-      return m ? JSON.parse(m[0]) : null;
-    } catch (e) { console.warn('ocr', e); return null; }
+      const r = await fetch('/api/claude', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      if (r.ok) { const d = await r.json(); if (d && d.content) return d; }
+    } catch (e) { /* no function / offline — fall through */ }
+    // 2) Personal key entered in Settings (direct browser call).
+    const key = aiKey();
+    if (key) {
+      try {
+        const r = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+          body: JSON.stringify(body)
+        });
+        if (r.ok) { const d = await r.json(); if (d && d.content) return d; }
+      } catch (e) { /* fall through */ }
+    }
+    return null;
+  }
+  async function aiVision(dataUrl, prompt) {
+    const mt = dataUrl.startsWith('data:image/png') ? 'image/png' : 'image/jpeg';
+    const b64 = dataUrl.split(',')[1];
+    const d = await callClaude({ model: 'claude-sonnet-4-6', max_tokens: 1024, messages: [{ role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: mt, data: b64 } }, { type: 'text', text: prompt }] }] });
+    if (!d) { toast(t('noKey'), 'error'); return null; }
+    try { const txt = d.content[0].text; const m = txt.match(/\{[\s\S]*\}/); return m ? JSON.parse(m[0]) : null; }
+    catch (e) { return null; }
   }
   function ocrCheck(dataUrl) { return aiVision(dataUrl, 'This is a photo of a check. Extract JSON only: {"name":"payer name","amount":0,"date":"YYYY-MM-DD","checkNumber":"","memo":""}'); }
   function ocrDocument(dataUrl) { return aiVision(dataUrl, 'Read this document (invoice/receipt/check/paperwork). Extract JSON only: {"type":"invoice|receipt|check|other","name":"company or person","amount":0,"date":"YYYY-MM-DD","checkNumber":"","memo":"short summary"}'); }
@@ -1606,23 +1622,13 @@
     const inp = $('#chat-in'); const q = inp.value.trim(); if (!q) return;
     chatHistory.push({ role: 'me', text: q }); inp.value = ''; viewAssistant();
     const ctx = buildContext(q);
-    const key = aiKey();
-    if (!key) { // local fallback: keyword search over records
-      const ans = localAnswer(q, ctx);
-      chatHistory.push({ role: 'bot', text: ans.text, src: ans.src }); viewAssistant(); return;
-    }
     chatHistory.push({ role: 'bot', text: '…' }); viewAssistant();
-    try {
-      const sys = `You are OTTO, the in-house assistant for a plumbing company. Answer briefly and practically in ${lang === 'es' ? 'Spanish' : 'English'} using ONLY the company data below. If the answer isn't in the data and isn't general plumbing how-to, say the office/owner should be asked. Data:\n\n${ctx || '(no matching records)'}`;
-      const r = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 700, system: sys, messages: [{ role: 'user', content: q }] })
-      });
-      chatHistory.pop();
-      if (!r.ok) { const a = localAnswer(q, ctx); chatHistory.push({ role: 'bot', text: a.text, src: a.src }); viewAssistant(); return; }
-      const d = await r.json();
-      chatHistory.push({ role: 'bot', text: d.content[0].text });
-    } catch (e) { chatHistory.pop(); const a = localAnswer(q, ctx); chatHistory.push({ role: 'bot', text: a.text, src: a.src }); }
+    const sys = `You are OTTO, the in-house assistant for a plumbing company. Answer briefly and practically in ${lang === 'es' ? 'Spanish' : 'English'} using ONLY the company data below. If the answer isn't in the data and isn't general plumbing how-to, say the office/owner should be asked. Data:\n\n${ctx || '(no matching records)'}`;
+    let d = null;
+    try { d = await callClaude({ model: 'claude-sonnet-4-6', max_tokens: 700, system: sys, messages: [{ role: 'user', content: q }] }); } catch (e) { d = null; }
+    chatHistory.pop(); // remove the "…" placeholder
+    if (d && d.content) { chatHistory.push({ role: 'bot', text: d.content[0].text }); }
+    else { const a = localAnswer(q, ctx); chatHistory.push({ role: 'bot', text: a.text, src: a.src }); }
     viewAssistant();
   }
   function localAnswer(q, ctx) {
