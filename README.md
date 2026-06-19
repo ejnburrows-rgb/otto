@@ -35,6 +35,10 @@ static host, or install it to a phone's home screen.
 | **QuickBooks** | One-tap CSV export of invoices and payments in QuickBooks import format |
 | **Role-based access** | Owner / Office / Field worker / Accounting, with tailored nav + permissions |
 | Replace Excel | Reports dashboard + CSV export of every record type |
+| **Inbox / email register** | Import forwarded `.eml` files (or auto-capture via webhook), matched to the right customer/job, searchable, AI-summarized |
+| **Payroll intake** | Import an Excel/CSV payroll file → each row becomes a structured, searchable payroll record |
+| **Drawing → estimate** | Upload AutoCAD/PDF → reads it → drafts a materials list & scope (NVIDIA) → owner reviews & confirms |
+| **AI search** | "Ask OTTO" now also searches emails, documents, and payroll |
 
 ## Workflows wired in
 - **New call → customer + job.** Logging a call matches an existing customer
@@ -93,6 +97,31 @@ your records. Without any key, scanning simply lets you type the details in.
 > works, or set a personal key in Settings. Opening `index.html` directly (no
 > server) still runs everything except the AI calls.
 
+## Inbox, documents & payroll (enter it once)
+The CRM is the single place correspondence, paperwork, and payroll live — no
+re-keying into spreadsheets.
+
+- **Inbox.** Open **Inbox** → **Import email file** to drop in forwarded/saved
+  `.eml` files. OTTO reads the sender, subject, body and attachments, matches the
+  message to the right customer and job, summarizes it in plain language, and
+  makes it searchable. You can re-link it or save it as a job note in one tap.
+  For **fully automatic capture**, point your email provider's inbound webhook
+  (SendGrid Inbound Parse, Mailgun, Postmark, …) at `/api/inbound-email` and set
+  `FIREBASE_PROJECT_ID` + `FIREBASE_API_KEY` in Vercel — forwarded mail then
+  appears in the Inbox on its own (it writes into the same Firestore the app
+  syncs from; see Cloud sync below).
+- **Documents.** Uploading or scanning a file in a job saves the original, OCRs
+  it (checks/invoices/receipts) or estimates it (drawings/PDFs), and creates a
+  searchable record in that job's folder.
+- **Payroll.** Open **Payroll** → **Import payroll file** and pick an Excel
+  (`.xlsx`) or CSV file. Columns (employee, hours, rate, gross, period) are
+  detected automatically; you get a preview, then every row becomes a structured
+  payroll record with a running total, CSV export, and an AI summary. (`.xlsx`
+  parsing loads SheetJS from the CDN on first use; `.csv` works fully offline.)
+
+All of the above feed **Ask OTTO**, so the owner can ask questions across any
+saved email, document, or payroll record.
+
 ## Cloud sync (optional)
 **Settings → Cloud Sync** accepts a Firebase project ID + web API key to share
 data across devices via Firestore. Without it, everything still works fully on
@@ -108,7 +137,8 @@ python3 -m http.server 8000   # then open http://localhost:8000
 
 ## Data model
 `customers · jobs · calls · notes · photos · documents · estimates · invoices ·
-payments · checks · followups · workflows · sops · users · locations · folders`
+payments · checks · followups · workflows · sops · users · locations · folders ·
+emails · payroll`
 
 Photos and files are stored as blobs in IndexedDB and linked to their job;
 everything else is JSON, backed up to localStorage and exportable to JSON/CSV.
@@ -117,6 +147,7 @@ everything else is JSON, backed up to localStorage and exportable to JSON/CSV.
 - `index.html` — the entire application.
 - `api/claude.js` — Vercel serverless proxy to the Anthropic API (keeps the key server-side).
 - `api/nvidia.js` — Vercel serverless proxy to the NVIDIA API for the drawing estimator (key server-side).
+- `api/inbound-email.js` — optional inbound-email webhook for automatic Inbox capture (writes to Firestore).
 - `manifest.json`, `sw.js` — PWA install + offline shell.
 - `legacy/dream-cooling-crm.html` — the previous Dream Cooling (HVAC) app this
   branch replaced, kept for reference.
