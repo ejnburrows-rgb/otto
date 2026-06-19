@@ -376,8 +376,10 @@ const T = {
     'ai.title':'Assistant','ai.sub':'Ask about any job, customer, or how-to','ai.greeting':"Hi! Ask me anything — like \"What's the address for the Miller job?\", \"Who is overdue?\", or \"How do we shut off a main line?\". I read your jobs, customers, notes and how-to guides.",'ai.placeholder':'Ask a question...','ai.thinking':'Thinking...',
     'rep.title':'Reports','rep.sub':'Replace your spreadsheets','rep.revenue':'Revenue','rep.byStatus':'Jobs by Status','rep.byWorker':'Jobs by Worker','rep.outstanding':'Outstanding Invoices','rep.exportAll':'Export Everything (CSV)',
     'set.title':'Settings','set.company':'Company','set.team':'Team & Roles','set.ai':'AI Features','set.aiKey':'AI Key (for check reading & assistant)','set.aiNote':'Paste an Anthropic API key to enable check/paper reading and the smart assistant. Without it, the assistant still answers from your data.','set.qb':'QuickBooks','set.qbNote':'Connect QuickBooks to sync invoices and payments for taxes.','set.qbConnect':'Connect QuickBooks','set.qbConnected':'Connected','set.data':'Data & Backup','set.exportJSON':'Download Full Backup','set.importJSON':'Restore Backup','set.clear':'Erase All Data','set.addUser':'Add Team Member','set.saveKey':'Save Key',
+    'set.nvidiaKey':'NVIDIA API Key (for drawing analysis)','set.nvidiaNote':'Paste a free NVIDIA NIM key (starts with nvapi-) from build.nvidia.com to read AutoCAD drawings. Falls back to your AI key above if not set.','set.saveNvKey':'Save NVIDIA Key',
     'voice.listening':'Listening... speak now','voice.tap':'Tap mic and speak',
     'ocr.reading':'Reading...','ocr.failed':'Could not read it — type it in','ocr.needKey':'Add an AI key in Settings to read images',
+    'cad.analyze':'Read with AI','cad.reanalyze':'Re-analyze','cad.analyzing':'Analyzing drawing...','cad.exact':'Exact','cad.estimate':'AI Estimate','cad.unsupported':'Not Analyzed','cad.summary':'Summary','cad.measurements':'Measurements','cad.fixtures':'Fixture Counts','cad.drawingUnits':'drawing units','cad.edit':'Edit Result','cad.editTitle':'Edit Analysis Result','cad.summaryLabel':'Summary','cad.measurementsLabel':'Measurements','cad.fixturesLabel':'Fixture Counts','cad.editedBadge':'Edited by you','cad.needKey':'Add an NVIDIA or AI key in Settings to analyze drawings','cad.guidance.dwg':"DWG files can't be read directly in the browser. Export to DXF from AutoCAD for exact calculations, or upload a photo of the drawing for an AI estimate.",'cad.guidance.pdf':"PDF analysis isn't supported yet. Export to DXF for exact calculations, or upload a photo of the drawing for an AI estimate.",'cad.err.parse':'Could not read this DXF file — it may be corrupted or in an unexpected format.','cad.err.empty':'No drawing geometry found in this file.','cad.err.toolarge':'This file is too large to analyze in the browser.','cad.err.ai':'AI analysis failed — try again, or check your API key in Settings.',
     'toast.saved':'Saved ✓','toast.deleted':'Deleted','toast.jobCreated':'Job created','toast.custCreated':'Customer added','toast.fillRequired':'Please fill required fields','toast.photoAdded':'Photo added to job','toast.docAdded':'File attached','toast.done':'Marked done','toast.tracking':'Location tracking on','toast.trackingOff':'Location tracking off','toast.notify':'Office notified','toast.matched':'Matched to invoice','toast.noMatch':'Saved — no matching invoice found',
     'gen.unassigned':'Unassigned','gen.noPhone':'No phone','gen.searchAll':'Search customers, jobs, notes...','gen.results':'Results','gen.noResults':'Nothing found','gen.confirm':'Are you sure?','gen.cannotUndo':'This cannot be undone.','gen.yes':'Yes','gen.justNow':'just now','gen.optional':'optional',
   },
@@ -421,8 +423,10 @@ const T = {
     'ai.title':'Asistente','ai.sub':'Pregunta sobre cualquier trabajo, cliente o guía','ai.greeting':'¡Hola! Pregúntame lo que sea — como "¿Cuál es la dirección del trabajo de Miller?", "¿Quién está vencido?" o "¿Cómo cerramos la línea principal?". Leo tus trabajos, clientes, notas y guías.','ai.placeholder':'Escribe una pregunta...','ai.thinking':'Pensando...',
     'rep.title':'Reportes','rep.sub':'Reemplaza tus hojas de cálculo','rep.revenue':'Ingresos','rep.byStatus':'Trabajos por Estado','rep.byWorker':'Trabajos por Trabajador','rep.outstanding':'Facturas por Cobrar','rep.exportAll':'Exportar Todo (CSV)',
     'set.title':'Ajustes','set.company':'Empresa','set.team':'Equipo y Roles','set.ai':'Funciones de IA','set.aiKey':'Clave de IA (para leer cheques y asistente)','set.aiNote':'Pega una clave API de Anthropic para leer cheques/papeles y activar el asistente inteligente. Sin ella, el asistente igual responde con tus datos.','set.qb':'QuickBooks','set.qbNote':'Conecta QuickBooks para sincronizar facturas y pagos para impuestos.','set.qbConnect':'Conectar QuickBooks','set.qbConnected':'Conectado','set.data':'Datos y Respaldo','set.exportJSON':'Descargar Respaldo Completo','set.importJSON':'Restaurar Respaldo','set.clear':'Borrar Todos los Datos','set.addUser':'Agregar Miembro','set.saveKey':'Guardar Clave',
+    'set.nvidiaKey':'Clave API de NVIDIA (para analizar planos)','set.nvidiaNote':'Pega una clave gratuita de NVIDIA NIM (empieza con nvapi-) de build.nvidia.com para leer planos de AutoCAD. Si no la configuras, se usa tu clave de IA de arriba.','set.saveNvKey':'Guardar Clave NVIDIA',
     'voice.listening':'Escuchando... habla ahora','voice.tap':'Toca el micrófono y habla',
     'ocr.reading':'Leyendo...','ocr.failed':'No se pudo leer — escríbelo','ocr.needKey':'Agrega una clave de IA en Ajustes para leer imágenes',
+    'cad.analyze':'Leer con IA','cad.reanalyze':'Volver a Analizar','cad.analyzing':'Analizando dibujo...','cad.exact':'Exacto','cad.estimate':'Estimado por IA','cad.unsupported':'Sin Analizar','cad.summary':'Resumen','cad.measurements':'Medidas','cad.fixtures':'Conteo de Accesorios','cad.drawingUnits':'unidades del dibujo','cad.edit':'Editar Resultado','cad.editTitle':'Editar Resultado del Análisis','cad.summaryLabel':'Resumen','cad.measurementsLabel':'Medidas','cad.fixturesLabel':'Conteo de Accesorios','cad.editedBadge':'Editado por ti','cad.needKey':'Agrega una clave de NVIDIA o de IA en Ajustes para analizar planos','cad.guidance.dwg':'Los archivos DWG no se pueden leer directamente en el navegador. Expórtalo a DXF desde AutoCAD para cálculos exactos, o sube una foto del plano para una estimación con IA.','cad.guidance.pdf':'El análisis de PDF aún no está disponible. Expórtalo a DXF para cálculos exactos, o sube una foto del plano para una estimación con IA.','cad.err.parse':'No se pudo leer este archivo DXF — puede estar dañado o en un formato inesperado.','cad.err.empty':'No se encontró geometría de dibujo en este archivo.','cad.err.toolarge':'Este archivo es demasiado grande para analizarlo en el navegador.','cad.err.ai':'El análisis con IA falló — intenta de nuevo, o revisa tu clave API en Ajustes.',
     'toast.saved':'Guardado ✓','toast.deleted':'Eliminado','toast.jobCreated':'Trabajo creado','toast.custCreated':'Cliente agregado','toast.fillRequired':'Llena los campos requeridos','toast.photoAdded':'Foto agregada al trabajo','toast.docAdded':'Archivo adjuntado','toast.done':'Marcado como listo','toast.tracking':'Rastreo de ubicación activado','toast.trackingOff':'Rastreo de ubicación apagado','toast.notify':'Oficina notificada','toast.matched':'Emparejado a factura','toast.noMatch':'Guardado — no se encontró factura',
     'gen.unassigned':'Sin asignar','gen.noPhone':'Sin teléfono','gen.searchAll':'Buscar clientes, trabajos, notas...','gen.results':'Resultados','gen.noResults':'No se encontró nada','gen.confirm':'¿Estás seguro?','gen.cannotUndo':'Esto no se puede deshacer.','gen.yes':'Sí','gen.justNow':'ahora mismo','gen.optional':'opcional',
   }
@@ -968,8 +972,29 @@ function noteRow(n){ return `<div style="padding:10px 0;border-bottom:1px solid 
   <div style="font-weight:600">${n.voice?'<i class="fas fa-microphone" style="color:var(--brand)"></i> ':''}${esc(n.text)}</div>
   <div class="s">${esc(userName(n.by))} · ${fmtDateTime(n.date)}</div></div>`; }
 function docRow(d){ const ic=/dwg|dxf|dwf/i.test(d.name)?'fa-compass-drafting':/pdf/i.test(d.name)?'fa-file-pdf':/jpg|png|jpeg/i.test(d.name)?'fa-file-image':'fa-file';
-  return `<div class="doc-row"><div class="di"><i class="fas ${ic}"></i></div><div class="row-main"><div class="t" style="font-size:14px">${esc(d.name)}</div><div class="s">${fmtDate(d.date)}</div></div>
-    <button class="btn btn-sm btn-ghost" onclick="openDoc('${d.id}')"><i class="fas fa-download"></i></button></div>`; }
+  const isCad=/\.(dxf|dwg|dwf)$/i.test(d.name), isImg=/\.(jpe?g|png)$/i.test(d.name), a=d.aiAnalysis;
+  return `<div class="doc-row" id="docrow-${d.id}"><div class="di"><i class="fas ${ic}"></i></div><div class="row-main"><div class="t" style="font-size:14px">${esc(d.name)}</div><div class="s">${fmtDate(d.date)}</div></div>
+    <div style="display:flex;gap:6px">${(isCad||isImg)?cadAnalyzeButton(d,a):''}
+    <button class="btn btn-sm btn-ghost" onclick="openDoc('${d.id}')"><i class="fas fa-download"></i></button></div></div>
+    ${a?cadResultCard(d,a):''}`; }
+function cadAnalyzeButton(d,a){
+  if(!a)return `<button class="btn btn-sm btn-ghost" onclick="analyzeDocument('${d.id}')" title="${esc(t('cad.analyze'))}"><i class="fas fa-wand-magic-sparkles"></i></button>`;
+  if(a.status==='pending')return `<button class="btn btn-sm btn-ghost" disabled><i class="fas fa-spinner fa-spin"></i></button>`;
+  if(a.status==='unsupported')return '';
+  return `<button class="btn btn-sm btn-ghost" onclick="analyzeDocument('${d.id}')" title="${esc(t('cad.reanalyze'))}"><i class="fas fa-rotate"></i></button>`;
+}
+function cadResultCard(d,a){
+  if(a.status==='pending')return `<div class="s" style="padding:4px 0 12px 52px;color:var(--text3)"><i class="fas fa-spinner fa-spin"></i> ${t('cad.analyzing')}</div>`;
+  if(a.status==='unsupported')return `<div class="s" style="padding:4px 0 12px 52px;color:var(--text2)">${esc(a.summary)}</div>`;
+  const badge=a.status==='error'?`<span class="badge b-red">${esc(L('Error','Error'))}</span>`:a.kind==='dxf'?`<span class="badge b-green">${esc(t('cad.exact'))}</span>`:`<span class="badge b-amber">${esc(t('cad.estimate'))}</span>`;
+  return `<div style="padding:4px 0 14px 52px">
+    <div style="margin-bottom:6px">${badge}${a.edited?` <span class="badge b-gray">${esc(t('cad.editedBadge'))}</span>`:''}</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:6px">${esc(a.summary)}</div>
+    ${a.measurements&&a.measurements.length?`<div class="s"><b>${t('cad.measurements')}:</b> ${a.measurements.map(x=>`${esc(x.label)}: ${esc(String(x.value))} ${esc(x.unit)}`).join(' · ')}</div>`:''}
+    ${a.fixtureCounts&&a.fixtureCounts.length?`<div class="s"><b>${t('cad.fixtures')}:</b> ${a.fixtureCounts.map(x=>`${esc(x.label)} (${esc(String(x.count))})`).join(' · ')}</div>`:''}
+    ${a.status==='done'?`<button class="btn btn-sm btn-ghost" style="margin-top:6px" onclick="editAnalysis('${d.id}')"><i class="fas fa-pen"></i> ${t('cad.edit')}</button>`:''}
+  </div>`;
+}
 
 function addJobNote(jobId){ const txt=val('jobNoteInput'); if(!txt)return; const j=byId('jobs',jobId);
   appData.notes.push({id:uid(),jobId,customerId:j.customerId,text:txt,by:me.id,date:new Date().toISOString(),voice:false,lang});
@@ -1286,6 +1311,208 @@ async function ocrImage(dataUrl,prompt){ const k=aiKey(); if(!k)return null;
     if(!r.ok)return null; const d=await r.json(); const m=d.content[0].text.match(/\{[\s\S]*\}/); return m?JSON.parse(m[0]):null;
   }catch(e){ return null; } }
 
+/* ============ CAD / DRAWING ANALYSIS ============ */
+function nvidiaKey(){ return localStorage.getItem('otto-nvidia-key')||''; }
+function cadAiProvider(){
+  if(nvidiaKey())return {provider:'nvidia',key:nvidiaKey()};
+  if(aiKey())return {provider:'anthropic',key:aiKey()};
+  return null;
+}
+async function nvidiaChat(messages,maxTokens){
+  const k=nvidiaKey(); if(!k)return null;
+  try{
+    const r=await fetch('https://integrate.api.nvidia.com/v1/chat/completions',{method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+k},
+      body:JSON.stringify({model:'meta/llama-3.2-11b-vision-instruct',messages,max_tokens:maxTokens||800,temperature:0.3})});
+    if(!r.ok)return null; const d=await r.json();
+    return (d.choices&&d.choices[0]&&d.choices[0].message)?d.choices[0].message.content:null;
+  }catch(e){ return null; }
+}
+async function anthropicText(prompt,maxTokens){
+  const k=aiKey(); if(!k)return null;
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':k,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:maxTokens||800,messages:[{role:'user',content:prompt}]})});
+    if(!r.ok)return null; const d=await r.json(); return d.content[0].text;
+  }catch(e){ return null; }
+}
+
+/* DXF — pure, synchronous, no DOM/network. The actual calculation engine: real coordinates in, real lengths/counts out. */
+function parseDxf(text){
+  try{
+    const lines=text.split(/\r\n|\r|\n/);
+    if(lines.length>500000)return {ok:false,error:'toolarge'};
+    const pairs=[];
+    for(let i=0;i+1<lines.length;i+=2){
+      const code=parseInt(lines[i].trim(),10);
+      if(isNaN(code))return {ok:false,error:'parse'};
+      pairs.push([code,lines[i+1].trim()]);
+    }
+    if(!pairs.length)return {ok:false,error:'empty'};
+
+    const UNIT_LABELS={1:'in',2:'ft',4:'mm',5:'cm',6:'m'};
+    const ENTITY_TYPES=['LINE','LWPOLYLINE','CIRCLE','ARC','INSERT'];
+    let section=null, expectSectionName=false, units=null, cur=null, pendingX=null;
+    const rawEntities=[];
+    function endEntity(){ if(cur)rawEntities.push(cur); cur=null; pendingX=null; }
+
+    for(let i=0;i<pairs.length;i++){
+      const code=pairs[i][0], val=pairs[i][1];
+      if(code===0){
+        endEntity();
+        if(val==='SECTION'){ expectSectionName=true; section=null; }
+        else if(val==='ENDSEC'){ section=null; }
+        else if(val==='EOF'){ break; }
+        else if(section==='ENTITIES' && ENTITY_TYPES.includes(val)){ cur={type:val,layer:null,verts:[],flags:0}; }
+        continue;
+      }
+      if(expectSectionName){ section=val; expectSectionName=false; continue; }
+      if(section==='HEADER' && code===9 && val==='$INSUNITS'){
+        const next=pairs[i+1];
+        if(next && next[0]===70) units=UNIT_LABELS[parseInt(next[1],10)]||null;
+        continue;
+      }
+      if(section!=='ENTITIES' || !cur)continue;
+      if(code===8){ cur.layer=val; continue; }
+      if(cur.type==='LWPOLYLINE'){
+        if(code===10){ pendingX=parseFloat(val); continue; }
+        if(code===20){ cur.verts.push([pendingX,parseFloat(val)]); pendingX=null; continue; }
+        if(code===70){ cur.flags=parseInt(val,10)||0; continue; }
+      } else if(cur.type==='LINE'){
+        if(code===10){ cur.x1=parseFloat(val); continue; }
+        if(code===20){ cur.y1=parseFloat(val); continue; }
+        if(code===11){ cur.x2=parseFloat(val); continue; }
+        if(code===21){ cur.y2=parseFloat(val); continue; }
+      } else if(cur.type==='CIRCLE'){
+        if(code===40){ cur.radius=parseFloat(val); continue; }
+      } else if(cur.type==='ARC'){
+        if(code===40){ cur.radius=parseFloat(val); continue; }
+        if(code===50){ cur.a1=parseFloat(val); continue; }
+        if(code===51){ cur.a2=parseFloat(val); continue; }
+      } else if(cur.type==='INSERT'){
+        if(code===2){ cur.block=val; continue; }
+      }
+    }
+    endEntity();
+    if(!rawEntities.length)return {ok:false,error:'empty'};
+
+    const lengthsByLayer={}, fixturesByBlock={};
+    const counts={lines:0,polylines:0,circles:0,arcs:0,inserts:0};
+    function addLen(layer,len){ if(!len||isNaN(len))return; const k=layer||'(none)'; lengthsByLayer[k]=(lengthsByLayer[k]||0)+len; }
+
+    for(const e of rawEntities){
+      if(e.type==='LINE' && e.x1!=null && e.y1!=null && e.x2!=null && e.y2!=null){
+        counts.lines++; addLen(e.layer,Math.hypot(e.x2-e.x1,e.y2-e.y1));
+      } else if(e.type==='LWPOLYLINE' && e.verts.length>1){
+        counts.polylines++; let len=0;
+        for(let i=1;i<e.verts.length;i++)len+=Math.hypot(e.verts[i][0]-e.verts[i-1][0],e.verts[i][1]-e.verts[i-1][1]);
+        if(e.flags&1){ const a=e.verts[0],b=e.verts[e.verts.length-1]; len+=Math.hypot(b[0]-a[0],b[1]-a[1]); }
+        addLen(e.layer,len);
+      } else if(e.type==='CIRCLE'){
+        counts.circles++;
+      } else if(e.type==='ARC' && e.radius!=null && e.a1!=null && e.a2!=null){
+        counts.arcs++; let delta=e.a2-e.a1; while(delta<0)delta+=360; while(delta>360)delta-=360;
+        addLen(e.layer,e.radius*(delta*Math.PI/180));
+      } else if(e.type==='INSERT' && e.block){
+        counts.inserts++; fixturesByBlock[e.block]=(fixturesByBlock[e.block]||0)+1;
+      }
+    }
+
+    const lengthsByLayerArr=Object.keys(lengthsByLayer).map(k=>({layer:k,length:lengthsByLayer[k]})).sort((a,b)=>b.length-a.length);
+    const fixturesByBlockArr=Object.keys(fixturesByBlock).map(k=>({block:k,count:fixturesByBlock[k]})).sort((a,b)=>b.count-a.count);
+    return {ok:true,units,lengthsByLayer:lengthsByLayerArr,fixturesByBlock:fixturesByBlockArr,entities:counts};
+  }catch(e){ return {ok:false,error:'parse'}; }
+}
+
+async function narrateDxfGeometry(parsed){
+  const prov=cadAiProvider(); if(!prov)return null;
+  const unitLabel=parsed.units||t('cad.drawingUnits');
+  const prompt='You are summarizing a parsed AutoCAD DXF drawing for a plumbing company owner. '+
+    'Units: '+unitLabel+'. Lengths by layer (already computed exactly): '+JSON.stringify(parsed.lengthsByLayer)+'. '+
+    'Fixture/block counts (already computed exactly): '+JSON.stringify(parsed.fixturesByBlock)+'. '+
+    'Entity totals: '+JSON.stringify(parsed.entities)+'. '+
+    'Write a short plain-language summary (3-5 sentences) useful to a plumber: total length per relevant layer, fixture counts, anything notable. Use only the exact numbers given, do not invent new ones. '+
+    'Reply ONLY in '+(lang==='es'?'Spanish':'English')+', plain text, no markdown.';
+  if(prov.provider==='nvidia')return await nvidiaChat([{role:'user',content:prompt}],700);
+  return await anthropicText(prompt,700);
+}
+
+async function analyzeDrawingImage(dataUrl){
+  const prov=cadAiProvider(); if(!prov)return null;
+  const prompt='This image shows a plumbing or construction drawing or sketch. Identify: (1) visible fixture symbols and counts (sinks, toilets, drains, valves, water heaters, etc.), '+
+    '(2) any printed or handwritten dimension numbers visible, (3) visible pipe runs or materials called out. '+
+    'Return JSON only, no other text: {"summary":"...","fixtureCounts":[{"label":"...","count":0}],"measurements":[{"label":"...","value":"...","unit":"..."}]}. '+
+    'Write the summary and labels in '+(lang==='es'?'Spanish':'English')+'. If you are not confident about a count or measurement, say so in the summary rather than guessing precisely.';
+  if(prov.provider==='nvidia'){
+    const raw=await nvidiaChat([{role:'user',content:[{type:'text',text:prompt},{type:'image_url',image_url:{url:dataUrl}}]}],900);
+    if(!raw)return null;
+    try{ const m=raw.match(/\{[\s\S]*\}/); return m?JSON.parse(m[0]):{summary:raw,fixtureCounts:[],measurements:[]}; }catch(e){ return {summary:raw,fixtureCounts:[],measurements:[]}; }
+  }
+  return await ocrImage(dataUrl,prompt);
+}
+
+async function analyzeDocument(docId){
+  const d=byId('documents',docId); if(!d)return;
+  const ext=(d.name.match(/\.([a-z0-9]+)$/i)||['',''])[1].toLowerCase();
+  const prov=cadAiProvider();
+  if(ext==='dxf'){
+    if(!prov){ toast(t('cad.needKey'),'warn'); go('settings'); return; }
+    d.aiAnalysis={status:'pending',kind:'dxf'}; scheduleSave(); refreshDocRow(d.id);
+    const url=await getFile(d.fileId);
+    let text=null;
+    if(url){ try{ text=decodeURIComponent(escape(atob(url.split(',')[1]))); }catch(e){ try{ text=atob(url.split(',')[1]); }catch(e2){ text=null; } } }
+    const parsed=text!=null?parseDxf(text):{ok:false,error:'parse'};
+    if(!parsed.ok){
+      d.aiAnalysis={status:'error',kind:'dxf',summary:t('cad.err.'+parsed.error),analyzedAt:new Date().toISOString()};
+      scheduleSave(); refreshDocRow(d.id); return;
+    }
+    const summary=await narrateDxfGeometry(parsed);
+    d.aiAnalysis={status:summary?'done':'error',kind:'dxf',
+      summary:summary||t('cad.err.ai'),
+      measurements:parsed.lengthsByLayer.map(x=>({label:x.layer,value:x.length.toFixed(1),unit:parsed.units||t('cad.drawingUnits')})),
+      fixtureCounts:parsed.fixturesByBlock.map(x=>({label:x.block,count:x.count})),
+      analyzedAt:new Date().toISOString(),model:prov.provider,edited:false};
+    scheduleSave(); refreshDocRow(d.id); return;
+  }
+  if(ext==='jpg'||ext==='jpeg'||ext==='png'){
+    if(!prov){ toast(t('cad.needKey'),'warn'); go('settings'); return; }
+    d.aiAnalysis={status:'pending',kind:'vision'}; scheduleSave(); refreshDocRow(d.id);
+    const url=await getFile(d.fileId);
+    const res=url?await analyzeDrawingImage(url):null;
+    d.aiAnalysis={status:res?'done':'error',kind:'vision',
+      summary:res?res.summary:t('cad.err.ai'),
+      measurements:(res&&res.measurements)||[],fixtureCounts:(res&&res.fixtureCounts)||[],
+      analyzedAt:new Date().toISOString(),model:prov.provider,edited:false};
+    scheduleSave(); refreshDocRow(d.id); return;
+  }
+  d.aiAnalysis={status:'unsupported',kind:'unsupported',summary:t(ext==='pdf'?'cad.guidance.pdf':'cad.guidance.dwg'),analyzedAt:new Date().toISOString()};
+  scheduleSave(); refreshDocRow(d.id);
+}
+function refreshDocRow(docId){
+  const el=document.getElementById('docrow-'+docId); if(!el)return;
+  const d=byId('documents',docId); if(!d)return;
+  el.outerHTML=docRow(d);
+}
+function editAnalysis(docId){
+  const d=byId('documents',docId); if(!d)return; const a=d.aiAnalysis||{};
+  openModal(t('cad.editTitle'),`
+    <div class="field"><label>${t('cad.summaryLabel')}</label>${voiceTextarea('ea-summary',a.summary||'')}</div>
+    <div class="field"><label>${t('cad.measurementsLabel')}</label>
+      <textarea id="ea-meas" rows="4" placeholder="${esc(L('One per line: Layer, Value, Unit','Uno por línea: Capa, Valor, Unidad'))}">${esc((a.measurements||[]).map(x=>x.label+', '+x.value+', '+x.unit).join('\n'))}</textarea></div>
+    <div class="field"><label>${t('cad.fixturesLabel')}</label>
+      <textarea id="ea-fix" rows="3" placeholder="${esc(L('One per line: Name, Count','Uno por línea: Nombre, Cantidad'))}">${esc((a.fixtureCounts||[]).map(x=>x.label+', '+x.count).join('\n'))}</textarea></div>`,
+    `<button class="btn btn-ghost" onclick="closeModal()">${t('btn.cancel')}</button>
+     <button class="btn btn-pri" onclick="saveAnalysisEdit('${docId}')">${t('btn.save')}</button>`);
+}
+function saveAnalysisEdit(docId){
+  const d=byId('documents',docId); if(!d)return; const a=d.aiAnalysis||{};
+  a.summary=val('ea-summary');
+  a.measurements=val('ea-meas').split('\n').map(l=>l.split(',').map(s=>s.trim())).filter(p=>p[0]).map(p=>({label:p[0],value:p[1]||'',unit:p[2]||''}));
+  a.fixtureCounts=val('ea-fix').split('\n').map(l=>l.split(',').map(s=>s.trim())).filter(p=>p[0]).map(p=>({label:p[0],count:p[1]||''}));
+  a.edited=true; d.aiAnalysis=a;
+  scheduleSave(); closeModal(); toast(t('toast.saved'),'ok'); refreshDocRow(docId);
+}
+
 /* ============ SOPs / KNOWLEDGE ============ */
 let sopFilter='';
 function renderSops(m){
@@ -1493,7 +1720,11 @@ function renderSettings(m){
     <div class="card"><div class="card-head"><i class="fas fa-robot" style="color:var(--brand)"></i><h3>${t('set.ai')}</h3></div><div class="card-body" style="padding:16px 18px">
       <p style="color:var(--text2);font-size:13px;margin-bottom:12px">${t('set.aiNote')}</p>
       <div class="field"><label>${t('set.aiKey')}</label><input id="st-aikey" type="password" value="${esc(aiKey())}" placeholder="sk-ant-..."></div>
-      <button class="btn btn-pri btn-sm" onclick="saveAiKey()">${t('set.saveKey')}</button></div></div>
+      <button class="btn btn-pri btn-sm" onclick="saveAiKey()">${t('set.saveKey')}</button>
+      <div style="height:14px"></div>
+      <p style="color:var(--text2);font-size:13px;margin-bottom:12px">${t('set.nvidiaNote')}</p>
+      <div class="field"><label>${t('set.nvidiaKey')}</label><input id="st-nvkey" type="password" value="${esc(nvidiaKey())}" placeholder="nvapi-..."></div>
+      <button class="btn btn-pri btn-sm" onclick="saveNvidiaKey()">${t('set.saveNvKey')}</button></div></div>
 
     <div class="card"><div class="card-head"><i class="fas fa-file-invoice-dollar" style="color:var(--brand)"></i><h3>${t('set.qb')}</h3></div><div class="card-body" style="padding:16px 18px">
       <p style="color:var(--text2);font-size:13px;margin-bottom:12px">${t('set.qbNote')}</p>
@@ -1509,6 +1740,7 @@ function renderSettings(m){
 }
 function saveCompany(){ appData.settings.companyName=val('st-name'); appData.settings.companyPhone=val('st-phone'); appData.settings.serviceArea=val('st-area'); scheduleSave(); toast(t('toast.saved'),'ok'); }
 function saveAiKey(){ const k=val('st-aikey'); localStorage.setItem('otto-ai-key',k); toast(t('toast.saved'),'ok'); }
+function saveNvidiaKey(){ const k=val('st-nvkey'); localStorage.setItem('otto-nvidia-key',k); toast(t('toast.saved'),'ok'); }
 function toggleQB(){ appData.settings.qbConnected=!appData.settings.qbConnected; scheduleSave(); toast(appData.settings.qbConnected?t('set.qbConnected'):t('toast.saved'),'ok'); render(); }
 function userForm(id){ const u=id?byId('users',id):{};
   openModal(id?t('btn.edit'):t('set.addUser'),`
