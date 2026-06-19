@@ -340,6 +340,22 @@
       scanning: 'Reading…', readFailed: 'Could not read it — please type the details.', tasks: 'Tasks',
       myDay: 'My Day', noJobsToday: 'No jobs assigned to you yet.', whoCalled: 'Caller name',
       callerPhone: 'Caller phone', logCall: 'Log the call', summary: 'Summary',
+      readEstimate: 'Read & estimate', readAgain: 'Read again', reading: 'Reading the drawing…',
+      estimatingMsg: 'Building the estimate…', estimateReady: 'Estimate ready', jobSummaryL: 'Job summary',
+      materials: 'Materials', scopeOfWork: 'Scope of work', quantities: 'Quantities', assumptions: 'Assumptions',
+      oneQuestion: 'One quick question', answerIt: 'Answer', skip: 'Skip', confirm: 'Confirm & save',
+      reviewEdit: 'Review & edit', addItem: 'Add item', itemL: 'Item', qtyL: 'Qty', unitL: 'Unit',
+      createEstimate: 'Create estimate from this', aiNotReady: 'AI is not set up yet — the file was saved. You can type the estimate.',
+      couldntRead: "Couldn't read much from this file — you can still type the estimate below.",
+      showInLang: 'Show in this language', drawingHint: 'Upload a drawing or PDF and I will read it and draft a materials list.',
+      emails: 'Inbox', payroll: 'Payroll', addEmail: 'Add email', importEmail: 'Import email file',
+      from: 'From', subject: 'Subject', message: 'Message', attachments: 'Attachments', matchedTo: 'Matched to',
+      matchCustomer: 'Customer / job', summarize: 'Summarize', aiSummary: 'AI summary', noMatch: 'Not matched yet',
+      makeNote: 'Save as job note', importPayroll: 'Import payroll file', importExcelHint: 'Excel (.xlsx) or CSV — each row becomes a payroll record.',
+      employee: 'Employee', hours: 'Hours', rate: 'Rate', gross: 'Gross', net: 'Net', period: 'Period',
+      rowsFound: 'rows found', importRows: 'Import these rows', payrollSummary: 'Payroll summary', totalGross: 'Total gross',
+      emailsHint: 'Forwarded emails and attachments, matched to the right customer and job.',
+      summarizing: 'Summarizing…', importing: 'Importing…', noColumns: "Couldn't read columns — check the file.",
     },
     es: {
       home: 'Inicio', customers: 'Clientes', jobs: 'Trabajos', calls: 'Llamadas', more: 'Más',
@@ -381,6 +397,22 @@
       scanning: 'Leyendo…', readFailed: 'No se pudo leer — por favor escribe los datos.', tasks: 'Tareas',
       myDay: 'Mi Día', noJobsToday: 'Aún no tienes trabajos asignados.', whoCalled: 'Nombre de quien llama',
       callerPhone: 'Teléfono', logCall: 'Registrar llamada', summary: 'Resumen',
+      readEstimate: 'Leer y estimar', readAgain: 'Leer de nuevo', reading: 'Leyendo el plano…',
+      estimatingMsg: 'Preparando el estimado…', estimateReady: 'Estimado listo', jobSummaryL: 'Resumen del trabajo',
+      materials: 'Materiales', scopeOfWork: 'Alcance del trabajo', quantities: 'Cantidades', assumptions: 'Suposiciones',
+      oneQuestion: 'Una pregunta rápida', answerIt: 'Responder', skip: 'Omitir', confirm: 'Confirmar y guardar',
+      reviewEdit: 'Revisar y editar', addItem: 'Agregar artículo', itemL: 'Artículo', qtyL: 'Cant.', unitL: 'Unidad',
+      createEstimate: 'Crear presupuesto con esto', aiNotReady: 'La IA aún no está configurada — el archivo se guardó. Puedes escribir el estimado.',
+      couldntRead: 'No se pudo leer mucho de este archivo — puedes escribir el estimado abajo.',
+      showInLang: 'Mostrar en este idioma', drawingHint: 'Sube un plano o PDF y lo leeré para hacer una lista de materiales.',
+      emails: 'Bandeja', payroll: 'Nómina', addEmail: 'Agregar correo', importEmail: 'Importar archivo de correo',
+      from: 'De', subject: 'Asunto', message: 'Mensaje', attachments: 'Adjuntos', matchedTo: 'Vinculado a',
+      matchCustomer: 'Cliente / trabajo', summarize: 'Resumir', aiSummary: 'Resumen de IA', noMatch: 'Sin vincular aún',
+      makeNote: 'Guardar como nota del trabajo', importPayroll: 'Importar archivo de nómina', importExcelHint: 'Excel (.xlsx) o CSV — cada fila se vuelve un registro de nómina.',
+      employee: 'Empleado', hours: 'Horas', rate: 'Tarifa', gross: 'Bruto', net: 'Neto', period: 'Periodo',
+      rowsFound: 'filas encontradas', importRows: 'Importar estas filas', payrollSummary: 'Resumen de nómina', totalGross: 'Total bruto',
+      emailsHint: 'Correos reenviados y adjuntos, vinculados al cliente y trabajo correctos.',
+      summarizing: 'Resumiendo…', importing: 'Importando…', noColumns: 'No se pudieron leer las columnas — revisa el archivo.',
     }
   };
   const t = (k) => (T[lang] && T[lang][k]) || T.en[k] || k;
@@ -394,7 +426,8 @@
 
   /* ============================ data model ============================ */
   const COLLECTIONS = ['customers', 'jobs', 'calls', 'notes', 'photos', 'documents', 'estimates',
-    'invoices', 'payments', 'checks', 'followups', 'workflows', 'sops', 'users', 'locations', 'folders'];
+    'invoices', 'payments', 'checks', 'followups', 'workflows', 'sops', 'users', 'locations', 'folders',
+    'emails', 'payroll'];
   let db = null;
   let session = null; // current user
 
@@ -572,10 +605,10 @@
 
   /* ============================ AUTH / ROLES ============================ */
   const ROLE_VIEWS = {
-    owner: ['home', 'customers', 'jobs', 'calls', 'estimates', 'invoices', 'payments', 'checks', 'followups', 'workflows', 'knowledge', 'map', 'reports', 'team', 'settings', 'assistant'],
-    office: ['home', 'customers', 'jobs', 'calls', 'estimates', 'invoices', 'payments', 'checks', 'followups', 'workflows', 'knowledge', 'map', 'reports', 'settings', 'assistant'],
+    owner: ['home', 'customers', 'jobs', 'calls', 'emails', 'estimates', 'invoices', 'payments', 'checks', 'payroll', 'followups', 'workflows', 'knowledge', 'map', 'reports', 'team', 'settings', 'assistant'],
+    office: ['home', 'customers', 'jobs', 'calls', 'emails', 'estimates', 'invoices', 'payments', 'checks', 'payroll', 'followups', 'workflows', 'knowledge', 'map', 'reports', 'settings', 'assistant'],
     field: ['home', 'jobs', 'customers', 'followups', 'knowledge', 'assistant', 'settings'],
-    accounting: ['home', 'customers', 'invoices', 'payments', 'checks', 'estimates', 'reports', 'knowledge', 'assistant', 'settings'],
+    accounting: ['home', 'customers', 'emails', 'invoices', 'payments', 'checks', 'payroll', 'estimates', 'reports', 'knowledge', 'assistant', 'settings'],
   };
   function can(view) { return session && (ROLE_VIEWS[session.role] || []).includes(view); }
 
@@ -651,9 +684,9 @@
       <i class="fas ${icons[v]}"></i><span>${t(v)}</span></button>`).join('');
   }
   function openMore() {
-    const items = ['estimates', 'invoices', 'payments', 'checks', 'followups', 'workflows', 'knowledge', 'map', 'reports', 'team', 'settings']
+    const items = ['emails', 'estimates', 'invoices', 'payments', 'checks', 'payroll', 'followups', 'workflows', 'knowledge', 'map', 'reports', 'team', 'settings']
       .filter(v => can(v));
-    const icons = { estimates: 'fa-file-lines', invoices: 'fa-file-invoice-dollar', payments: 'fa-money-bill-wave', checks: 'fa-money-check-dollar', followups: 'fa-bell', workflows: 'fa-diagram-project', knowledge: 'fa-book', map: 'fa-map-location-dot', reports: 'fa-chart-line', team: 'fa-user-gear', settings: 'fa-gear' };
+    const icons = { emails: 'fa-inbox', estimates: 'fa-file-lines', invoices: 'fa-file-invoice-dollar', payments: 'fa-money-bill-wave', checks: 'fa-money-check-dollar', payroll: 'fa-money-check', followups: 'fa-bell', workflows: 'fa-diagram-project', knowledge: 'fa-book', map: 'fa-map-location-dot', reports: 'fa-chart-line', team: 'fa-user-gear', settings: 'fa-gear' };
     modal(`<h2>${t('more')}</h2><div class="card" style="margin-top:12px">
       ${items.map(v => `<div class="list-item" onclick="closeModal();nav('${v}')"><div class="avatar" style="background:${colorFor(v)}"><i class="fas ${icons[v]}"></i></div><div class="li-main"><div class="li-title">${t(v)}</div></div><i class="fas fa-chevron-right chev"></i></div>`).join('')}
     </div>`);
@@ -667,11 +700,11 @@
     $('#lang-es').classList.toggle('on', lang === 'es');
     const v = route.view;
     const fab = $('#fab');
-    fab.classList.toggle('hidden', !['home', 'customers', 'jobs', 'calls', 'estimates', 'invoices', 'payments', 'checks', 'followups', 'workflows', 'knowledge', 'team'].includes(v));
+    fab.classList.toggle('hidden', !['home', 'customers', 'jobs', 'calls', 'emails', 'estimates', 'invoices', 'payments', 'checks', 'payroll', 'followups', 'workflows', 'knowledge', 'team'].includes(v));
     const views = {
       home: viewHome, customers: viewCustomers, customer: viewCustomer, jobs: viewJobs, job: viewJob,
-      calls: viewCalls, estimates: viewEstimates, invoices: viewInvoices, payments: viewPayments,
-      checks: viewChecks, followups: viewFollowups, workflows: viewWorkflows, knowledge: viewKnowledge,
+      calls: viewCalls, emails: viewEmails, estimates: viewEstimates, invoices: viewInvoices, payments: viewPayments,
+      checks: viewChecks, payroll: viewPayroll, followups: viewFollowups, workflows: viewWorkflows, knowledge: viewKnowledge,
       map: viewMap, reports: viewReports, team: viewTeam, settings: viewSettings, assistant: viewAssistant,
     };
     (views[v] || viewHome)();
@@ -860,7 +893,8 @@
         <button class="btn sm" onclick="uploadDoc('${j.id}','doc')"><i class="fas fa-file-arrow-up"></i> ${t('uploadDoc')}</button>
         <button class="btn amber sm" onclick="uploadDoc('${j.id}','scan')"><i class="fas fa-expand"></i> ${t('scanDoc')}</button>
         <button class="btn ghost sm" onclick="uploadDoc('${j.id}','cad')"><i class="fas fa-vector-square"></i> ${t('cadFile')}</button>
-      </div>`;
+      </div>
+      <div class="muted" style="margin-top:6px;font-size:13px"><i class="fas fa-wand-magic-sparkles"></i> ${t('drawingHint')}</div>`;
       html += `<div class="card" style="margin-top:12px">${docs.length ? docs.map(docRow).join('') : emptyState()}</div>`;
     } else if (tab === 'money') {
       html += `<div class="btnrow"><button class="btn sm" onclick="openEstimateForm(null,'${j.id}')"><i class="fas fa-plus"></i> ${t('estimates')}</button><button class="btn green sm" onclick="openInvoiceForm(null,'${j.id}')"><i class="fas fa-plus"></i> ${t('invoices')}</button></div>`;
@@ -1038,21 +1072,24 @@
 
   /* ============================ DOCUMENTS (+ scan/OCR + CAD) ============================ */
   function docRow(d) {
-    const icon = d.kind === 'cad' ? 'fa-vector-square' : d.mime && d.mime.includes('pdf') ? 'fa-file-pdf' : d.mime && d.mime.includes('image') ? 'fa-file-image' : 'fa-file';
+    const draw = d.kind === 'cad' || d.kind === 'drawing';
+    const icon = draw ? 'fa-vector-square' : d.mime && d.mime.includes('pdf') ? 'fa-file-pdf' : d.mime && d.mime.includes('image') ? 'fa-file-image' : 'fa-file';
+    const badge = d.estimate ? ` <span class="pill green">${t('estimateReady')}</span>` : '';
     return `<div class="list-item" onclick="openDoc('${d.id}')">
-      <div class="avatar" style="background:${d.kind === 'cad' ? 'var(--blue2)' : 'var(--accent)'}"><i class="fas ${icon}"></i></div>
-      <div class="li-main"><div class="li-title">${esc(d.name)}</div><div class="li-sub">${d.kind === 'cad' ? 'AutoCAD' : (d.kind || 'doc')} · ${timeAgo(d.created)}</div></div></div>`;
+      <div class="avatar" style="background:${draw ? 'var(--blue2)' : 'var(--accent)'}"><i class="fas ${icon}"></i></div>
+      <div class="li-main"><div class="li-title">${esc(d.name)}${badge}</div><div class="li-sub">${d.kind === 'cad' ? 'AutoCAD' : (d.kind || 'doc')} · ${timeAgo(d.created)}</div></div></div>`;
   }
   function uploadDoc(jobId, kind) {
     const inp = document.createElement('input'); inp.type = 'file';
-    if (kind === 'cad') inp.accept = '.dwg,.dxf,.dwf,.dgn';
+    if (kind === 'cad') inp.accept = '.dwg,.dxf,.dwf,.dgn,.pdf,application/pdf';
     else if (kind === 'scan') { inp.accept = 'image/*'; inp.capture = 'environment'; }
     inp.onchange = async () => {
       const f = inp.files[0]; if (!f) return;
       let blob = f, mime = f.type;
       if (kind === 'scan' && f.type.startsWith('image/')) blob = await downscale(f);
       const fileId = await storeFile(blob);
-      const docRec = add('documents', { jobId, name: f.name || (kind + '-' + todayISO()), kind, mime, size: f.size });
+      const isDrawing = kind === 'cad' || (mime || '').includes('pdf') || /\.(dxf|dwg|dwf|dgn|pdf)$/i.test(f.name || '');
+      const docRec = add('documents', { jobId, name: f.name || (kind + '-' + todayISO()), kind: isDrawing && kind !== 'cad' ? 'drawing' : kind, mime, size: f.size });
       docRec.fileId = fileId; save();
       // If it's a scan, try OCR and attach the read text + offer to create check/invoice.
       if (kind === 'scan' && f.type.startsWith('image/')) {
@@ -1061,6 +1098,10 @@
         const parsed = await ocrDocument(dataUrl);
         if (parsed) { update('documents', docRec.id, { ocr: parsed }); offerFromOCR(parsed, jobId, docRec.id); }
         else toast(t('readFailed'), 'error');
+      } else if (isDrawing) {
+        // Drawing or PDF → read it and draft a materials estimate (upload → review → confirm).
+        await analyzeDrawing(docRec.id);
+        return;
       }
       toast(t('saved'), 'success'); render();
     };
@@ -1070,9 +1111,21 @@
     const d = get('documents', id);
     const url = await getFileURL(d.fileId);
     const isImg = d.mime && d.mime.startsWith('image/');
+    const draw = d.kind === 'cad' || d.kind === 'drawing';
+    const e = d.estimate;
+    const estCard = e ? `<div class="card" style="padding:12px;margin-bottom:10px">
+        <div class="muted">${t('jobSummaryL')}</div><div>${esc(e.jobSummary || '—')}</div>
+        ${(e.materials && e.materials.length) ? `<div class="muted" style="margin-top:8px">${t('materials')}</div><ul style="margin:4px 0 0 16px;padding:0">${e.materials.map(m => `<li>${esc(((m.qty || '') + ' ' + (m.unit || '') + ' ' + (m.item || '')).replace(/\s+/g, ' ').trim())}</li>`).join('')}</ul>` : ''}
+      </div>` : '';
     modal(`<h2>${esc(d.name)}</h2>
       ${isImg && url ? `<img src="${url}" style="width:100%;border-radius:12px;margin:10px 0">` : ''}
+      ${estCard}
       ${d.ocr ? `<div class="card" style="padding:12px;margin-bottom:10px"><div class="muted">OCR</div><pre style="white-space:pre-wrap;font-family:inherit">${esc(typeof d.ocr === 'string' ? d.ocr : JSON.stringify(d.ocr, null, 2))}</pre></div>` : ''}
+      ${draw ? `<div class="btnrow">
+        ${e ? `<button class="btn green" onclick="closeModal();showDrawingReview('${id}')"><i class="fas fa-pen"></i> ${t('reviewEdit')}</button>
+              <button class="btn" onclick="closeModal();estimateFromDrawing('${id}')"><i class="fas fa-file-invoice-dollar"></i> ${t('createEstimate')}</button>` : ''}
+        <button class="btn ghost" onclick="closeModal();analyzeDrawing('${id}')"><i class="fas fa-rotate"></i> ${e ? t('readAgain') : t('readEstimate')}</button>
+      </div>` : ''}
       <div class="btnrow">
         ${url ? `<a class="btn ghost" href="${url}" download="${esc(d.name)}"><i class="fas fa-download"></i> ${lang === 'es' ? 'Descargar' : 'Download'}</a>` : ''}
         <button class="btn red" onclick="confirmDel(()=>{remove('documents','${id}');closeModal();render()})"><i class="fas fa-trash"></i> ${t('delete')}</button>
@@ -1590,6 +1643,508 @@
   function ocrCheck(dataUrl) { return aiVision(dataUrl, 'This is a photo of a check. Extract JSON only: {"name":"payer name","amount":0,"date":"YYYY-MM-DD","checkNumber":"","memo":""}'); }
   function ocrDocument(dataUrl) { return aiVision(dataUrl, 'Read this document (invoice/receipt/check/paperwork). Extract JSON only: {"type":"invoice|receipt|check|other","name":"company or person","amount":0,"date":"YYYY-MM-DD","checkNumber":"","memo":"short summary"}'); }
 
+  /* ==================== DRAWING ESTIMATOR (NVIDIA, server key) ==================== */
+  // Sends a chat request to the NVIDIA model through the server proxy (key lives in
+  // the NVIDIA_API_KEY env var, never in the browser). Returns the assistant text, or
+  // null if AI is unavailable so the owner can simply type the estimate by hand.
+  async function callNvidia(messages, opts) {
+    opts = opts || {};
+    const body = { messages, max_tokens: opts.max_tokens || 1600, temperature: opts.temperature == null ? 0.2 : opts.temperature };
+    if (opts.model) body.model = opts.model;
+    try {
+      const r = await fetch('/api/nvidia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      if (r.ok) { const d = await r.json(); const m = d && d.choices && d.choices[0] && d.choices[0].message; if (m && m.content) return m.content; }
+    } catch (e) { /* offline / no function — fall through */ }
+    return null;
+  }
+
+  // Blob readers that work both in the browser and in the jsdom test harness.
+  function blobText(b) { return b.text ? b.text() : new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsText(b); }); }
+  function blobBuf(b) { return b.arrayBuffer ? b.arrayBuffer() : new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsArrayBuffer(b); }); }
+
+  // pdf.js is loaded lazily from the CDN only when a PDF is actually opened, so the
+  // base app stays dependency-free. The service worker caches it for offline reuse.
+  function loadPdfJs() {
+    if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+    if (loadPdfJs._p) return loadPdfJs._p;
+    loadPdfJs._p = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+      s.onload = () => { try { window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; } catch (e) {} resolve(window.pdfjsLib); };
+      s.onerror = () => reject(new Error('pdfjs load failed'));
+      document.head.appendChild(s);
+    });
+    return loadPdfJs._p;
+  }
+  async function extractPDFText(blob) {
+    const lib = await loadPdfJs();
+    const data = await blobBuf(blob);
+    const pdf = await lib.getDocument({ data }).promise;
+    const out = []; const max = Math.min(pdf.numPages, 12);
+    for (let p = 1; p <= max; p++) {
+      const page = await pdf.getPage(p);
+      const tc = await page.getTextContent();
+      tc.items.forEach(it => { if (it.str && it.str.trim()) out.push(it.str.trim()); });
+    }
+    return out;
+  }
+  // DXF is plain text: alternating group-code / value lines. Pull text entity
+  // values (codes 1 & 3) and layer names (code 8).
+  function extractDXFText(text) {
+    const lines = text.split(/\r\n|\r|\n/);
+    const texts = [], layers = new Set();
+    for (let i = 0; i + 1 < lines.length; i += 2) {
+      const code = lines[i].trim(); const val = lines[i + 1];
+      if (code === '1' || code === '3') { const v = (val || '').replace(/\\[A-Za-z][^;]*;?/g, '').replace(/[{}]/g, '').trim(); if (v) texts.push(v); }
+      else if (code === '8') { const v = (val || '').trim(); if (v) layers.add(v); }
+    }
+    return { texts, layers: [...layers] };
+  }
+  // Last resort for binary CAD (DWG/DWF/DGN): scrape readable ASCII runs. Title
+  // blocks and notes are frequently stored as plain strings.
+  function scrapeStrings(buf) {
+    const bytes = new Uint8Array(buf); const out = []; let cur = '';
+    for (let i = 0; i < bytes.length; i++) {
+      const c = bytes[i];
+      if (c >= 32 && c < 127) cur += String.fromCharCode(c);
+      else { if (cur.length >= 4) out.push(cur); cur = ''; }
+    }
+    if (cur.length >= 4) out.push(cur);
+    return out.filter(s => /[A-Za-z]{2,}/.test(s));
+  }
+  async function extractDrawing(blob, name) {
+    const ext = ((name || '').split('.').pop() || '').toLowerCase();
+    let texts = [], layers = [];
+    try {
+      if (ext === 'pdf' || (blob.type && blob.type.includes('pdf'))) texts = await extractPDFText(blob);
+      else if (ext === 'dxf') { const r = extractDXFText(await blobText(blob)); texts = r.texts; layers = r.layers; }
+      else texts = scrapeStrings(await blobBuf(blob));
+    } catch (e) { /* leave empty; AI step will note limited data */ }
+    const seen = new Set(), clean = [];
+    for (const tx of texts) { const k = (tx || '').trim(); if (k && !seen.has(k)) { seen.add(k); clean.push(k); } if (clean.length >= 400) break; }
+    return classifyExtraction(name, ext, clean, layers);
+  }
+  // Turn the raw text list into structured, labelled groups the AI can map from.
+  function classifyExtraction(fileName, fileType, texts, layers) {
+    const dimRe = /(\d+(?:\.\d+)?\s*(?:mm|cm|"|'|in|ft|psi|gpm|gpd|°))|(\d+\s*\d*\/\d+\s*")|(\bDN\s?\d+)|(Ø\s?\d+)|(\bR\d+\b)|(\d+'\s*-?\s*\d*")/i;
+    const tbRe = /(scale|date|drawn|checked|sheet|project|rev(ision)?\b|client|title|job\s*(no|#)|drawing\s*(no|#)|approved|address)/i;
+    const noteRe = /\b(note|notes|typ\.?|typical|provide|install|verify|refer|shall|contractor|min\.?|max\.?)\b/i;
+    const titleBlock = [], notes = [], dimensions = [], labels = [];
+    texts.forEach(s => {
+      if (tbRe.test(s) && s.length < 80) titleBlock.push(s);
+      else if (dimRe.test(s)) dimensions.push(s);
+      else if (noteRe.test(s)) notes.push(s);
+      else if (s.length <= 28) labels.push(s);
+      else notes.push(s);
+    });
+    return {
+      fileName, fileType, layers: layers || [],
+      titleBlock: titleBlock.slice(0, 40), notes: notes.slice(0, 80),
+      dimensions: dimensions.slice(0, 80), labels: [...new Set(labels)].slice(0, 120),
+      allText: texts.slice(0, 300), rawCount: texts.length,
+    };
+  }
+
+  // Main pipeline: read the file → structure it → ask NVIDIA for a draft materials
+  // list / scope → (maybe ask ONE follow-up) → open the review-and-edit sheet.
+  async function analyzeDrawing(docId, followupAnswer) {
+    const d = get('documents', docId); if (!d) return;
+    const blob = await idbGet('files', d.fileId);
+    if (!blob) { toast(t('readFailed'), 'error'); return; }
+    toast(t('reading'));
+    let ex = d.extracted;
+    if (!ex) { ex = await extractDrawing(blob, d.name); update('documents', docId, { extracted: ex }); }
+
+    toast(t('estimatingMsg'));
+    const langName = lang === 'es' ? 'Spanish' : 'English';
+    const sys = `You are OTTO, a plumbing estimating assistant for a small plumbing company. You read construction/plumbing drawings and turn them into a simple draft estimate a non-technical owner can review. Reply in ${langName}. Be practical and conservative. Output ONLY valid JSON (no prose, no markdown) with exactly this shape:
+{"jobSummary":"2-4 plain sentences","scope":["short item",...],"materials":[{"item":"","qty":0,"unit":""}],"quantities":[{"label":"","count":0}],"assumptions":["things you inferred or are unsure about"],"question":""}
+Rules: Never invent precise counts you cannot support from the data — instead note them in "assumptions". If ONE missing detail would meaningfully change the estimate, put a single short plain-language question in "question"; otherwise "question" must be "".`;
+    const userParts = [
+      `Drawing file: ${ex.fileName} (${ex.fileType || 'unknown'}). Readable text items: ${ex.rawCount}.`,
+      ex.titleBlock.length ? 'TITLE BLOCK:\n' + ex.titleBlock.join('\n') : '',
+      ex.notes.length ? 'NOTES:\n' + ex.notes.join('\n') : '',
+      ex.dimensions.length ? 'DIMENSIONS:\n' + ex.dimensions.join('\n') : '',
+      ex.labels.length ? 'LABELS / CALLOUTS:\n' + ex.labels.join(' | ') : '',
+      ex.layers.length ? 'LAYERS:\n' + ex.layers.join(', ') : '',
+      ex.rawCount && ex.allText.length ? 'ALL EXTRACTED TEXT:\n' + ex.allText.join('\n') : '(Very little readable text could be extracted from this file.)',
+      followupAnswer ? `\nThe owner answered your question: "${followupAnswer}". Use it and do NOT ask any more questions (set "question" to "").` : '',
+    ].filter(Boolean).join('\n\n');
+
+    const raw = await callNvidia([{ role: 'system', content: sys }, { role: 'user', content: userParts }]);
+    if (raw == null) {
+      // AI unavailable — keep the saved file and let the owner type the estimate.
+      toast(t('aiNotReady'), 'error');
+      const cur = d.estimate || { jobSummary: '', scope: [], materials: [], assumptions: [], quantities: [] };
+      update('documents', docId, { estimate: cur });
+      showDrawingReview(docId);
+      return;
+    }
+    let parsed = null;
+    try { const m = raw.match(/\{[\s\S]*\}/); parsed = m ? JSON.parse(m[0]) : null; } catch (e) { parsed = null; }
+    if (!parsed) parsed = { jobSummary: raw.slice(0, 600), scope: [], materials: [], assumptions: [], quantities: [], question: '' };
+    parsed.jobSummary = parsed.jobSummary || '';
+    parsed.scope = Array.isArray(parsed.scope) ? parsed.scope : [];
+    parsed.materials = Array.isArray(parsed.materials) ? parsed.materials : [];
+    parsed.quantities = Array.isArray(parsed.quantities) ? parsed.quantities : [];
+    parsed.assumptions = Array.isArray(parsed.assumptions) ? parsed.assumptions : [];
+    parsed.lang = lang;
+
+    // Ask the single follow-up question first, before showing the draft.
+    if (!followupAnswer && parsed.question && String(parsed.question).trim()) {
+      update('documents', docId, { estimate: parsed });
+      askDrawingQuestion(docId, String(parsed.question).trim());
+      return;
+    }
+    parsed.question = '';
+    update('documents', docId, { estimate: parsed });
+    toast(t('estimateReady'), 'success');
+    showDrawingReview(docId);
+  }
+
+  function askDrawingQuestion(docId, q) {
+    modal(`<h2><i class="fas fa-circle-question"></i> ${t('oneQuestion')}</h2>
+      <div class="card" style="padding:14px;margin:10px 0"><b>${esc(q)}</b></div>
+      <div class="field"><div class="with-voice"><textarea id="dq-ans" placeholder="${esc(q)}"></textarea>${voiceBtn('dq-ans')}</div></div>
+      <div class="btnrow">
+        <button class="btn green" onclick="answerDrawingQ('${docId}')"><i class="fas fa-check"></i> ${t('answerIt')}</button>
+        <button class="btn ghost" onclick="skipDrawingQ('${docId}')">${t('skip')}</button>
+      </div>`);
+  }
+  function answerDrawingQ(docId) { const v = ($('#dq-ans').value || '').trim(); closeModal(); analyzeDrawing(docId, v || '(no answer given)'); }
+  function skipDrawingQ(docId) { closeModal(); const d = get('documents', docId); if (d && d.estimate) { d.estimate.question = ''; update('documents', docId, { estimate: d.estimate }); } showDrawingReview(docId); }
+
+  // The owner reviews and edits the draft before it is finalized. Upload → review → confirm.
+  function showDrawingReview(docId) {
+    const d = get('documents', docId); if (!d) return;
+    const e = d.estimate || { jobSummary: '', scope: [], materials: [], assumptions: [], quantities: [] };
+    const mats = (e.materials && e.materials.length) ? e.materials : [{ item: '', qty: '', unit: '' }];
+    const matRows = mats.map(matRowHTML).join('');
+    const qtys = (e.quantities || []).filter(q => q && (q.label || q.count));
+    modal(`<h2><i class="fas fa-vector-square"></i> ${t('reviewEdit')}</h2>
+      <div class="sheet-sub">${esc(d.name)}</div>
+      <div class="field"><label>${t('jobSummaryL')}</label><div class="with-voice"><textarea id="est-summary" style="min-height:84px">${esc(e.jobSummary || '')}</textarea>${voiceBtn('est-summary')}</div></div>
+      <div class="field"><label>${t('scopeOfWork')}</label><textarea id="est-scope" style="min-height:84px" placeholder="${lang === 'es' ? 'Un punto por línea' : 'One item per line'}">${esc((e.scope || []).join('\n'))}</textarea></div>
+      <label style="font-weight:600;display:block;margin:4px 0 6px">${t('materials')}</label>
+      <div id="mat-rows">${matRows}</div>
+      <button class="btn ghost sm" style="margin:4px 0 12px" onclick="addMaterialRow()"><i class="fas fa-plus"></i> ${t('addItem')}</button>
+      ${qtys.length ? `<div class="card" style="padding:12px;margin-bottom:10px"><div class="muted">${t('quantities')}</div>${qtys.map(q => kv(esc(q.label || ''), esc(String(q.count || '')))).join('')}</div>` : ''}
+      ${(e.assumptions && e.assumptions.length) ? `<div class="card" style="padding:12px;margin-bottom:10px"><div class="muted">${t('assumptions')}</div><ul style="margin:6px 0 0 16px;padding:0">${e.assumptions.map(a => `<li>${esc(a)}</li>`).join('')}</ul></div>` : ''}
+      <button class="btn green block" onclick="saveDrawingEstimate('${docId}')"><i class="fas fa-check"></i> ${t('confirm')}</button>
+      <button class="btn ghost block" style="margin-top:10px" onclick="closeModal();estimateFromDrawing('${docId}')"><i class="fas fa-file-invoice-dollar"></i> ${t('createEstimate')}</button>`);
+  }
+  function matRowHTML(m) {
+    m = m || {};
+    return `<div class="mat-row row2" style="grid-template-columns:1fr 64px 70px;gap:8px;margin-bottom:8px;align-items:center">
+      <input class="m-item" placeholder="${t('itemL')}" value="${esc(m.item || '')}">
+      <input class="m-qty" type="number" step="any" placeholder="${t('qtyL')}" value="${m.qty != null ? esc(String(m.qty)) : ''}">
+      <input class="m-unit" placeholder="${t('unitL')}" value="${esc(m.unit || '')}">
+    </div>`;
+  }
+  function addMaterialRow() { const c = $('#mat-rows'); if (!c) return; c.insertAdjacentHTML('beforeend', matRowHTML({})); }
+  function saveDrawingEstimate(docId) {
+    const d = get('documents', docId); if (!d) return;
+    const summary = ($('#est-summary').value || '').trim();
+    const scope = ($('#est-scope').value || '').split('\n').map(s => s.trim()).filter(Boolean);
+    const materials = [...document.querySelectorAll('#mat-rows .mat-row')].map(r => ({
+      item: (r.querySelector('.m-item').value || '').trim(),
+      qty: parseFloat(r.querySelector('.m-qty').value) || 0,
+      unit: (r.querySelector('.m-unit').value || '').trim(),
+    })).filter(m => m.item);
+    const cur = d.estimate || {};
+    update('documents', docId, { estimate: Object.assign({}, cur, { jobSummary: summary, scope, materials, finalized: true, lang }) });
+    closeModal(); toast(t('saved'), 'success'); render();
+  }
+  // Turn the reviewed draft into a real Estimate record on the job.
+  function estimateFromDrawing(docId) {
+    const d = get('documents', docId); const e = (d && d.estimate) || {};
+    const desc = [
+      e.jobSummary || '',
+      (e.scope && e.scope.length) ? '\n' + e.scope.map(s => '• ' + s).join('\n') : '',
+      (e.materials && e.materials.length) ? '\n' + t('materials') + ':\n' + e.materials.map(m => `- ${m.qty || ''} ${m.unit || ''} ${m.item}`.replace(/\s+/g, ' ').trim()).join('\n') : '',
+    ].filter(Boolean).join('\n');
+    openEstimateForm(null, d.jobId);
+    setTimeout(() => {
+      const td = $('#e-desc'); if (td) td.value = desc;
+      const tt = $('#e-title'); if (tt && !tt.value) tt.value = (e.jobSummary || d.name || '').slice(0, 50);
+    }, 30);
+  }
+
+  /* ==================== AI plain-language summaries ==================== */
+  // Short, skimmable summary of any text (email/document/payroll) in the current
+  // language. Uses the Claude proxy; returns null if AI is unavailable.
+  async function aiSummarize(text, kind) {
+    const langName = lang === 'es' ? 'Spanish' : 'English';
+    const d = await callClaude({ model: 'claude-sonnet-4-6', max_tokens: 400,
+      system: `You summarize a ${kind} for a busy plumbing company owner in 2-3 short, plain sentences. Call out any money, dates, or action needed. Reply in ${langName}.`,
+      messages: [{ role: 'user', content: (text || '').slice(0, 6000) }] });
+    return d && d.content ? d.content[0].text.trim() : null;
+  }
+
+  /* ==================== INBOX / EMAIL register ==================== */
+  // Emails arrive by importing a forwarded/saved .eml file (works fully offline)
+  // or, for true auto-capture, by pointing an email provider's inbound webhook at
+  // api/inbound-email.js (see README). Either way they land here, matched to the
+  // right customer/job, searchable, and summarized.
+  function viewEmails() {
+    const q = _search['eml'] || '';
+    const list = db.emails.filter(e => matches(e, q)).sort((a, b) => new Date(b.date || b.created) - new Date(a.date || a.created));
+    let html = pageHead(t('emails'), '') + searchBox('eml');
+    html += `<div class="btnrow"><button class="btn green" onclick="openEmailForm()"><i class="fas fa-plus"></i> ${t('addEmail')}</button><button class="btn ghost" onclick="importEml()"><i class="fas fa-file-import"></i> ${t('importEmail')}</button></div>`;
+    html += `<div class="muted" style="margin:8px 0;font-size:13px"><i class="fas fa-inbox"></i> ${t('emailsHint')}</div>`;
+    html += `<div class="card">${list.length ? list.map(emailRow).join('') : emptyState()}</div>`;
+    $('#main').innerHTML = html; bindSearch('eml');
+  }
+  function emailRow(e) {
+    const who = e.fromName || e.from || '—'; const match = e.customerId ? customerName(e.customerId) : '';
+    const att = e.attachments && e.attachments.length ? ' · <i class="fas fa-paperclip"></i>' + e.attachments.length : '';
+    return `<div class="list-item" onclick="openEmail('${e.id}')"><div class="avatar" style="background:${colorFor(who)}"><i class="fas fa-envelope"></i></div>
+      <div class="li-main"><div class="li-title">${esc(e.subject || '(no subject)')}</div><div class="li-sub">${esc(who)}${match ? ' · ' + esc(match) : ''}${att}</div></div>
+      <div class="li-right">${timeAgo(e.date || e.created)}</div></div>`;
+  }
+  function openEmailForm() {
+    modal(`<h2>${t('addEmail')}</h2>
+      <div class="field"><label>${t('from')}</label><input id="em-from" placeholder="name@email.com"></div>
+      <div class="field"><label>${t('subject')}</label><input id="em-subj"></div>
+      <div class="field"><label>${t('message')}</label><div class="with-voice"><textarea id="em-body" style="min-height:120px"></textarea>${voiceBtn('em-body')}</div></div>
+      <button class="btn green block" onclick="saveEmailForm()"><i class="fas fa-check"></i> ${t('save')}</button>`);
+  }
+  function saveEmailForm() {
+    const from = ($('#em-from').value || '').trim(); const subject = ($('#em-subj').value || '').trim(); const body = ($('#em-body').value || '').trim();
+    if (!from && !subject && !body) return closeModal();
+    const e = add('emails', { from, fromName: from, subject, body, date: nowISO(), attachments: [] });
+    update('emails', e.id, autoMatchEmail(e));
+    closeModal(); toast(t('saved'), 'success'); openEmail(e.id); finalizeEmail(e.id);
+  }
+  function importEml() {
+    const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.eml,.txt,message/rfc822'; inp.multiple = true;
+    inp.onchange = async () => {
+      const files = [...inp.files]; if (!files.length) return; toast(t('importing'));
+      let last = null;
+      for (const f of files) {
+        const p = parseEml(await blobText(f));
+        const atts = [];
+        for (const a of (p.attachments || [])) {
+          if (a.b64) { try { const fid = await storeFile(b64ToBlob(a.b64, a.mime)); atts.push({ name: a.name, fileId: fid, mime: a.mime }); } catch (e) { atts.push({ name: a.name }); } }
+          else atts.push({ name: a.name });
+        }
+        const e = add('emails', { from: p.from, fromName: p.fromName, subject: p.subject, body: p.body, date: p.date, attachments: atts });
+        update('emails', e.id, autoMatchEmail(e)); last = e.id; finalizeEmail(e.id);
+      }
+      closeModal(); toast(t('saved'), 'success');
+      if (files.length === 1 && last) openEmail(last); else nav('emails');
+    };
+    inp.click();
+  }
+  // Match an email to a customer (by sender email or name) and then to a job.
+  function autoMatchEmail(e) {
+    const from = (e.from || '').toLowerCase();
+    const hay = ((e.subject || '') + ' ' + (e.body || '')).toLowerCase();
+    let cust = db.customers.find(c => c.email && from && c.email.toLowerCase() === from);
+    if (!cust) cust = db.customers.find(c => c.name && c.name.length > 2 && hay.includes(c.name.toLowerCase()));
+    if (!cust && e.fromName) cust = db.customers.find(c => c.name && c.name.toLowerCase() === e.fromName.toLowerCase());
+    let job = null;
+    if (cust) { const cj = db.jobs.filter(j => j.customerId === cust.id); job = cj.find(j => j.title && hay.includes(j.title.toLowerCase())) || cj[0] || null; }
+    else { job = db.jobs.find(j => j.title && j.title.length > 3 && hay.includes(j.title.toLowerCase())) || null; if (job) cust = get('customers', job.customerId); }
+    return { customerId: cust ? cust.id : '', jobId: job ? job.id : '' };
+  }
+  async function finalizeEmail(id) {
+    const e = get('emails', id); if (!e) return;
+    const s = await aiSummarize(`Email from ${e.fromName || e.from}\nSubject: ${e.subject}\n\n${e.body}`, 'email');
+    if (s) { update('emails', id, { summary: s }); if (route.view === 'emails' || route.id === id) render(); }
+  }
+  async function openEmail(id) {
+    const e = get('emails', id); if (!e) return;
+    const atts = e.attachments || []; const links = [];
+    for (const a of atts) { const url = a.fileId ? await getFileURL(a.fileId) : null; links.push(url ? `<a class="btn ghost sm" href="${url}" download="${esc(a.name)}"><i class="fas fa-paperclip"></i> ${esc(a.name)}</a>` : `<span class="pill gray"><i class="fas fa-paperclip"></i> ${esc(a.name)}</span>`); }
+    const matched = e.customerId ? `<a onclick="closeModal();nav('customer','${e.customerId}')" style="cursor:pointer">${esc(customerName(e.customerId))}</a>` + (e.jobId ? ` · <a onclick="closeModal();nav('job','${e.jobId}')" style="cursor:pointer">${esc(jobTitle(e.jobId))}</a>` : '') : t('noMatch');
+    modal(`<h2>${esc(e.subject || '(no subject)')}</h2>
+      <div class="card" style="padding:14px">${kv(t('from'), esc(e.fromName || e.from || '—'))}${kv(t('date'), fmtDate(e.date || e.created))}${kv(t('matchedTo'), matched)}</div>
+      ${e.summary ? `<div class="card" style="padding:12px;margin-top:10px"><div class="muted">${t('aiSummary')}</div>${esc(e.summary)}</div>` : ''}
+      ${atts.length ? `<div class="btnrow" style="margin-top:10px">${links.join('')}</div>` : ''}
+      <div class="card" style="padding:12px;margin-top:10px"><pre style="white-space:pre-wrap;font-family:inherit;margin:0">${esc((e.body || '').slice(0, 4000))}</pre></div>
+      <div class="btnrow" style="margin-top:10px">
+        <button class="btn" onclick="relinkEmail('${id}')"><i class="fas fa-link"></i> ${t('matchCustomer')}</button>
+        ${e.jobId ? `<button class="btn ghost" onclick="emailToNote('${id}')"><i class="fas fa-pen"></i> ${t('makeNote')}</button>` : ''}
+        ${!e.summary ? `<button class="btn ghost" onclick="summarizeEmail('${id}')"><i class="fas fa-robot"></i> ${t('summarize')}</button>` : ''}
+      </div>
+      <button class="btn red block" style="margin-top:10px" onclick="confirmDel(()=>{remove('emails','${id}');closeModal();render()})"><i class="fas fa-trash"></i> ${t('delete')}</button>`);
+  }
+  function relinkEmail(id) {
+    const e = get('emails', id);
+    const custOpts = db.customers.map(c => `<option value="${c.id}" ${e.customerId === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
+    const jobOpts = db.jobs.map(j => `<option value="${j.id}" ${e.jobId === j.id ? 'selected' : ''}>${esc(j.title)} — ${esc(customerName(j.customerId))}</option>`).join('');
+    modal(`<h2>${t('matchCustomer')}</h2>
+      <div class="field"><label>${t('customer')}</label><select id="em-cust"><option value="">—</option>${custOpts}</select></div>
+      <div class="field"><label>${t('job')}</label><select id="em-job"><option value="">—</option>${jobOpts}</select></div>
+      <button class="btn green block" onclick="saveEmailLink('${id}')"><i class="fas fa-check"></i> ${t('save')}</button>`);
+  }
+  function saveEmailLink(id) {
+    const customerId = $('#em-cust').value; const jobId = $('#em-job').value; const job = jobId ? get('jobs', jobId) : null;
+    update('emails', id, { customerId: customerId || (job ? job.customerId : ''), jobId });
+    closeModal(); toast(t('saved'), 'success'); openEmail(id);
+  }
+  function emailToNote(id) {
+    const e = get('emails', id); if (!e.jobId) return;
+    add('notes', { jobId: e.jobId, text: `📧 ${e.subject || ''}\n${e.summary || e.body || ''}`.slice(0, 1200) });
+    closeModal(); toast(t('saved'), 'success');
+  }
+  async function summarizeEmail(id) {
+    const e = get('emails', id); toast(t('summarizing'));
+    const s = await aiSummarize(`Email from ${e.fromName || e.from}\nSubject: ${e.subject}\n\n${e.body}`, 'email');
+    if (s) { update('emails', id, { summary: s }); openEmail(id); } else toast(t('aiNotReady'), 'error');
+  }
+  // Minimal RFC-822 / .eml parser: headers + a plain-text body + base64 attachments.
+  function parseEml(text) {
+    const he = text.search(/\r?\n\r?\n/);
+    const headerBlock = he >= 0 ? text.slice(0, he) : text;
+    const bodyBlock = he >= 0 ? text.slice(he).replace(/^\r?\n\r?\n/, '') : '';
+    const h = {}; headerBlock.replace(/\r?\n[ \t]+/g, ' ').split(/\r?\n/).forEach(line => { const m = line.match(/^([A-Za-z-]+):\s*(.*)$/); if (m) h[m[1].toLowerCase()] = m[2]; });
+    const fromRaw = h.from || '';
+    const from = ((fromRaw.match(/<([^>]+)>/) || [])[1]) || ((fromRaw.match(/[^\s<]+@[^\s>]+/) || [''])[0]);
+    const fromName = decodeMimeWord(fromRaw.replace(/<[^>]+>/, '').replace(/"/g, '').trim()) || from;
+    const subject = decodeMimeWord(h.subject || '');
+    const date = h.date && !isNaN(new Date(h.date)) ? new Date(h.date).toISOString() : nowISO();
+    const ct = h['content-type'] || ''; const bm = ct.match(/boundary="?([^";]+)"?/i);
+    const attachments = []; let body = '';
+    if (bm) {
+      bodyBlock.split('--' + bm[1]).forEach(part => {
+        const pe = part.search(/\r?\n\r?\n/); if (pe < 0) return;
+        const ph = part.slice(0, pe).toLowerCase(); let pb = part.slice(pe).replace(/^\r?\n\r?\n/, '');
+        const fn = (part.match(/filename="?([^"\r\n;]+)"?/i) || [])[1];
+        if (fn) { attachments.push({ name: fn, mime: (ph.match(/content-type:\s*([^;\r\n]+)/) || [])[1] || '', b64: ph.includes('base64') ? pb.replace(/\s+/g, '') : '' }); }
+        else if (ph.includes('text/plain') && !body) body = decodeBody(pb, ph);
+        else if (ph.includes('text/html') && !body) body = stripHtml(decodeBody(pb, ph));
+      });
+    } else { body = bodyBlock; }
+    return { from, fromName, subject, date, body: (body || '').trim().slice(0, 20000), attachments };
+  }
+  function decodeMimeWord(s) {
+    return (s || '')
+      .replace(/=\?[^?]+\?[Bb]\?([^?]+)\?=/g, (m, b) => { try { return decodeURIComponent(escape(atob(b))); } catch (e) { return m; } })
+      .replace(/=\?[^?]+\?[Qq]\?([^?]+)\?=/g, (m, q) => q.replace(/_/g, ' ').replace(/=([0-9A-F]{2})/gi, (x, hx) => String.fromCharCode(parseInt(hx, 16))));
+  }
+  function decodeBody(b, headerLower) {
+    if (headerLower.includes('base64')) { try { return decodeURIComponent(escape(atob(b.replace(/\s+/g, '')))); } catch (e) { return b; } }
+    if (headerLower.includes('quoted-printable')) return b.replace(/=\r?\n/g, '').replace(/=([0-9A-F]{2})/gi, (x, hx) => String.fromCharCode(parseInt(hx, 16)));
+    return b;
+  }
+  function stripHtml(h) { return (h || '').replace(/<style[\s\S]*?<\/style>/gi, '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/[ \t]{2,}/g, ' ').replace(/\s*\n\s*/g, '\n').trim(); }
+  function b64ToBlob(b64, mime) { const bin = atob(b64); const arr = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i); return new Blob([arr], mime ? { type: mime } : undefined); }
+
+  /* ==================== PAYROLL intake (Excel / CSV) ==================== */
+  // Import an Excel or CSV payroll file once; every row becomes a structured,
+  // searchable payroll record — no re-keying into a spreadsheet.
+  function viewPayroll() {
+    const q = _search['pay2'] || '';
+    const list = db.payroll.filter(p => matches(p, q));
+    const total = list.reduce((s, p) => s + (p.gross || 0), 0);
+    let html = pageHead(t('payroll'), '') + searchBox('pay2');
+    html += `<div class="btnrow"><button class="btn green block" onclick="importPayroll()"><i class="fas fa-file-import"></i> ${t('importPayroll')}</button></div>`;
+    html += `<div class="muted" style="margin:8px 0;font-size:13px"><i class="fas fa-file-excel"></i> ${t('importExcelHint')}</div>`;
+    if (list.length) html += `<div class="card" style="padding:14px;margin-bottom:10px">${kv(t('totalGross'), '<b>' + money(total) + '</b>')}
+      <div class="btnrow" style="margin-top:8px"><button class="btn ghost sm" onclick="exportCSV('payroll')"><i class="fas fa-file-export"></i> CSV</button><button class="btn ghost sm" onclick="summarizePayrollAll()"><i class="fas fa-robot"></i> ${t('summarize')}</button></div></div>`;
+    html += `<div class="card">${list.length ? list.map(payrollRow).join('') : emptyState()}</div>`;
+    $('#main').innerHTML = html; bindSearch('pay2');
+  }
+  function payrollRow(p) {
+    return `<div class="list-item" onclick="openPayroll('${p.id}')"><div class="avatar" style="background:${colorFor(p.employee)}">${initials(p.employee)}</div>
+      <div class="li-main"><div class="li-title">${esc(p.employee || '—')}</div><div class="li-sub">${p.period ? esc(p.period) + ' · ' : ''}${p.hours || 0} ${t('hours')}</div></div>
+      <div class="li-right">${money(p.gross)}</div></div>`;
+  }
+  function openPayroll(id) {
+    const p = get('payroll', id);
+    modal(`<h2>${esc(p.employee || '—')}</h2>
+      <div class="card" style="padding:14px">${kv(t('period'), esc(p.period || '—'))}${kv(t('hours'), String(p.hours || 0))}${kv(t('rate'), p.rate ? money(p.rate) : '—')}${kv(t('gross'), money(p.gross))}${p.net ? kv(t('net'), money(p.net)) : ''}</div>
+      ${p.raw ? `<div class="card" style="padding:12px;margin-top:10px"><div class="muted">${lang === 'es' ? 'Datos originales' : 'Original data'}</div>${Object.entries(p.raw).map(([k, v]) => kv(esc(k), esc(String(v == null ? '' : v)))).join('')}</div>` : ''}
+      <button class="btn red block" style="margin-top:10px" onclick="confirmDel(()=>{remove('payroll','${id}');closeModal();render()})"><i class="fas fa-trash"></i> ${t('delete')}</button>`);
+  }
+  function importPayroll() {
+    const inp = document.createElement('input'); inp.type = 'file';
+    inp.accept = '.xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv';
+    inp.onchange = async () => {
+      const f = inp.files[0]; if (!f) return; toast(t('importing'));
+      let parsed; try { parsed = await parsePayrollFile(f); } catch (e) { toast(t('readFailed'), 'error'); return; }
+      if (!parsed || !parsed.headers.length) { toast(t('noColumns'), 'error'); return; }
+      const recs = rowsToPayroll(parsed.headers, parsed.rows);
+      if (!recs.length) { toast(t('noColumns'), 'error'); return; }
+      previewPayroll(recs, f.name || 'payroll');
+    };
+    inp.click();
+  }
+  async function parsePayrollFile(file) {
+    const name = (file.name || '').toLowerCase();
+    if (name.endsWith('.csv') || (file.type || '').includes('csv')) {
+      const rows = parseCSV(await blobText(file));
+      return { headers: rows[0] || [], rows: rows.slice(1) };
+    }
+    const XLSX = await loadXLSX(); const buf = await blobBuf(file);
+    const wb = XLSX.read(buf, { type: 'array' }); const ws = wb.Sheets[wb.SheetNames[0]];
+    const arr = XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: false });
+    return { headers: arr[0] || [], rows: arr.slice(1) };
+  }
+  function loadXLSX() {
+    if (window.XLSX) return Promise.resolve(window.XLSX);
+    if (loadXLSX._p) return loadXLSX._p;
+    loadXLSX._p = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      s.onload = () => resolve(window.XLSX); s.onerror = () => reject(new Error('xlsx load failed'));
+      document.head.appendChild(s);
+    });
+    return loadXLSX._p;
+  }
+  function parseCSV(text) {
+    const rows = []; let row = [], cur = '', q = false;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (q) { if (c === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += c; }
+      else if (c === '"') q = true;
+      else if (c === ',') { row.push(cur); cur = ''; }
+      else if (c === '\n') { row.push(cur); rows.push(row); row = []; cur = ''; }
+      else if (c !== '\r') cur += c;
+    }
+    if (cur.length || row.length) { row.push(cur); rows.push(row); }
+    return rows.filter(r => r.some(c => String(c).trim() !== ''));
+  }
+  function detectPayrollCols(headers) {
+    const idx = (re) => headers.findIndex(h => re.test(String(h).toLowerCase()));
+    return { employee: idx(/name|employee|empleado|trabajador/), hours: idx(/hours|hrs|horas/), rate: idx(/rate|tarifa/),
+      gross: idx(/gross|bruto|total\s*pay|gross\s*pay|^total$/), net: idx(/net|neto|take\s*home/), period: idx(/period|week|pay\s*date|fecha|periodo|ending/) };
+  }
+  function rowsToPayroll(headers, rows) {
+    const c = detectPayrollCols(headers);
+    const num = (v) => { const n = parseFloat(String(v == null ? '' : v).replace(/[$,]/g, '')); return isNaN(n) ? 0 : n; };
+    return rows.map(r => {
+      const raw = {}; headers.forEach((h, i) => { if (String(h).trim()) raw[String(h).trim()] = r[i]; });
+      return { employee: c.employee >= 0 ? String(r[c.employee] || '').trim() : '', hours: c.hours >= 0 ? num(r[c.hours]) : 0,
+        rate: c.rate >= 0 ? num(r[c.rate]) : 0, gross: c.gross >= 0 ? num(r[c.gross]) : 0, net: c.net >= 0 ? num(r[c.net]) : 0,
+        period: c.period >= 0 ? String(r[c.period] || '').trim() : '', raw };
+    }).filter(p => p.employee || p.gross || p.hours);
+  }
+  let _pendingPayroll = null;
+  function previewPayroll(recs, fname) {
+    _pendingPayroll = { recs, fname };
+    const total = recs.reduce((s, p) => s + (p.gross || 0), 0);
+    modal(`<h2>${t('importPayroll')}</h2><div class="sheet-sub">${esc(fname)} · ${recs.length} ${t('rowsFound')}</div>
+      <div class="card" style="padding:12px;margin:10px 0">${kv(t('totalGross'), '<b>' + money(total) + '</b>')}</div>
+      <div class="card" style="max-height:240px;overflow:auto">${recs.slice(0, 12).map(p => `<div class="list-item"><div class="li-main"><div class="li-title">${esc(p.employee || '—')}</div><div class="li-sub">${p.hours || 0} ${t('hours')} · ${money(p.gross)}</div></div></div>`).join('')}${recs.length > 12 ? `<div class="muted" style="padding:8px">+${recs.length - 12}…</div>` : ''}</div>
+      <button class="btn green block" onclick="confirmPayrollImport()"><i class="fas fa-check"></i> ${t('importRows')}</button>`);
+  }
+  function confirmPayrollImport() {
+    const pend = _pendingPayroll; _pendingPayroll = null; if (!pend) return;
+    const batch = 'pr_' + uid();
+    pend.recs.forEach(p => { p.batch = batch; p.source = pend.fname; if (!p.period) p.period = (pend.fname || '').replace(/\.[^.]+$/, ''); add('payroll', p); });
+    closeModal(); toast(t('saved'), 'success'); nav('payroll');
+  }
+  async function summarizePayrollAll() {
+    const list = db.payroll; if (!list.length) return;
+    toast(t('summarizing'));
+    const txt = list.slice(0, 200).map(p => `${p.employee}: ${p.period || ''} ${p.hours || 0}h gross ${p.gross}`).join('\n');
+    const s = await aiSummarize('Payroll records:\n' + txt + '\n\nGive totals, who worked the most hours, and anything unusual.', 'payroll report');
+    modal(`<h2>${t('payrollSummary')}</h2><div class="card" style="padding:14px;margin-top:10px">${s ? esc(s) : t('aiNotReady')}</div>`);
+  }
+
   /* ============================ ASSISTANT / CHATBOT ============================ */
   let chatHistory = [];
   function viewAssistant() {
@@ -1610,11 +2165,17 @@
     const jobs = top('jobs', 5, j => `Job "${j.title}" for ${customerName(j.customerId)} — status ${j.status}; ${j.description || ''}`);
     const notes = top('notes', 6, n => `Note on ${jobTitle(n.jobId)}: ${n.text}`);
     const invs = top('invoices', 5, i => `Invoice ${i.number} ${customerName(i.customerId)}: total ${money(i.amount)}, paid ${money(i.paid || 0)}, status ${invStatus(i)}`);
+    const emails = top('emails', 4, e => `Email from ${e.fromName || e.from} re "${e.subject}": ${(e.summary || e.body || '').slice(0, 220)}`);
+    const pay = top('payroll', 6, p => `Payroll ${p.period || ''} ${p.employee}: ${p.hours || 0}h, gross ${money(p.gross)}`);
+    const docs = top('documents', 4, d => `Document "${d.name}"${d.jobId ? ' on ' + jobTitle(d.jobId) : ''}: ${(d.estimate ? 'estimate — ' + (d.estimate.jobSummary || '') : (d.ocr ? JSON.stringify(d.ocr) : '')).slice(0, 240)}`);
     const sops = top('sops', 3, s => `How-to "${s.title}": ${s.body}`);
     if (cust.length) parts.push('CUSTOMERS:\n' + cust.join('\n'));
     if (jobs.length) parts.push('JOBS:\n' + jobs.join('\n'));
     if (notes.length) parts.push('NOTES:\n' + notes.join('\n'));
     if (invs.length) parts.push('INVOICES:\n' + invs.join('\n'));
+    if (emails.length) parts.push('EMAILS:\n' + emails.join('\n'));
+    if (pay.length) parts.push('PAYROLL:\n' + pay.join('\n'));
+    if (docs.length) parts.push('DOCUMENTS:\n' + docs.join('\n'));
     if (sops.length) parts.push('SOPs:\n' + sops.join('\n'));
     return parts.join('\n\n');
   }
@@ -1659,7 +2220,8 @@
     const map = {
       home: () => session.role === 'field' ? chooseJob('photo') : newCall(),
       customers: () => openCustomerForm(), customer: () => openJobForm(null, route.id),
-      jobs: () => openJobForm(), calls: () => newCall(), estimates: () => openEstimateForm(),
+      jobs: () => openJobForm(), calls: () => newCall(), emails: () => openEmailForm(), payroll: () => importPayroll(),
+      estimates: () => openEstimateForm(),
       invoices: () => openInvoiceForm(), payments: () => openPaymentForm(), checks: () => openCheckForm({}),
       followups: () => openFollowForm(), workflows: () => openWorkflowForm(), knowledge: () => openSopForm(),
       team: () => openUserForm(),
@@ -1694,7 +2256,10 @@
     openEstimateForm, saveEstimate, estimateToInvoice, openInvoiceForm, saveInvoice, openInvoiceView, openPaymentForm, savePayment,
     openCheckForm, saveCheck, quickScanCheck, openFollowForm, saveFollow, toggleFollow, openWorkflow, openWorkflowForm, saveWorkflow,
     openSop, openSopForm, saveSop, shareLocation, exportCSV, exportQuickBooks, openUserForm, saveUser, toggleTheme, saveFirebase,
-    cloudPullNow, exportAll, importAll, askAssistant });
+    cloudPullNow, exportAll, importAll, askAssistant,
+    analyzeDrawing, askDrawingQuestion, answerDrawingQ, skipDrawingQ, showDrawingReview, addMaterialRow, saveDrawingEstimate, estimateFromDrawing,
+    viewEmails, openEmailForm, saveEmailForm, importEml, openEmail, relinkEmail, saveEmailLink, emailToNote, summarizeEmail,
+    viewPayroll, openPayroll, importPayroll, previewPayroll, confirmPayrollImport, summarizePayrollAll });
   boot();
   </script>
 </body>
