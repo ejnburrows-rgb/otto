@@ -11,6 +11,9 @@
   <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1995/1995470.png" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <script src="https://apis.google.com/js/api.js"></script>
   <style>
     :root {
       --blue: #0f3d6e;
@@ -110,6 +113,17 @@
     .tile.big { grid-column: span 2; flex-direction: row; justify-content: flex-start; text-align: left; padding: 20px; }
     .tile.big .ic { width: 56px; height: 56px; }
     .tile.big .lbl { font-size: 18px; }
+    
+    .sched-strip { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-top: 14px; }
+    .sched-day { flex: 1; min-width: 48px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; display: flex; flex-direction: column; align-items: center; padding: 10px 4px; box-shadow: var(--shadow); position: relative; }
+    .sched-day.today { border-color: var(--accent); background: rgba(31, 143, 255, 0.05); }
+    .sched-day .dw { font-size: 11px; font-weight: 700; color: var(--text2); text-transform: uppercase; }
+    .sched-day .dn { font-size: 18px; font-weight: 800; margin-top: 2px; }
+    .sched-dots { display: flex; gap: 4px; margin-top: 6px; height: 6px; }
+    .sched-dots span { width: 6px; height: 6px; border-radius: 50%; }
+    .sched-pto { background: var(--green) !important; color: #fff !important; border-color: var(--green) !important; }
+    .sched-pto .dw, .sched-pto .dn { color: #fff; }
+    .notif-dot { position: absolute; top: -2px; right: -2px; width: 10px; height: 10px; background: var(--red); border-radius: 50%; border: 2px solid var(--card); }
 
     /* ===== Cards / list ===== */
     .section-title { font-size: 14px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: .04em; margin: 22px 4px 10px; }
@@ -261,6 +275,7 @@
     .note-item:last-child { border-bottom: none; }
     .note-meta { font-size: 12px; color: var(--text3); margin-top: 4px; }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
@@ -364,8 +379,19 @@
       dailySummary: 'Daily summary', aiActivity: 'AI activity', consentStatus: 'Consent', auditTrail: 'Audit trail', needsAttention: 'Needs attention tomorrow', allClear: 'All clear',
       consentTitle: 'Permission to use the work app', consentBody: 'This app records your work location only between check-in and check-out, your job photos, and your checklists, to do your job. It does not track your personal phone use or your location outside of work. Do you agree?', iAgree: 'I agree', notNow: 'Not now', consentNeeded: 'Your consent is needed to use the app.',
       projectAI: 'Project AI', overview: 'Overview', goal: 'Goal', phase: 'Phase', rules: 'Rules', faq: 'FAQ', approvedAnswers: 'Approved answers', openQuestions: 'Open questions', escalations: 'Escalations', askProject: 'Ask about this job…', escalateToOwner: 'Send to owner', escalatedMsg: 'Sent to the owner', clarifyMsg: 'One quick question',
-      contracts: 'Contracts', proposals: 'Proposals', plans: 'Plans', projectDocs: 'Contracts / Proposals / Plans', newVersion: 'Upload new version', version: 'Version', approve: 'Approve', approved2: 'Approved', versionHistory: 'Version history', approvalHistory: 'Approval history',
+      contracts: 'Contracts', proposals: 'Proposals', plans: 'Plans', projectDocs: 'Contracts / Proposals / Plans', newVersion: 'Upload new version', version: 'Version', approve: 'Approve', approved2: 'Approved', versionHistory: 'Version history',
       backups: 'Backups', backupNow: 'Back up now', testRestore: 'Test restore', backupOk: 'Backup saved', backupLog: 'Backup & restore log', copies: 'copies', verified: 'Verified', lastBackup: 'Last backup', lastRestoreTest: 'Last restore test', restorePass: 'Restore test passed', restoreFail: 'Restore test FAILED', security: 'Security', mfaOwner: 'Extra code for owner/admin (MFA)', encryptBackups: 'Backup passphrase (encrypts backups)',
+      teamKpis: 'Team KPIs', locationsVisited: 'Locations Visited', ptoStatus: 'PTO Status', escalations: 'Escalations', workerProfile: 'Worker Profile',
+      ptoRequests: 'Time-Off Requests', approve: 'Approve', deny: 'Deny', approvePto: 'Approve PTO', denyPto: 'Deny PTO', pendingPto: 'Pending PTO',
+      ptoApproved: 'PTO Approved', ptoDenied: 'PTO Denied', conflictWarning: 'has a job scheduled on', approveAnyway: 'Approve anyway?',
+      hoursWorked: 'Hours Worked', jobsDone: 'Jobs Done', viewFullProfile: 'View Full Profile', daysWorked: 'Days Worked', locationLog: 'Location Log',
+      jobTimeline: 'Job Timeline', ptoHistory: 'PTO History', loginHistory: 'Login History', teamSummary: 'Team Summary', aggregateView: 'Aggregate View',
+      totalTeamHours: 'Total Team Hours', jobsCompletedVsAssigned: 'Jobs Completed vs Assigned', escalationRate: 'Escalation Rate', overtimeHours: 'Overtime Hours',
+      allWorkers: 'All Workers', thisWeek: 'This Week', lastWeek: 'Last Week', customDate: 'Custom', metrics: 'Metrics', hours: 'Hours',
+      dateRange: 'Date Range', arrival: 'Arrival', departure: 'Departure', timeSpent: 'Time Spent', missedItem: 'Missed Item', workerNote: 'Worker Note',
+      firstOpen: 'First Open', lastClose: 'Last Close', noPtoPending: 'none', pendingCount: 'pending', approvedThrough: 'approved through',
+      startJob: 'Start Job', acknowledge: 'Acknowledge', cantComplete: 'Can\'t complete', addNoteToContinue: 'Add a note to continue', submitAndClose: 'Submit & Close Job', incompleteChecklist: 'Complete all items or add a note before closing', openJobReminder: 'You have an open job — complete check-out', timeOff: 'Request Time Off', ptoReason: 'Reason', ptoDates: 'Dates', isOT: 'OT / Overtime Job', ackOT: 'Acknowledge OT',
+      connectEmail: 'Connect Email', preview: 'Preview', download: 'Download', analyzeAI: 'Analyze with AI', aiAnalysisComplete: 'AI Analysis Complete', foundFixtures: 'Found', fixturesL: 'fixtures', pipesL: 'LF pipe', fittingsL: 'fittings', assignTo: 'Assign to', existingJob: 'Existing job', createNewProject: 'Create new project folder', aiTakeoffTitle: 'AI Floor Plan Takeoff', noInboxMessages: 'No new messages in inbox.', inboxRefresh: 'Refresh Inbox',
     },
     es: {
       home: 'Inicio', customers: 'Clientes', jobs: 'Trabajos', calls: 'Llamadas', more: 'Más',
@@ -431,8 +457,19 @@
       dailySummary: 'Resumen diario', aiActivity: 'Actividad de IA', consentStatus: 'Consentimiento', auditTrail: 'Auditoría', needsAttention: 'Atención mañana', allClear: 'Todo en orden',
       consentTitle: 'Permiso para usar la app de trabajo', consentBody: 'Esta app registra tu ubicación de trabajo solo entre la entrada y la salida, las fotos del trabajo y tus checklists, para hacer tu trabajo. No rastrea el uso personal de tu teléfono ni tu ubicación fuera del trabajo. ¿Estás de acuerdo?', iAgree: 'Acepto', notNow: 'Ahora no', consentNeeded: 'Se necesita tu consentimiento para usar la app.',
       projectAI: 'IA del Trabajo', overview: 'Resumen', goal: 'Objetivo', phase: 'Fase', rules: 'Reglas', faq: 'Preguntas frecuentes', approvedAnswers: 'Respuestas aprobadas', openQuestions: 'Preguntas abiertas', escalations: 'Escalaciones', askProject: 'Pregunta sobre este trabajo…', escalateToOwner: 'Enviar al dueño', escalatedMsg: 'Enviado al dueño', clarifyMsg: 'Una pregunta rápida',
-      contracts: 'Contratos', proposals: 'Propuestas', plans: 'Planos', projectDocs: 'Contratos / Propuestas / Planos', newVersion: 'Subir nueva versión', version: 'Versión', approve: 'Aprobar', approved2: 'Aprobado', versionHistory: 'Historial de versiones', approvalHistory: 'Historial de aprobación',
+      contracts: 'Contratos', proposals: 'Propuestas', plans: 'Planos', projectDocs: 'Contratos / Propuestas / Planos', newVersion: 'Subir nueva versión', version: 'Versión',
       backups: 'Respaldos', backupNow: 'Respaldar ahora', testRestore: 'Probar restauración', backupOk: 'Respaldo guardado', backupLog: 'Registro de respaldos', copies: 'copias', verified: 'Verificado', lastBackup: 'Último respaldo', lastRestoreTest: 'Última prueba', restorePass: 'Prueba de restauración OK', restoreFail: 'Prueba de restauración FALLÓ', security: 'Seguridad', mfaOwner: 'Código extra para dueño/admin (MFA)', encryptBackups: 'Frase para cifrar respaldos',
+      teamKpis: 'KPIs del Equipo', locationsVisited: 'Ubicaciones Visitadas', ptoStatus: 'Estado de Permisos', escalations: 'Escalaciones', workerProfile: 'Perfil del Trabajador',
+      ptoRequests: 'Solicitudes de Permiso', approve: 'Aprobar', deny: 'Denegar', approvePto: 'Aprobar Permiso', denyPto: 'Denegar Permiso', pendingPto: 'Permiso Pendiente',
+      ptoApproved: 'Permiso Aprobado', ptoDenied: 'Permiso Denegado', conflictWarning: 'tiene un trabajo el', approveAnyway: '¿Aprobar de todas formas?',
+      hoursWorked: 'Horas Trabajadas', jobsDone: 'Trabajos Hechos', viewFullProfile: 'Ver Perfil Completo', daysWorked: 'Días Trabajados', locationLog: 'Registro de Ubicaciones',
+      jobTimeline: 'Línea de Tiempo', ptoHistory: 'Historial de Permisos', loginHistory: 'Historial de Conexiones', teamSummary: 'Resumen del Equipo', aggregateView: 'Vista General',
+      totalTeamHours: 'Horas Totales del Equipo', jobsCompletedVsAssigned: 'Trabajos Completados vs Asignados', escalationRate: 'Tasa de Escalaciones', overtimeHours: 'Horas Extras',
+      allWorkers: 'Todos los Trabajadores', thisWeek: 'Esta Semana', lastWeek: 'Semana Pasada', customDate: 'Personalizado', metrics: 'Métricas', hours: 'Horas',
+      dateRange: 'Rango de Fechas', arrival: 'Llegada', departure: 'Salida', timeSpent: 'Tiempo Invertido', missedItem: 'Elemento Faltante', workerNote: 'Nota del Trabajador',
+      firstOpen: 'Primera Conexión', lastClose: 'Última Desconexión', noPtoPending: 'ninguno', pendingCount: 'pendiente(s)', approvedThrough: 'aprobado hasta',
+      startJob: 'Comenzar Trabajo', acknowledge: 'Reconocer', cantComplete: 'No se pudo', addNoteToContinue: 'Añade una nota para continuar', submitAndClose: 'Enviar y Cerrar', incompleteChecklist: 'Complete todo o añada una nota antes de cerrar', openJobReminder: 'Tienes un trabajo abierto — completa la salida', timeOff: 'Solicitar Tiempo Libre', ptoReason: 'Motivo', ptoDates: 'Fechas', isOT: 'Trabajo OT', ackOT: 'Reconocer OT',
+      connectEmail: 'Conectar Correo', preview: 'Vista previa', download: 'Descargar', analyzeAI: 'Analizar con IA', aiAnalysisComplete: 'Análisis IA Completo', foundFixtures: 'Encontrado', fixturesL: 'accesorios', pipesL: 'pies de tubo', fittingsL: 'conexiones', assignTo: 'Asignar a', existingJob: 'Trabajo existente', createNewProject: 'Crear nueva carpeta de proyecto', aiTakeoffTitle: 'Estimado de Planos IA', noInboxMessages: 'No hay mensajes nuevos.', inboxRefresh: 'Actualizar Bandeja',
     }
   };
   const t = (k) => (T[lang] && T[lang][k]) || T.en[k] || k;
@@ -447,9 +484,9 @@
   /* ============================ data model ============================ */
   const COLLECTIONS = ['customers', 'jobs', 'calls', 'notes', 'photos', 'documents', 'estimates',
     'invoices', 'payments', 'checks', 'followups', 'workflows', 'sops', 'users', 'locations', 'folders',
-    'emails', 'payroll',
+    'emails', 'inbox_emails', 'payroll', 'time_off', 'login_history',
     'projects', 'job_events', 'job_checklists', 'ai_conversations', 'ai_escalations', 'consent_records',
-    'contracts', 'proposals', 'plans', 'alerts', 'backups', 'daily_summaries', 'audit_log'];
+    'contracts', 'proposals', 'plans', 'alerts', 'backups', 'daily_summaries', 'audit_log', 'checklist_submissions', 'pto_requests'];
   let db = null;
   let session = null; // current user
 
@@ -487,11 +524,12 @@
   let _idb = null;
   function openDB() {
     return new Promise((res, rej) => {
-      const r = indexedDB.open('otto-crm', 1);
+      const r = indexedDB.open('otto-crm', 2);
       r.onupgradeneeded = (e) => {
         const d = e.target.result;
         if (!d.objectStoreNames.contains('kv')) d.createObjectStore('kv');
         if (!d.objectStoreNames.contains('files')) d.createObjectStore('files');
+        if (!d.objectStoreNames.contains('gps_logs')) d.createObjectStore('gps_logs');
       };
       r.onsuccess = () => { _idb = r.result; res(_idb); };
       r.onerror = () => rej(r.error);
@@ -508,6 +546,13 @@
     return new Promise((res, rej) => {
       const tx = _idb.transaction(store, 'readonly');
       const rq = tx.objectStore(store).get(key);
+      rq.onsuccess = () => res(rq.result); rq.onerror = () => rej(rq.error);
+    });
+  }
+  function idbGetAll(store) {
+    return new Promise((res, rej) => {
+      const tx = _idb.transaction(store, 'readonly');
+      const rq = tx.objectStore(store).getAll();
       rq.onsuccess = () => res(rq.result); rq.onerror = () => rej(rq.error);
     });
   }
@@ -627,10 +672,10 @@
 
   /* ============================ AUTH / ROLES ============================ */
   const ROLE_VIEWS = {
-    owner: ['home', 'hub', 'customers', 'jobs', 'calls', 'emails', 'estimates', 'invoices', 'payments', 'checks', 'payroll', 'alerts', 'followups', 'workflows', 'knowledge', 'map', 'reports', 'backups', 'audit', 'team', 'settings', 'assistant'],
-    office: ['home', 'hub', 'customers', 'jobs', 'calls', 'emails', 'estimates', 'invoices', 'payments', 'checks', 'payroll', 'alerts', 'followups', 'workflows', 'knowledge', 'map', 'reports', 'backups', 'settings', 'assistant'],
+    owner: ['home', 'hub', 'kpis', 'worker_profile', 'customers', 'jobs', 'calls', 'inbox', 'emails', 'estimates', 'invoices', 'payments', 'checks', 'payroll', 'alerts', 'followups', 'workflows', 'knowledge', 'map', 'reports', 'backups', 'audit', 'team', 'settings', 'assistant'],
+    office: ['home', 'hub', 'customers', 'jobs', 'calls', 'inbox', 'emails', 'estimates', 'invoices', 'payments', 'checks', 'payroll', 'alerts', 'followups', 'workflows', 'knowledge', 'map', 'reports', 'backups', 'settings', 'assistant'],
     field: ['home', 'jobs', 'customers', 'followups', 'knowledge', 'assistant', 'settings'],
-    accounting: ['home', 'customers', 'emails', 'invoices', 'payments', 'checks', 'payroll', 'estimates', 'reports', 'knowledge', 'assistant', 'settings'],
+    accounting: ['home', 'customers', 'inbox', 'emails', 'invoices', 'payments', 'checks', 'payroll', 'estimates', 'reports', 'knowledge', 'assistant', 'settings'],
   };
   function can(view) { return session && (ROLE_VIEWS[session.role] || []).includes(view); }
 
@@ -711,19 +756,19 @@
 
   const NAVBAR = {
     field: ['home', 'jobs', 'customers', 'followups', 'assistant'],
-    default: ['home', 'jobs', 'customers', 'calls', 'more'],
+    default: ['home', 'jobs', 'customers', 'inbox', 'more'],
   };
   function renderNav() {
     const bn = $('#bottomnav');
     const items = (session.role === 'field' ? NAVBAR.field : NAVBAR.default);
-    const icons = { home: 'fa-house', jobs: 'fa-screwdriver-wrench', customers: 'fa-users', calls: 'fa-phone', followups: 'fa-bell', assistant: 'fa-robot', more: 'fa-ellipsis' };
+    const icons = { home: 'fa-house', jobs: 'fa-screwdriver-wrench', customers: 'fa-users', calls: 'fa-phone', inbox: 'fa-inbox', followups: 'fa-bell', assistant: 'fa-robot', more: 'fa-ellipsis' };
     bn.innerHTML = items.map(v => `<button class="${route.view === v ? 'on' : ''}" onclick="${v === 'more' ? 'openMore()' : `nav('${v}')`}">
       <i class="fas ${icons[v]}"></i><span>${t(v)}</span></button>`).join('');
   }
   function openMore() {
-    const items = ['hub', 'emails', 'estimates', 'invoices', 'payments', 'checks', 'payroll', 'alerts', 'followups', 'workflows', 'knowledge', 'map', 'reports', 'backups', 'audit', 'team', 'settings']
+    const items = ['hub', 'calls', 'emails', 'estimates', 'invoices', 'payments', 'checks', 'payroll', 'alerts', 'followups', 'workflows', 'knowledge', 'map', 'reports', 'backups', 'audit', 'team', 'settings']
       .filter(v => can(v));
-    const icons = { hub: 'fa-gauge-high', emails: 'fa-inbox', estimates: 'fa-file-lines', invoices: 'fa-file-invoice-dollar', payments: 'fa-money-bill-wave', checks: 'fa-money-check-dollar', payroll: 'fa-money-check', alerts: 'fa-triangle-exclamation', followups: 'fa-bell', workflows: 'fa-diagram-project', knowledge: 'fa-book', map: 'fa-map-location-dot', reports: 'fa-chart-line', backups: 'fa-database', audit: 'fa-clipboard-list', team: 'fa-user-gear', settings: 'fa-gear' };
+    const icons = { hub: 'fa-gauge-high', calls: 'fa-phone', emails: 'fa-envelope', estimates: 'fa-file-lines', invoices: 'fa-file-invoice-dollar', payments: 'fa-money-bill-wave', checks: 'fa-money-check-dollar', payroll: 'fa-money-check', alerts: 'fa-triangle-exclamation', followups: 'fa-bell', workflows: 'fa-diagram-project', knowledge: 'fa-book', map: 'fa-map-location-dot', reports: 'fa-chart-line', backups: 'fa-database', audit: 'fa-clipboard-list', team: 'fa-user-gear', settings: 'fa-gear' };
     const labels = { audit: t('auditTrail') };
     modal(`<h2>${t('more')}</h2><div class="card" style="margin-top:12px">
       ${items.map(v => `<div class="list-item" onclick="closeModal();nav('${v}')"><div class="avatar" style="background:${colorFor(v)}"><i class="fas ${icons[v]}"></i></div><div class="li-main"><div class="li-title">${labels[v] || t(v)}</div></div><i class="fas fa-chevron-right chev"></i></div>`).join('')}
@@ -741,12 +786,30 @@
     fab.classList.toggle('hidden', !['home', 'customers', 'jobs', 'calls', 'emails', 'estimates', 'invoices', 'payments', 'checks', 'payroll', 'followups', 'workflows', 'knowledge', 'team'].includes(v));
     const views = {
       home: viewHome, customers: viewCustomers, customer: viewCustomer, jobs: viewJobs, job: viewJob,
-      calls: viewCalls, emails: viewEmails, estimates: viewEstimates, invoices: viewInvoices, payments: viewPayments,
+      calls: viewCalls, inbox: viewInbox, emails: viewEmails, estimates: viewEstimates, invoices: viewInvoices, payments: viewPayments,
       checks: viewChecks, payroll: viewPayroll, followups: viewFollowups, workflows: viewWorkflows, knowledge: viewKnowledge,
       map: viewMap, reports: viewReports, team: viewTeam, settings: viewSettings, assistant: viewAssistant,
       hub: viewHub, alerts: viewAlerts, backups: viewBackups, audit: viewAudit,
+      kpis: viewKpis, worker_profile: viewWorkerProfile, gps: viewGpsLogs,
     };
     (views[v] || viewHome)();
+
+    const existingBanner = $('#open-job-banner');
+    if (existingBanner) existingBanner.remove();
+    if (session.role === 'field') {
+      const openJob = db.jobs.find(j => j.assignedTo === session.id && j.activeCheckIn);
+      if (openJob && (route.view !== 'job' || route.id !== openJob.id)) {
+        const banner = document.createElement('div');
+        banner.id = 'open-job-banner';
+        banner.style = "position:fixed; top:0; left:0; right:0; background:var(--red); color:#fff; padding:12px; padding-top:max(12px, env(safe-area-inset-top)); text-align:center; z-index:100; font-weight:bold; cursor:pointer; box-shadow:0 2px 10px rgba(0,0,0,0.2)";
+        banner.innerHTML = `<i class="fas fa-triangle-exclamation"></i> ${t('openJobReminder')}`;
+        banner.onclick = () => nav('job', openJob.id);
+        document.body.appendChild(banner);
+        $('.topbar').style.top = '48px';
+      } else {
+        $('.topbar').style.top = '0';
+      }
+    }
   }
 
   /* ---------- shared building blocks ---------- */
@@ -761,44 +824,87 @@
   function emptyState(msg) { return `<div class="empty"><i class="fas fa-box-open"></i>${esc(msg || t('noResults'))}</div>`; }
   function matches(obj, q) { if (!q) return true; return JSON.stringify(obj).toLowerCase().includes(q.toLowerCase()); }
 
-  /* ============================ HOME ============================ */
+  function renderScheduleStrip() {
+    const today = new Date();
+    const currentDayOfWeek = today.getDay() || 7;
+    const mon = new Date(today); mon.setDate(today.getDate() - currentDayOfWeek + 1);
+    const days = [];
+    for(let i=0; i<7; i++) {
+      const d = new Date(mon); d.setDate(mon.getDate() + i);
+      const iso = d.toISOString().slice(0, 10);
+      const pto = db.pto_requests.find(p => p.workerId === session.id && p.status === 'approved' && p.dates.includes(iso));
+      const jobs = db.jobs.filter(j => j.assignedTo === session.id && (j.scheduledDate||'').slice(0, 10) === iso);
+      const hasOT = jobs.some(j => j.isOT);
+      const allDone = jobs.length > 0 && jobs.every(j => ['completed', 'canceled'].includes(j.status));
+      const hasPending = jobs.some(j => !['completed', 'canceled'].includes(j.status));
+      const isToday = iso === todayISO();
+      let dotsHtml = '';
+      if (!pto) {
+        if (hasOT) dotsHtml += `<span style="background:var(--red)"></span>`;
+        if (hasPending) dotsHtml += `<span style="background:var(--blue)"></span>`;
+        if (allDone && !hasPending) dotsHtml += `<span style="background:var(--green)"></span>`;
+      }
+      const dw = d.toLocaleDateString(lang === 'es' ? 'es-US' : 'en-US', { weekday: 'short' });
+      const dn = d.getDate();
+      days.push(`<div class="sched-day ${isToday ? 'today' : ''} ${pto ? 'sched-pto' : ''}">
+        <div class="dw">${esc(dw)}</div><div class="dn">${dn}</div>
+        ${dotsHtml ? `<div class="sched-dots">${dotsHtml}</div>` : ''}
+      </div>`);
+    }
+    return `<div class="sched-strip">${days.join('')}</div>`;
+  }
+
   function viewHome() {
-    // Owner & office land on the minimal operational hub.
     if (session.role === 'owner' || session.role === 'office') return viewHub();
     const hour = new Date().getHours();
     const greet = hour < 12 ? (lang === 'es' ? 'Buenos días' : 'Good morning') : hour < 18 ? (lang === 'es' ? 'Buenas tardes' : 'Good afternoon') : (lang === 'es' ? 'Buenas noches' : 'Good evening');
-    const myJobs = db.jobs.filter(j => j.assignedTo === session.id && !['completed', 'canceled'].includes(j.status));
+    
+    if (session.role === 'field') {
+      const unreadPTO = db.pto_requests.some(p => p.workerId === session.id && p.status !== 'pending' && !p.readByWorker);
+      const todayJobs = db.jobs.filter(j => j.assignedTo === session.id && (j.scheduledDate||'').slice(0, 10) === todayISO());
+      
+      let html = `<div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div><div class="greet">${greet}, <b>${esc(session.name)}</b></div><div class="muted">${fmtDate(todayISO())}</div></div>
+          <button class="iconbtn" style="position:relative; color:var(--text); background:var(--card); border:1px solid var(--line); box-shadow:var(--shadow)" onclick="nav('settings')">
+            <i class="fas fa-bell"></i>${unreadPTO ? '<div class="notif-dot"></div>' : ''}
+          </button>
+        </div>`;
+      html += renderScheduleStrip();
+      html += `<div class="btnrow" style="margin-top:0"><button class="btn ghost sm">2-Week</button><button class="btn ghost sm">4-Week</button></div>`;
+      html += `<div class="section-title">${t('jobsToday')} (${todayJobs.length})</div>`;
+      html += `<div class="card">${todayJobs.length ? todayJobs.map(jobRow).join('') : emptyState(t('noJobsToday'))}</div>`;
+      
+      const tiles = [
+        { icon: 'fa-camera', color: 'var(--green)', lbl: t('addPhoto'), action: 'quickPhoto()' },
+        { icon: 'fa-location-dot', color: 'var(--accent)', lbl: t('clockIn'), action: 'shareLocation()' },
+        { icon: 'fa-robot', color: 'var(--blue2)', lbl: t('ask'), action: "nav('assistant')" }
+      ];
+      html += `<div class="tiles" style="margin-top:20px">${tiles.map(x => `<div class="tile" onclick="${x.action}"><div class="ic" style="background:${x.color}"><i class="fas ${x.icon}"></i></div><div class="lbl">${esc(x.lbl)}</div></div>`).join('')}</div>`;
+      $('#main').innerHTML = html;
+      return;
+    }
+
     const activeJobs = db.jobs.filter(j => !['completed', 'canceled'].includes(j.status));
-    const openFollow = db.followups.filter(f => f.status !== 'done' && (!f.assignedTo || f.assignedTo === session.id || session.role !== 'field'));
+    const openFollow = db.followups.filter(f => f.status !== 'done' && (!f.assignedTo || f.assignedTo === session.id));
     const tiles = [];
     const T_ = (icon, color, lbl, action, cnt) => ({ icon, color, lbl, action, cnt });
-    if (session.role === 'field') {
-      tiles.push(T_('fa-screwdriver-wrench', 'var(--blue)', t('myJobs'), "nav('jobs')", myJobs.length + ''));
-      tiles.push(T_('fa-camera', 'var(--green)', t('addPhoto'), 'quickPhoto()'));
-      tiles.push(T_('fa-microphone', 'var(--amber)', t('voiceNote'), 'quickVoiceNote()'));
-      tiles.push(T_('fa-location-dot', 'var(--accent)', t('clockIn'), 'shareLocation()'));
-      tiles.push(T_('fa-bell', 'var(--red)', t('followups'), "nav('followups')", openFollow.length + ''));
-      tiles.push(T_('fa-robot', 'var(--blue2)', t('ask'), "nav('assistant')"));
-    } else {
-      tiles.push(T_('fa-phone', 'var(--green)', t('newCall'), 'newCall()'));
-      tiles.push(T_('fa-screwdriver-wrench', 'var(--blue)', t('newJob'), 'openJobForm()'));
-      tiles.push(T_('fa-users', 'var(--accent)', t('customers'), "nav('customers')", db.customers.length + ''));
-      tiles.push(T_('fa-camera', 'var(--amber)', t('scanCheck'), 'quickScanCheck()'));
-      tiles.push(T_('fa-microphone', 'var(--blue2)', t('voiceNote'), 'quickVoiceNote()'));
-      tiles.push(T_('fa-robot', 'var(--red)', t('ask'), "nav('assistant')"));
-    }
+    tiles.push(T_('fa-phone', 'var(--green)', t('newCall'), 'newCall()'));
+    tiles.push(T_('fa-screwdriver-wrench', 'var(--blue)', t('newJob'), 'openJobForm()'));
+    tiles.push(T_('fa-users', 'var(--accent)', t('customers'), "nav('customers')", db.customers.length + ''));
+    tiles.push(T_('fa-camera', 'var(--amber)', t('scanCheck'), 'quickScanCheck()'));
+    tiles.push(T_('fa-microphone', 'var(--blue2)', t('voiceNote'), 'quickVoiceNote()'));
+    tiles.push(T_('fa-robot', 'var(--red)', t('ask'), "nav('assistant')"));
+
     let html = `<div class="greet">${greet}, <b>${esc(session.name)}</b></div>
       <div class="muted">${fmtDate(todayISO())}</div>
       <div class="tiles">${tiles.map(x => `<div class="tile" onclick="${x.action}">
         <div class="ic" style="background:${x.color}"><i class="fas ${x.icon}"></i></div>
         <div class="lbl">${esc(x.lbl)}</div>${x.cnt != null ? `<div class="cnt">${x.cnt}</div>` : ''}</div>`).join('')}</div>`;
 
-    // My day / active jobs snapshot
-    const list = (session.role === 'field' ? myJobs : activeJobs).slice(0, 5);
-    html += `<div class="section-title">${session.role === 'field' ? t('myDay') : t('activeJobs')}</div>`;
-    html += `<div class="card">${list.length ? list.map(jobRow).join('') : emptyState(session.role === 'field' ? t('noJobsToday') : t('noResults'))}</div>`;
+    html += `<div class="section-title">${t('activeJobs')}</div>`;
+    html += `<div class="card">${activeJobs.length ? activeJobs.slice(0, 5).map(jobRow).join('') : emptyState(t('noResults'))}</div>`;
 
-    if (openFollow.length && session.role !== 'field') {
+    if (openFollow.length) {
       html += `<div class="section-title">${t('followups')}</div><div class="card">${openFollow.slice(0, 4).map(followRow).join('')}</div>`;
     }
     $('#main').innerHTML = html;
@@ -866,9 +972,11 @@
   /* ============================ JOBS ============================ */
   const JOB_STATUSES = ['scheduled', 'inProgress', 'onHold', 'completed', 'canceled'];
   function jobRow(j) {
+    const isOT = j.isOT || (j.assignedTo && (_workerWeeklyHours[j.assignedTo] || 0) > 40);
+    const otFlag = isOT ? ' <span class="pill red" style="margin-left:8px;font-size:10px;padding:2px 6px">OT</span>' : '';
     return `<div class="list-item" onclick="nav('job','${j.id}')">
       <div class="avatar" style="background:${colorFor(j.title)}"><i class="fas fa-screwdriver-wrench"></i></div>
-      <div class="li-main"><div class="li-title">${esc(j.title || t('untitled'))}</div>
+      <div class="li-main"><div class="li-title">${esc(j.title || t('untitled'))}${otFlag}</div>
         <div class="li-sub">${esc(customerName(j.customerId))}${j.scheduledDate ? ' · ' + fmtDate(j.scheduledDate) : ''}</div></div>
       <div class="li-right">${statusPill(j.status)}</div></div>`;
   }
@@ -961,7 +1069,7 @@
   }
 
   function openJobForm(id, customerId) {
-    const j = id ? get('jobs', id) : { customerId: customerId || '', status: 'scheduled' };
+    const j = id ? get('jobs', id) : { customerId: customerId || '', status: 'scheduled', isOT: false };
     const custOpts = db.customers.map(c => `<option value="${c.id}" ${j.customerId === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
     const workerOpts = db.users.filter(u => u.role === 'field' || u.role === 'owner').map(u => `<option value="${u.id}" ${j.assignedTo === u.id ? 'selected' : ''}>${esc(u.name)}</option>`).join('');
     modal(`<h2>${id ? t('edit') : t('newJob')}</h2>
@@ -974,14 +1082,18 @@
         <div class="field"><label>${t('scheduled')}</label><input id="j-date" type="date" value="${esc((j.scheduledDate || '').slice(0, 10))}"></div>
         <div class="field"><label>${t('assignedTo')}</label><select id="j-worker"><option value="">—</option>${workerOpts}</select></div>
       </div>
+      <div class="field">
+        <label style="display:flex; align-items:center; gap:8px"><input type="checkbox" id="j-isot" ${j.isOT ? 'checked' : ''} style="width:20px;height:20px"> ${t('isOT')}</label>
+      </div>
       <div class="field"><label>${t('status')}</label><select id="j-status">${JOB_STATUSES.map(s => `<option value="${s}" ${j.status === s ? 'selected' : ''}>${t(s)}</option>`).join('')}</select></div>
       <button class="btn block" onclick="saveJob('${id || ''}')"><i class="fas fa-check"></i> ${t('save')}</button>`);
   }
   function saveJob(id) {
     const title = $('#j-title').value.trim() || t('untitled');
     let custId = $('#j-cust').value;
+    const isOT = $('#j-isot').checked;
     const data = { title, customerId: custId, description: $('#j-desc').value.trim(), address: $('#j-addr').value.trim(),
-      scheduledDate: $('#j-date').value, assignedTo: $('#j-worker').value, status: $('#j-status').value };
+      scheduledDate: $('#j-date').value, assignedTo: $('#j-worker').value, status: $('#j-status').value, isOT };
     if (!data.address && custId) { const c = get('customers', custId); if (c) data.address = c.address || ''; }
     let job;
     if (id) { job = update('jobs', id, data); } else { job = add('jobs', data); }
@@ -1564,10 +1676,29 @@
     </div>
     <div class="btnrow"><button class="btn ghost block" onclick="toggleTheme()"><i class="fas fa-${dark ? 'sun' : 'moon'}"></i> ${dark ? (lang === 'es' ? 'Modo claro' : 'Light mode') : (lang === 'es' ? 'Modo oscuro' : 'Dark mode')}</button></div>`;
 
-    html += `<div class="section-title"><i class="fas fa-robot"></i> ${lang === 'es' ? 'Inteligencia Artificial' : 'Artificial Intelligence'}</div>
+    if (session.role === 'field') {
+      html += `<div class="btnrow" style="margin-top:0"><button class="btn block" onclick="openPTOForm()"><i class="fas fa-calendar-plus"></i> ${t('timeOff')}</button></div>`;
+      const ptos = db.pto_requests.filter(p => p.workerId === session.id).sort((a,b) => new Date(b.startDate) - new Date(a.startDate));
+      if (ptos.length) {
+        html += `<div class="section-title">${t('timeOff')}</div><div class="card">` + ptos.map(p => {
+          const isPending = p.status === 'pending';
+          const isApproved = p.status === 'approved';
+          const col = isPending ? 'var(--amber)' : (isApproved ? 'var(--green)' : 'var(--red)');
+          return `<div class="list-item">
+            <div class="li-main"><div class="li-title">${fmtDate(p.startDate)} - ${fmtDate(p.endDate)}</div><div class="li-sub">${esc(p.reason || '')}</div></div>
+            <div class="li-right"><span style="font-size:12px; font-weight:bold; color:${col}">${p.status.toUpperCase()}</span></div>
+          </div>`;
+        }).join('') + `</div>`;
+      }
+      ptos.forEach(p => p.readByWorker = true);
+      save();
+    }
+
+    html += `<div class="section-title"><i class="fas fa-robot"></i> ${t('assistant')} & AI</div>
       <div class="card" style="padding:14px">
-        <div class="muted" style="margin-bottom:10px">${lang === 'es' ? 'Recomendado: configura la clave UNA vez en Vercel (variable ANTHROPIC_API_KEY) y la IA funciona en todos los dispositivos sin escribir nada aquí. La clave de abajo es opcional, solo para este dispositivo.' : 'Recommended: set the key ONCE in Vercel (ANTHROPIC_API_KEY env var) and AI works on every device with nothing typed here. The key below is an optional, device-only fallback.'}</div>
+        <div class="muted" style="margin-bottom:10px">${lang === 'es' ? 'Clave de Anthropic Claude y NVIDIA para usar el asistente y OCR.' : 'Anthropic Claude & NVIDIA keys for assistant & OCR.'}</div>
         <div class="field"><label>${lang === 'es' ? 'Clave Anthropic (opcional, este dispositivo)' : 'Anthropic API Key (optional, this device)'}</label><input id="set-aikey" type="password" value="${esc(localStorage.getItem('otto_ai_key') || '')}" placeholder="sk-ant-..."></div>
+        <div class="field"><label>${lang === 'es' ? 'Clave NVIDIA (para estimado de planos)' : 'NVIDIA API Key (for floor plan takeoff)'}</label><input id="set-nvi-key" type="password" value="${esc(db.meta?.nvidiaKey || '')}" placeholder="nvapi-..."></div>
         <button class="btn block" onclick="saveAIKey()"><i class="fas fa-check"></i> ${t('save')}</button>
       </div>`;
 
@@ -1577,6 +1708,18 @@
           <div class="muted" style="margin-bottom:10px">${lang === 'es' ? 'Código extra de 4 dígitos que se pedirá al entrar como dueño. Déjalo vacío para desactivar.' : '4-digit extra code asked at owner login. Leave blank to disable.'}</div>
           <div class="field"><label>${t('mfaOwner')}</label><input id="set-mfa" type="password" inputmode="numeric" maxlength="4" value="${esc(session.mfaPin || '')}" placeholder="••••"></div>
           <button class="btn block" onclick="saveMfa()"><i class="fas fa-check"></i> ${t('save')}</button>
+        </div>`;
+    }
+
+    if (session.role === 'owner' || session.role === 'office') {
+      html += `<div class="section-title"><i class="fas fa-envelope"></i> Email Integration (Gmail API)</div>
+        <div class="card" style="padding:14px">
+          <div class="muted" style="margin-bottom:10px">${lang === 'es' ? 'Ingresa tu Client ID de Google para activar la bandeja de entrada.' : 'Enter your Google Client ID to enable the real-time inbox.'}</div>
+          <div class="field"><label>Google Client ID</label><input id="set-gclient" type="password" value="${esc(db.meta?.googleClientId || '')}" placeholder="12345678-abcd.apps.googleusercontent.com"></div>
+          <div class="btnrow">
+            <button class="btn" onclick="saveGoogleClient()"><i class="fas fa-check"></i> ${t('save')}</button>
+            <button class="btn ghost" onclick="connectGmail()"><i class="fas fa-link"></i> ${t('connectEmail')}</button>
+          </div>
         </div>`;
     }
 
@@ -1602,6 +1745,36 @@
       <div class="muted" style="text-align:center;margin-top:18px">OTTO Plumbing CRM · v1 · ${db.customers.length} ${t('customers').toLowerCase()} · ${db.jobs.length} ${t('jobs').toLowerCase()}</div>`;
     $('#main').innerHTML = html;
   }
+  function openPTOForm() {
+    modal(`<h2>${t('timeOff')}</h2>
+      <div class="field"><label>${t('ptoDates')} (Start to End)</label><input type="date" id="pto-start" style="margin-bottom:8px"> <input type="date" id="pto-end"></div>
+      <div class="field"><label>${t('ptoReason')}</label><textarea id="pto-reason" placeholder="Vacation, sick..."></textarea></div>
+      <button class="btn block" onclick="savePTO()"><i class="fas fa-check"></i> ${t('save')}</button>
+    `);
+  }
+  function savePTO() {
+    const start = $('#pto-start').value;
+    const end = $('#pto-end').value || start;
+    const reason = $('#pto-reason').value.trim();
+    if (!start) return toast(t('ptoDates') + '?', 'error');
+    
+    const dates = [];
+    const d = new Date(start + 'T12:00:00');
+    const ed = new Date(end + 'T12:00:00');
+    while (d <= ed) {
+      dates.push(d.toISOString().slice(0, 10));
+      d.setDate(d.getDate() + 1);
+    }
+    
+    add('pto_requests', {
+      workerId: session.id,
+      startDate: start, endDate: end, dates,
+      reason, status: 'pending', readByWorker: true
+    });
+    
+    closeModal(); toast(t('saved'), 'success'); render();
+  }
+
   function toggleTheme() { const cur = document.documentElement.getAttribute('data-theme'); const n = cur === 'dark' ? 'light' : 'dark'; document.documentElement.setAttribute('data-theme', n); localStorage.setItem('otto_theme', n); render(); }
   function saveFirebase() { localStorage.setItem('otto_fb', JSON.stringify({ projectId: $('#fb-proj').value.trim(), apiKey: $('#fb-key').value.trim() })); toast(t('saved'), 'success'); }
   async function cloudPullNow() { toast('…'); const ok = await cloudPull(); toast(ok ? t('saved') : t('readFailed'), ok ? 'success' : 'error'); if (ok) render(); }
@@ -2093,26 +2266,33 @@ Rules: Never invent precise counts you cannot support from the data — instead 
   /* ==================== PAYROLL intake (Excel / CSV) ==================== */
   // Import an Excel or CSV payroll file once; every row becomes a structured,
   // searchable payroll record — no re-keying into a spreadsheet.
+  function getEmpName(p) {
+    const u = p.employeeId ? get('users', p.employeeId) : null;
+    return u ? (lang === 'es' && u.name_es ? u.name_es : (u.name_en || u.name)) : (p.employee || '—');
+  }
   function viewPayroll() {
     const q = _search['pay2'] || '';
     const list = db.payroll.filter(p => matches(p, q));
     const total = list.reduce((s, p) => s + (p.gross || 0), 0);
+    const totalHours = list.reduce((s, p) => s + (p.hours || 0), 0);
     let html = pageHead(t('payroll'), '') + searchBox('pay2');
     html += `<div class="btnrow"><button class="btn green block" onclick="importPayroll()"><i class="fas fa-file-import"></i> ${t('importPayroll')}</button></div>`;
     html += `<div class="muted" style="margin:8px 0;font-size:13px"><i class="fas fa-file-excel"></i> ${t('importExcelHint')}</div>`;
-    if (list.length) html += `<div class="card" style="padding:14px;margin-bottom:10px">${kv(t('totalGross'), '<b>' + money(total) + '</b>')}
+    if (list.length) html += `<div class="card" style="padding:14px;margin-bottom:10px">${kv('Total Hours', '<b>' + totalHours + '</b>')}${kv(t('totalGross'), '<b>' + money(total) + '</b>')}
       <div class="btnrow" style="margin-top:8px"><button class="btn ghost sm" onclick="exportCSV('payroll')"><i class="fas fa-file-export"></i> CSV</button><button class="btn ghost sm" onclick="summarizePayrollAll()"><i class="fas fa-robot"></i> ${t('summarize')}</button></div></div>`;
     html += `<div class="card">${list.length ? list.map(payrollRow).join('') : emptyState()}</div>`;
     $('#main').innerHTML = html; bindSearch('pay2');
   }
   function payrollRow(p) {
-    return `<div class="list-item" onclick="openPayroll('${p.id}')"><div class="avatar" style="background:${colorFor(p.employee)}">${initials(p.employee)}</div>
-      <div class="li-main"><div class="li-title">${esc(p.employee || '—')}</div><div class="li-sub">${p.period ? esc(p.period) + ' · ' : ''}${p.hours || 0} ${t('hours')}</div></div>
+    const name = getEmpName(p);
+    return `<div class="list-item" onclick="openPayroll('${p.id}')"><div class="avatar" style="background:${colorFor(name)}">${initials(name)}</div>
+      <div class="li-main"><div class="li-title">${esc(name)}</div><div class="li-sub">${p.period ? esc(p.period) + ' · ' : ''}${p.hours || 0} ${t('hours')}</div></div>
       <div class="li-right">${money(p.gross)}</div></div>`;
   }
   function openPayroll(id) {
     const p = get('payroll', id);
-    modal(`<h2>${esc(p.employee || '—')}</h2>
+    const name = getEmpName(p);
+    modal(`<h2>${esc(name)}</h2>
       <div class="card" style="padding:14px">${kv(t('period'), esc(p.period || '—'))}${kv(t('hours'), String(p.hours || 0))}${kv(t('rate'), p.rate ? money(p.rate) : '—')}${kv(t('gross'), money(p.gross))}${p.net ? kv(t('net'), money(p.net)) : ''}</div>
       ${p.raw ? `<div class="card" style="padding:12px;margin-top:10px"><div class="muted">${lang === 'es' ? 'Datos originales' : 'Original data'}</div>${Object.entries(p.raw).map(([k, v]) => kv(esc(k), esc(String(v == null ? '' : v)))).join('')}</div>` : ''}
       <button class="btn red block" style="margin-top:10px" onclick="confirmDel(()=>{remove('payroll','${id}');closeModal();render()})"><i class="fas fa-trash"></i> ${t('delete')}</button>`);
@@ -2314,49 +2494,215 @@ Rules: Never invent precise counts you cannot support from the data — instead 
   /* ---- work-only GPS: check-in / check-out ---- */
   function geoDist(a1, o1, a2, o2) { const R = 6371000, toR = x => x * Math.PI / 180; const dLat = toR(a2 - a1), dLon = toR(o2 - o1); const s = Math.sin(dLat / 2) ** 2 + Math.cos(toR(a1)) * Math.cos(toR(a2)) * Math.sin(dLon / 2) ** 2; return 2 * R * Math.asin(Math.sqrt(s)); }
   function getPos() { return new Promise((res, rej) => { if (!navigator.geolocation) return rej(new Error('no gps')); navigator.geolocation.getCurrentPosition(p => res(p), e => rej(e), { enableHighAccuracy: true, timeout: 10000 }); }); }
+
+  async function logGps(event, jobId = null, locationLabel = null) {
+    if (!session) return;
+    let lat = null, lng = null;
+    try {
+      const p = await getPos(); lat = p.coords.latitude; lng = p.coords.longitude;
+    } catch (e) {
+      if (event === 'sample') return;
+      locationLabel = 'GPS Unavailable';
+    }
+    const log = { id: uid(), workerId: session.id, jobId, event, lat, lng, timestamp: nowISO(), locationLabel };
+    await idbPut('gps_logs', log.id, log);
+    if (!lat && event !== 'sample') {
+      raiseAlert('off-site', 'user', session.id, `${session.name}: GPS unavailable at ${nowISO()}`);
+    }
+  }
+
+  let _gpsInterval = null;
+  function startGpsTracking() {
+    clearInterval(_gpsInterval);
+    _gpsInterval = setInterval(() => {
+      if (!session) return;
+      const activeJob = db.jobs.find(j => j.activeCheckIn && get('job_events', j.activeCheckIn)?.userId === session.id);
+      if (activeJob) logGps('sample', activeJob.id);
+    }, 5 * 60 * 1000);
+  }
+
+  /* ---- GPS Clustering & Payroll Time ---- */
+  let _geocache = {};
+  async function reverseGeocode(lat, lng) {
+    const key = `${lat.toFixed(4)},${lng.toFixed(4)}`;
+    if (_geocache[key]) return _geocache[key];
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
+      if (!res.ok) return 'Unknown Location';
+      const data = await res.json();
+      const addr = data.address;
+      const label = addr ? (addr.house_number ? `${addr.house_number} ` : '') + (addr.road || addr.suburb || data.display_name.split(',')[0]) : 'Unknown Location';
+      _geocache[key] = label;
+      return label;
+    } catch(e) { return 'Unknown Location'; }
+  }
+
+  function clusterGpsLogs(logs) {
+    if (!logs || !logs.length) return [];
+    logs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+    const clusters = [];
+    let current = null;
+    for (const log of logs) {
+      if (!log.lat) continue;
+      if (!current) {
+        current = { start: log.timestamp, end: log.timestamp, lat: log.lat, lng: log.lng, logs: [log], locationLabel: log.locationLabel };
+      } else {
+        const dist = geoDist(current.lat, current.lng, log.lat, log.lng);
+        if (dist <= 60) {
+          current.end = log.timestamp;
+          current.logs.push(log);
+        } else {
+          clusters.push(current);
+          current = { start: log.timestamp, end: log.timestamp, lat: log.lat, lng: log.lng, logs: [log], locationLabel: log.locationLabel };
+        }
+      }
+    }
+    if (current) clusters.push(current);
+    for (const c of clusters) { c.hours = (new Date(c.end) - new Date(c.start)) / 3.6e6; }
+    return clusters;
+  }
+
+  let _workerWeeklyHours = {};
+  async function calcAllWeeklyHours() {
+    try {
+      const allLogs = await idbGetAll('gps_logs');
+      if (!allLogs || !allLogs.length) return;
+      const d = new Date();
+      const day = d.getDay();
+      const diff = d.getDate() - day;
+      const startOfWeek = new Date(d.setDate(diff));
+      startOfWeek.setHours(0,0,0,0);
+      const weekLogs = allLogs.filter(l => new Date(l.timestamp) >= startOfWeek);
+      
+      const byWorker = {};
+      for (const l of weekLogs) {
+        if (!byWorker[l.workerId]) byWorker[l.workerId] = [];
+        byWorker[l.workerId].push(l);
+      }
+      for (const wId in byWorker) {
+        const clusters = clusterGpsLogs(byWorker[wId]);
+        _workerWeeklyHours[wId] = clusters.reduce((s, c) => s + c.hours, 0);
+      }
+    } catch(e) {}
+  }
+
+  function acknowledgeOT(jobId) {
+    update('jobs', jobId, { otAcknowledgedAt: nowISO() });
+    render();
+  }
+
   function workerActionsHTML(j) {
     const onSite = !!j.activeCheckIn;
     const ci = onSite ? get('job_events', j.activeCheckIn) : null;
+    
+    let actionBtn = '';
+    if (onSite) {
+      actionBtn = `<button class="btn red block" onclick="startCheckOutFlow('${j.id}')"><i class="fas fa-right-from-bracket"></i> ${t('submitAndClose')}</button>`;
+    } else {
+      const isOT = j.isOT || (j.assignedTo && (_workerWeeklyHours[j.assignedTo] || 0) > 40);
+      if (isOT && !j.otAcknowledgedAt && session.role === 'field') {
+        actionBtn = `<button class="btn red block" onclick="acknowledgeOT('${j.id}')"><i class="fas fa-triangle-exclamation"></i> ${t('ackOT')}</button>`;
+      } else {
+        actionBtn = `<button class="btn green block" onclick="startCheckInFlow('${j.id}')"><i class="fas fa-right-to-bracket"></i> ${t('startJob')}</button>`;
+      }
+    }
+    
     return `<div class="card" style="padding:12px;margin-top:10px">
       ${onSite ? `<div class="muted" style="margin-bottom:8px"><span class="pill green">${t('onSiteNow')}</span> ${ci ? timeAgo(ci.ts) : ''}</div>` : ''}
-      <div class="btnrow">
-        ${onSite
-          ? `<button class="btn red block" onclick="checkOut('${j.id}')"><i class="fas fa-right-from-bracket"></i> ${t('checkOut')}</button>`
-          : `<button class="btn green block" onclick="checkIn('${j.id}')"><i class="fas fa-right-to-bracket"></i> ${t('checkIn')}</button>`}
-      </div>
+      <div class="btnrow">${actionBtn}</div>
       <button class="btn ghost sm" style="margin-top:8px" onclick="setJobSite('${j.id}')"><i class="fas fa-map-pin"></i> ${t('setSite')}${j.siteLat != null ? ' ✓' : ''}</button>
     </div>`;
   }
-  async function checkIn(jobId) {
+
+  function handleFlowPhoto(e, jobId, phase, cb) {
+    const f = e.target.files[0]; if (!f) return;
+    storeFile(f).then(id => {
+      add('photos', { jobId, phase, fileId: id, createdBy: session.id, caption: phase === 'before' ? t('beforePhoto') : t('afterPhoto') });
+      cb();
+    });
+  }
+
+  function startCheckInFlow(jobId) {
+    const j = get('jobs', jobId);
+    modal(`<h2>${t('startJob')}</h2>
+      <p style="margin:14px 0">${lang === 'es' ? 'Por favor confirma que estás listo para empezar este trabajo.' : 'Please confirm you are ready to start this job.'}</p>
+      <div class="btnrow" style="margin-bottom:16px;">
+        <button class="btn green block" onclick="doCheckIn('${jobId}')"><i class="fas fa-check"></i> ${t('acknowledge')}</button>
+      </div>
+      <div style="text-align:center;">
+        <label class="btn amber sm" style="cursor:pointer; width:100%">
+          <i class="fas fa-camera"></i> ${t('beforePhoto')}
+          <input type="file" accept="image/*" capture="environment" class="hidden" onchange="handleFlowPhoto(event, '${jobId}', 'before', () => doCheckIn('${jobId}'))">
+        </label>
+      </div>
+    `);
+  }
+
+  async function doCheckIn(jobId) {
+    closeModal();
     const j = get('jobs', jobId); if (!j) return;
     toast(lang === 'es' ? 'Obteniendo ubicación…' : 'Getting location…');
     let lat = null, lng = null, offSite = false;
-    try { const p = await getPos(); lat = p.coords.latitude; lng = p.coords.longitude; } catch (e) { /* GPS off/denied: still record the event */ }
+    try { const p = await getPos(); lat = p.coords.latitude; lng = p.coords.longitude; } catch (e) { }
     if (lat != null) add('locations', { userId: session.id, lat, lng, jobId, ts: nowISO(), kind: 'check_in' });
     if (lat != null && j.siteLat != null) offSite = geoDist(lat, lng, j.siteLat, j.siteLng) > OFFSITE_M;
     const ev = add('job_events', { type: 'check_in', jobId, userId: session.id, lat, lng, offSite, ts: nowISO() });
     update('jobs', jobId, { activeCheckIn: ev.id, status: j.status === 'scheduled' ? 'inProgress' : j.status });
     audit('job.check_in', 'job', jobId, { offSite });
     if (offSite) raiseAlert('off-site', 'job', jobId, `${session.name}: ${t('offSite')} — ${j.title}`);
+    logGps('job_checkin', jobId);
     toast(t('checkedInAt'), 'success'); render();
   }
-  async function checkOut(jobId) {
+
+  function startCheckOutFlow(jobId) {
+    const cl = ensureChecklist(jobId);
+    if (!cl.items.every(i => i.done)) {
+      return toast(t('incompleteChecklist'), 'error');
+    }
+    modal(`<h2>${t('submitAndClose')}</h2>
+      <p style="margin:14px 0">${t('checklistDone')} ✅</p>
+      <div style="margin-bottom:16px; text-align:center;">
+        <label class="btn amber sm" style="cursor:pointer; width:100%">
+          <i class="fas fa-camera"></i> ${t('afterPhoto')}
+          <input type="file" accept="image/*" capture="environment" class="hidden" onchange="handleFlowPhoto(event, '${jobId}', 'after', () => {})">
+        </label>
+      </div>
+      <div class="btnrow">
+        <button class="btn red block" onclick="doCheckOut('${jobId}')"><i class="fas fa-right-from-bracket"></i> ${t('submitAndClose')}</button>
+      </div>
+    `);
+  }
+
+  async function doCheckOut(jobId) {
+    closeModal();
     const j = get('jobs', jobId); if (!j) return;
     let lat = null, lng = null;
     try { const p = await getPos(); lat = p.coords.latitude; lng = p.coords.longitude; } catch (e) { }
     if (lat != null) add('locations', { userId: session.id, lat, lng, jobId, ts: nowISO(), kind: 'check_out' });
     add('job_events', { type: 'check_out', jobId, userId: session.id, lat, lng, ts: nowISO() });
     const ci = db.job_events.filter(e => e.jobId === jobId && e.type === 'check_in').sort((a, b) => new Date(b.ts) - new Date(a.ts))[0];
+    const co = db.job_events.filter(e => e.jobId === jobId && e.type === 'check_out').sort((a, b) => new Date(b.ts) - new Date(a.ts))[0];
     let late = new Date().getHours() >= LATE_HOUR;
     if (ci) { const hrs = (Date.now() - new Date(ci.ts)) / 3.6e6; if (hrs > LONG_SHIFT_H) late = true; }
     update('jobs', jobId, { activeCheckIn: null });
     audit('job.check_out', 'job', jobId, { late });
+    logGps('job_checkout', jobId);
+    await calcAllWeeklyHours();
+    
+    const cl = ensureChecklist(jobId);
+    add('checklist_submissions', {
+      jobId, workerId: session.id,
+      items: cl.items.map(i => ({ label: i.en, done: i.done, note: i.note })),
+      checkinTime: ci ? ci.ts : null, checkoutTime: co ? co.ts : null,
+      escalated: cl.items.some(i => !!i.note)
+    });
+
     const photos = db.photos.filter(p => p.jobId === jobId);
     if (!photos.some(p => p.phase === 'before') || !photos.some(p => p.phase === 'after')) raiseAlert('missing-photo', 'job', jobId, `${j.title}: ${t('missingPhoto')}`);
-    if (!checklistComplete(jobId)) raiseAlert('missing-checklist', 'job', jobId, `${j.title}: ${t('missingChecklist')}`);
     if (late) raiseAlert('late-checkout', 'job', jobId, `${session.name}: ${t('lateCheckout')} — ${j.title}`);
     toast(t('checkOut'), 'success'); render();
   }
+
   async function setJobSite(jobId) {
     try { const p = await getPos(); update('jobs', jobId, { siteLat: p.coords.latitude, siteLng: p.coords.longitude }); audit('job.set_site', 'job', jobId); toast(t('siteSet'), 'success'); render(); }
     catch (e) { toast(lang === 'es' ? 'No se pudo obtener ubicación' : 'Could not get location', 'error'); }
@@ -2371,17 +2717,35 @@ Rules: Never invent precise counts you cannot support from the data — instead 
   ];
   function ensureChecklist(jobId) {
     let cl = db.job_checklists.find(c => c.jobId === jobId);
-    if (!cl) cl = add('job_checklists', { jobId, items: CHECKLIST_TEMPLATE.map(i => ({ key: i.key, en: i.en, es: i.es, done: false })) });
+    if (!cl) cl = add('job_checklists', { jobId, items: CHECKLIST_TEMPLATE.map(i => ({ key: i.key, en: i.en, es: i.es, done: false, note: '' })) });
     return cl;
   }
   function toggleChecklistItem(jobId, key) { const cl = ensureChecklist(jobId); const it = cl.items.find(i => i.key === key); if (it) { it.done = !it.done; cl.updated = nowISO(); save(); audit('checklist.toggle', 'job', jobId, { key, done: it.done }); render(); } }
-  function checklistComplete(jobId) { const cl = db.job_checklists.find(c => c.jobId === jobId); return !!cl && cl.items.length > 0 && cl.items.every(i => i.done); }
+  function promptChecklistNote(jobId, key) {
+    const cl = ensureChecklist(jobId); const it = cl.items.find(i => i.key === key); if (!it) return;
+    modal(`<h2>${t('cantComplete')}</h2><p style="margin-bottom:12px">${lang==='es'?it.es:it.en}</p>
+      <div class="field"><label>${t('addNoteToContinue')}</label><textarea id="cl-note">${esc(it.note||'')}</textarea></div>
+      <button class="btn block" onclick="saveChecklistNote('${jobId}','${key}')">${t('save')}</button>`);
+  }
+  function saveChecklistNote(jobId, key) {
+    const note = $('#cl-note').value.trim(); if (!note) return toast(t('addNoteToContinue'), 'error');
+    const cl = ensureChecklist(jobId); const it = cl.items.find(i => i.key === key); 
+    if (it) { it.note = note; it.done = true; cl.updated = nowISO(); save(); raiseAlert('checklist-note', 'job', jobId, `Checklist item exception: ${note}`); }
+    closeModal(); render();
+  }
   function checklistCardHTML(jobId) {
     const cl = ensureChecklist(jobId); const doneN = cl.items.filter(i => i.done).length;
     return `<div class="section-title">${t('checklist')} (${doneN}/${cl.items.length})${doneN === cl.items.length ? ' ✅' : ''}</div>
-      <div class="card" style="padding:6px 0">${cl.items.map(i => `<div class="list-item" onclick="toggleChecklistItem('${jobId}','${i.key}')">
-        <div class="avatar" style="background:${i.done ? 'var(--green)' : 'var(--gray)'}"><i class="fas ${i.done ? 'fa-check' : 'fa-square'}"></i></div>
-        <div class="li-main"><div class="li-title">${esc(lang === 'es' ? i.es : i.en)}</div></div></div>`).join('')}</div>`;
+      <div class="card" style="padding:6px 0">${cl.items.map(i => `<div class="list-item">
+        <div class="avatar" style="background:${i.done ? (i.note ? 'var(--amber)' : 'var(--green)') : 'var(--gray)'}" onclick="toggleChecklistItem('${jobId}','${i.key}')">
+          <i class="fas ${i.done ? (i.note ? 'fa-triangle-exclamation' : 'fa-check') : 'fa-square'}"></i>
+        </div>
+        <div class="li-main" onclick="toggleChecklistItem('${jobId}','${i.key}')">
+          <div class="li-title">${esc(lang === 'es' ? i.es : i.en)}</div>
+          ${i.note ? `<div class="li-sub" style="color:var(--amber)">${esc(i.note)}</div>` : ''}
+        </div>
+        <button class="btn ghost sm" style="padding:0 8px; min-height:30px" onclick="promptChecklistNote('${jobId}','${i.key}')">${t('cantComplete')}</button>
+      </div>`).join('')}</div>`;
   }
 
   /* ---- exceptions, hub, daily summary ---- */
@@ -2402,6 +2766,8 @@ Rules: Never invent precise counts you cannot support from the data — instead 
       ['fa-person-digging', 'var(--green)', t('onSite'), onsite.length, "nav('map')"],
       ['fa-triangle-exclamation', exTotal ? 'var(--red)' : 'var(--blue2)', t('exceptions'), exTotal, "nav('alerts')"],
       ['fa-circle-check', 'var(--accent)', t('readyToClose'), ready.length, 'showReadyToClose()'],
+      ['fa-chart-pie', 'var(--blue2)', t('teamKpis'), '', "nav('kpis')"],
+      ['fa-map-location-dot', 'var(--amber)', lang === 'es' ? 'GPS' : 'GPS Logs', '', "nav('gps')"],
     ];
     let html = pageHead('OTTO', fmtDate(todayISO()));
     html += `<div class="tiles">${tiles.map(x => `<div class="tile" onclick="${x[4]}"><div class="ic" style="background:${x[1]}"><i class="fas ${x[0]}"></i></div><div class="lbl">${esc(x[2])}</div><div class="cnt">${x[3]}</div></div>`).join('')}</div>`;
@@ -2413,6 +2779,59 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     const workers = db.users.filter(u => u.role === 'field');
     html += `<div class="section-title">${t('consentStatus')}</div><div class="card">${workers.length ? workers.map(u => `<div class="list-item"><div class="avatar" style="background:${colorFor(u.name)}">${initials(u.name)}</div><div class="li-main"><div class="li-title">${esc(u.name)}</div></div><div class="li-right">${hasConsent(u.id) ? `<span class="pill green">${t('iAgree')}</span>` : `<span class="pill amber">—</span>`}</div></div>`).join('') : emptyState()}</div>`;
     html += `<div class="btnrow" style="margin-top:12px"><button class="btn ghost" onclick="nav('audit')"><i class="fas fa-clipboard-list"></i> ${t('auditTrail')}</button><button class="btn ghost" onclick="nav('backups')"><i class="fas fa-database"></i> ${t('backups')}</button></div>`;
+    $('#main').innerHTML = html;
+  }
+
+  /* ============================ GPS LOGS (Owner View) ============================ */
+  async function viewGpsLogs() {
+    const d = _search['gpsdate'] || todayISO();
+    const wId = _search['gpsworker'] || '';
+    
+    let html = pageHead(lang === 'es' ? 'Registros GPS' : 'GPS Logs', '');
+    const workers = db.users.filter(u => u.role === 'field');
+    const workerOpts = `<option value="">${t('all')}</option>` + workers.map(u => `<option value="${u.id}" ${wId === u.id ? 'selected' : ''}>${esc(u.name)}</option>`).join('');
+    
+    html += `<div class="card" style="padding:12px;margin-bottom:12px;display:flex;gap:8px">
+      <input type="date" id="q-gpsdate" class="input" value="${d}" style="flex:1" onchange="setSearch('gpsdate', this.value)">
+      <select id="q-gpsworker" class="input" style="flex:1" onchange="setSearch('gpsworker', this.value)">${workerOpts}</select>
+    </div>`;
+
+    let logs = [];
+    if (wId && d) {
+      const allLogs = await idbGetAll('gps_logs');
+      logs = allLogs.filter(l => l.workerId === wId && l.timestamp.slice(0, 10) === d);
+    }
+    
+    if (!wId) {
+      html += emptyState(lang === 'es' ? 'Selecciona un trabajador para ver sus registros.' : 'Select a worker to view their logs.');
+    } else if (!logs.length) {
+      html += emptyState(lang === 'es' ? 'No hay registros GPS para este día.' : 'No GPS logs for this day.');
+    } else {
+      const clusters = clusterGpsLogs(logs);
+      html += `<div class="card">`;
+      for (const c of clusters) {
+        const timeStr = `${c.start.slice(11, 16)} - ${c.end.slice(11, 16)} (${c.hours.toFixed(1)}h)`;
+        const evTypes = [...new Set(c.logs.map(l => l.event))].join(', ');
+        
+        const id = 'addr_' + c.start.replace(/\D/g, '');
+        if (c.lat) {
+          reverseGeocode(c.lat, c.lng).then(addr => {
+            const el = document.getElementById(id);
+            if (el) el.innerText = addr;
+          });
+        }
+        
+        html += `<div class="list-item" style="flex-direction:column;align-items:flex-start">
+          <div style="font-weight:bold;margin-bottom:4px">${timeStr}</div>
+          <div style="color:var(--text);font-size:14px;margin-bottom:4px">
+            <i class="fas fa-location-dot" style="color:var(--pri)"></i> <span id="${id}">${c.locationLabel || (c.lat ? 'Loading address...' : 'Unknown')}</span>
+          </div>
+          <div class="muted">Events: ${evTypes}</div>
+        </div>`;
+      }
+      html += `</div>`;
+    }
+
     $('#main').innerHTML = html;
   }
   function showReadyToClose() {
@@ -2657,13 +3076,47 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     setLang(lang);
     // First-login consent for field workers (Spanish-first work-app permission).
     if (session.role === 'field' && !hasConsent(session.id)) { showConsent(); return; }
+
+    if (session.role === 'field' && !session.gpsAcknowledged) {
+      showGpsOnboarding();
+      return;
+    }
+
+    startGpsTracking();
+    logGps('app_open');
+    window.addEventListener('pagehide', () => logGps('app_close'));
+
     nav('home');
     // Owner/office: refresh today's summary and run scheduled backups/restore tests.
     if (session.role === 'owner' || session.role === 'office') { try { generateDailySummary(); } catch (e) { } maybeAutoBackup(); }
   }
+
+  function showGpsOnboarding() {
+    const msgEn = "OTTO requires GPS access to track job site hours. Tap Allow to continue.";
+    const msgEs = "OTTO requiere acceso al GPS para registrar las horas de trabajo. Toca Permitir para continuar.";
+    $('#main').innerHTML = `
+      <div style="padding:40px 20px;text-align:center;max-width:400px;margin:0 auto">
+        <h2><i class="fas fa-location-dot" style="font-size:40px;color:var(--pri)"></i></h2>
+        <p style="margin:20px 0;font-size:16px">${lang === 'es' ? msgEs : msgEn}</p>
+        <button class="btn green block" onclick="acceptGps()"><i class="fas fa-check"></i> ${lang === 'es' ? 'Permitir' : 'Allow'}</button>
+      </div>`;
+  }
+  
+  async function acceptGps() {
+    try {
+      await getPos();
+      update('users', session.id, { gpsAcknowledged: true });
+      session.gpsAcknowledged = true;
+      startApp();
+    } catch(e) {
+      toast(lang === 'es' ? 'GPS es obligatorio' : 'GPS is required', 'error');
+      logGps('gps_unavailable');
+    }
+  }
   async function boot() {
     document.documentElement.setAttribute('data-theme', localStorage.getItem('otto_theme') || 'light');
     await load();
+    await calcAllWeeklyHours();
     // Try cloud pull on boot if configured (best-effort).
     if (fbConfig()) { try { await cloudPull(); } catch (e) { } }
     const sid = localStorage.getItem('otto_session');
@@ -2672,9 +3125,479 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     if ('serviceWorker' in navigator) { try { navigator.serviceWorker.register('./sw.js'); } catch (e) { } }
   }
   function setSearch(key, val) { _search[key] = val; render(); }
-  function saveAIKey() { localStorage.setItem('otto_ai_key', ($('#set-aikey').value || '').trim()); toast(t('saved'), 'success'); }
+  function saveAIKey() { 
+    localStorage.setItem('otto_ai_key', ($('#set-aikey').value || '').trim()); 
+    db.meta.nvidiaKey = ($('#set-nvi-key').value || '').trim();
+    save();
+    toast(t('saved'), 'success'); 
+  }
   function saveMfa() { const v = ($('#set-mfa').value || '').trim(); const ok = /^\d{4}$/.test(v) || v === ''; if (!ok) return toast(lang === 'es' ? '4 dígitos' : '4 digits', 'error'); update('users', session.id, { mfaPin: v }); session.mfaPin = v; audit('security.mfa_set', 'user', session.id, { enabled: !!v }); toast(t('saved'), 'success'); }
   // expose functions used in inline handlers
+  /* ============================ OWNER KPI DASHBOARD ============================ */
+  let kpiMode = 'summary'; // 'summary' or 'aggregate'
+
+  function seedMockKPIs() {
+    if (!db.time_off.length) {
+      const fieldWorkers = db.users.filter(u => u.role === 'field');
+      if (fieldWorkers.length > 0) {
+        add('time_off', { workerId: fieldWorkers[0].id, startDate: todayISO(), endDate: todayISO(), reason: 'Sick day', status: 'pending' });
+        add('login_history', { userId: fieldWorkers[0].id, ts: nowISO() });
+      }
+    }
+  }
+
+  function viewKpis() {
+    let html = pageHead(t('teamKpis'), t('metrics'), "nav('hub')");
+    
+    // Check for pending PTO requests
+    const pendingPTO = db.time_off.filter(p => p.status === 'pending');
+    if (pendingPTO.length > 0) {
+      html += pendingPTO.map(p => {
+        const u = get('users', p.workerId) || {};
+        const isConflict = db.jobs.some(j => j.assignedTo === p.workerId && j.scheduledDate && j.scheduledDate >= p.startDate && j.scheduledDate <= p.endDate);
+        const warn = isConflict ? `<div class="muted" style="color:var(--amber);margin-bottom:8px;"><i class="fas fa-triangle-exclamation"></i> ⚠ ${esc(u.name)} ${t('conflictWarning')} ${fmtDate(p.startDate)}. ${t('approveAnyway')}</div>` : '';
+        return `<div class="card" style="padding:16px; margin-bottom:12px; border-left:4px solid var(--amber);">
+          <div style="font-weight:700; margin-bottom:4px;">${esc(u.name)} ${t('ptoRequests')} ${fmtDate(p.startDate)} - ${fmtDate(p.endDate)}</div>
+          ${warn}
+          <div class="btnrow" style="margin-top:8px;">
+            <button class="btn green sm" onclick="approvePTO('${p.id}')">${t('approve')}</button>
+            <button class="btn red sm" onclick="denyPTO('${p.id}')">${t('deny')}</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    // Toggle switch
+    html += `<div class="tabs" style="margin-bottom:16px;">
+      <button class="${kpiMode === 'summary' ? 'on' : ''}" onclick="kpiMode='summary'; render()">${t('teamSummary')}</button>
+      <button class="${kpiMode === 'aggregate' ? 'on' : ''}" onclick="kpiMode='aggregate'; render()">${t('aggregateView')}</button>
+    </div>`;
+
+    if (kpiMode === 'summary') {
+      const workers = db.users.filter(u => u.role === 'field');
+      html += `<div class="tiles" style="grid-template-columns:1fr; gap:12px;">`;
+      workers.forEach(w => {
+        const checkins = db.job_events.filter(e => e.workerId === w.id && e.type === 'check_in');
+        const jobsDone = db.jobs.filter(j => j.assignedTo === w.id && j.status === 'completed').length;
+        const escalations = db.ai_escalations.filter(e => e.workerId === w.id).length;
+        const locations = new Set(checkins.map(e => e.jobId)).size;
+        
+        const approvedPTO = db.time_off.find(p => p.workerId === w.id && p.status === 'approved' && p.endDate >= todayISO());
+        const pendingCount = db.time_off.filter(p => p.workerId === w.id && p.status === 'pending').length;
+        let ptoStr = t('noPtoPending');
+        if (approvedPTO) ptoStr = `${t('approvedThrough')} ${fmtDate(approvedPTO.endDate)}`;
+        else if (pendingCount) ptoStr = `[${pendingCount}] ${t('pendingCount')}`;
+
+        html += `<div class="card" style="padding:16px;">
+          <div style="display:flex; gap:12px; align-items:center; margin-bottom:12px;">
+            <div class="avatar" style="background:${colorFor(w.name)}">${initials(w.name)}</div>
+            <div style="flex:1;">
+              <div style="font-weight:800; font-size:18px;">${esc(w.name)}</div>
+              <div class="muted">${t('ptoStatus')}: ${ptoStr}</div>
+            </div>
+            <button class="btn ghost sm" onclick="nav('worker_profile', '${w.id}')">${t('viewFullProfile')}</button>
+          </div>
+          <div class="row2">
+            <div style="background:var(--bg); padding:10px; border-radius:8px; text-align:center;">
+              <div style="font-size:20px; font-weight:800;">${checkins.length * 2}</div>
+              <div class="muted" style="font-size:12px;">${t('hoursWorked')}</div>
+            </div>
+            <div style="background:var(--bg); padding:10px; border-radius:8px; text-align:center;">
+              <div style="font-size:20px; font-weight:800;">${jobsDone}</div>
+              <div class="muted" style="font-size:12px;">${t('jobsDone')}</div>
+            </div>
+            <div style="background:var(--bg); padding:10px; border-radius:8px; text-align:center;">
+              <div style="font-size:20px; font-weight:800;">${escalations}</div>
+              <div class="muted" style="font-size:12px;">${t('escalations')}</div>
+            </div>
+            <div style="background:var(--bg); padding:10px; border-radius:8px; text-align:center;">
+              <div style="font-size:20px; font-weight:800;">${locations}</div>
+              <div class="muted" style="font-size:12px;">${t('locationsVisited')}</div>
+            </div>
+          </div>
+        </div>`;
+      });
+      html += `</div>`;
+    } else {
+      // Aggregate view (Charts)
+      html += `<div style="display:flex; flex-direction:column; gap:20px; padding-bottom:30px;">
+        <div class="card" style="padding:12px;"><div class="section-title" style="margin-top:0">${t('totalTeamHours')}</div><canvas id="chart1" height="200"></canvas></div>
+        <div class="card" style="padding:12px;"><div class="section-title" style="margin-top:0">${t('jobsCompletedVsAssigned')}</div><canvas id="chart2" height="200"></canvas></div>
+        <div class="card" style="padding:12px;"><div class="section-title" style="margin-top:0">${t('escalationRate')}</div><canvas id="chart3" height="200"></canvas></div>
+        <div class="card" style="padding:12px;"><div class="section-title" style="margin-top:0">${t('overtimeHours')}</div><canvas id="chart4" height="200"></canvas></div>
+      </div>`;
+      setTimeout(renderCharts, 100);
+    }
+    $('#main').innerHTML = html;
+  }
+
+  function approvePTO(id) { update('time_off', id, {status: 'approved'}); toast(t('ptoApproved'), 'success'); render(); }
+  function denyPTO(id) { update('time_off', id, {status: 'denied'}); toast(t('ptoDenied'), 'error'); render(); }
+
+  function renderCharts() {
+    if (!window.Chart) return;
+    const workers = db.users.filter(u => u.role === 'field');
+    const labels = workers.map(w => w.name);
+    
+    // Mock data based on workers
+    const completed = workers.map(() => Math.floor(Math.random() * 10) + 1);
+    const assigned = completed.map(c => c + Math.floor(Math.random() * 3));
+    const escalations = workers.map(() => Math.floor(Math.random() * 4));
+    const otHours = workers.map(() => Math.floor(Math.random() * 8));
+
+    new Chart($('#chart1'), {
+      type: 'line',
+      data: { labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'], datasets: [
+        { label: 'This Week', data: [32, 40, 38, 42, 35], borderColor: '#1e40af', backgroundColor: '#1e40af', tension: 0.3 },
+        { label: 'Last Week', data: [30, 38, 40, 39, 41], borderColor: '#93a1b5', backgroundColor: '#93a1b5', borderDash: [5, 5], tension: 0.3 }
+      ]},
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+
+    new Chart($('#chart2'), {
+      type: 'bar',
+      data: { labels, datasets: [
+        { label: 'Completed', data: completed, backgroundColor: '#1e40af' },
+        { label: 'Assigned', data: assigned, backgroundColor: '#0ea5e9' }
+      ]},
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+
+    new Chart($('#chart3'), {
+      type: 'bar',
+      data: { labels, datasets: [{ label: 'Escalations', data: escalations, backgroundColor: '#ef4444' }]},
+      options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y' }
+    });
+
+    new Chart($('#chart4'), {
+      type: 'bar',
+      data: { labels, datasets: [{ label: 'OT Hours', data: otHours, backgroundColor: '#3b82f6' }]},
+      options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }
+    });
+  }
+
+  function viewWorkerProfile() {
+    const w = get('users', route.id);
+    if (!w) return nav('kpis');
+    
+    let html = pageHead(w.name, t('workerProfile'), "nav('kpis')");
+    
+    // Calendar Heatmap
+    html += `<div class="section-title">${t('daysWorked')}</div><div class="card" style="padding:16px;">`;
+    html += `<div style="display:grid; grid-template-columns:repeat(7, 1fr); gap:4px;">`;
+    for(let i=0; i<28; i++) {
+      const h = Math.random() * 10;
+      const bg = h > 8 ? '#1e40af' : (h > 4 ? '#3b82f6' : (h > 0 ? '#dbeafe' : 'var(--bg)'));
+      html += `<div style="aspect-ratio:1; border-radius:4px; background:${bg};" title="${h.toFixed(1)}h"></div>`;
+    }
+    html += `</div></div>`;
+
+    // Job Timeline
+    const jobs = db.jobs.filter(j => j.assignedTo === w.id).slice(0, 5);
+    html += `<div class="section-title">${t('jobTimeline')}</div><div class="card">`;
+    if (!jobs.length) html += emptyState();
+    else html += jobs.map(j => `<div class="list-item"><div class="avatar" style="background:${colorFor(j.title)}"><i class="fas fa-wrench"></i></div><div class="li-main"><div class="li-title">${esc(j.title)}</div><div class="li-sub">${fmtDate(j.scheduledDate)}</div></div><div class="li-right">${statusPill(j.status)}</div></div>`).join('');
+    html += `</div>`;
+
+    // Location Log
+    const events = db.job_events.filter(e => e.workerId === w.id && (e.type==='check_in' || e.type==='check_out')).slice(0, 5);
+    html += `<div class="section-title">${t('locationLog')}</div><div class="card">`;
+    if (!events.length) html += emptyState();
+    else html += events.map(e => `<div class="list-item"><div class="avatar" style="background:var(--bg); color:var(--text);"><i class="fas fa-location-dot"></i></div><div class="li-main"><div class="li-title">${esc(jobTitle(e.jobId))}</div><div class="li-sub">${fmtDate(e.ts)} - ${t(e.type === 'check_in' ? 'arrival' : 'departure')}</div></div></div>`).join('');
+    html += `</div>`;
+
+    // PTO History
+    const ptos = db.time_off.filter(p => p.workerId === w.id);
+    html += `<div class="section-title">${t('ptoHistory')}</div><div class="card">`;
+    if (!ptos.length) html += emptyState();
+    else html += ptos.map(p => `<div class="list-item"><div class="li-main"><div class="li-title">${fmtDate(p.startDate)} - ${fmtDate(p.endDate)}</div><div class="li-sub">${esc(p.reason || 'Time off')}</div></div><div class="li-right">${p.status==='approved' ? '<span class="pill green">Approved</span>' : (p.status==='denied'?'<span class="pill red">Denied</span>':'<span class="pill amber">Pending</span>')}</div></div>`).join('');
+    html += `</div>`;
+    
+    // Login History
+    const logins = db.login_history.filter(l => l.userId === w.id).slice(0, 3);
+    html += `<div class="section-title">${t('loginHistory')}</div><div class="card">`;
+    if (!logins.length) html += emptyState();
+    else html += logins.map(l => `<div class="list-item"><div class="li-main"><div class="li-title">${fmtDate(l.ts)}</div><div class="li-sub">${t('firstOpen')}</div></div></div>`).join('');
+    html += `</div>`;
+
+    $('#main').innerHTML = html;
+  }
+
+  /* ============================ GMAIL INBOX & AI TAKEOFF ============================ */
+  let _gmailToken = null;
+  let _gmailTimer = null;
+
+  function saveGoogleClient() {
+    if (!db.meta) db.meta = {};
+    db.meta.googleClientId = ($('#set-gclient').value || '').trim();
+    save();
+    toast(t('saved'), 'success');
+  }
+
+  function connectGmail() {
+    if (!db.meta || !db.meta.googleClientId) return toast(lang==='es'?'Falta Client ID':'Missing Client ID', 'error');
+    const client = google.accounts.oauth2.initTokenClient({
+      client_id: db.meta.googleClientId,
+      scope: 'https://www.googleapis.com/auth/gmail.readonly',
+      callback: (response) => {
+        if (response.error) return toast('OAuth Error: ' + response.error, 'error');
+        _gmailToken = response.access_token;
+        toast(lang==='es'?'Conectado a Gmail':'Connected to Gmail', 'success');
+        fetchNewEmails();
+        if (_gmailTimer) clearInterval(_gmailTimer);
+        _gmailTimer = setInterval(fetchNewEmails, 60000); // Poll every 60 seconds
+      },
+    });
+    client.requestAccessToken();
+  }
+
+  async function fetchNewEmails() {
+    if (!_gmailToken) return;
+    try {
+      const histId = db.meta.gmailHistoryId;
+      // If historyId exists, we could use history API, but for simplicity in v1 we poll latest messages
+      // and skip those we already have in db.inbox_emails.
+      let url = 'https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults=10';
+      
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${_gmailToken}` } });
+      if (!res.ok) throw new Error('Gmail fetch failed');
+      const data = await res.json();
+      if (!data.messages) return;
+
+      let added = false;
+      for (const m of data.messages) {
+        if (db.inbox_emails.find(e => e.id === m.id)) continue;
+        const detailRes = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}`, { headers: { Authorization: `Bearer ${_gmailToken}` } });
+        const detail = await detailRes.json();
+        
+        let subject = '(no subject)', from = '', preview = detail.snippet;
+        const headers = detail.payload.headers;
+        headers.forEach(h => {
+          if (h.name.toLowerCase() === 'subject') subject = h.value;
+          if (h.name.toLowerCase() === 'from') from = h.value;
+        });
+
+        const attachments = [];
+        if (detail.payload.parts) {
+          for (const p of detail.payload.parts) {
+            if (p.filename && p.body && p.body.attachmentId) {
+              const attRes = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}/attachments/${p.body.attachmentId}`, { headers: { Authorization: `Bearer ${_gmailToken}` } });
+              const attData = await attRes.json();
+              attachments.push({
+                name: p.filename,
+                mimeType: p.mimeType,
+                data: attData.data.replace(/-/g, '+').replace(/_/g, '/') // base64url to standard base64
+              });
+            }
+          }
+        }
+
+        db.inbox_emails.push({
+          id: m.id, from, subject, preview,
+          receivedAt: new Date(parseInt(detail.internalDate)).toISOString(),
+          attachments,
+          aiTakeoffStatus: 'none',
+          read: false
+        });
+        added = true;
+      }
+      
+      db.meta.gmailHistoryId = data.resultSizeEstimate || Date.now();
+      save();
+      if (added && route.view === 'inbox') renderInbox();
+    } catch (e) { console.error('Gmail fetch error', e); }
+  }
+
+  function viewInbox() {
+    let html = pageHead(t('inbox'), `<button class="btn" onclick="fetchNewEmails()"><i class="fas fa-rotate"></i> ${t('inboxRefresh')}</button>`);
+    const list = [...db.inbox_emails].sort((a,b) => new Date(b.receivedAt) - new Date(a.receivedAt));
+    if (!list.length) {
+      html += `<div class="card" style="padding:20px;text-align:center"><div class="muted">${t('noInboxMessages')}</div></div>`;
+    } else {
+      html += `<div class="card" style="padding:10px">` + list.map((e, idx) => `
+        <div style="padding:12px; border-bottom:1px solid var(--line); ${e.read?'opacity:0.7':''}">
+          <div style="font-weight:600; font-size:14px; margin-bottom:4px;">${esc(e.from)}</div>
+          <div style="font-weight:700; font-size:16px; margin-bottom:4px; color:var(--blue)">${esc(e.subject)}</div>
+          <div class="muted" style="font-size:13px; margin-bottom:8px">${esc(e.preview)}</div>
+          <div style="font-size:11px; color:var(--text3); margin-bottom:8px">${new Date(e.receivedAt).toLocaleString()}</div>
+          ${e.attachments.map((a, i) => {
+            if (a.mimeType === 'application/pdf') {
+              return `<div style="background:var(--bg); border-radius:8px; padding:10px; margin-top:8px">
+                <div style="font-size:13px; font-weight:600; margin-bottom:8px"><i class="fas fa-file-pdf" style="color:var(--red)"></i> ${esc(a.name)}</div>
+                <div class="btnrow" style="margin:0">
+                  <button class="btn ghost small" onclick="previewPDF('${e.id}', ${i})"><i class="fas fa-eye"></i> ${t('preview')}</button>
+                  <button class="btn small" onclick="analyzePdfAI('${e.id}', ${i})"><i class="fas fa-robot"></i> ${t('analyzeAI')}</button>
+                </div>
+              </div>`;
+            } else {
+              return `<div style="font-size:12px; margin-top:4px; padding:8px"><i class="fas fa-paperclip"></i> ${esc(a.name)}</div>`;
+            }
+          }).join('')}
+        </div>
+      `).join('') + `</div>`;
+    }
+    $('#main').innerHTML = html;
+  }
+
+  function previewPDF(emailId, attIdx) {
+    const e = db.inbox_emails.find(x => x.id === emailId);
+    if (!e) return;
+    const att = e.attachments[attIdx];
+    
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `<div class="modal" style="width:100%; height:100%; max-width:none; max-height:none; border-radius:0; display:flex; flex-direction:column; padding:0;">
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:var(--blue); color:white">
+        <div style="font-weight:bold">${esc(att.name)}</div>
+        <div>
+          <button class="btn small" style="background:var(--accent); border:none;" onclick="analyzePdfAI('${e.id}', ${attIdx})"><i class="fas fa-robot"></i> ${t('analyzeAI')}</button>
+          <button class="btn ghost small" style="color:white; margin-left:8px; border:none;" onclick="this.closest('.modal-overlay').remove()"><i class="fas fa-xmark"></i></button>
+        </div>
+      </div>
+      <div id="pdf-viewer" style="flex:1; overflow:auto; background:#333; display:flex; flex-direction:column; align-items:center; padding:20px; gap:20px;"></div>
+    </div>`;
+    document.body.appendChild(overlay);
+
+    const pdfData = atob(att.data);
+    const pdfjsLib = window['pdfjs-dist/build/pdf'];
+    if (!pdfjsLib) return toast('PDF.js not loaded', 'error');
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    
+    const loadingTask = pdfjsLib.getDocument({data: pdfData});
+    loadingTask.promise.then(pdf => {
+      const viewer = document.getElementById('pdf-viewer');
+      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        pdf.getPage(pageNum).then(page => {
+          const viewport = page.getViewport({scale: 1.5});
+          const canvas = document.createElement('canvas');
+          const context = canvas.getContext('2d');
+          canvas.height = viewport.height;
+          canvas.width = viewport.width;
+          viewer.appendChild(canvas);
+          page.render({canvasContext: context, viewport: viewport});
+        });
+      }
+    });
+  }
+
+  async function analyzePdfAI(emailId, attIdx) {
+    const e = db.inbox_emails.find(x => x.id === emailId);
+    if (!e) return;
+    const att = e.attachments[attIdx];
+    const nviKey = db.meta.nvidiaKey;
+    if (!nviKey) return toast(lang==='es'?'Falta clave NVIDIA':'Missing NVIDIA Key', 'error');
+
+    toast(t('reading'), 'info');
+    document.querySelector('.modal-overlay')?.remove();
+
+    try {
+      const pdfData = atob(att.data);
+      const pdfjsLib = window['pdfjs-dist/build/pdf'];
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      
+      const pdf = await pdfjsLib.getDocument({data: pdfData}).promise;
+      const page = await pdf.getPage(1);
+      const viewport = page.getViewport({scale: 1.5});
+      const canvas = document.createElement('canvas');
+      canvas.height = viewport.height; canvas.width = viewport.width;
+      await page.render({canvasContext: canvas.getContext('2d'), viewport}).promise;
+      const imgB64 = canvas.toDataURL('image/jpeg').split(',')[1];
+
+      const res = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${nviKey}` },
+        body: JSON.stringify({
+          model: 'nvidia/llama-3.1-nemotron-nano-vl-8b-v1',
+          messages: [{
+            role: 'user',
+            content: `You are a licensed plumbing estimator. From this floor plan image extract:
+- All fixture locations (toilet, sink, shower, tub, water heater, dishwasher, washing machine connection)
+- Linear feet of hot water supply pipe, cold water supply pipe, and drain/waste pipe
+- Fitting types and counts (elbows, tees, couplings, valves)
+- Rough-in dimensions where visible
+Return ONLY valid JSON: { "fixtures": [], "pipes": [], "fittings": [], "notes": "" } <img src="data:image/jpeg;base64,${imgB64}" />`
+          }],
+          temperature: 0.2
+        })
+      });
+
+      if (!res.ok) throw new Error('API Error');
+      const data = await res.json();
+      let text = data.choices[0].message.content;
+      const jmatch = text.match(/\{[\s\S]*\}/);
+      const parsed = JSON.parse(jmatch ? jmatch[0] : text);
+
+      let html = `<h2>✅ ${t('aiAnalysisComplete')}</h2>
+        <div style="margin:12px 0; background:var(--bg); padding:10px; border-radius:8px">
+          <div><b>${t('foundFixtures')}:</b> ${(parsed.fixtures||[]).length} ${t('fixturesL')} &middot; ${(parsed.pipes||[]).length} ${t('pipesL')} &middot; ${(parsed.fittings||[]).length} ${t('fittingsL')}</div>
+        </div>
+        <div class="field"><label>${t('assignTo')}</label>
+          <div style="display:flex; gap:8px">
+            <button class="btn" style="flex:1" onclick="assignTakeoff('${emailId}', ${attIdx}, 'new', '${esc(JSON.stringify(parsed))}')"><i class="fas fa-folder-plus"></i> ${t('createNewProject')}</button>
+            <button class="btn ghost" style="flex:1" onclick="selectJobForTakeoff('${emailId}', ${attIdx}, '${esc(JSON.stringify(parsed))}')"><i class="fas fa-search"></i> ${t('existingJob')}</button>
+          </div>
+        </div>
+        <button class="btn block ghost" onclick="closeModal()">${t('cancel')}</button>`;
+      modal(html);
+    } catch (err) {
+      console.error(err);
+      toast(t('couldntRead'), 'error');
+    }
+  }
+
+  function selectJobForTakeoff(emailId, attIdx, parsedJson) {
+    const jobs = db.jobs.filter(j => j.status !== 'completed' && j.status !== 'canceled');
+    let html = `<h2>${t('existingJob')}</h2><div class="card" style="max-height:300px; overflow:auto">
+      ${jobs.map(j => `<div class="list-item" onclick="assignTakeoff('${emailId}', ${attIdx}, '${j.id}', '${parsedJson}')"><div class="li-main"><div class="li-title">${esc(j.title)}</div><div class="li-sub">${esc(customerName(j.customerId))}</div></div></div>`).join('')}
+    </div><button class="btn block ghost" onclick="closeModal()">${t('cancel')}</button>`;
+    modal(html);
+  }
+
+  async function assignTakeoff(emailId, attIdx, jobId, parsedJson) {
+    const e = db.inbox_emails.find(x => x.id === emailId);
+    const att = e.attachments[attIdx];
+    const parsed = JSON.parse(parsedJson);
+    
+    const binaryStr = atob(att.data);
+    const bytes = new Uint8Array(binaryStr.length);
+    for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
+    const blob = new Blob([bytes], {type: att.mimeType});
+    const blobId = await storeFile(blob);
+    
+    let targetJobId = jobId;
+    if (jobId === 'new') {
+      targetJobId = uid();
+      db.jobs.push({
+        id: targetJobId, title: t('aiTakeoffTitle') + ': ' + att.name, customerId: '', status: 'new',
+        created: nowISO(), materials: []
+      });
+    }
+    
+    const job = db.jobs.find(j => j.id === targetJobId);
+    if (!job.materials) job.materials = [];
+    
+    if (parsed.fixtures) parsed.fixtures.forEach(f => job.materials.push({ id:uid(), item: f, qty: 1, unit: 'ea', addedByAI: true }));
+    if (parsed.pipes) parsed.pipes.forEach(p => job.materials.push({ id:uid(), item: p, qty: 1, unit: 'lf', addedByAI: true }));
+    if (parsed.fittings) parsed.fittings.forEach(f => job.materials.push({ id:uid(), item: f, qty: 1, unit: 'ea', addedByAI: true }));
+    
+    if (!job.documents) job.documents = [];
+    job.documents.push({ id: uid(), fileId: blobId, name: att.name, mime: att.mimeType, date: nowISO() });
+    
+    if (parsed.notes) {
+      if (!job.notes) job.notes = '';
+      job.notes += '\nAI Notes: ' + parsed.notes;
+    }
+    
+    e.aiTakeoffStatus = 'complete';
+    e.linkedJobId = targetJobId;
+    e.read = true;
+    save();
+    closeModal();
+    nav('job');
+    window.viewJob(targetJobId);
+    toast(t('saved'), 'success');
+  }
+
   Object.assign(window, { __db: () => db, setSearch, saveAIKey, saveMfa, t, toast, closeModal, modal,
     setLang, nav, back, signOut, quickAdd, openMore, get, remove, update, confirmDel, render,
     newCall, saveCall, jobFromCall, openCallView, openCustomerForm, saveCustomer, openJobForm, saveJob, changeJobStatus, setJobStatus,
@@ -2687,9 +3610,68 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     viewEmails, openEmailForm, saveEmailForm, importEml, openEmail, relinkEmail, saveEmailLink, emailToNote, summarizeEmail,
     viewPayroll, openPayroll, importPayroll, previewPayroll, confirmPayrollImport, summarizePayrollAll,
     checkIn, checkOut, setJobSite, toggleChecklistItem, resolveAlert, showDailySummary, showReadyToClose,
-    acceptConsent, openProjectAIForm, saveProjectAI, askProjectAI, escalateProjectAI,
-    uploadProjectDoc, openProjectDoc, approveProjectDoc, backupNow, restoreTest });
+    acceptConsent, acceptGps, openProjectAIForm, saveProjectAI, askProjectAI, escalateProjectAI,
+    uploadProjectDoc, openProjectDoc, approveProjectDoc, backupNow, restoreTest,
+    viewKpis, viewWorkerProfile, approvePTO, denyPTO, renderCharts, seedMockKPIs,
+    saveGoogleClient, connectGmail, fetchNewEmails, viewInbox, previewPDF, analyzePdfAI, selectJobForTakeoff, assignTakeoff });
+  
+  // Call seed on boot to ensure mock data is there for viewing
+  const originalBoot = window.boot; // We just override boot if we need to, but it's called right after.
   boot();
+  setTimeout(seedMockKPIs, 500);
+  </script>
+  <script>
+    const _origBootSeed = window.boot;
+    window.boot = async function() {
+      await _origBootSeed();
+      if (!localStorage.getItem("otto_mock_seeded")) {
+        const owners = [
+          { id: "owner-1", name: "Owner One", name_en: "Owner One", name_es: "Dueño Uno", role: "owner", pin: "1111", lang: "en", created: nowISO() },
+          { id: "owner-2", name: "Owner Two", name_en: "Owner Two", name_es: "Dueño Dos", role: "owner", pin: "2222", lang: "es", created: nowISO() }
+        ];
+        const employees = [
+          { id: "emp-1", name: "Employee One", name_en: "Employee One", name_es: "Empleado Uno", role: "employee", pin: "1001", hourlyRate: 22, lang: "en", created: nowISO() },
+          { id: "emp-2", name: "Employee Two", name_en: "Employee Two", name_es: "Empleado Dos", role: "employee", pin: "1002", hourlyRate: 23, lang: "en", created: nowISO() },
+          { id: "emp-3", name: "Employee Three", name_en: "Employee Three", name_es: "Empleado Tres", role: "employee", pin: "1003", hourlyRate: 24, lang: "en", created: nowISO() },
+          { id: "emp-4", name: "Employee Four", name_en: "Employee Four", name_es: "Empleado Cuatro", role: "employee", pin: "1004", hourlyRate: 22, lang: "en", created: nowISO() },
+          { id: "emp-5", name: "Employee Five", name_en: "Employee Five", name_es: "Empleado Cinco", role: "employee", pin: "1005", hourlyRate: 25, lang: "en", created: nowISO() }
+        ];
+        
+        const shifts = {
+          "emp-1": { time: "7:00AM–3:00PM", loc: "Warehouse" },
+          "emp-2": { time: "8:00AM–4:00PM", loc: "Field" },
+          "emp-3": { time: "6:30AM–2:30PM", loc: "Warehouse" },
+          "emp-4": { time: "9:00AM–5:00PM", loc: "Office" },
+          "emp-5": { time: "7:30AM–3:30PM", loc: "Field" }
+        };
+
+        db.users.push(...owners, ...employees);
+
+        employees.forEach(emp => {
+          const s = shifts[emp.id];
+          const raw = {};
+          ["Mon", "Tue", "Wed", "Thu", "Fri"].forEach(day => {
+            const [signIn, signOut] = s.time.split("–");
+            raw[`Shift ${day}`] = `SignIn: ${signIn} | SignOut: ${signOut} | Hours: 8 | Loc: ${s.loc} | Status: approved`;
+          });
+          db.payroll.push({
+            id: 'pay_' + uid(),
+            employeeId: emp.id,
+            employee: emp.name_en,
+            period: 'Seed Week',
+            hours: 40,
+            rate: emp.hourlyRate,
+            gross: 40 * emp.hourlyRate,
+            net: 40 * emp.hourlyRate,
+            raw: raw
+          });
+        });
+
+        localStorage.setItem("otto_mock_seeded", "1");
+        save();
+        render();
+      }
+    };
   </script>
 </body>
 </html>
