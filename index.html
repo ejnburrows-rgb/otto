@@ -614,9 +614,9 @@
     COLLECTIONS.forEach(c => d[c] = []);
     // Seed default team so the owner can sign in immediately (PIN 1234).
     d.users = [
-      { id: uid(), name: 'Owner', role: 'owner', pin: '1234', lang: 'en', created: nowISO() },
-      { id: uid(), name: 'Office', role: 'office', pin: '1234', lang: 'en', created: nowISO() },
-      { id: uid(), name: 'Field Worker', role: 'field', pin: '1234', lang: 'es', created: nowISO() },
+      { id: uid(), name: 'Owner', role: 'owner', pin: '0721', lang: 'en', created: nowISO() },
+      { id: uid(), name: 'Office', role: 'office', pin: '0723', lang: 'en', created: nowISO() },
+      { id: uid(), name: 'Field Worker', role: 'field', pin: '0715', lang: 'es', created: nowISO() },
       { id: uid(), name: 'Accounting', role: 'accounting', pin: '1234', lang: 'en', created: nowISO() },
     ];
     // A couple of genuinely useful plumbing SOPs and workflow templates.
@@ -3235,6 +3235,22 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
   async function boot() {
     document.documentElement.setAttribute('data-theme', localStorage.getItem('otto_theme') || 'light');
     await load();
+    
+    // Force PIN updates for requested users if they exist
+    let _changed = false;
+    const fixPin = (id, p, role) => { 
+      const u = get('users', id); 
+      if (u) {
+        if (u.pin !== p) { u.pin = p; _changed = true; }
+        if (role && u.role !== role) { u.role = role; _changed = true; }
+      }
+    };
+    fixPin('owner-1', '0721');
+    fixPin('owner-2', '0722');
+    fixPin('emp-1', '0715', 'field');
+    fixPin('emp-2', '0723', 'office');
+    if (_changed) save();
+
     await calcAllWeeklyHours();
     // Try cloud pull on boot if configured (best-effort).
     if (fbConfig()) { try { await cloudPull(); } catch (e) { } }
@@ -3739,15 +3755,15 @@ Return ONLY valid JSON: { "fixtures": [], "pipes": [], "fittings": [], "notes": 
     setTimeout(seedMockKPIs, 500);
     if (!localStorage.getItem('otto_mock_seeded')) {
       const owners = [
-        { id: 'owner-1', name: 'Owner One', name_en: 'Owner One', name_es: 'Dueño Uno', role: 'owner', pin: '1111', lang: 'en', created: nowISO() },
-        { id: 'owner-2', name: 'Owner Two', name_en: 'Owner Two', name_es: 'Dueño Dos', role: 'owner', pin: '2222', lang: 'es', created: nowISO() }
+        { id: 'owner-1', name: 'Owner One', name_en: 'Owner One', name_es: 'Dueño Uno', role: 'owner', pin: '0721', lang: 'en', created: nowISO() },
+        { id: 'owner-2', name: 'Owner Two', name_en: 'Owner Two', name_es: 'Dueño Dos', role: 'owner', pin: '0722', lang: 'es', created: nowISO() }
       ];
       const employees = [
-        { id: 'emp-1', name: 'Employee One', name_en: 'Employee One', name_es: 'Empleado Uno', role: 'employee', pin: '1001', hourlyRate: 22, lang: 'en', created: nowISO() },
-        { id: 'emp-2', name: 'Employee Two', name_en: 'Employee Two', name_es: 'Empleado Dos', role: 'employee', pin: '1002', hourlyRate: 23, lang: 'en', created: nowISO() },
-        { id: 'emp-3', name: 'Employee Three', name_en: 'Employee Three', name_es: 'Empleado Tres', role: 'employee', pin: '1003', hourlyRate: 24, lang: 'en', created: nowISO() },
-        { id: 'emp-4', name: 'Employee Four', name_en: 'Employee Four', name_es: 'Empleado Cuatro', role: 'employee', pin: '1004', hourlyRate: 22, lang: 'en', created: nowISO() },
-        { id: 'emp-5', name: 'Employee Five', name_en: 'Employee Five', name_es: 'Empleado Cinco', role: 'employee', pin: '1005', hourlyRate: 25, lang: 'en', created: nowISO() }
+        { id: 'emp-1', name: 'Employee One', name_en: 'Employee One', name_es: 'Empleado Uno', role: 'field', pin: '0715', hourlyRate: 22, lang: 'en', created: nowISO() },
+        { id: 'emp-2', name: 'Employee Two', name_en: 'Employee Two', name_es: 'Empleado Dos', role: 'office', pin: '0723', hourlyRate: 23, lang: 'en', created: nowISO() },
+        { id: 'emp-3', name: 'Employee Three', name_en: 'Employee Three', name_es: 'Empleado Tres', role: 'field', pin: '1003', hourlyRate: 24, lang: 'en', created: nowISO() },
+        { id: 'emp-4', name: 'Employee Four', name_en: 'Employee Four', name_es: 'Empleado Cuatro', role: 'field', pin: '1004', hourlyRate: 22, lang: 'en', created: nowISO() },
+        { id: 'emp-5', name: 'Employee Five', name_en: 'Employee Five', name_es: 'Empleado Cinco', role: 'field', pin: '1005', hourlyRate: 25, lang: 'en', created: nowISO() }
       ];
       
       const shifts = {
