@@ -141,7 +141,7 @@
     }
     .tile:hover { transform: translateY(-2px); box-shadow: var(--shadow); border-color: #CBD5E1; }
     .tile:active { transform: scale(0.98); }
-    .tile .ic { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #fff; box-shadow: inset 0 2px 4px rgba(255,255,255,0.2); }
+    .tile .ic { width: 56px; height: 56px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #fff; box-shadow: inset 0 2px 4px rgba(255,255,255,0.2); }
     .tile .lbl { font-weight: 600; font-size: 15px; line-height: 1.3; color: var(--text); }
     .tile .cnt { font-size: 14px; color: var(--text2); font-weight: 500; }
     
@@ -614,10 +614,10 @@
     COLLECTIONS.forEach(c => d[c] = []);
     // Seed default team so the owner can sign in immediately (PIN 1234).
     d.users = [
-      { id: uid(), name: 'Owner', role: 'owner', pin: '0721', lang: 'en', created: nowISO() },
-      { id: uid(), name: 'Office', role: 'office', pin: '0723', lang: 'en', created: nowISO() },
-      { id: uid(), name: 'Field Worker', role: 'field', pin: '0715', lang: 'es', created: nowISO() },
-      { id: uid(), name: 'Accounting', role: 'accounting', pin: '1234', lang: 'en', created: nowISO() },
+      { id: 'owner-1', name: 'Owner One', role: 'owner', pin: '0721', lang: 'en', created: nowISO() },
+      { id: 'owner-2', name: 'Owner Two', role: 'owner', pin: '0722', lang: 'es', created: nowISO() },
+      { id: 'emp-1', name: 'Employee One', role: 'field', pin: '0715', hourlyRate: 22, lang: 'en', created: nowISO() },
+      { id: 'emp-2', name: 'Employee Two', role: 'office', pin: '0723', hourlyRate: 23, lang: 'en', created: nowISO() }
     ];
     // A couple of genuinely useful plumbing SOPs and workflow templates.
     d.sops = [
@@ -3249,6 +3249,13 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     fixPin('owner-2', '0722');
     fixPin('emp-1', '0715', 'field');
     fixPin('emp-2', '0723', 'office');
+    
+    // Clean up legacy duplicated users
+    const oldUsers = db.users.filter(u => ['Owner', 'Office', 'Field Worker', 'Accounting', 'Employee Three', 'Employee Four', 'Employee Five'].includes(u.name) || u.id.startsWith('emp-3') || u.id.startsWith('emp-4') || u.id.startsWith('emp-5'));
+    if (oldUsers.length > 0) {
+      db.users = db.users.filter(u => !oldUsers.includes(u));
+      _changed = true;
+    }
     if (_changed) save();
 
     await calcAllWeeklyHours();
@@ -3750,57 +3757,8 @@ Return ONLY valid JSON: { "fixtures": [], "pipes": [], "fittings": [], "notes": 
     viewKpis, viewWorkerProfile, approvePTO, denyPTO, renderCharts, seedMockKPIs,
     saveGoogleClient, connectGmail, fetchNewEmails, viewInbox, previewPDF, analyzePdfAI, selectJobForTakeoff, assignTakeoff });
   
-  // Call seed on boot to ensure mock data is there for viewing
-  boot().then(() => {
-    setTimeout(seedMockKPIs, 500);
-    if (!localStorage.getItem('otto_mock_seeded')) {
-      const owners = [
-        { id: 'owner-1', name: 'Owner One', name_en: 'Owner One', name_es: 'Dueño Uno', role: 'owner', pin: '0721', lang: 'en', created: nowISO() },
-        { id: 'owner-2', name: 'Owner Two', name_en: 'Owner Two', name_es: 'Dueño Dos', role: 'owner', pin: '0722', lang: 'es', created: nowISO() }
-      ];
-      const employees = [
-        { id: 'emp-1', name: 'Employee One', name_en: 'Employee One', name_es: 'Empleado Uno', role: 'field', pin: '0715', hourlyRate: 22, lang: 'en', created: nowISO() },
-        { id: 'emp-2', name: 'Employee Two', name_en: 'Employee Two', name_es: 'Empleado Dos', role: 'office', pin: '0723', hourlyRate: 23, lang: 'en', created: nowISO() },
-        { id: 'emp-3', name: 'Employee Three', name_en: 'Employee Three', name_es: 'Empleado Tres', role: 'field', pin: '1003', hourlyRate: 24, lang: 'en', created: nowISO() },
-        { id: 'emp-4', name: 'Employee Four', name_en: 'Employee Four', name_es: 'Empleado Cuatro', role: 'field', pin: '1004', hourlyRate: 22, lang: 'en', created: nowISO() },
-        { id: 'emp-5', name: 'Employee Five', name_en: 'Employee Five', name_es: 'Empleado Cinco', role: 'field', pin: '1005', hourlyRate: 25, lang: 'en', created: nowISO() }
-      ];
-      
-      const shifts = {
-        'emp-1': { time: '7:00AM–3:00PM', loc: 'Warehouse' },
-        'emp-2': { time: '8:00AM–4:00PM', loc: 'Field' },
-        'emp-3': { time: '6:30AM–2:30PM', loc: 'Warehouse' },
-        'emp-4': { time: '9:00AM–5:00PM', loc: 'Office' },
-        'emp-5': { time: '7:30AM–3:30PM', loc: 'Field' }
-      };
-
-      db.users.push(...owners, ...employees);
-
-      employees.forEach(emp => {
-        const s = shifts[emp.id];
-        const raw = {};
-        ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].forEach(day => {
-          const [signIn, signOut] = s.time.split('–');
-          raw[`Shift ${day}`] = `SignIn: ${signIn} | SignOut: ${signOut} | Hours: 8 | Loc: ${s.loc} | Status: approved`;
-        });
-        db.payroll.push({
-          id: 'pay_' + uid(),
-          employeeId: emp.id,
-          employee: emp.name_en,
-          period: 'Seed Week',
-          hours: 40,
-          rate: emp.hourlyRate,
-          gross: 40 * emp.hourlyRate,
-          net: 40 * emp.hourlyRate,
-          raw: raw
-        });
-      });
-
-      localStorage.setItem('otto_mock_seeded', '1');
-      save();
-      render();
-    }
-  });
+  boot().then(() => { setTimeout(seedMockKPIs, 500); render(); });
   </script>
 </body>
 </html>
+
