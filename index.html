@@ -715,7 +715,7 @@
   async function getFileURL(id) { const b = await idbGet('files', id); return b ? URL.createObjectURL(b) : null; }
 
   /* ============================ optional Firebase REST cloud sync ============================ */
-  function fbConfig() { try { return JSON.parse(localStorage.getItem('otto_fb') || 'null'); } catch (e) { return null; } }
+  function fbConfig() { try { const s = JSON.parse(localStorage.getItem('otto_fb') || 'null'); if (s && s.projectId && s.apiKey) return s; } catch (e) { } return { projectId: 'otto-crm-7f951', apiKey: 'AIzaSyBcOfUbUfFc7PBkKUNAALIEtTO7YCznjH4' }; }
   let _cloudTimer = null;
   function cloudPush() {
     const cfg = fbConfig(); if (!cfg || !cfg.projectId || !cfg.apiKey) return;
