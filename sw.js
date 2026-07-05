@@ -1,6 +1,6 @@
 /* OTTO Plumbing CRM — service worker
    Offline-first shell cache. App data lives in IndexedDB, not here. */
-const CACHE = 'otto-crm-v1';
+const CACHE = 'otto-crm-v2';
 const SHELL = ['./', './index.html', './manifest.json'];
 
 self.addEventListener('install', (e) => {
@@ -38,7 +38,7 @@ self.addEventListener('fetch', (e) => {
   // Cache-first for static CDN assets (fonts, icons).
   e.respondWith(
     caches.match(req).then((m) => m || fetch(req).then((res) => {
-      if (res && res.status === 200 && (url.hostname.includes('cdnjs') || url.hostname.includes('fonts') || url.hostname.includes('cdn-icons'))) {
+      if (res && res.status === 200 && (url.hostname.includes('cdnjs') || url.hostname.includes('fonts') || url.hostname.includes('cdn-icons') || url.hostname.includes('jsdelivr'))) {
         const copy = res.clone();
         caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
       }

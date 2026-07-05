@@ -4,8 +4,8 @@
   "description": "The operating system for Auto Plumbing / O.T.T.O. Plumbing — bilingual, mobile-first CRM.",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#0f3d6e",
-  "theme_color": "#0f3d6e",
+  "background_color": "#0B1120",
+  "theme_color": "#0B1120",
   "orientation": "portrait-primary",
   "lang": "en",
   "icons": [
