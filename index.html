@@ -3770,9 +3770,6 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     const e = db.inbox_emails.find(x => x.id === emailId);
     if (!e) return;
     const att = e.attachments[attIdx];
-    const nviKey = db.meta.nvidiaKey;
-    if (!nviKey) return toast(lang==='es'?'Falta clave NVIDIA':'Missing NVIDIA Key', 'error');
-
     toast(t('reading'), 'info');
     document.querySelector('.modal-overlay')?.remove();
 
@@ -3789,27 +3786,45 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
       await page.render({canvasContext: canvas.getContext('2d'), viewport}).promise;
       const imgB64 = canvas.toDataURL('image/jpeg').split(',')[1];
 
-      const res = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${nviKey}` },
-        body: JSON.stringify({
-          model: 'nvidia/llama-3.1-nemotron-nano-vl-8b-v1',
-          messages: [{
-            role: 'user',
-            content: `You are a licensed plumbing estimator. From this floor plan image extract:
+      const prompt = `You are a licensed plumbing estimator. From this floor plan image extract:
 - All fixture locations (toilet, sink, shower, tub, water heater, dishwasher, washing machine connection)
 - Linear feet of hot water supply pipe, cold water supply pipe, and drain/waste pipe
 - Fitting types and counts (elbows, tees, couplings, valves)
 - Rough-in dimensions where visible
-Return ONLY valid JSON: { "fixtures": [], "pipes": [], "fittings": [], "notes": "" } <img src="data:image/jpeg;base64,${imgB64}" />`
-          }],
-          temperature: 0.2
-        })
-      });
-
-      if (!res.ok) throw new Error('API Error');
-      const data = await res.json();
-      let text = data.choices[0].message.content;
+Return ONLY valid JSON: { "fixtures": [], "pipes": [], "fittings": [], "notes": "" }`;
+      let text = null;
+      try {
+        const proxy = await fetch('/api/nvidia', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'nvidia/llama-3.1-nemotron-nano-vl-8b-v1',
+            messages: [{ role: 'user', content: prompt + ` <img src="data:image/jpeg;base64,${imgB64}" />` }],
+            temperature: 0.2,
+            max_tokens: 1024,
+          }),
+        });
+        if (proxy.ok) {
+          const data = await proxy.json();
+          text = data.choices?.[0]?.message?.content;
+        }
+      } catch (e) { /* fall through */ }
+      if (!text && db.meta?.nvidiaKey) {
+        const res = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${db.meta.nvidiaKey}` },
+          body: JSON.stringify({
+            model: 'nvidia/llama-3.1-nemotron-nano-vl-8b-v1',
+            messages: [{ role: 'user', content: prompt + ` <img src="data:image/jpeg;base64,${imgB64}" />` }],
+            temperature: 0.2,
+          }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          text = data.choices[0].message.content;
+        }
+      }
+      if (!text) throw new Error('no_ai');
       const jmatch = text.match(/\{[\s\S]*\}/);
       const parsed = JSON.parse(jmatch ? jmatch[0] : text);
 
@@ -3879,8 +3894,7 @@ Return ONLY valid JSON: { "fixtures": [], "pipes": [], "fittings": [], "notes": 
     e.read = true;
     save();
     closeModal();
-    nav('job');
-    window.viewJob(targetJobId);
+    nav('job', targetJobId);
     toast(t('saved'), 'success');
   }
 
@@ -3899,7 +3913,9 @@ Return ONLY valid JSON: { "fixtures": [], "pipes": [], "fittings": [], "notes": 
     acceptConsent, acceptGps, openProjectAIForm, saveProjectAI, askProjectAI, escalateProjectAI,
     uploadProjectDoc, openProjectDoc, approveProjectDoc, backupNow, restoreTest,
     viewKpis, viewWorkerProfile, approvePTO, denyPTO, renderCharts, seedMockKPIs,
-    saveGoogleClient, connectGmail, fetchNewEmails, viewInbox, previewPDF, analyzePdfAI, selectJobForTakeoff, assignTakeoff });
+    saveGoogleClient, connectGmail, fetchNewEmails, viewInbox, previewPDF, analyzePdfAI, selectJobForTakeoff, assignTakeoff,
+    photoScanCreateCustomer, viewUrgentHub, openUrgentForm, submitUrgentMessage, replyUrgent, resolveUrgent,
+    connectQuickBooks, saveNotifyPrefs, refreshIntegrationStatus });
   
   boot().then(() => { setTimeout(seedMockKPIs, 500); render(); });
   </script>
