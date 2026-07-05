@@ -506,6 +506,10 @@
       hoursWorked: 'Hours Worked', jobsDone: 'Jobs Done', viewFullProfile: 'View Full Profile', daysWorked: 'Days Worked', locationLog: 'Location Log',
       jobTimeline: 'Job Timeline', ptoHistory: 'PTO History', loginHistory: 'Login History', teamSummary: 'Team Summary', aggregateView: 'Aggregate View',
       totalTeamHours: 'Total Team Hours', jobsCompletedVsAssigned: 'Jobs Completed vs Assigned', escalationRate: 'Escalation Rate', overtimeHours: 'Overtime Hours',
+      urgentHub: 'Urgent Issues', urgentQuestion: 'Urgent question for owner', sendUrgent: 'Send to owner', urgentSent: 'Sent to owner', noUrgent: 'No urgent issues',
+      photoNewCustomer: 'Photo → New Customer', scanningCustomer: 'Reading account photo…', customerCreated: 'Customer created from photo',
+      connectQuickBooks: 'Connect QuickBooks', quickBooksSection: 'QuickBooks', notificationsSection: 'Customer Notifications', smsReady: 'SMS ready', emailReady: 'Email ready', notConfigured: 'Not configured yet',
+      replyToWorker: 'Reply', markHandled: 'Mark handled',
       allWorkers: 'All Workers', thisWeek: 'This Week', lastWeek: 'Last Week', customDate: 'Custom', metrics: 'Metrics', hours: 'Hours',
       dateRange: 'Date Range', arrival: 'Arrival', departure: 'Departure', timeSpent: 'Time Spent', missedItem: 'Missed Item', workerNote: 'Worker Note',
       firstOpen: 'First Open', lastClose: 'Last Close', noPtoPending: 'none', pendingCount: 'pending', approvedThrough: 'approved through',
@@ -584,6 +588,10 @@
       hoursWorked: 'Horas Trabajadas', jobsDone: 'Trabajos Hechos', viewFullProfile: 'Ver Perfil Completo', daysWorked: 'Días Trabajados', locationLog: 'Registro de Ubicaciones',
       jobTimeline: 'Línea de Tiempo', ptoHistory: 'Historial de Permisos', loginHistory: 'Historial de Conexiones', teamSummary: 'Resumen del Equipo', aggregateView: 'Vista General',
       totalTeamHours: 'Horas Totales del Equipo', jobsCompletedVsAssigned: 'Trabajos Completados vs Asignados', escalationRate: 'Tasa de Escalaciones', overtimeHours: 'Horas Extras',
+      urgentHub: 'Asuntos Urgentes', urgentQuestion: 'Pregunta urgente al dueño', sendUrgent: 'Enviar al dueño', urgentSent: 'Enviado al dueño', noUrgent: 'Sin asuntos urgentes',
+      photoNewCustomer: 'Foto → Nuevo Cliente', scanningCustomer: 'Leyendo foto de cuenta…', customerCreated: 'Cliente creado desde foto',
+      connectQuickBooks: 'Conectar QuickBooks', quickBooksSection: 'QuickBooks', notificationsSection: 'Notificaciones al Cliente', smsReady: 'SMS listo', emailReady: 'Correo listo', notConfigured: 'Sin configurar aún',
+      replyToWorker: 'Responder', markHandled: 'Marcar resuelto',
       allWorkers: 'Todos los Trabajadores', thisWeek: 'Esta Semana', lastWeek: 'Semana Pasada', customDate: 'Personalizado', metrics: 'Métricas', hours: 'Horas',
       dateRange: 'Rango de Fechas', arrival: 'Llegada', departure: 'Salida', timeSpent: 'Tiempo Invertido', missedItem: 'Elemento Faltante', workerNote: 'Nota del Trabajador',
       firstOpen: 'Primera Conexión', lastClose: 'Última Desconexión', noPtoPending: 'ninguno', pendingCount: 'pendiente(s)', approvedThrough: 'aprobado hasta',
@@ -605,7 +613,7 @@
     'invoices', 'payments', 'checks', 'followups', 'workflows', 'sops', 'users', 'locations', 'folders',
     'emails', 'inbox_emails', 'payroll', 'time_off', 'login_history',
     'projects', 'job_events', 'job_checklists', 'ai_conversations', 'ai_escalations', 'consent_records',
-    'contracts', 'proposals', 'plans', 'alerts', 'backups', 'daily_summaries', 'audit_log', 'checklist_submissions', 'pto_requests'];
+    'contracts', 'proposals', 'plans', 'alerts', 'backups', 'daily_summaries', 'audit_log', 'checklist_submissions', 'pto_requests', 'employee_messages'];
   let db = null;
   let session = null; // current user
 
@@ -791,8 +799,8 @@
 
   /* ============================ AUTH / ROLES ============================ */
   const ROLE_VIEWS = {
-    owner: ['home', 'hub', 'kpis', 'worker_profile', 'customers', 'jobs', 'calls', 'inbox', 'emails', 'estimates', 'invoices', 'payments', 'checks', 'payroll', 'alerts', 'followups', 'workflows', 'knowledge', 'map', 'reports', 'backups', 'audit', 'team', 'settings', 'assistant'],
-    office: ['home', 'hub', 'customers', 'jobs', 'calls', 'inbox', 'emails', 'estimates', 'invoices', 'payments', 'checks', 'payroll', 'alerts', 'followups', 'workflows', 'knowledge', 'map', 'reports', 'backups', 'settings', 'assistant'],
+    owner: ['home', 'hub', 'kpis', 'worker_profile', 'urgent', 'customers', 'jobs', 'calls', 'inbox', 'emails', 'estimates', 'invoices', 'payments', 'checks', 'payroll', 'alerts', 'followups', 'workflows', 'knowledge', 'map', 'reports', 'backups', 'audit', 'team', 'settings', 'assistant'],
+    office: ['home', 'hub', 'urgent', 'customers', 'jobs', 'calls', 'inbox', 'emails', 'estimates', 'invoices', 'payments', 'checks', 'payroll', 'alerts', 'followups', 'workflows', 'knowledge', 'map', 'reports', 'backups', 'settings', 'assistant'],
     field: ['home', 'jobs', 'customers', 'followups', 'knowledge', 'assistant', 'settings'],
     accounting: ['home', 'customers', 'inbox', 'emails', 'invoices', 'payments', 'checks', 'payroll', 'estimates', 'reports', 'knowledge', 'assistant', 'settings'],
   };
@@ -885,10 +893,10 @@
       <i class="fas ${icons[v]}"></i><span>${t(v)}</span></button>`).join('');
   }
   function openMore() {
-    const items = ['hub', 'calls', 'emails', 'estimates', 'invoices', 'payments', 'checks', 'payroll', 'alerts', 'followups', 'workflows', 'knowledge', 'map', 'reports', 'backups', 'audit', 'team', 'settings']
+    const items = ['hub', 'urgent', 'calls', 'emails', 'estimates', 'invoices', 'payments', 'checks', 'payroll', 'alerts', 'followups', 'workflows', 'knowledge', 'map', 'reports', 'backups', 'audit', 'team', 'settings']
       .filter(v => can(v));
-    const icons = { hub: 'fa-gauge-high', calls: 'fa-phone', emails: 'fa-envelope', estimates: 'fa-file-lines', invoices: 'fa-file-invoice-dollar', payments: 'fa-money-bill-wave', checks: 'fa-money-check-dollar', payroll: 'fa-money-check', alerts: 'fa-triangle-exclamation', followups: 'fa-bell', workflows: 'fa-diagram-project', knowledge: 'fa-book', map: 'fa-map-location-dot', reports: 'fa-chart-line', backups: 'fa-database', audit: 'fa-clipboard-list', team: 'fa-user-gear', settings: 'fa-gear' };
-    const labels = { audit: t('auditTrail') };
+    const icons = { hub: 'fa-gauge-high', urgent: 'fa-bolt', calls: 'fa-phone', emails: 'fa-envelope', estimates: 'fa-file-lines', invoices: 'fa-file-invoice-dollar', payments: 'fa-money-bill-wave', checks: 'fa-money-check-dollar', payroll: 'fa-money-check', alerts: 'fa-triangle-exclamation', followups: 'fa-bell', workflows: 'fa-diagram-project', knowledge: 'fa-book', map: 'fa-map-location-dot', reports: 'fa-chart-line', backups: 'fa-database', audit: 'fa-clipboard-list', team: 'fa-user-gear', settings: 'fa-gear' };
+    const labels = { audit: t('auditTrail'), urgent: t('urgentHub') };
     modal(`<h2>${t('more')}</h2><div class="card" style="margin-top:12px">
       ${items.map(v => `<div class="list-item" onclick="closeModal();nav('${v}')"><div class="avatar" style="background:${colorFor(v)}"><i class="fas ${icons[v]}"></i></div><div class="li-main"><div class="li-title">${labels[v] || t(v)}</div></div><i class="fas fa-chevron-right chev"></i></div>`).join('')}
     </div>`);
@@ -909,7 +917,7 @@
       checks: viewChecks, payroll: viewPayroll, followups: viewFollowups, workflows: viewWorkflows, knowledge: viewKnowledge,
       map: viewMap, reports: viewReports, team: viewTeam, settings: viewSettings, assistant: viewAssistant,
       hub: viewHub, alerts: viewAlerts, backups: viewBackups, audit: viewAudit,
-      kpis: viewKpis, worker_profile: viewWorkerProfile, gps: viewGpsLogs,
+      kpis: viewKpis, worker_profile: viewWorkerProfile, gps: viewGpsLogs, urgent: viewUrgentHub,
     };
     (views[v] || viewHome)();
 
@@ -1034,6 +1042,10 @@
     const q = _search['cust'] || '';
     const list = db.customers.filter(c => matches(c, q));
     let html = pageHead(t('customers'), db.customers.length + '') + searchBox('cust');
+    if (session.role === 'owner' || session.role === 'office') {
+      html += `<div class="btnrow"><button class="btn green block" onclick="openCustomerForm()"><i class="fas fa-plus"></i> ${t('addCustomer')}</button>
+        <button class="btn block" onclick="photoScanCreateCustomer()"><i class="fas fa-camera"></i> ${t('photoNewCustomer')}</button></div>`;
+    }
     html += `<div class="card">${list.length ? list.map(c => {
       const jc = db.jobs.filter(j => j.customerId === c.id).length;
       return `<div class="list-item" onclick="nav('customer','${c.id}')">
@@ -1796,7 +1808,8 @@
     <div class="btnrow"><button class="btn ghost block" onclick="toggleTheme()"><i class="fas fa-${dark ? 'sun' : 'moon'}"></i> ${dark ? (lang === 'es' ? 'Modo claro' : 'Light mode') : (lang === 'es' ? 'Modo oscuro' : 'Dark mode')}</button></div>`;
 
     if (session.role === 'field') {
-      html += `<div class="btnrow" style="margin-top:0"><button class="btn block" onclick="openPTOForm()"><i class="fas fa-calendar-plus"></i> ${t('timeOff')}</button></div>`;
+      html += `<div class="btnrow" style="margin-top:0"><button class="btn block" onclick="openPTOForm()"><i class="fas fa-calendar-plus"></i> ${t('timeOff')}</button>
+        <button class="btn red block" onclick="openUrgentForm()"><i class="fas fa-bolt"></i> ${t('sendUrgent')}</button></div>`;
       const ptos = db.pto_requests.filter(p => p.workerId === session.id).sort((a,b) => new Date(b.startDate) - new Date(a.startDate));
       if (ptos.length) {
         html += `<div class="section-title">${t('timeOff')}</div><div class="card">` + ptos.map(p => {
@@ -1831,6 +1844,21 @@
     }
 
     if (session.role === 'owner' || session.role === 'office') {
+      html += `<div class="section-title"><i class="fas fa-file-invoice-dollar"></i> ${t('quickBooksSection')}</div>
+        <div class="card" style="padding:14px">
+          <div class="muted" style="margin-bottom:10px">${lang === 'es' ? 'Conecta QuickBooks cuando tengas las credenciales. Mientras tanto, exporta CSV desde Facturas/Pagos.' : 'Connect QuickBooks when you have credentials. Until then, export CSV from Invoices/Payments.'}</div>
+          <div id="qb-status" class="muted" style="margin-bottom:10px">…</div>
+          <div class="btnrow"><button class="btn" onclick="connectQuickBooks()"><i class="fas fa-link"></i> ${t('connectQuickBooks')}</button>
+          <button class="btn ghost" onclick="exportQuickBooks('invoices')"><i class="fas fa-file-export"></i> ${t('exportQB')}</button></div>
+        </div>`;
+      html += `<div class="section-title"><i class="fas fa-bell"></i> ${t('notificationsSection')}</div>
+        <div class="card" style="padding:14px">
+          <div class="muted" style="margin-bottom:10px">${lang === 'es' ? 'SMS y correo al cliente (recordatorios, técnico en camino). Configura en Vercel cuando tengas Twilio/SendGrid.' : 'Customer SMS & email (reminders, tech on the way). Configure Twilio/SendGrid in Vercel when ready.'}</div>
+          <div id="notify-status" class="muted" style="margin-bottom:10px">…</div>
+          <div class="field"><label>Twilio From (preview)</label><input id="set-twilio-from" value="${esc(db.meta?.twilioFrom || '')}" placeholder="+1…"></div>
+          <div class="field"><label>Company email From (preview)</label><input id="set-email-from" value="${esc(db.meta?.emailFrom || '')}" placeholder="service@yourcompany.com"></div>
+          <button class="btn block" onclick="saveNotifyPrefs()"><i class="fas fa-check"></i> ${t('save')}</button>
+        </div>`;
       html += `<div class="section-title"><i class="fas fa-envelope"></i> Email Integration (Gmail API)</div>
         <div class="card" style="padding:14px">
           <div class="muted" style="margin-bottom:10px">${lang === 'es' ? 'Ingresa tu Client ID de Google para activar la bandeja de entrada.' : 'Enter your Google Client ID to enable the real-time inbox.'}</div>
@@ -1863,6 +1891,85 @@
     html += `<div class="btnrow"><button class="btn red block" onclick="signOut()"><i class="fas fa-right-from-bracket"></i> ${t('signOut')}</button></div>
       <div class="muted" style="text-align:center;margin-top:18px">OTTO Plumbing CRM · v1 · ${db.customers.length} ${t('customers').toLowerCase()} · ${db.jobs.length} ${t('jobs').toLowerCase()}</div>`;
     $('#main').innerHTML = html;
+    if (session.role === 'owner' || session.role === 'office') refreshIntegrationStatus();
+  }
+  async function refreshIntegrationStatus() {
+    const qbEl = $('#qb-status'); const nEl = $('#notify-status');
+    try {
+      const qb = await fetch('/api/quickbooks?action=status').then(r => r.json()).catch(() => null);
+      if (qbEl) qbEl.textContent = qb?.configured ? (qb.connected ? 'QuickBooks: connected' : 'QuickBooks: credentials on server — connect OAuth when ready') : t('notConfigured');
+    } catch (e) { if (qbEl) qbEl.textContent = t('notConfigured'); }
+    try {
+      const test = await fetch('/api/notify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ channel: 'sms', to: '+10000000000', body: 'test' }) }).then(r => r.json()).catch(() => null);
+      if (nEl) nEl.textContent = test?.error === 'sms_not_configured' ? 'SMS/Email: ' + t('notConfigured') + ' (stubs ready)' : 'SMS/Email: ' + t('smsReady');
+    } catch (e) { if (nEl) nEl.textContent = t('notConfigured'); }
+  }
+  async function connectQuickBooks() {
+    try {
+      const d = await fetch('/api/quickbooks?action=auth_url').then(r => r.json());
+      if (d.authUrl) { window.open(d.authUrl, '_blank'); toast(lang === 'es' ? 'Abre QuickBooks para conectar' : 'Complete QuickBooks connect in the new tab', 'success'); }
+      else toast(d.message || t('notConfigured'), 'error');
+    } catch (e) { toast(t('notConfigured'), 'error'); }
+  }
+  function saveNotifyPrefs() {
+    if (!db.meta) db.meta = {};
+    db.meta.twilioFrom = ($('#set-twilio-from')?.value || '').trim();
+    db.meta.emailFrom = ($('#set-email-from')?.value || '').trim();
+    save(); toast(t('saved'), 'success');
+  }
+  function openUrgentForm() {
+    modal(`<h2>${t('urgentQuestion')}</h2>
+      <div class="field"><label>${t('question')}</label><div class="with-voice"><textarea id="urgent-text" placeholder="${lang === 'es' ? 'Ej: No encuentro la válvula principal' : 'e.g. Cannot find main shut-off'}"></textarea>${voiceBtn('urgent-text')}</div></div>
+      <button class="btn red block" onclick="submitUrgentMessage()"><i class="fas fa-bolt"></i> ${t('sendUrgent')}</button>`);
+  }
+  function submitUrgentMessage() {
+    const text = ($('#urgent-text')?.value || '').trim();
+    if (!text) return toast(t('question') + '?', 'error');
+    add('employee_messages', { workerId: session.id, text, status: 'open', ts: nowISO(), ownerReply: null });
+    raiseAlert('ai-escalated', 'user', session.id, `${session.name}: ${text}`);
+    audit('urgent.submit', 'employee_message', session.id);
+    closeModal(); toast(t('urgentSent'), 'success'); render();
+  }
+  function viewUrgentHub() {
+    const msgs = [...(db.employee_messages || []), ...db.ai_escalations.filter(e => e.status !== 'resolved').map(e => ({
+      id: e.id, workerId: e.workerId || e.userId, text: e.question || e.msg || '', status: 'open', ts: e.ts, kind: 'ai', jobId: e.jobId,
+    }))].sort((a, b) => new Date(b.ts) - new Date(a.ts));
+    const open = msgs.filter(m => m.status === 'open');
+    let html = pageHead(t('urgentHub'), open.length + ' ' + (lang === 'es' ? 'abiertos' : 'open'));
+    html += `<div class="card">${open.length ? open.map(m => {
+      const w = get('users', m.workerId) || {};
+      return `<div class="list-item" style="flex-direction:column;align-items:stretch">
+        <div style="display:flex;gap:10px;align-items:center">
+          <div class="avatar" style="background:${colorFor(w.name || '?')}">${initials(w.name || '?')}</div>
+          <div style="flex:1"><div style="font-weight:700">${esc(w.name || 'Worker')}</div><div class="muted">${timeAgo(m.ts)}</div></div>
+          ${m.jobId ? `<button class="btn ghost sm" onclick="nav('job','${m.jobId}')"><i class="fas fa-wrench"></i></button>` : ''}
+        </div>
+        <div style="margin:10px 0 8px">${esc(m.text)}</div>
+        ${m.ownerReply ? `<div class="muted" style="margin-bottom:8px"><b>${t('replyToWorker')}:</b> ${esc(m.ownerReply)}</div>` : ''}
+        <div class="btnrow" style="margin:0">
+          <button class="btn sm" onclick="replyUrgent('${m.id}','${m.kind || 'msg'}')"><i class="fas fa-reply"></i> ${t('replyToWorker')}</button>
+          <button class="btn green sm" onclick="resolveUrgent('${m.id}','${m.kind || 'msg'}')"><i class="fas fa-check"></i> ${t('markHandled')}</button>
+          <button class="btn ghost sm" onclick="nav('worker_profile','${m.workerId}')">${t('workerProfile')}</button>
+        </div>
+      </div>`;
+    }).join('') : emptyState(t('noUrgent'))}</div>`;
+    $('#main').innerHTML = html;
+  }
+  function replyUrgent(id, kind) {
+    const reply = prompt(lang === 'es' ? 'Tu respuesta al trabajador:' : 'Your reply to the worker:');
+    if (!reply) return;
+    if (kind === 'ai') {
+      const e = get('ai_escalations', id); if (e) { e.ownerReply = reply; e.status = 'answered'; save(); }
+    } else {
+      const m = get('employee_messages', id); if (m) { m.ownerReply = reply; save(); }
+      try { fetch('/api/notify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ channel: 'sms', to: '', body: reply }) }); } catch (e) { }
+    }
+    toast(t('saved'), 'success'); render();
+  }
+  function resolveUrgent(id, kind) {
+    if (kind === 'ai') { const e = get('ai_escalations', id); if (e) { e.status = 'resolved'; save(); } }
+    else { const m = get('employee_messages', id); if (m) { m.status = 'resolved'; m.resolvedTs = nowISO(); save(); } }
+    toast(t('saved'), 'success'); render();
   }
   function openPTOForm() {
     modal(`<h2>${t('timeOff')}</h2>
@@ -1992,6 +2099,42 @@
   }
   function ocrCheck(dataUrl) { return aiVision(dataUrl, 'This is a photo of a check. Extract JSON only: {"name":"payer name","amount":0,"date":"YYYY-MM-DD","checkNumber":"","memo":""}'); }
   function ocrDocument(dataUrl) { return aiVision(dataUrl, 'Read this document (invoice/receipt/check/paperwork). Extract JSON only: {"type":"invoice|receipt|check|other","name":"company or person","amount":0,"date":"YYYY-MM-DD","checkNumber":"","memo":"short summary"}'); }
+  function ocrCustomerAccount(dataUrl) {
+    return aiVision(dataUrl, 'This is a photo of a plumbing customer account, service ticket, utility bill, or property paperwork. Extract JSON only: {"name":"customer or business name","phone":"phone if visible","email":"email if visible","address":"service address","notes":"account number or short notes"}');
+  }
+  function photoScanCreateCustomer() {
+    const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*'; inp.capture = 'environment';
+    inp.onchange = async () => {
+      const f = inp.files[0]; if (!f) return;
+      toast(t('scanningCustomer'));
+      const blob = await downscale(f);
+      const dataUrl = await blobToDataURL(blob);
+      let parsed = await ocrCustomerAccount(dataUrl);
+      if (!parsed) parsed = await ocrDocument(dataUrl);
+      if (!parsed || !parsed.name) {
+        toast(t('readFailed'), 'error');
+        openCustomerForm();
+        return;
+      }
+      const cust = add('customers', {
+        name: parsed.name || parsed.payer || 'New Customer',
+        phone: parsed.phone || '',
+        email: parsed.email || '',
+        address: parsed.address || '',
+        notes: (parsed.notes || parsed.memo || '') + (parsed.type ? ` (${parsed.type})` : ''),
+        created: nowISO(),
+        source: 'photo_scan',
+      });
+      try {
+        const fileId = await storeFile(blob);
+        add('photos', { jobId: '', customerId: cust.id, fileId, caption: 'Account photo', phase: 'account', created: nowISO(), createdBy: session.id });
+      } catch (e) { /* photo optional */ }
+      audit('customer.create_photo', 'customer', cust.id);
+      toast(t('customerCreated'), 'success');
+      nav('customer', cust.id);
+    };
+    inp.click();
+  }
 
   /* ==================== DRAWING ESTIMATOR (NVIDIA, server key) ==================== */
   // Sends a chat request to the NVIDIA model through the server proxy (key lives in
@@ -2886,6 +3029,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
       ['fa-triangle-exclamation', exTotal ? 'var(--red)' : 'var(--blue2)', t('exceptions'), exTotal, "nav('alerts')"],
       ['fa-circle-check', 'var(--accent)', t('readyToClose'), ready.length, 'showReadyToClose()'],
       ['fa-chart-pie', 'var(--blue2)', t('teamKpis'), '', "nav('kpis')"],
+      ['fa-bolt', 'var(--red)', t('urgentHub'), (db.employee_messages || []).filter(m => m.status === 'open').length, "nav('urgent')"],
       ['fa-map-location-dot', 'var(--amber)', lang === 'es' ? 'GPS' : 'GPS Logs', '', "nav('gps')"],
     ];
     let html = pageHead('OTTO', fmtDate(todayISO()));
@@ -3233,7 +3377,7 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     }
   }
   async function boot() {
-    document.documentElement.setAttribute('data-theme', localStorage.getItem('otto_theme') || 'light');
+    document.documentElement.setAttribute('data-theme', localStorage.getItem('otto_theme') || 'dark');
     await load();
     
     // Force PIN updates for requested users if they exist
