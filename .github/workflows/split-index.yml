@@ -4,22 +4,38 @@ on:
     branches: ["agent/split-index"]
 permissions:
   contents: write
+  pull-requests: write
+  issues: write
 jobs:
   split:
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: $ github.token 
     steps:
-      - uses: actions/checkout@v4
-      - name: Split index.html into small base64 parts
+      - name: Clone, split, push, report
         run: |
-          mkdir -p parts
-          gzip -9 -c index.html | base64 > /tmp/index.gz.b64
-          split -b 48000 -d -a 2 /tmp/index.gz.b64 parts/part_ --additional-suffix=.txt
-          git hash-object index.html > parts/blob_sha.txt
-          wc -c index.html /tmp/index.gz.b64 parts/*.txt > parts/manifest.txt
-      - name: Commit parts
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add parts
-          git commit -m "chore: split index.html for chunked retrieval [skip ci]"
-          git push
+          git clone --depth 1 -b agent/split-index "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" work
+          cd work
+          {
+            set -x
+            mkdir -p parts
+            gzip -9 -c index.html | base64 > /tmp/index.gz.b64
+            ( cd parts && split -b 48000 -d -a 2 /tmp/index.gz.b64 part_ )
+            for f in parts/part_*; do mv "$f" "$f.txt"; done
+            git hash-object index.html > parts/blob_sha.txt
+            wc -c index.html /tmp/index.gz.b64 parts/*.txt > parts/manifest.txt
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add parts
+            git commit -m "chore: split parts for retrieval [skip ci]"
+            git push origin HEAD:agent/split-index
+            echo ALL_OK
+          } > /tmp/work.log 2>&1 || true
+          tail -c 4000 /tmp/work.log
+          {
+            echo 'split-index v2 result:'
+            echo '```'
+            tail -c 5000 /tmp/work.log
+            echo '```'
+          } > /tmp/comment.md
+          gh pr comment 7 --repo "$GITHUB_REPOSITORY" --body-file /tmp/comment.md || echo comment failed
