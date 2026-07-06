@@ -1,6 +1,7 @@
 # OTTO Plumbing CRM
 
-> **Status:** Crew-ready demo · Live: https://dream-cooling-crm.vercel.app · Guide: `/guide.html`
+> **Status:** Crew-ready demo · Live: https://dream-cooling-crm.vercel.app (note: may be updated to otto branding) · Guide: `/guide.html`
+> QA: Static + full browser tests (17/17 on local server). Run `node scripts/qa-check.mjs` and `node scripts/qa-browser.mjs` (or use `scripts/local-server.js`).
 
 The operating system for **Auto Plumbing / O.T.T.O. Plumbing** — a bilingual
 (English / Spanish), mobile-first, minimal CRM built for a 15-person plumbing

@@ -6,6 +6,7 @@
 - Default branch: `main`
 - Current purpose: field-service CRM / O.T.T.O. Plumbing CRM workstream
 - Current root shape: single-file PWA plus API helpers and legacy reference
+- **Recent:** QA scripts tightened (better detection, +SW + jobs coverage, 17/17 on live http server). Local test server helper added. Rebrand to plumbing appears complete in code.
 
 ## Current root inventory
 
