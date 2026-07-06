@@ -57,6 +57,9 @@
       --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
       --shadow: 0 4px 12px rgba(0,0,0,0.4);
       --shadow2: 0 12px 32px rgba(0,0,0,0.5);
+      /* Premium glassmorphism */
+      --glass-bg: rgba(20, 28, 47, 0.85);
+      --glass-border: rgba(255,255,255,0.08);
     }
 
     /* ===== RESET & BASE TYPOGRAPHY ===== */
@@ -383,11 +386,115 @@
     .pindots span { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--accent); transition: all 0.2s ease; }
     .pindots span.f { background: var(--accent); transform: scale(1.1); }
 
-    .chat-log { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; }
-    .bubble { max-width: 85%; padding: 12px 16px; border-radius: 16px; line-height: 1.5; white-space: pre-wrap; font-size: 15px; }
-    .bubble.me { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 4px; }
-    .bubble.bot { align-self: flex-start; background: var(--card); border: 1px solid var(--line); border-bottom-left-radius: 4px; box-shadow: var(--shadow-sm); }
-    .bubble.bot .src { display: block; margin-top: 8px; font-size: 12px; color: var(--text3); }
+    .chat-log { display: flex; flex-direction: column; gap: 12px; margin-bottom: 16px; padding: 8px 0; }
+    .bubble { 
+      max-width: 85%; padding: 14px 18px; border-radius: 18px; line-height: 1.45; white-space: pre-wrap; font-size: 15px; 
+      box-shadow: var(--shadow-sm); transition: all 0.2s ease; position: relative;
+    }
+    .bubble.me { 
+      align-self: flex-end; background: linear-gradient(135deg, var(--accent), #0052cc); color: #fff; 
+      border-bottom-right-radius: 6px; box-shadow: 0 4px 12px rgba(0, 102, 255, 0.25);
+    }
+    .bubble.bot { 
+      align-self: flex-start; background: var(--card); border: 1px solid var(--line); 
+      border-bottom-left-radius: 6px; box-shadow: var(--shadow-sm);
+    }
+    .bubble.bot .src { display: block; margin-top: 8px; font-size: 11px; color: var(--text3); font-weight: 500; }
+    .bubble .bubble-meta { 
+      font-size: 10px; color: var(--text3); margin-top: 6px; opacity: 0.7; display: flex; align-items: center; gap: 6px;
+    }
+    .bubble .copy-btn { 
+      position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,0.15); border: none; 
+      color: inherit; font-size: 11px; padding: 2px 6px; border-radius: 4px; cursor: pointer; opacity: 0.6; transition: 0.15s;
+    }
+    .bubble:hover .copy-btn { opacity: 1; }
+    .bubble .avatar { 
+      width: 22px; height: 22px; border-radius: 50%; background: var(--blue2); color: #fff; 
+      display: inline-flex; align-items: center; justify-content: center; font-size: 11px; margin-right: 8px; vertical-align: middle;
+    }
+    .bubble.me .avatar { background: rgba(255,255,255,0.2); }
+
+    /* Premium glassmorphism */
+    .glass, .card, .tile, .sheet, .login .card-login {
+      background: var(--card);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-sm);
+      transition: transform 0.2s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.2s ease, background 0.2s ease;
+    }
+    [data-theme="dark"] .glass, [data-theme="dark"] .card, [data-theme="dark"] .tile, 
+    [data-theme="dark"] .sheet, [data-theme="dark"] .login .card-login {
+      background: var(--glass-bg, rgba(20, 28, 47, 0.85));
+      border: 1px solid var(--glass-border, rgba(255,255,255,0.08));
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+    }
+    .card:hover, .tile:hover { 
+      transform: translateY(-3px); 
+      box-shadow: var(--shadow2); 
+    }
+    .glass { backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+
+    /* Micro-interactions & animations */
+    .btn, .iconbtn, .tile, .list-item, .back, .fab {
+      transition: transform 0.15s cubic-bezier(0.23, 1, 0.32, 1), 
+                  box-shadow 0.15s ease, 
+                  background 0.15s ease,
+                  border-color 0.15s ease;
+    }
+    .btn:active, .iconbtn:active, .tile:active, .list-item:active { 
+      transform: scale(0.985); 
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .fab:hover { transform: translateY(-2px) scale(1.03); }
+    .fade-in { animation: fadeInUp 0.25s cubic-bezier(0.23, 1.0, 0.32, 1) both; }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .chat-message { animation: messageFade 0.2s ease both; }
+    @keyframes messageFade {
+      from { opacity: 0; transform: translateY(8px) scale(0.98); }
+      to { opacity: 1; transform: none; }
+    }
+    .spinner { 
+      display: inline-block; width: 14px; height: 14px; border: 2px solid var(--text3); 
+      border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .typing-dots { display: flex; gap: 4px; padding: 8px 12px; }
+    .typing-dots span { 
+      width: 6px; height: 6px; background: var(--text3); border-radius: 50%; 
+      animation: typingBounce 1.2s infinite ease-in-out;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingBounce {
+      0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); }
+    }
+
+    /* Improved typography, spacing & hierarchy */
+    body { font-size: 15.5px; line-height: 1.55; }
+    h1, .pagehead h1 { font-size: 26px; letter-spacing: -0.025em; font-weight: 700; }
+    .section-title { font-size: 12px; letter-spacing: 0.08em; margin: 28px 4px 10px; }
+    .tile .lbl { font-size: 15px; font-weight: 600; }
+    .list-item { padding: 15px 18px; }
+    .kv .k { font-size: 13.5px; }
+    input, textarea, select, .btn { font-size: 15.5px; }
+    .pill { font-size: 11px; letter-spacing: 0.05em; padding: 3px 10px; }
+
+    .muted { color: var(--text2); font-size: 13.5px; }
+
+    .note-item { padding: 15px 0; }
+    .note-meta { font-size: 12px; }
+
+    /* Better mobile/PWA */
+    .btn, .iconbtn, .fab, .bottomnav button { min-height: 48px; }
+    @media (max-width: 480px) {
+      .wrap { padding: 18px 14px 110px; }
+      .tile { min-height: 120px; padding: 18px 12px; }
+      .pagehead h1 { font-size: 23px; }
+    }
+    .bottomnav button { min-height: 52px; padding: 8px 2px; }
 
     .muted { color: var(--text2); font-size: 14px; }
     .note-item { padding: 16px 0; border-bottom: 1px solid var(--line); }
@@ -515,6 +622,7 @@
       firstOpen: 'First Open', lastClose: 'Last Close', noPtoPending: 'none', pendingCount: 'pending', approvedThrough: 'approved through',
       startJob: 'Start Job', acknowledge: 'Acknowledge', cantComplete: 'Can\'t complete', addNoteToContinue: 'Add a note to continue', submitAndClose: 'Submit & Close Job', incompleteChecklist: 'Complete all items or add a note before closing', openJobReminder: 'You have an open job — complete check-out', timeOff: 'Request Time Off', ptoReason: 'Reason', ptoDates: 'Dates', isOT: 'OT / Overtime Job', ackOT: 'Acknowledge OT',
       connectEmail: 'Connect Email', preview: 'Preview', download: 'Download', analyzeAI: 'Analyze with AI', aiAnalysisComplete: 'AI Analysis Complete', foundFixtures: 'Found', fixturesL: 'fixtures', pipesL: 'LF pipe', fittingsL: 'fittings', assignTo: 'Assign to', existingJob: 'Existing job', createNewProject: 'Create new project folder', aiTakeoffTitle: 'AI Floor Plan Takeoff', noInboxMessages: 'No new messages in inbox.', inboxRefresh: 'Refresh Inbox',
+      floatingChat: 'Chat with OTTO', chatTitle: 'OTTO Assistant', typing: 'OTTO is thinking…', copyMsg: 'Copy', copied: 'Copied!', close: 'Close', openAiChat: 'Open AI Chat', sendMessage: 'Send',
     },
     es: {
       home: 'Inicio', customers: 'Clientes', jobs: 'Trabajos', calls: 'Llamadas', more: 'Más',
@@ -597,6 +705,7 @@
       firstOpen: 'Primera Conexión', lastClose: 'Última Desconexión', noPtoPending: 'ninguno', pendingCount: 'pendiente(s)', approvedThrough: 'aprobado hasta',
       startJob: 'Comenzar Trabajo', acknowledge: 'Reconocer', cantComplete: 'No se pudo', addNoteToContinue: 'Añade una nota para continuar', submitAndClose: 'Enviar y Cerrar', incompleteChecklist: 'Complete todo o añada una nota antes de cerrar', openJobReminder: 'Tienes un trabajo abierto — completa la salida', timeOff: 'Solicitar Tiempo Libre', ptoReason: 'Motivo', ptoDates: 'Fechas', isOT: 'Trabajo OT', ackOT: 'Reconocer OT',
       connectEmail: 'Conectar Correo', preview: 'Vista previa', download: 'Descargar', analyzeAI: 'Analizar con IA', aiAnalysisComplete: 'Análisis IA Completo', foundFixtures: 'Encontrado', fixturesL: 'accesorios', pipesL: 'pies de tubo', fittingsL: 'conexiones', assignTo: 'Asignar a', existingJob: 'Trabajo existente', createNewProject: 'Crear nueva carpeta de proyecto', aiTakeoffTitle: 'Estimado de Planos IA', noInboxMessages: 'No hay mensajes nuevos.', inboxRefresh: 'Actualizar Bandeja',
+      floatingChat: 'Chatear con OTTO', chatTitle: 'Asistente OTTO', typing: 'OTTO está pensando…', copyMsg: 'Copiar', copied: '¡Copiado!', close: 'Cerrar', openAiChat: 'Abrir chat IA', sendMessage: 'Enviar',
     }
   };
   const t = (k) => (T[lang] && T[lang][k]) || T.en[k] || k;
@@ -869,7 +978,12 @@
     };
     draw();
   }
-  function signOut() { session = null; localStorage.removeItem('otto_session'); showLogin(); }
+  function signOut() { 
+    session = null; localStorage.removeItem('otto_session'); 
+    const f = document.getElementById('ai-float-btn'); if (f) f.remove();
+    const p = document.getElementById('ai-chat-popup'); if (p) p.remove();
+    showLogin(); 
+  }
 
   /* ============================ ROUTER ============================ */
   let route = { view: 'home', id: null, tab: null };
@@ -905,6 +1019,8 @@
   /* ============================ MAIN RENDER ============================ */
   function render() {
     if (!session) return;
+    const main = $('#main');
+    if (main) { main.style.transition = 'opacity .15s ease'; main.style.opacity = '0.6'; setTimeout(()=>{ main.style.opacity='1'; }, 10); }
     renderNav();
     $('#lang-en').classList.toggle('on', lang === 'en');
     $('#lang-es').classList.toggle('on', lang === 'es');
@@ -2649,11 +2765,41 @@ Rules: Never invent precise counts you cannot support from the data — instead 
   let chatHistory = [];
   function viewAssistant() {
     let html = pageHead(t('assistant'), 'OTTO');
-    html += `<div class="chat-log" id="chatlog">${chatHistory.length ? chatHistory.map(m => `<div class="bubble ${m.role}">${esc(m.text)}${m.src ? `<span class="src"><i class="fas fa-link"></i> ${esc(m.src)}</span>` : ''}</div>`).join('') : `<div class="bubble bot">${lang === 'es' ? '¡Hola! Pregúntame sobre cualquier trabajo, cliente, factura o cómo hacer algo. Ej: "¿Cuánto debe Juan?" o "¿Cómo cambio un calentador?"' : 'Hi! Ask me about any job, customer, invoice, or how-to. e.g. "How much does Juan owe?" or "How do I replace a water heater?"'}</div>`}</div>`;
-    html += `<div class="field" style="position:fixed;left:0;right:0;bottom:calc(70px + env(safe-area-inset-bottom));max-width:1100px;margin:0 auto;padding:10px 14px;background:var(--bg)">
+    const welcome = lang === 'es' 
+      ? '¡Hola! Pregúntame sobre cualquier trabajo, cliente, factura o cómo hacer algo. Ej: "¿Cuánto debe Juan?" o "¿Cómo cambio un calentador?"' 
+      : 'Hi! Ask me about any job, customer, invoice, or how-to. e.g. "How much does Juan owe?" or "How do I replace a water heater?"';
+    html += `<div class="chat-log glass" id="chatlog" style="max-height:calc(100dvh - 240px); overflow:auto; padding:12px; border-radius:var(--radius); border:1px solid var(--line)">`;
+    if (chatHistory.length) {
+      html += chatHistory.map((m, i) => {
+        const time = m.ts ? new Date(m.ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
+        const avatar = m.role === 'bot' ? '<span class="avatar"><i class="fas fa-robot"></i></span>' : '<span class="avatar"><i class="fas fa-user"></i></span>';
+        let content = esc(m.text);
+        if (m.src) content += `<span class="src"><i class="fas fa-link"></i> ${esc(m.src)}</span>`;
+        return `<div class="bubble ${m.role} chat-message" data-idx="${i}">
+          ${m.role==='bot' ? avatar : ''}${content}${m.role==='me' ? avatar : ''}
+          <div class="bubble-meta">${time} 
+            <button class="copy-btn" onclick="copyChatMsg(${i}, this)">${t('copyMsg')}</button>
+          </div>
+        </div>`;
+      }).join('');
+    } else {
+      html += `<div class="bubble bot chat-message">${welcome}</div>`;
+    }
+    html += `</div>`;
+    html += `<div class="field" style="position:fixed;left:0;right:0;bottom:calc(70px + env(safe-area-inset-bottom));max-width:1100px;margin:0 auto;padding:10px 14px;background:var(--bg);z-index:10">
       <div class="with-voice"><input id="chat-in" placeholder="${t('askPlaceholder')}" onkeydown="if(event.key==='Enter')askAssistant()">${voiceBtn('chat-in')}<button class="btn" style="flex:0 0 auto" onclick="askAssistant()"><i class="fas fa-paper-plane"></i></button></div></div>`;
     $('#main').innerHTML = html;
     const cl = $('#chatlog'); if (cl) cl.scrollTop = cl.scrollHeight;
+  }
+
+  function copyChatMsg(idx, btn) {
+    const msg = chatHistory[idx];
+    if (!msg) return;
+    navigator.clipboard.writeText(msg.text).then(() => {
+      const orig = btn.textContent;
+      btn.textContent = t('copied');
+      setTimeout(() => { btn.textContent = orig; }, 1400);
+    });
   }
   // Build a compact, relevant context snapshot the model (or local search) can use.
   function buildContext(q) {
@@ -2681,20 +2827,137 @@ Rules: Never invent precise counts you cannot support from the data — instead 
   }
   async function askAssistant() {
     const inp = $('#chat-in'); const q = inp.value.trim(); if (!q) return;
-    chatHistory.push({ role: 'me', text: q }); inp.value = ''; viewAssistant();
+    chatHistory.push({ role: 'me', text: q, ts: Date.now() }); inp.value = ''; viewAssistant();
     const ctx = buildContext(q);
-    chatHistory.push({ role: 'bot', text: '…' }); viewAssistant();
+    // Premium typing indicator
+    const log = $('#chatlog');
+    if (log) {
+      const typing = document.createElement('div');
+      typing.className = 'bubble bot chat-message';
+      typing.id = 'typing-indicator';
+      typing.innerHTML = `<span class="avatar"><i class="fas fa-robot"></i></span><span class="typing-dots"><span></span><span></span><span></span></span> <span style="font-size:13px;color:var(--text3);margin-left:6px">${t('typing')}</span>`;
+      log.appendChild(typing);
+      log.scrollTop = log.scrollHeight;
+    }
     const sys = `You are OTTO, the in-house assistant for a plumbing company. Answer briefly and practically in ${lang === 'es' ? 'Spanish' : 'English'} using ONLY the company data below. If the answer isn't in the data and isn't general plumbing how-to, say the office/owner should be asked. Data:\n\n${ctx || '(no matching records)'}`;
     let d = null;
     try { d = await callClaude({ model: 'claude-sonnet-4-6', max_tokens: 700, system: sys, messages: [{ role: 'user', content: q }] }); } catch (e) { d = null; }
-    chatHistory.pop(); // remove the "…" placeholder
-    if (d && d.content) { chatHistory.push({ role: 'bot', text: d.content[0].text }); }
-    else { const a = localAnswer(q, ctx); chatHistory.push({ role: 'bot', text: a.text, src: a.src }); }
+    const typingEl = $('#typing-indicator'); if (typingEl) typingEl.remove();
+    if (d && d.content) { 
+      chatHistory.push({ role: 'bot', text: d.content[0].text, ts: Date.now() }); 
+    } else { 
+      const a = localAnswer(q, ctx); 
+      chatHistory.push({ role: 'bot', text: a.text, src: a.src, ts: Date.now() }); 
+    }
     viewAssistant();
   }
   function localAnswer(q, ctx) {
     if (ctx) return { text: (lang === 'es' ? 'Esto encontré en los registros:' : 'Here is what I found in the records:') + '\n\n' + ctx, src: lang === 'es' ? 'Datos de la empresa' : 'Company records' };
     return { text: lang === 'es' ? 'No encontré nada sobre eso. Pregunta a la oficina o al dueño. (Agrega una clave de IA en Ajustes para respuestas más inteligentes.)' : "I couldn't find anything about that. Please ask the office or owner. (Add an AI key in Settings for smarter answers.)", src: '' };
+  }
+
+  /* ============================ PREMIUM FLOATING AI CHAT BOX (EN/ES) ============================ */
+  let floatingChatOpen = false;
+  function createFloatingChat() {
+    if (document.getElementById('ai-float-btn')) return;
+    // Floating button - premium glass + micro interaction
+    const floatBtn = document.createElement('div');
+    floatBtn.id = 'ai-float-btn';
+    floatBtn.className = 'glass';
+    floatBtn.style.cssText = `position:fixed;bottom:92px;right:22px;width:54px;height:54px;border-radius:999px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:var(--shadow2);cursor:pointer;z-index:55;transition:transform .2s cubic-bezier(0.23,1,0.32,1),box-shadow .2s;`;
+    floatBtn.innerHTML = `<i class="fas fa-robot"></i>`;
+    floatBtn.title = t('openAiChat');
+    floatBtn.onclick = toggleFloatingChat;
+    document.body.appendChild(floatBtn);
+
+    // Premium floating chat popup (glassmorphism, layered depth)
+    const popup = document.createElement('div');
+    popup.id = 'ai-chat-popup';
+    popup.className = 'glass';
+    popup.style.cssText = `position:fixed;bottom:18px;right:18px;width:380px;max-width:94vw;height:480px;max-height:65vh;border-radius:20px;box-shadow:var(--shadow2);display:none;flex-direction:column;overflow:hidden;z-index:120;border:1px solid var(--line);`;
+    popup.innerHTML = `
+      <div style="padding:12px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.03)">
+        <div style="font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px"><i class="fas fa-robot"></i> ${t('chatTitle')}</div>
+        <div>
+          <button onclick="toggleFloatingChat()" style="background:none;border:none;font-size:18px;color:var(--text2);cursor:pointer;padding:4px 8px">×</button>
+        </div>
+      </div>
+      <div id="float-chatlog" style="flex:1;padding:14px;overflow:auto;font-size:14.5px;line-height:1.45"></div>
+      <div style="padding:10px 12px;border-top:1px solid var(--line);background:var(--bg)">
+        <div style="display:flex;gap:8px">
+          <input id="float-chat-in" style="flex:1;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--card);font-size:15px" placeholder="${t('askPlaceholder')}" onkeydown="if(event.key==='Enter')sendFloatingMessage()">
+          <button onclick="sendFloatingMessage()" class="btn" style="padding:0 18px;border-radius:12px"><i class="fas fa-paper-plane"></i></button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(popup);
+  }
+
+  function toggleFloatingChat() {
+    const popup = document.getElementById('ai-chat-popup');
+    if (!popup) return;
+    floatingChatOpen = !floatingChatOpen;
+    popup.style.display = floatingChatOpen ? 'flex' : 'none';
+    if (floatingChatOpen) {
+      renderFloatingChat();
+      const inp = document.getElementById('float-chat-in'); if (inp) inp.focus();
+    }
+  }
+
+  function renderFloatingChat() {
+    const log = document.getElementById('float-chatlog');
+    if (!log) return;
+    const welcome = lang === 'es' ? '¡Hola! ¿En qué puedo ayudarte hoy?' : 'Hi! How can I help you today?';
+    log.innerHTML = chatHistory.length ? chatHistory.map((m, i) => {
+      const time = m.ts ? new Date(m.ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
+      const av = m.role === 'bot' ? '<span class="avatar" style="width:18px;height:18px;font-size:10px"><i class="fas fa-robot"></i></span>' : '<span class="avatar" style="width:18px;height:18px;font-size:10px"><i class="fas fa-user"></i></span>';
+      return `<div class="bubble ${m.role}" style="font-size:14.5px;margin-bottom:8px;max-width:82%">${m.role==='bot'?av:''}${esc(m.text)}${m.role==='me'?av:''}<div class="bubble-meta" style="font-size:10px">${time}</div></div>`;
+    }).join('') : `<div class="bubble bot" style="font-size:14.5px">${welcome}</div>`;
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function sendFloatingMessage() {
+    const inp = document.getElementById('float-chat-in');
+    if (!inp) return;
+    const q = inp.value.trim(); if (!q) return;
+    chatHistory.push({ role: 'me', text: q, ts: Date.now() });
+    inp.value = '';
+    renderFloatingChat();
+    const log = document.getElementById('float-chatlog');
+    // Typing
+    if (log) {
+      const tdiv = document.createElement('div');
+      tdiv.className = 'bubble bot';
+      tdiv.innerHTML = `<span class="avatar" style="width:18px;height:18px;font-size:10px"><i class="fas fa-robot"></i></span><span class="typing-dots"><span></span><span></span><span></span></span>`;
+      log.appendChild(tdiv);
+      log.scrollTop = log.scrollHeight;
+    }
+    const ctx = buildContext(q);
+    const sys = `You are OTTO, the in-house assistant for a plumbing company. Answer briefly and practically in ${lang === 'es' ? 'Spanish' : 'English'} using ONLY the company data below. If the answer isn't in the data and isn't general plumbing how-to, say the office/owner should be asked. Data:\n\n${ctx || '(no matching records)'}`;
+    callClaude({ model: 'claude-sonnet-4-6', max_tokens: 650, system: sys, messages: [{ role: 'user', content: q }] }).then(d => {
+      const tdiv = log ? log.querySelector('.bubble.bot:last-child') : null; if (tdiv) tdiv.remove();
+      if (d && d.content) chatHistory.push({ role: 'bot', text: d.content[0].text, ts: Date.now() });
+      else { const a = localAnswer(q, ctx); chatHistory.push({ role: 'bot', text: a.text, src: a.src, ts: Date.now() }); }
+      renderFloatingChat();
+    }).catch(() => {
+      const tdiv = log ? log.querySelector('.bubble.bot:last-child') : null; if (tdiv) tdiv.remove();
+      const a = localAnswer(q, ctx); chatHistory.push({ role: 'bot', text: a.text, src: a.src, ts: Date.now() });
+      renderFloatingChat();
+    });
+  }
+
+  // Add floating AI button + premium chat when app boots (after login)
+  function ensureFloatingAI() {
+    setTimeout(() => {
+      if (document.getElementById('app') && !document.getElementById('ai-float-btn')) {
+        createFloatingChat();
+        // subtle haptics on tap for mobile PWA
+        const btn = document.getElementById('ai-float-btn');
+        if (btn && 'vibrate' in navigator) {
+          btn.addEventListener('click', () => navigator.vibrate(15), {once:true});
+        }
+      }
+    }, 1200);
   }
 
   /* ============================ helpers: notify, selects, quick add ============================ */
@@ -3337,6 +3600,7 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     $('#login').classList.add('hidden'); $('#login').innerHTML = '';
     $('#app').classList.remove('hidden');
     setLang(lang);
+    ensureFloatingAI();  // premium floating AI chat (glass + animations)
     // First-login consent for field workers (Spanish-first work-app permission).
     if (session.role === 'field' && !hasConsent(session.id)) { showConsent(); return; }
 
