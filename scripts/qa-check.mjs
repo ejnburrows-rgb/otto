@@ -10,13 +10,34 @@ const script = scripts[scripts.length - 1].replace(/<\/?script>/g, '');
 const funcs = new Set();
 for (const m of script.matchAll(/(?:async\s+)?function\s+([a-zA-Z_$][\w$]*)\s*\(/g)) funcs.add(m[1]);
 
-const onclick = [...html.matchAll(/onclick="([^"]+)"/g)].map((m) => m[1]);
+// Catch arrow and assigned functions: const/let/var foo = () => or = function
+for (const m of script.matchAll(/(?:^|[\s;{])(?:const|let|var)\s+([a-zA-Z_$][\w$]*)\s*=\s*(?:async\s+)?(?:function\b|\()/gm)) funcs.add(m[1]);
+
+// Catch direct window.xxx = assignments (e.g. the __pin handlers)
+for (const m of script.matchAll(/window\.([a-zA-Z_$][\w$]*)\s*=\s*(?:async\s+)?(?:function\b|\()/g)) funcs.add(m[1]);
+
+// Pull names from Object.assign(window, { shorthand1, shorthand2, ... })
+const assignBlock = script.match(/Object\.assign\(window,\s*\{([\s\S]*?)\}\s*\);/);
+if (assignBlock) {
+  for (const m of assignBlock[1].matchAll(/\b([a-zA-Z_$][\w$]*)\b(?=\s*(?:,|:\s*|\s*\}))/g)) funcs.add(m[1]);
+}
+
+const onclick = [...html.matchAll(/onclick=["']([^"']+)["']/g)].map((m) => m[1]);
 const calls = new Set();
-const builtins = new Set(['nav', 'closeModal', 'this', 'event', 'confirm', 'alert', 'prompt', 'setSearch', 'setLang', 'setJobStatus', 'setJobSite', 'render', 'back', 'signOut', 'toggleTheme', 'toggleFollow', 'toggleChecklistItem', 'answerDrawingQ', 'skipDrawingQ', 'assignTakeoff', 'selectJobForTakeoff', 'window']);
+const builtins = new Set([
+  'nav', 'closeModal', 'this', 'event', 'confirm', 'alert', 'prompt',
+  'setSearch', 'setLang', 'setJobStatus', 'setJobSite', 'render', 'back', 'signOut',
+  'toggleTheme', 'toggleFollow', 'toggleChecklistItem', 'answerDrawingQ', 'skipDrawingQ',
+  'assignTakeoff', 'selectJobForTakeoff', 'window',
+  // helpers that can appear inside template expressions embedded in onclick= strings
+  '$', 'Number', 'stringify', 'todayISO', 'esc', 'open', 'closest', 'stopPropagation', 'JSON'
+]);
 
 for (const oc of onclick) {
-  for (const m of oc.matchAll(/([a-zA-Z_$][\w$]*)\s*\(/g)) {
-    const n = m[1];
+  // Improved extraction: match bare calls or window.XXX( but skip .method( calls using negative lookbehind
+  for (const m of oc.matchAll(/(?<![\w$.])((?:window\.)?[a-zA-Z_$][\w$]*)\s*\(/g)) {
+    let full = m[1];
+    let n = full.replace(/^window\./, '');
     if (!builtins.has(n)) calls.add(n);
   }
 }
@@ -87,7 +108,7 @@ const report = {
   prodDarkDefault: urlResults.prod?.body?.includes('data-theme="dark"') ?? false,
   apiQuickbooks: apiQb.status,
   apiNotify: apiNotify.status,
-  pass: missing.filter((m) => !['$', 'Number', 'stringify', 'todayISO', 'esc', 'open', 'closest', 'stopPropagation'].includes(m) && !m.startsWith('__')).length === 0 && urlResults.prod?.ok && urlResults.prod?.body?.includes('viewUrgentHub'),
+  pass: missing.length === 0 && urlResults.prod?.ok && (urlResults.prod?.body?.includes('viewUrgentHub') ?? false),
 };
 
 const lines = [

@@ -14,11 +14,23 @@ const page = await browser.newPage();
 const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 page.on('console', (msg) => { if (msg.type() === 'error') errors.push(msg.text()); });
+const isIgnorableError = (e) => /ServiceWorker|protocol of the current origin/i.test(String(e));
+let realErrors = [];
 
 try {
   await page.goto(BASE, { waitUntil: 'networkidle', timeout: 30000 });
   log('Page loads', (await page.title()).includes('OTTO'));
   log('Dark theme default', (await page.locator('html').getAttribute('data-theme')) === 'dark');
+
+  // Verify PWA service worker can register (http context only)
+  const swStatus = await page.evaluate(async () => {
+    if (!('serviceWorker' in navigator)) return 'no-sw-api';
+    try {
+      await navigator.serviceWorker.register('./sw.js', { scope: './' });
+      return 'registered';
+    } catch (e) { return 'register-fail: ' + (e && e.message || e); }
+  }).catch(() => 'eval-fail');
+  log('Service Worker registers', swStatus === 'registered', swStatus);
 
   await page.waitForSelector('#login:not(.hidden), #app:not(.hidden)', { timeout: 10000 });
   const onLogin = await page.locator('#login').isVisible();
@@ -48,6 +60,11 @@ try {
   log('Customers screen', cust.toLowerCase().includes('customer') || cust.toLowerCase().includes('cliente'));
   log('Photo new customer button', await page.locator('button', { hasText: /Photo|Foto/ }).count() > 0);
 
+  await page.evaluate(() => { if (typeof nav === 'function') nav('jobs'); });
+  await page.waitForTimeout(500);
+  const jobsText = await page.locator('#main').innerText();
+  log('Jobs screen', jobsText.toLowerCase().includes('job') || jobsText.toLowerCase().includes('trabajo') || jobsText.toLowerCase().includes('work'));
+
   await page.evaluate(() => { if (typeof nav === 'function') nav('urgent'); });
   await page.waitForTimeout(500);
   const urgent = await page.locator('#main').innerText();
@@ -69,7 +86,8 @@ try {
   await page.evaluate(() => { if (typeof exportAll === 'function') exportAll(); });
   log('Backup export function', true);
 
-  log('No JS crashes', errors.length === 0, errors.slice(0, 3).join('; '));
+  realErrors = errors.filter(e => !isIgnorableError(e));
+  log('No JS crashes', realErrors.length === 0, realErrors.slice(0, 3).join('; '));
 
   await page.evaluate(() => { if (typeof signOut === 'function') signOut(); });
   await page.waitForTimeout(600);
@@ -93,9 +111,10 @@ try {
 
 await browser.close();
 
+realErrors = errors.filter(e => !isIgnorableError(e));
 const passed = results.filter((r) => r.ok).length;
 const total = results.length;
-const report = { ts: new Date().toISOString(), base: BASE, passed, total, pct: Math.round((passed / total) * 100), results, errors };
+const report = { ts: new Date().toISOString(), base: BASE, passed, total, pct: Math.round((passed / total) * 100), results, errors: realErrors };
 
 const md = [
   '# OTTO Browser QA',
@@ -106,7 +125,7 @@ const md = [
   '',
   ...results.map((r) => `- [${r.ok ? 'x' : ' '}] ${r.name}${r.detail ? ' — ' + r.detail : ''}`),
   '',
-  errors.length ? `**Console errors:** ${errors.join('; ')}` : '**Console errors:** none',
+  realErrors.length ? `**Console errors:** ${realErrors.join('; ')}` : '**Console errors:** none',
 ].join('\n');
 
 fs.writeFileSync('D:/Projects/otto-fresh/docs/QA_BROWSER.md', md, 'utf8');

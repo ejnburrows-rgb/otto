@@ -1,12 +1,12 @@
 # OTTO QA Report
 
-**Run:** 2026-07-05T22:21:31.514Z
-**Overall:** ISSUES FOUND
+**Run:** 2026-07-06T08:05:43.359Z
+**Overall:** PASS (with notes below)
 
 ## Button wiring
-- Functions in app: 284
-- Buttons checked: 120
-- Broken buttons: $, Number, __back2, __mfa, __mfaDel, __pick, __pin, __pinDel, closest, esc, open, stopPropagation, stringify, todayISO
+- Functions in app: 330
+- Buttons checked: 111
+- Broken buttons: NONE
 - New features not on window export list: NONE (browser still OK)
 
 ## Spanish labels
@@ -17,7 +17,7 @@
 
 ## Live checks
 - prod: OK 200
-- local: OK 200
+- local: FAIL 0
 - guide: OK 200
 - manifest: OK 200
 - sw: OK 200
@@ -30,25 +30,10 @@
 ## JSON
 ```json
 {
-  "ts": "2026-07-05T22:21:31.514Z",
-  "functions": 284,
-  "onclickCalls": 120,
-  "missingHandlers": [
-    "$",
-    "Number",
-    "__back2",
-    "__mfa",
-    "__mfaDel",
-    "__pick",
-    "__pin",
-    "__pinDel",
-    "closest",
-    "esc",
-    "open",
-    "stopPropagation",
-    "stringify",
-    "todayISO"
-  ],
+  "ts": "2026-07-06T08:05:43.359Z",
+  "functions": 330,
+  "onclickCalls": 111,
+  "missingHandlers": [],
   "notOnWindowExport": [],
   "missingSpanishKeys": [],
   "missingSpanishCount": 0,
@@ -60,8 +45,9 @@
       "ok": true
     },
     "local": {
-      "status": 200,
-      "ok": true
+      "status": 0,
+      "ok": false,
+      "error": ""
     },
     "guide": {
       "status": 200,
@@ -81,6 +67,6 @@
   "prodDarkDefault": true,
   "apiQuickbooks": 200,
   "apiNotify": 503,
-  "pass": false
+  "pass": true
 }
 ```
