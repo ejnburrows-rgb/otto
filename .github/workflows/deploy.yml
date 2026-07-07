@@ -1,0 +1,46 @@
+name: Deploy OTTO Plumbing CRM to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Allow one concurrent deployment, queueing newer ones after the current finishes.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+# Restrict default token permissions; explicitly grant only what's needed.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      # No build step — the project is a single-file PWA (index.html at repo root).
+      - name: Build
+        run: |
+          echo "Static PWA — no build step required."
+          ls -la
+          [ -f index.html ] && echo "index.html found ✓" || (echo "index.html missing ✗" && exit 1)
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
