@@ -1,4 +1,9 @@
 {
+  "scripts": {
+    "dev": "python3 -m http.server 3000",
+    "build": "echo 'No build step required — this is a static single-file PWA'",
+    "start": "python3 -m http.server 3000"
+  },
   "devDependencies": {
     "playwright": "^1.61.1"
   }
