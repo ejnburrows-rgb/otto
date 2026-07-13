@@ -1141,11 +1141,11 @@
 
   const NAVBAR = {
     field: ['home', 'jobs', 'customers', 'followups', 'assistant'],
-    default: ['home', 'jobs', 'customers', 'more'],
+    default: ['home', 'jobs', 'inbox', 'more'],
   };
   function renderNav() {
     const bn = $('#bottomnav');
-    const items = (session.role === 'field' ? NAVBAR.field : ['home', 'jobs', 'customers', 'more']);
+    const items = (session.role === 'field' ? NAVBAR.field : ['home', 'jobs', 'inbox', 'more']);
     const icons = { home: 'fa-house', jobs: 'fa-screwdriver-wrench', customers: 'fa-users', calls: 'fa-phone', inbox: 'fa-inbox', followups: 'fa-bell', assistant: 'fa-robot', more: 'fa-ellipsis' };
     bn.innerHTML = items.map(v => `<button class="${route.view === v ? 'on' : ''}" onclick="${v === 'more' ? 'openMore()' : `nav('${v}')`}">
       <i class="fas ${icons[v]}"></i><span>${t(v)}</span></button>`).join('');
