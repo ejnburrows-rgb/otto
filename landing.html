@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Otto Plumbing Inc. — Trusted Plumbing Services</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --navy:   #0A2540;
+      --navy2:  #143A61;
+      --blue:   #1B6AC9;
+      --sky:    #3E9BE5;
+      --light:  #E8F4FD;
+      --white:  #FFFFFF;
+      --gray1:  #F0F6FC;
+      --gray2:  #C9DCF0;
+      --text:   #0F172A;
+      --text2:  #475569;
+      --radius: 16px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--white);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── NAVBAR ─── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 5%;
+      height: 72px;
+      background: rgba(10, 37, 64, 0.96);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    .nav-logo img { height: 42px; object-fit: contain; }
+    .nav-phone {
+      display: flex; align-items: center; gap: 10px;
+      color: var(--white); font-weight: 600; font-size: 15px;
+      text-decoration: none; letter-spacing: 0.01em;
+      transition: color 0.2s;
+    }
+    .nav-phone i { color: var(--sky); font-size: 16px; }
+    .nav-phone:hover { color: var(--sky); }
+    .nav-cta {
+      background: var(--sky); color: var(--white); border: none; border-radius: 8px;
+      padding: 10px 22px; font-size: 14px; font-weight: 600; cursor: pointer;
+      text-decoration: none; transition: all 0.2s; white-space: nowrap;
+    }
+    .nav-cta:hover { background: #2b8fd9; transform: translateY(-1px); }
+    @media (max-width: 520px) { .nav-cta { display: none; } }
+
+    /* ─── HERO ─── */
+    .hero {
+      min-height: 100vh;
+      background:
+        linear-gradient(160deg, #071B33 0%, #0A2540 45%, #143A61 100%);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; padding: 100px 5% 80px;
+      position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 80% 60% at 50% 110%, rgba(62,155,229,0.18) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-logo {
+      width: min(320px, 72vw);
+      margin-bottom: 48px;
+      filter: drop-shadow(0 8px 32px rgba(0,0,0,0.35));
+      animation: fadeUp 0.9s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(28px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .hero h1 {
+      font-size: clamp(34px, 6vw, 62px);
+      font-weight: 800; color: var(--white);
+      line-height: 1.1; letter-spacing: -0.03em;
+      max-width: 700px; margin: 0 auto 20px;
+      animation: fadeUp 1s 0.15s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .hero h1 span { color: var(--sky); }
+    .hero p {
+      font-size: clamp(16px, 2.2vw, 20px);
+      color: rgba(255,255,255,0.72);
+      max-width: 520px; margin: 0 auto 48px;
+      line-height: 1.65; font-weight: 400;
+      animation: fadeUp 1s 0.28s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .hero-actions {
+      display: flex; flex-wrap: wrap; gap: 16px; justify-content: center;
+      animation: fadeUp 1s 0.4s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: var(--sky); color: var(--white);
+      padding: 16px 32px; border-radius: 10px;
+      font-size: 17px; font-weight: 700; text-decoration: none;
+      box-shadow: 0 6px 24px rgba(30,110,200,0.4);
+      transition: all 0.2s;
+    }
+    .btn-primary:hover { background: #2b8fd9; transform: translateY(-2px); box-shadow: 0 10px 32px rgba(30,110,200,0.5); }
+    .btn-ghost {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: rgba(255,255,255,0.1); color: var(--white);
+      padding: 16px 32px; border-radius: 10px;
+      font-size: 17px; font-weight: 600; text-decoration: none;
+      border: 1px solid rgba(255,255,255,0.2);
+      transition: all 0.2s;
+    }
+    .btn-ghost:hover { background: rgba(255,255,255,0.18); }
+
+    /* ─── PHONE BADGE ─── */
+    .phone-badge {
+      margin-top: 56px;
+      display: inline-flex; align-items: center; gap: 14px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 999px;
+      padding: 14px 28px;
+      animation: fadeUp 1s 0.55s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .phone-badge .icon {
+      width: 46px; height: 46px; border-radius: 50%;
+      background: var(--sky); display: flex; align-items: center;
+      justify-content: center; font-size: 20px; color: #fff;
+      box-shadow: 0 0 0 6px rgba(62,155,229,0.2);
+      flex-shrink: 0;
+    }
+    .phone-badge .text { text-align: left; }
+    .phone-badge .label { font-size: 11px; color: rgba(255,255,255,0.5); font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; }
+    .phone-badge a {
+      display: block; font-size: clamp(22px, 4vw, 30px);
+      font-weight: 800; color: var(--white); text-decoration: none;
+      letter-spacing: -0.02em; line-height: 1.2;
+      transition: color 0.2s;
+    }
+    .phone-badge a:hover { color: var(--sky); }
+    .phone-badge .avail { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+
+    /* ─── WAVE DIVIDER ─── */
+    .wave {
+      display: block; width: 100%; height: 80px;
+      background: var(--white); clip-path: ellipse(55% 100% at 50% 100%);
+      margin-top: -2px;
+    }
+
+    /* ─── SERVICES ─── */
+    section { padding: 96px 5%; }
+    .section-label {
+      text-align: center; font-size: 12px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.12em;
+      color: var(--blue); margin-bottom: 12px;
+    }
+    .section-title {
+      text-align: center; font-size: clamp(28px, 4vw, 42px);
+      font-weight: 800; color: var(--navy);
+      letter-spacing: -0.025em; margin-bottom: 16px; line-height: 1.1;
+    }
+    .section-sub {
+      text-align: center; color: var(--text2);
+      font-size: 17px; max-width: 500px; margin: 0 auto 60px;
+      line-height: 1.65;
+    }
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 24px; max-width: 1100px; margin: 0 auto;
+    }
+    .service-card {
+      background: var(--gray1);
+      border: 1px solid var(--gray2);
+      border-radius: var(--radius);
+      padding: 32px 24px;
+      text-align: center;
+      transition: all 0.25s;
+    }
+    .service-card:hover {
+      background: var(--white);
+      box-shadow: 0 12px 40px rgba(10,37,64,0.1);
+      transform: translateY(-4px);
+      border-color: var(--sky);
+    }
+    .service-icon {
+      width: 60px; height: 60px; border-radius: 14px;
+      background: linear-gradient(135deg, var(--blue), var(--sky));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px; color: #fff; margin: 0 auto 18px;
+      box-shadow: 0 6px 18px rgba(27,106,201,0.3);
+    }
+    .service-card h3 { font-size: 17px; font-weight: 700; margin-bottom: 8px; color: var(--navy); }
+    .service-card p  { font-size: 14px; color: var(--text2); line-height: 1.6; }
+
+    /* ─── WHY US ─── */
+    .why { background: var(--navy); }
+    .why .section-title { color: var(--white); }
+    .why .section-sub   { color: rgba(255,255,255,0.6); }
+    .why .section-label { color: var(--sky); }
+    .pillars {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 32px; max-width: 900px; margin: 0 auto;
+    }
+    .pillar { text-align: center; }
+    .pillar .num {
+      font-size: 48px; font-weight: 900; color: var(--sky);
+      letter-spacing: -0.03em; line-height: 1;
+    }
+    .pillar h4 { font-size: 16px; font-weight: 700; color: var(--white); margin: 8px 0 6px; }
+    .pillar p  { font-size: 14px; color: rgba(255,255,255,0.55); line-height: 1.6; }
+
+    /* ─── CTA STRIP ─── */
+    .cta-strip {
+      background: linear-gradient(135deg, var(--blue) 0%, var(--sky) 100%);
+      padding: 80px 5%;
+      text-align: center;
+    }
+    .cta-strip h2 {
+      font-size: clamp(28px, 4vw, 44px); font-weight: 800;
+      color: var(--white); letter-spacing: -0.025em; margin-bottom: 14px;
+    }
+    .cta-strip p { font-size: 18px; color: rgba(255,255,255,0.85); margin-bottom: 36px; }
+    .cta-strip a {
+      display: inline-flex; align-items: center; gap: 12px;
+      background: var(--white); color: var(--navy);
+      padding: 18px 38px; border-radius: 10px;
+      font-size: 20px; font-weight: 800; text-decoration: none;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.18);
+      letter-spacing: -0.01em;
+      transition: all 0.2s;
+    }
+    .cta-strip a:hover { transform: translateY(-2px); box-shadow: 0 12px 36px rgba(0,0,0,0.24); }
+    .cta-strip a i { color: var(--blue); font-size: 22px; }
+
+    /* ─── FOOTER ─── */
+    footer {
+      background: #06172A;
+      color: rgba(255,255,255,0.5);
+      padding: 40px 5%;
+      display: flex; flex-wrap: wrap;
+      align-items: center; justify-content: space-between;
+      gap: 20px; font-size: 13px;
+    }
+    footer img { height: 32px; opacity: 0.7; }
+    footer a { color: rgba(255,255,255,0.5); text-decoration: none; }
+    footer a:hover { color: var(--sky); }
+
+    /* ─── SCROLL REVEAL ─── */
+    .reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.7s ease, transform 0.7s ease; }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav>
+    <div class="nav-logo">
+      <img src="https://raw.githubusercontent.com/ejnburrows-rgb/otto/main/Screenshot-2026-07-13-141905.jpg"
+           alt="Otto Plumbing Inc."
+           onerror="this.style.display='none'; this.nextElementSibling.style.display='block'" />
+      <span style="display:none; color:#fff; font-weight:800; font-size:18px; letter-spacing:-0.02em;">OTTO Plumbing</span>
+    </div>
+    <a class="nav-phone" href="tel:+13055551234">
+      <i class="fas fa-phone"></i> (305) 555-1234
+    </a>
+    <a class="nav-cta" href="tel:+13055551234">Book a Plumber</a>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <!-- Logo -->
+    <img
+      class="hero-logo"
+      src="https://raw.githubusercontent.com/ejnburrows-rgb/otto/main/Screenshot-2026-07-13-141905.jpg"
+      alt="Otto Plumbing Inc."
+      onerror="this.style.display='none'"
+    />
+
+    <h1>Miami's Most<br><span>Trusted Plumbers</span></h1>
+    <p>Fast, professional plumbing for residential and commercial properties. Available 7 days a week across Miami-Dade and Broward.</p>
+
+    <div class="hero-actions">
+      <a class="btn-primary" href="tel:+13055551234">
+        <i class="fas fa-phone-volume"></i> Call Now
+      </a>
+      <a class="btn-ghost" href="#services">
+        <i class="fas fa-list"></i> Our Services
+      </a>
+    </div>
+
+    <!-- Phone Badge -->
+    <div class="phone-badge">
+      <div class="icon"><i class="fas fa-phone"></i></div>
+      <div class="text">
+        <div class="label">Call or Text Anytime</div>
+        <a href="tel:+13055551234">(305) 555-1234</a>
+        <div class="avail">Mon – Sat &nbsp;·&nbsp; 7 AM – 7 PM</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVICES -->
+  <section id="services">
+    <div class="section-label reveal">What We Do</div>
+    <h2 class="section-title reveal">Plumbing Done Right</h2>
+    <p class="section-sub reveal">From a dripping faucet to a full re-pipe, our licensed team handles every job with care and precision.</p>
+    <div class="services-grid">
+      <div class="service-card reveal">
+        <div class="service-icon"><i class="fas fa-faucet-drip"></i></div>
+        <h3>Leak Repair</h3>
+        <p>Faucets, pipes, and fixtures diagnosed and fixed the same day.</p>
+      </div>
+      <div class="service-card reveal">
+        <div class="service-icon"><i class="fas fa-fire-flame-simple"></i></div>
+        <h3>Water Heater</h3>
+        <p>Installation and replacement of tank and tankless water heaters.</p>
+      </div>
+      <div class="service-card reveal">
+        <div class="service-icon"><i class="fas fa-toilet"></i></div>
+        <h3>Drain & Sewer</h3>
+        <p>Camera inspection, hydro-jetting, and sewer line repair.</p>
+      </div>
+      <div class="service-card reveal">
+        <div class="service-icon"><i class="fas fa-house-chimney-crack"></i></div>
+        <h3>Emergency Service</h3>
+        <p>Burst pipes, flooding, and urgent repairs — we respond fast.</p>
+      </div>
+      <div class="service-card reveal">
+        <div class="service-icon"><i class="fas fa-building"></i></div>
+        <h3>Commercial</h3>
+        <p>Reliable plumbing solutions for offices, restaurants, and buildings.</p>
+      </div>
+      <div class="service-card reveal">
+        <div class="service-icon"><i class="fas fa-shower"></i></div>
+        <h3>Remodeling</h3>
+        <p>Bathroom and kitchen plumbing upgrades tailored to your vision.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHY US -->
+  <section class="why">
+    <div class="section-label reveal">Why Otto</div>
+    <h2 class="section-title reveal">Built on Reliability</h2>
+    <p class="section-sub reveal">Numbers that speak louder than words.</p>
+    <div class="pillars">
+      <div class="pillar reveal">
+        <div class="num">15+</div>
+        <h4>Years in Business</h4>
+        <p>Serving Miami-Dade and Broward since 2009.</p>
+      </div>
+      <div class="pillar reveal">
+        <div class="num">5K+</div>
+        <h4>Jobs Completed</h4>
+        <p>Residential and commercial projects, on time.</p>
+      </div>
+      <div class="pillar reveal">
+        <div class="num">5 ★</div>
+        <h4>Average Rating</h4>
+        <p>Hundreds of 5-star reviews from happy customers.</p>
+      </div>
+      <div class="pillar reveal">
+        <div class="num">24h</div>
+        <h4>Fast Response</h4>
+        <p>Most jobs scheduled within one business day.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA STRIP -->
+  <div class="cta-strip">
+    <h2>Got a Plumbing Problem?</h2>
+    <p>Call us now and we'll get someone to you fast.</p>
+    <a href="tel:+13055551234">
+      <i class="fas fa-phone-volume"></i>
+      (305) 555-1234
+    </a>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    <img
+      src="https://raw.githubusercontent.com/ejnburrows-rgb/otto/main/Screenshot-2026-07-13-141905.jpg"
+      alt="Otto Plumbing Inc."
+      onerror="this.style.display='none'"
+    />
+    <span>© 2026 Otto Plumbing Inc. — Miami, FL &nbsp;|&nbsp; Licensed &amp; Insured</span>
+    <a href="tel:+13055551234"><i class="fas fa-phone"></i> (305) 555-1234</a>
+  </footer>
+
+  <script>
+    // Scroll reveal
+    const obs = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+  </script>
+</body>
+</html>
