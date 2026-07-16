@@ -537,6 +537,45 @@
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
   const todayISO = () => new Date().toISOString().slice(0, 10);
   const nowISO = () => new Date().toISOString();
+  
+  // Auto-estimating: number to words converter for proposal totals
+  function numberToWords(n) {
+    if (n === 0) return 'Zero Dollars';
+    const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+    const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+    const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+    
+    function convertHundreds(num) {
+      let str = '';
+      if (num >= 100) { str += ones[Math.floor(num / 100)] + ' Hundred '; num %= 100; }
+      if (num >= 20) { str += tens[Math.floor(num / 10)] + ' '; num %= 10; }
+      else if (num >= 10) { str += teens[num - 10] + ' '; num = 0; }
+      if (num > 0) { str += ones[num] + ' '; }
+      return str.trim();
+    }
+    
+    const dollars = Math.floor(n);
+    const cents = Math.round((n - dollars) * 100);
+    let result = '';
+    
+    if (dollars >= 1000000) {
+      result += convertHundreds(Math.floor(dollars / 1000000)) + ' Million ';
+      dollars %= 1000000;
+    }
+    if (dollars >= 1000) {
+      result += convertHundreds(Math.floor(dollars / 1000)) + ' Thousand ';
+      dollars %= 1000;
+    }
+    if (dollars > 0) {
+      result += convertHundreds(dollars);
+    }
+    
+    result = result.trim() + ' Dollar' + (Math.floor(n) !== 1 ? 's' : '');
+    if (cents > 0) {
+      result += ' and ' + convertHundreds(cents) + ' Cent' + (cents !== 1 ? 's' : '');
+    }
+    return result;
+  }
 
   /* ============================ i18n ============================ */
   let lang = localStorage.getItem('otto_lang') || 'en';
@@ -722,7 +761,9 @@
     'invoices', 'payments', 'checks', 'followups', 'workflows', 'sops', 'users', 'locations', 'folders',
     'emails', 'inbox_emails', 'payroll', 'time_off', 'login_history',
     'projects', 'job_events', 'job_checklists', 'ai_conversations', 'ai_escalations', 'consent_records',
-    'contracts', 'proposals', 'plans', 'alerts', 'backups', 'daily_summaries', 'audit_log', 'checklist_submissions', 'pto_requests', 'employee_messages'];
+    'contracts', 'proposals', 'plans', 'alerts', 'backups', 'daily_summaries', 'audit_log', 'checklist_submissions', 'pto_requests', 'employee_messages',
+    // Auto-Estimating Workflow Collections
+    'rate_cards', 'estimate_projects', 'estimate_records', 'verification_logs', 'pricing_exceptions'];
   let db = null;
   let session = null; // current user
 
@@ -769,6 +810,46 @@
         steps: ['Upload final photos', 'Create invoice', 'Send invoice to customer', 'Create follow-up in 7 days'],
         steps_es: ['Subir fotos finales', 'Crear factura', 'Enviar factura al cliente', 'Crear seguimiento en 7 días'], template: true, created: nowISO() },
     ];
+    
+    // ============================ AUTO-ESTIMATING WORKFLOW SEED DATA ============================
+    // Default Rate Card with fixed pricing legend (versioned, editable by authorized users only)
+    const defaultRateCardId = 'rc-default-v1';
+    d.rate_cards = [{
+      id: defaultRateCardId,
+      name: 'OTTO Standard Plumbing Rates',
+      version: '1.0',
+      effectiveDate: nowISO(),
+      status: 'Active',
+      createdBy: 'owner-1',
+      modifiedBy: 'owner-1',
+      createdDate: nowISO(),
+      modifiedDate: nowISO(),
+      items: [
+        { itemId: 'FIX-001', category: 'Fixture', itemName: 'Plumbing Fixture', aliases: ['WC', 'Toilet', 'Lav', 'Sink', 'HB', 'Hose Bibb', 'Floor Drain', 'Water Heater', 'Sump Pump', 'Outdoor Shower'], unit: 'Each', rate: 1500.00, materialType: null, notes: 'All confirmed fixtures including toilets, sinks, hose bibbs, floor drains, water heaters, sump pumps, outdoor showers' },
+        { itemId: 'WTR-CL-001', category: 'Water Pipe', itemName: 'Copper Type L', aliases: ['Copper L', 'Type L', 'Cu-L', 'CW', 'Hot Water', 'Cold Water'], unit: 'Pipe Unit', rate: 2000.00, materialType: 'copper', notes: 'Per confirmed branch/run with distinct visible label' },
+        { itemId: 'WTR-CPVC-001', category: 'Water Pipe', itemName: 'CPVC', aliases: ['CPVC', 'Chlorinated PVC'], unit: 'Pipe Unit', rate: 1300.00, materialType: 'cpvc', notes: 'Per confirmed branch/run with distinct visible label' },
+        { itemId: 'SAN-PVC-001', category: 'Sanitary Pipe', itemName: 'PVC Sch 40', aliases: ['PVC', 'Schedule 40', 'Sch 40', 'SAN', 'Waste', 'Vent', 'Drain'], unit: 'Pipe Unit', rate: 1300.00, materialType: 'pvc', notes: 'Per confirmed sanitary branch/run with distinct visible label' }
+      ]
+    }];
+    
+    // Seed company profile for proposal generation
+    d.companyProfile = {
+      id: 'company-otto-001',
+      name: 'Otto Plumbing',
+      logo: null, // Stored as file reference
+      license: '',
+      phone: '(800) OTTO-PLB',
+      email: 'info@ottoplumbing.com',
+      address: '',
+      website: 'www.ottoplumbing.com',
+      defaultTerms: 'Payment due upon completion unless otherwise specified.',
+      defaultExclusions: 'Gas piping excluded unless explicitly enabled. Permit fees not included unless listed.',
+      proposalTemplate: 'default',
+      paymentScheduleConfig: { type: 'percentage', milestones: [{name: 'Deposit', percent: 50}, {name: 'Completion', percent: 50}] },
+      created: nowISO(),
+      modified: nowISO()
+    };
+    
     // Minimal realistic demo data (plumbing focused, non-clutter for ADHD/non-tech). Assigned across fields.
     d.customers = [
       { id: uid(), name: 'Garcia Residence', phone: '(305) 555-1234', address: '123 Oak St, Miami, FL', created: nowISO() },
@@ -790,12 +871,18 @@
   let _idb = null;
   function openDB() {
     return new Promise((res, rej) => {
-      const r = indexedDB.open('otto-crm', 2);
+      const r = indexedDB.open('otto-crm', 3);
       r.onupgradeneeded = (e) => {
         const d = e.target.result;
         if (!d.objectStoreNames.contains('kv')) d.createObjectStore('kv');
         if (!d.objectStoreNames.contains('files')) d.createObjectStore('files');
         if (!d.objectStoreNames.contains('gps_logs')) d.createObjectStore('gps_logs');
+        // Auto-estimating workflow stores
+        if (!d.objectStoreNames.contains('rate_cards')) d.createObjectStore('rate_cards', { keyPath: 'id' });
+        if (!d.objectStoreNames.contains('estimate_projects')) d.createObjectStore('estimate_projects', { keyPath: 'id' });
+        if (!d.objectStoreNames.contains('estimate_records')) d.createObjectStore('estimate_records', { keyPath: 'id' });
+        if (!d.objectStoreNames.contains('verification_logs')) d.createObjectStore('verification_logs', { keyPath: 'id' });
+        if (!d.objectStoreNames.contains('pricing_exceptions')) d.createObjectStore('pricing_exceptions', { keyPath: 'id' });
       };
       r.onsuccess = () => { _idb = r.result; res(_idb); };
       r.onerror = () => rej(r.error);
@@ -851,6 +938,14 @@
       // forward-compat: ensure all collections exist
       COLLECTIONS.forEach(c => { if (!Array.isArray(db[c])) db[c] = []; });
       if (!db.meta) db.meta = { version: 1 };
+      // Ensure rate_cards and companyProfile are initialized
+      if (!db.rate_cards || db.rate_cards.length === 0) {
+        const rc = blankDB().rate_cards;
+        db.rate_cards = rc;
+      }
+      if (!db.companyProfile) {
+        db.companyProfile = blankDB().companyProfile;
+      }
     } else {
       db = blankDB();
       await idbPut('kv', 'db', JSON.stringify(db));
@@ -882,7 +977,11 @@
       const r = await fetch(url); if (!r.ok) return false;
       const d = await r.json();
       const json = d && d.fields && d.fields.json && d.fields.json.stringValue;
-      if (json) { db = JSON.parse(json); COLLECTIONS.forEach(c => { if (!Array.isArray(db[c])) db[c] = []; }); await idbPut('kv', 'db', JSON.stringify(db)); return true; }
+      if (json) { db = JSON.parse(json); COLLECTIONS.forEach(c => { if (!Array.isArray(db[c])) db[c] = []; }); 
+        // Ensure rate_cards and companyProfile are initialized after cloud pull
+        if (!db.rate_cards || db.rate_cards.length === 0) { db.rate_cards = blankDB().rate_cards; }
+        if (!db.companyProfile) { db.companyProfile = blankDB().companyProfile; }
+        await idbPut('kv', 'db', JSON.stringify(db)); return true; }
     } catch (e) { console.warn('cloud pull failed', e); }
     return false;
   }
@@ -896,6 +995,19 @@
   }
   function update(col, id, patch) { const o = get(col, id); if (o) { Object.assign(o, patch, { updated: nowISO() }); save(); } return o; }
   function remove(col, id) { db[col] = db[col].filter(x => x.id !== id); save(); }
+
+  // Auto-estimating workflow helpers
+  function getActiveRateCard() { return db.rate_cards.find(rc => rc.status === 'Active') || db.rate_cards[0]; }
+  function getRateCardItem(itemId) { const rc = getActiveRateCard(); return rc ? rc.items.find(i => i.itemId === itemId) : null; }
+  function findRateCardMatch(category, aliases) { 
+    const rc = getActiveRateCard(); 
+    if (!rc) return null;
+    for (const item of rc.items) {
+      if (item.category.toLowerCase() === category.toLowerCase()) return item;
+      if (item.aliases && item.aliases.some(a => aliases.some(qa => qa.toLowerCase() === a.toLowerCase()))) return item;
+    }
+    return null;
+  }
 
   function customerName(id) { const c = get('customers', id); return c ? c.name : '—'; }
   function jobTitle(id) { const j = get('jobs', id); return j ? j.title : '—'; }
@@ -1029,11 +1141,11 @@
 
   const NAVBAR = {
     field: ['home', 'jobs', 'customers', 'followups', 'assistant'],
-    default: ['home', 'jobs', 'customers', 'more'],
+    default: ['home', 'jobs', 'inbox', 'more'],
   };
   function renderNav() {
     const bn = $('#bottomnav');
-    const items = (session.role === 'field' ? NAVBAR.field : ['home', 'jobs', 'customers', 'more']);
+    const items = (session.role === 'field' ? NAVBAR.field : ['home', 'jobs', 'inbox', 'more']);
     const icons = { home: 'fa-house', jobs: 'fa-screwdriver-wrench', customers: 'fa-users', calls: 'fa-phone', inbox: 'fa-inbox', followups: 'fa-bell', assistant: 'fa-robot', more: 'fa-ellipsis' };
     bn.innerHTML = items.map(v => `<button class="${route.view === v ? 'on' : ''}" onclick="${v === 'more' ? 'openMore()' : `nav('${v}')`}">
       <i class="fas ${icons[v]}"></i><span>${t(v)}</span></button>`).join('');
@@ -3693,6 +3805,17 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     const oldUsers = db.users.filter(u => !validIds.includes(u.id) || ['Owner', 'Office', 'Field Worker', 'Accounting', 'Employee Three', 'Employee Four', 'Employee Five'].includes(u.name));
     if (oldUsers.length > 0) {
       db.users = db.users.filter(u => !oldUsers.includes(u));
+      _changed = true;
+    }
+    if (_changed) save();
+    
+    // Auto-estimating workflow: ensure rate card and company profile are seeded
+    if (!db.rate_cards || db.rate_cards.length === 0) {
+      db.rate_cards = blankDB().rate_cards;
+      _changed = true;
+    }
+    if (!db.companyProfile) {
+      db.companyProfile = blankDB().companyProfile;
       _changed = true;
     }
     if (_changed) save();
