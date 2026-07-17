@@ -7,8 +7,8 @@
   <meta name="theme-color" content="#0B1120" />
   <title>OTTO Plumbing CRM</title>
   <link rel="manifest" href="./manifest.json" />
-  <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/1995/1995470.png" />
-  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1995/1995470.png" />
+  <link rel="icon" type="image/png" href="./icon-192.png" />
+  <link rel="apple-touch-icon" href="./icon-192.png" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -643,11 +643,11 @@
       severity: 'Severity', sourceRecord: 'Source', assignedOwner: 'Assigned', resolve: 'Resolve', resolved: 'Resolved', openS: 'Open',
       dailySummary: 'Daily summary', aiActivity: 'AI activity', consentStatus: 'Consent', auditTrail: 'Audit trail', needsAttention: 'Needs attention tomorrow', allClear: 'All clear',
       consentTitle: 'Permission to use the work app', consentBody: 'This app records your work location only between check-in and check-out, your job photos, and your checklists, to do your job. It does not track your personal phone use or your location outside of work. Do you agree?', iAgree: 'I agree', notNow: 'Not now', consentNeeded: 'Your consent is needed to use the app.',
-      projectAI: 'Project AI', overview: 'Overview', goal: 'Goal', phase: 'Phase', rules: 'Rules', faq: 'FAQ', approvedAnswers: 'Approved answers', openQuestions: 'Open questions', escalations: 'Escalations', askProject: 'Ask about this job…', escalateToOwner: 'Send to owner', escalatedMsg: 'Sent to the owner', clarifyMsg: 'One quick question',
+      projectAI: 'Project AI', goal: 'Goal', phase: 'Phase', rules: 'Rules', faq: 'FAQ', approvedAnswers: 'Approved answers', openQuestions: 'Open questions', askProject: 'Ask about this job…', escalateToOwner: 'Send to owner', escalatedMsg: 'Sent to the owner', clarifyMsg: 'One quick question',
       contracts: 'Contracts', proposals: 'Proposals', plans: 'Plans', projectDocs: 'Contracts / Proposals / Plans', newVersion: 'Upload new version', version: 'Version', approve: 'Approve', approved2: 'Approved', versionHistory: 'Version history',
       backups: 'Backups', backupNow: 'Back up now', testRestore: 'Test restore', backupOk: 'Backup saved', backupLog: 'Backup & restore log', copies: 'copies', verified: 'Verified', lastBackup: 'Last backup', lastRestoreTest: 'Last restore test', restorePass: 'Restore test passed', restoreFail: 'Restore test FAILED', security: 'Security', mfaOwner: 'Extra code for owner/admin (MFA)', encryptBackups: 'Backup passphrase (encrypts backups)',
-      teamKpis: 'Team KPIs', locationsVisited: 'Locations Visited', ptoStatus: 'PTO Status', escalations: 'Escalations', workerProfile: 'Worker Profile',
-      ptoRequests: 'Time-Off Requests', approve: 'Approve', deny: 'Deny', approvePto: 'Approve PTO', denyPto: 'Deny PTO', pendingPto: 'Pending PTO',
+      teamKpis: 'Team KPIs', locationsVisited: 'Locations Visited', ptoStatus: 'PTO Status', workerProfile: 'Worker Profile',
+      ptoRequests: 'Time-Off Requests', deny: 'Deny', approvePto: 'Approve PTO', denyPto: 'Deny PTO', pendingPto: 'Pending PTO',
       ptoApproved: 'PTO Approved', ptoDenied: 'PTO Denied', conflictWarning: 'has a job scheduled on', approveAnyway: 'Approve anyway?',
       hoursWorked: 'Hours Worked', jobsDone: 'Jobs Done', viewFullProfile: 'View Full Profile', daysWorked: 'Days Worked', locationLog: 'Location Log',
       jobTimeline: 'Job Timeline', ptoHistory: 'PTO History', loginHistory: 'Login History', teamSummary: 'Team Summary', aggregateView: 'Aggregate View',
@@ -656,7 +656,7 @@
       photoNewCustomer: 'Photo → New Customer', scanningCustomer: 'Reading account photo…', customerCreated: 'Customer created from photo',
       connectQuickBooks: 'Connect QuickBooks', quickBooksSection: 'QuickBooks', notificationsSection: 'Customer Notifications', smsReady: 'SMS ready', emailReady: 'Email ready', notConfigured: 'Not configured yet',
       replyToWorker: 'Reply', markHandled: 'Mark handled',
-      allWorkers: 'All Workers', thisWeek: 'This Week', lastWeek: 'Last Week', customDate: 'Custom', metrics: 'Metrics', hours: 'Hours',
+      allWorkers: 'All Workers', thisWeek: 'This Week', lastWeek: 'Last Week', customDate: 'Custom', metrics: 'Metrics',
       dateRange: 'Date Range', arrival: 'Arrival', departure: 'Departure', timeSpent: 'Time Spent', missedItem: 'Missed Item', workerNote: 'Worker Note',
       firstOpen: 'First Open', lastClose: 'Last Close', noPtoPending: 'none', pendingCount: 'pending', approvedThrough: 'approved through',
       startJob: 'Start Job', acknowledge: 'Acknowledge', cantComplete: 'Can\'t complete', addNoteToContinue: 'Add a note to continue', submitAndClose: 'Submit & Close Job', incompleteChecklist: 'Complete all items or add a note before closing', openJobReminder: 'You have an open job — complete check-out', timeOff: 'Request Time Off', ptoReason: 'Reason', ptoDates: 'Dates', isOT: 'OT / Overtime Job', ackOT: 'Acknowledge OT',
@@ -727,7 +727,7 @@
       dailySummary: 'Resumen diario', aiActivity: 'Actividad de IA', consentStatus: 'Consentimiento', auditTrail: 'Auditoría', needsAttention: 'Atención mañana', allClear: 'Todo en orden',
       consentTitle: 'Permiso para usar la app de trabajo', consentBody: 'Esta app registra tu ubicación de trabajo solo entre la entrada y la salida, las fotos del trabajo y tus checklists, para hacer tu trabajo. No rastrea el uso personal de tu teléfono ni tu ubicación fuera del trabajo. ¿Estás de acuerdo?', iAgree: 'Acepto', notNow: 'Ahora no', consentNeeded: 'Se necesita tu consentimiento para usar la app.',
       projectAI: 'IA del Trabajo', overview: 'Resumen', goal: 'Objetivo', phase: 'Fase', rules: 'Reglas', faq: 'Preguntas frecuentes', approvedAnswers: 'Respuestas aprobadas', openQuestions: 'Preguntas abiertas', escalations: 'Escalaciones', askProject: 'Pregunta sobre este trabajo…', escalateToOwner: 'Enviar al dueño', escalatedMsg: 'Enviado al dueño', clarifyMsg: 'Una pregunta rápida',
-      contracts: 'Contratos', proposals: 'Propuestas', plans: 'Planos', projectDocs: 'Contratos / Propuestas / Planos', newVersion: 'Subir nueva versión', version: 'Versión',
+      contracts: 'Contratos', proposals: 'Propuestas', plans: 'Planos', projectDocs: 'Contratos / Propuestas / Planos', newVersion: 'Subir nueva versión', version: 'Versión', approve: 'Aprobar', approved2: 'Aprobado', versionHistory: 'Historial de versiones',
       backups: 'Respaldos', backupNow: 'Respaldar ahora', testRestore: 'Probar restauración', backupOk: 'Respaldo guardado', backupLog: 'Registro de respaldos', copies: 'copias', verified: 'Verificado', lastBackup: 'Último respaldo', lastRestoreTest: 'Última prueba', restorePass: 'Prueba de restauración OK', restoreFail: 'Prueba de restauración FALLÓ', security: 'Seguridad', mfaOwner: 'Código extra para dueño/admin (MFA)', encryptBackups: 'Frase para cifrar respaldos',
       teamKpis: 'KPIs del Equipo', locationsVisited: 'Ubicaciones Visitadas', ptoStatus: 'Estado de Permisos', escalations: 'Escalaciones', workerProfile: 'Perfil del Trabajador',
       ptoRequests: 'Solicitudes de Permiso', approve: 'Aprobar', deny: 'Denegar', approvePto: 'Aprobar Permiso', denyPto: 'Denegar Permiso', pendingPto: 'Permiso Pendiente',
@@ -2130,7 +2130,7 @@
 
     html += `<div class="section-title"><i class="fas fa-cloud"></i> ${lang === 'es' ? 'Sincronización en la nube' : 'Cloud Sync'}</div>
       <div class="card" style="padding:14px">
-        <div class="muted" style="margin-bottom:10px">${lang === 'es' ? 'Opcional: Firebase Firestore para compartir datos entre dispositivos.' : 'Optional: Firebase Firestore to share data across devices.'}</div>
+        <div class="muted" style="margin-bottom:10px">${lang === 'es' ? 'Requerido: Firebase Firestore para compartir datos entre dispositivos en v1.' : 'Required: Firebase Firestore to share data across devices in v1.'}</div>
         <div class="field"><label>Project ID</label><input id="fb-proj" value="${esc(fb.projectId || '')}"></div>
         <div class="field"><label>Web API Key</label><input id="fb-key" value="${esc(fb.apiKey || '')}"></div>
         <div class="btnrow">

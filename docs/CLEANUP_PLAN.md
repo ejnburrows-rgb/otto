@@ -40,7 +40,7 @@ Recommended next steps before merge:
 2. Review the large `index.html` rewrite manually in browser.
 3. Verify the app still boots offline as a static PWA.
 4. Confirm default/demo PINs are intentional and not production credentials.
-5. Check that `legacy/dream-cooling-crm.html` remains preserved for rollback/reference.
+5. Check that `legacy/otto.html` remains preserved for rollback/reference.
 6. After review, either merge PR #4 or close it as superseded.
 
 ## Branch cleanup candidates
