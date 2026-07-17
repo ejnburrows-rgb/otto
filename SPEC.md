@@ -1,6 +1,6 @@
 # OTTO Plumbing CRM — Full Project Specification
 
-**Repository:** `ejnburrows-rgb/dream-cooling-crm`
+**Repository:** `ejnburrows-rgb/otto`
 **Stack:** Single-file PWA (HTML/CSS/JS) · IndexedDB · Firebase Firestore/Storage · Vercel · Service Worker
 **Languages:** English / Spanish (full bilingual parity required on all UI)
 **Last updated:** June 20, 2026
