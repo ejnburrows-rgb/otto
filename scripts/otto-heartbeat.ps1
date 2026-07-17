@@ -10,7 +10,7 @@ $ts = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
 $lines = @("--- $ts ---")
 
 try {
-    $prod = Invoke-WebRequest -Uri 'https://dream-cooling-crm.vercel.app' -UseBasicParsing -TimeoutSec 20
+    $prod = Invoke-WebRequest -Uri 'https://otto-plumbing-site.vercel.app' -UseBasicParsing -TimeoutSec 20
     $hasUrgent = $prod.Content -match 'viewUrgentHub'
     $hasPhoto = $prod.Content -match 'photoScanCreateCustomer'
     $lines += "PROD: OK ($($prod.StatusCode)) urgent=$hasUrgent photo=$hasPhoto"
@@ -69,7 +69,7 @@ $lastBlock
 - The AI agent only works when you are in this chat. It does not run 24/7 alone.
 
 ## Live app
-https://dream-cooling-crm.vercel.app
+https://otto-plumbing-site.vercel.app
 
 ## PINs
 Owner 0721 | Field 0715

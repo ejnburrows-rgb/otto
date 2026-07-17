@@ -1,24 +1,24 @@
 {
-  "name": "OTTO Plumbing CRM",
-  "short_name": "OTTO CRM",
-  "description": "The operating system for Auto Plumbing / O.T.T.O. Plumbing — bilingual, mobile-first CRM.",
+  "name": "OTTO PLUMBING INC.",
+  "short_name": "OTTO Plumbing",
+  "description": "Miami's Elite Plumbing Services — Premium plumbing solutions across Miami-Dade and Broward.",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#0B1120",
-  "theme_color": "#0B1120",
+  "background_color": "#0C2D48",
+  "theme_color": "#0C91B2",
   "orientation": "portrait-primary",
   "lang": "en",
   "icons": [
     {
-      "src": "./icon-512.png",
+      "src": "./favicon-miami-luxe.svg",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "./icon-192.png",
+      "src": "./favicon-miami-luxe.svg",
       "sizes": "192x192",
-      "type": "image/png",
+      "type": "image/svg+xml",
       "purpose": "any maskable"
     }
   ]

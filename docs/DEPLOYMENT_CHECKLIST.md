@@ -4,9 +4,9 @@
 
 | URL | Status |
 |-----|--------|
-| https://dream-cooling-crm.vercel.app | **Production** — OTTO Plumbing CRM (Phase 0+) |
+| https://otto-plumbing-site.vercel.app | **Production** — OTTO Plumbing CRM (Miami Luxe) |
 | https://otto-crm-git-main-ejns-projects-1b938dd2.vercel.app | Git `main` preview |
-| https://otto-crm.vercel.app | May point elsewhere — use dream-cooling-crm.vercel.app for crew |
+| https://otto-crm.vercel.app | Alias for crew access |
 
 ## Worker install
 
