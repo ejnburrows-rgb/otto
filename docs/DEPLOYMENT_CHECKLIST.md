@@ -4,9 +4,13 @@
 
 | URL | Status |
 |-----|--------|
-| https://otto-plumbing-site.vercel.app | **Production** — OTTO Plumbing CRM (Miami Luxe) |
-| https://otto-crm-git-main-ejns-projects-1b938dd2.vercel.app | Git `main` preview |
-| https://otto-crm.vercel.app | Alias for crew access |
+| https://otto-kohl.vercel.app | **Production** — OTTO Plumbing CRM (this repo) |
+
+`otto-plumbing-site.vercel.app` and `otto-crm.vercel.app` are **not** this
+app — verified live: the former is the separate marketing-site repo
+([otto-plumbing-site](https://github.com/ejnburrows-rgb/otto-plumbing-site)),
+the latter resolves to an unrelated Next.js deployment that happens to hold
+that subdomain. Don't send crew to either.
 
 ## Worker install
 
