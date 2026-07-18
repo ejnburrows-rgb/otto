@@ -1,6 +1,6 @@
 # OTTO Browser QA
 
-**Run:** 2026-07-06T08:05:37.064Z
+**Run:** 2026-07-17T21:38:53.700Z
 **URL:** http://localhost:8000
 **Score:** 17/17 (100%)
 
@@ -10,10 +10,10 @@
 - [x] Login screen shows
 - [x] Owner login PIN 0721
 - [x] Owner home renders — OTTO
-Jul 5, 2026
+Jul 16, 2026
 Jobs today
-0
-Workers on
+3
+Customers
 - [x] Customers screen
 - [x] Photo new customer button
 - [x] Jobs screen

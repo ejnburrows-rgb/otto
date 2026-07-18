@@ -1,11 +1,11 @@
 # OTTO QA Report
 
-**Run:** 2026-07-06T08:05:43.359Z
-**Overall:** PASS (with notes below)
+**Run:** 2026-07-17T20:31:35.591Z
+**Overall:** ISSUES FOUND
 
 ## Button wiring
-- Functions in app: 330
-- Buttons checked: 111
+- Functions in app: 342
+- Buttons checked: 114
 - Broken buttons: NONE
 - New features not on window export list: NONE (browser still OK)
 
@@ -17,27 +17,27 @@
 
 ## Live checks
 - prod: OK 200
-- local: FAIL 0
-- guide: OK 200
-- manifest: OK 200
-- sw: OK 200
-- Production has urgent hub: true
-- Production has photo customer: true
+- local: OK 200
+- guide: OK 308
+- manifest: FAIL 404
+- sw: FAIL 404
+- Production has urgent hub: false
+- Production has photo customer: false
 - Production dark default: true
-- QuickBooks API responds: 200
-- Notify API responds: 503
+- QuickBooks API responds: 404
+- Notify API responds: 404
 
 ## JSON
 ```json
 {
-  "ts": "2026-07-06T08:05:43.359Z",
-  "functions": 330,
-  "onclickCalls": 111,
+  "ts": "2026-07-17T20:31:35.591Z",
+  "functions": 342,
+  "onclickCalls": 114,
   "missingHandlers": [],
   "notOnWindowExport": [],
   "missingSpanishKeys": [],
   "missingSpanishCount": 0,
-  "collections": 37,
+  "collections": 42,
   "hasEmployeeMessages": true,
   "urls": {
     "prod": {
@@ -45,28 +45,27 @@
       "ok": true
     },
     "local": {
-      "status": 0,
-      "ok": false,
-      "error": ""
+      "status": 200,
+      "ok": true
     },
     "guide": {
-      "status": 200,
+      "status": 308,
       "ok": true
     },
     "manifest": {
-      "status": 200,
-      "ok": true
+      "status": 404,
+      "ok": false
     },
     "sw": {
-      "status": 200,
-      "ok": true
+      "status": 404,
+      "ok": false
     }
   },
-  "prodHasUrgent": true,
-  "prodHasPhoto": true,
+  "prodHasUrgent": false,
+  "prodHasPhoto": false,
   "prodDarkDefault": true,
-  "apiQuickbooks": 200,
-  "apiNotify": 503,
-  "pass": true
+  "apiQuickbooks": 404,
+  "apiNotify": 404,
+  "pass": false
 }
 ```

@@ -2,8 +2,8 @@ import fs from 'fs';
 import https from 'https';
 import http from 'http';
 
-const ROOT = 'D:/Projects/otto-fresh';
-const html = fs.readFileSync(`${ROOT}/index.html`, 'utf8');
+const ROOT = process.cwd();
+const html = fs.readFileSync(ROOT + '/index.html', 'utf8');
 const scripts = html.match(/<script>[\s\S]*?<\/script>/g) || [];
 const script = scripts[scripts.length - 1].replace(/<\/?script>/g, '');
 
