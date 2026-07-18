@@ -1,6 +1,6 @@
 /* OTTO Plumbing CRM — service worker
    Offline-first shell cache. App data lives in IndexedDB, not here. */
-const CACHE = 'otto-crm-v2';
+const CACHE = 'otto-crm-v3';
 const SHELL = ['./', './index.html', './manifest.json'];
 
 self.addEventListener('install', (e) => {
