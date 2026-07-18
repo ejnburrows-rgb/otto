@@ -28,7 +28,7 @@
 |----------|----------------|
 | `NVIDIA_API_KEY` | Blueprint / PDF estimator |
 | `ANTHROPIC_API_KEY` | Ask OTTO, OCR, photo→customer |
-| `FIREBASE_PROJECT_ID` + `FIREBASE_API_KEY` | Cloud sync + inbound email webhook |
+| `FIREBASE_PROJECT_ID` + `FIREBASE_API_KEY` | Cloud sync + inbound email webhook + marketing-site lead capture (`/api/website-lead`) |
 | `QB_CLIENT_ID` + `QB_CLIENT_SECRET` | QuickBooks connect (when ready) |
 | `TWILIO_SID` + `TWILIO_AUTH` + `TWILIO_FROM` | Customer SMS |
 | `SENDGRID_API_KEY` | Customer email |

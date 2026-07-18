@@ -1,6 +1,7 @@
 # OTTO Plumbing CRM
 
 > **Status:** Crew-ready demo · Live: https://otto-kohl.vercel.app · Landing Page: https://otto-kohl.vercel.app/landing.html · Guide: `/guide.html`
+> Public marketing site (separate repo): [otto-plumbing-site](https://github.com/ejnburrows-rgb/otto-plumbing-site) — its contact form posts leads into this CRM (see "Website lead capture" below).
 > QA: Static + full browser tests (17/17 on local server). Run `node scripts/qa-check.mjs` and `node scripts/qa-browser.mjs` (or use `scripts/local-server.js`).
 
 The operating system for **Auto Plumbing / O.T.T.O. Plumbing** — a bilingual
@@ -170,6 +171,17 @@ A field-service layer that keeps workers accountable without adding friction.
 data across devices via Firestore. Without it, everything still works fully on
 the device.
 
+## Website lead capture
+The public marketing site ([otto-plumbing-site](https://github.com/ejnburrows-rgb/otto-plumbing-site),
+a separate repo) posts its contact form directly to `/api/website-lead` on
+this app's deployment. That serverless function appends a new record to the
+same Firestore `calls` collection Cloud Sync already reads, so a website
+submission shows up in **Calls** here with no manual re-entry, and can be
+turned into a job in one tap the same as a phone call logged in-app. It needs
+the same `FIREBASE_PROJECT_ID` + `FIREBASE_API_KEY` env vars as Cloud Sync; if
+they're not set the endpoint returns 503 and the site falls back to a
+`mailto:` link so a lead is never lost.
+
 ## Run / deploy
 ```bash
 # locally
@@ -193,6 +205,7 @@ everything else is JSON, backed up to localStorage and exportable to JSON/CSV.
 - `api/claude.js` — Vercel serverless proxy to the Anthropic API (keeps the key server-side).
 - `api/nvidia.js` — Vercel serverless proxy to the NVIDIA API for the drawing estimator (key server-side).
 - `api/inbound-email.js` — optional inbound-email webhook for automatic Inbox capture (writes to Firestore).
+- `api/website-lead.js` — intake for the marketing site's contact form; writes a new call into Firestore (see "Website lead capture" above).
 - `manifest.json`, `sw.js` — PWA install + offline shell.
 - `legacy/dream-cooling-crm.html` — the previous Dream Cooling (HVAC) app this
   branch replaced, kept for reference.
