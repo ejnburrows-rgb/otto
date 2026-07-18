@@ -37,22 +37,22 @@ export default async function handler(req, res) {
     }
     const email = normalize(body);
 
-    const docUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/otto_crm/data?key=${apiKey}`;
-    // Read current DB JSON (may not exist yet).
-    let dbObj = { emails: [] };
+    const docUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/otto_crm/emails?key=${apiKey}`;
+    // Read current emails JSON (may not exist yet).
+    let emailsArr = [];
     const getR = await fetch(docUrl);
     if (getR.ok) {
       const doc = await getR.json();
       const jsonStr = doc && doc.fields && doc.fields.json && doc.fields.json.stringValue;
-      if (jsonStr) { try { dbObj = JSON.parse(jsonStr); } catch (e) { /* start fresh-ish */ } }
+      if (jsonStr) { try { emailsArr = JSON.parse(jsonStr); } catch (e) { /* start fresh-ish */ } }
     }
-    if (!Array.isArray(dbObj.emails)) dbObj.emails = [];
-    dbObj.emails.unshift(email);
+    if (!Array.isArray(emailsArr)) emailsArr = [];
+    emailsArr.unshift(email);
 
     const putR = await fetch(docUrl, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fields: { json: { stringValue: JSON.stringify(dbObj) } } }),
+      body: JSON.stringify({ fields: { json: { stringValue: JSON.stringify(emailsArr) } } }),
     });
     if (!putR.ok) { const txt = await putR.text(); res.status(502).json({ error: 'firestore_write_failed', detail: txt.slice(0, 500) }); return; }
     res.status(200).json({ ok: true, id: email.id });

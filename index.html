@@ -976,29 +976,70 @@
   /* ============================ optional Firebase REST cloud sync ============================ */
   function fbConfig() { try { const s = JSON.parse(localStorage.getItem('otto_fb') || 'null'); if (s && s.projectId && s.apiKey) return s; } catch (e) { } return { projectId: 'otto-crm-7f951', apiKey: 'AIzaSyBcOfUbUfFc7PBkKUNAALIEtTO7YCznjH4' }; }
   let _cloudTimer = null;
+  let _lastCloudState = {};
   function cloudPush() {
     const cfg = fbConfig(); if (!cfg || !cfg.projectId || !cfg.apiKey) return;
     clearTimeout(_cloudTimer);
     _cloudTimer = setTimeout(async () => {
       try {
-        const url = `https://firestore.googleapis.com/v1/projects/${cfg.projectId}/databases/(default)/documents/otto_crm/data?key=${cfg.apiKey}`;
-        await fetch(url, { method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fields: { json: { stringValue: JSON.stringify(db) } } }) });
+        const promises = [];
+        const colsToSync = [...COLLECTIONS, 'companyProfile'];
+        for (const col of colsToSync) {
+          const currentStr = JSON.stringify(db[col] || (col === 'companyProfile' ? {} : []));
+          if (currentStr !== _lastCloudState[col]) {
+            _lastCloudState[col] = currentStr;
+            const url = `https://firestore.googleapis.com/v1/projects/${cfg.projectId}/databases/(default)/documents/otto_crm/${col}?key=${cfg.apiKey}`;
+            promises.push(fetch(url, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fields: { json: { stringValue: currentStr } } }) }).catch(e => console.warn('push error', col, e)));
+          }
+        }
+        if (promises.length) await Promise.all(promises);
       } catch (e) { console.warn('cloud push failed', e); }
     }, 1500);
   }
   async function cloudPull() {
     const cfg = fbConfig(); if (!cfg || !cfg.projectId || !cfg.apiKey) return false;
     try {
-      const url = `https://firestore.googleapis.com/v1/projects/${cfg.projectId}/databases/(default)/documents/otto_crm/data?key=${cfg.apiKey}`;
+      const url = `https://firestore.googleapis.com/v1/projects/${cfg.projectId}/databases/(default)/documents/otto_crm?key=${cfg.apiKey}`;
       const r = await fetch(url); if (!r.ok) return false;
       const d = await r.json();
-      const json = d && d.fields && d.fields.json && d.fields.json.stringValue;
-      if (json) { db = JSON.parse(json); COLLECTIONS.forEach(c => { if (!Array.isArray(db[c])) db[c] = []; }); 
-        // Ensure rate_cards and companyProfile are initialized after cloud pull
+      
+      let newDb = null;
+      let isMigrating = false;
+
+      if (d && d.documents) {
+        newDb = blankDB();
+        let hasNewFormat = false;
+        
+        d.documents.forEach(doc => {
+          const nameParts = doc.name.split('/');
+          const docId = nameParts[nameParts.length - 1];
+          if (docId === 'data' && !hasNewFormat) {
+             const json = doc.fields && doc.fields.json && doc.fields.json.stringValue;
+             if (json) { try { newDb = JSON.parse(json); isMigrating = true; } catch (e) {} }
+          } else if (COLLECTIONS.includes(docId) || docId === 'companyProfile') {
+             hasNewFormat = true;
+             isMigrating = false;
+             const json = doc.fields && doc.fields.json && doc.fields.json.stringValue;
+             if (json) { try { newDb[docId] = JSON.parse(json); } catch(e) {} }
+          }
+        });
+      }
+      
+      if (newDb) {
+        db = newDb;
+        COLLECTIONS.forEach(c => { if (!Array.isArray(db[c])) db[c] = []; }); 
         if (!db.rate_cards || db.rate_cards.length === 0) { db.rate_cards = blankDB().rate_cards; }
         if (!db.companyProfile) { db.companyProfile = blankDB().companyProfile; }
-        await idbPut('kv', 'db', JSON.stringify(db)); return true; }
+        await idbPut('kv', 'db', JSON.stringify(db));
+        
+        if (!isMigrating) {
+           for (const col of COLLECTIONS) _lastCloudState[col] = JSON.stringify(db[col]);
+           _lastCloudState['companyProfile'] = JSON.stringify(db.companyProfile);
+        } else {
+           cloudPush();
+        }
+        return true; 
+      }
     } catch (e) { console.warn('cloud pull failed', e); }
     return false;
   }
