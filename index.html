@@ -525,7 +525,7 @@
   <div id="login" class="login hidden"></div>
   <div id="app" class="hidden">
     <header class="topbar">
-      <div class="brand"><i class="fas fa-faucet-drip"></i> OTTO</div>
+      <div class="brand"><img src="./logo.jpg" style="height:36px;object-fit:contain;border-radius:6px;" /></div>
       <div class="spacer"></div>
       <div class="langtoggle">
         <button id="lang-en" onclick="setLang('en')">EN</button>
@@ -617,7 +617,7 @@
       takePhoto: 'Take / choose photo', uploadDoc: 'Upload document', scanDoc: 'Scan document',
       clockIn: 'Share my location', located: 'Location saved', signIn: 'Sign In', pickUser: 'Who are you?',
       enterPin: 'Enter your PIN', wrongPin: 'Wrong PIN', signOut: 'Sign Out', role: 'Role',
-      owner: 'Owner', office: 'Office', field: 'Field Worker', accounting: 'Accounting', ops: 'Operations Manager', logging: 'Logging / IT',
+      owner: 'Owner', office: 'Office Manager', field: 'Field Worker', accounting: 'Accounting', ops: 'Operations Manager', logging: 'Logging / IT',
       total: 'Total', thisMonth: 'This month', outstanding: 'Outstanding', activeJobs: 'Active jobs',
       askPlaceholder: 'Ask about a job, customer, or how-to…', send: 'Send',
       createInvoice: 'Create invoice', recordPayment: 'Record payment', markPaid: 'Mark paid',
@@ -700,7 +700,7 @@
       takePhoto: 'Tomar / elegir foto', uploadDoc: 'Subir documento', scanDoc: 'Escanear documento',
       clockIn: 'Compartir mi ubicación', located: 'Ubicación guardada', signIn: 'Entrar', pickUser: '¿Quién eres?',
       enterPin: 'Ingresa tu PIN', wrongPin: 'PIN incorrecto', signOut: 'Salir', role: 'Rol',
-      owner: 'Dueño', office: 'Oficina', field: 'Trabajador', accounting: 'Contabilidad', ops: 'Gerente de Operaciones', logging: 'Registro / TI',
+      owner: 'Dueño', office: 'Gerente de Oficina', field: 'Trabajador', accounting: 'Contabilidad', ops: 'Gerente de Operaciones', logging: 'Registro / TI',
       total: 'Total', thisMonth: 'Este mes', outstanding: 'Por cobrar', activeJobs: 'Trabajos activos',
       askPlaceholder: 'Pregunta sobre un trabajo, cliente o cómo hacer algo…', send: 'Enviar',
       createInvoice: 'Crear factura', recordPayment: 'Registrar pago', markPaid: 'Marcar pagado',
@@ -790,25 +790,25 @@
     // Seed exact team per business spec: 2 owners + 1 ops manager + 1 logging/IT + 15 field workers.
     // Non-tech/ADHD friendly: realistic names, clear roles. Use 'office' internally for managers (full non-field access).
     d.users = [
-      { id: 'owner-1', name: 'Alex Rivera', role: 'owner', pin: '0721', lang: 'en', created: nowISO() },
-      { id: 'owner-2', name: 'Sofia Patel', role: 'owner', pin: '0722', lang: 'es', created: nowISO() },
-      { id: 'ops-1', name: 'Jordan Hale - Ops Mgr', role: 'office', pin: '0723', lang: 'en', created: nowISO() },
+      { id: 'owner-1', name: 'Otto', role: 'owner', pin: '0721', lang: 'en', created: nowISO() },
+      { id: 'owner-2', name: 'El Príncipe', role: 'owner', pin: '0722', lang: 'es', created: nowISO() },
+      { id: 'ops-1', name: 'Sarays', role: 'office', pin: '0723', lang: 'en', created: nowISO() },
       { id: 'it-1', name: 'Taylor Kim - Logs/IT', role: 'office', pin: '0724', lang: 'en', created: nowISO() },
-      { id: 'field-1', name: 'Carlos Mendez', role: 'field', pin: '0715', hourlyRate: 22, lang: 'en', created: nowISO() },
-      { id: 'field-2', name: 'Elena Vargas', role: 'field', pin: '0716', hourlyRate: 23, lang: 'es', created: nowISO() },
-      { id: 'field-3', name: 'Miguel Soto', role: 'field', pin: '0717', hourlyRate: 21, lang: 'en', created: nowISO() },
-      { id: 'field-4', name: 'Isabella Cruz', role: 'field', pin: '0718', hourlyRate: 24, lang: 'es', created: nowISO() },
-      { id: 'field-5', name: 'Diego Ramirez', role: 'field', pin: '0719', hourlyRate: 22, lang: 'en', created: nowISO() },
-      { id: 'field-6', name: 'Lucia Fernandez', role: 'field', pin: '0720', hourlyRate: 20, lang: 'es', created: nowISO() },
-      { id: 'field-7', name: 'Mateo Lopez', role: 'field', pin: '0725', hourlyRate: 23, lang: 'en', created: nowISO() },
-      { id: 'field-8', name: 'Valentina Ruiz', role: 'field', pin: '0726', hourlyRate: 22, lang: 'es', created: nowISO() },
-      { id: 'field-9', name: 'Sebastian Torres', role: 'field', pin: '0727', hourlyRate: 21, lang: 'en', created: nowISO() },
-      { id: 'field-10', name: 'Camila Diaz', role: 'field', pin: '0728', hourlyRate: 24, lang: 'es', created: nowISO() },
-      { id: 'field-11', name: 'Alejandro Morales', role: 'field', pin: '0729', hourlyRate: 22, lang: 'en', created: nowISO() },
-      { id: 'field-12', name: 'Gabriela Reyes', role: 'field', pin: '0730', hourlyRate: 23, lang: 'es', created: nowISO() },
-      { id: 'field-13', name: 'Daniela Castro', role: 'field', pin: '0731', hourlyRate: 20, lang: 'en', created: nowISO() },
-      { id: 'field-14', name: 'Javier Ortega', role: 'field', pin: '0732', hourlyRate: 25, lang: 'es', created: nowISO() },
-      { id: 'field-15', name: 'Natalia Mendoza', role: 'field', pin: '0733', hourlyRate: 22, lang: 'en', created: nowISO() }
+      { id: 'field-1', name: '', role: 'field', pin: '0715', hourlyRate: 22, lang: 'en', created: nowISO() },
+      { id: 'field-2', name: '', role: 'field', pin: '0716', hourlyRate: 23, lang: 'es', created: nowISO() },
+      { id: 'field-3', name: '', role: 'field', pin: '0717', hourlyRate: 21, lang: 'en', created: nowISO() },
+      { id: 'field-4', name: '', role: 'field', pin: '0718', hourlyRate: 24, lang: 'es', created: nowISO() },
+      { id: 'field-5', name: '', role: 'field', pin: '0719', hourlyRate: 22, lang: 'en', created: nowISO() },
+      { id: 'field-6', name: '', role: 'field', pin: '0720', hourlyRate: 20, lang: 'es', created: nowISO() },
+      { id: 'field-7', name: '', role: 'field', pin: '0725', hourlyRate: 23, lang: 'en', created: nowISO() },
+      { id: 'field-8', name: '', role: 'field', pin: '0726', hourlyRate: 22, lang: 'es', created: nowISO() },
+      { id: 'field-9', name: '', role: 'field', pin: '0727', hourlyRate: 21, lang: 'en', created: nowISO() },
+      { id: 'field-10', name: '', role: 'field', pin: '0728', hourlyRate: 24, lang: 'es', created: nowISO() },
+      { id: 'field-11', name: '', role: 'field', pin: '0729', hourlyRate: 22, lang: 'en', created: nowISO() },
+      { id: 'field-12', name: '', role: 'field', pin: '0730', hourlyRate: 23, lang: 'es', created: nowISO() },
+      { id: 'field-13', name: '', role: 'field', pin: '0731', hourlyRate: 20, lang: 'en', created: nowISO() },
+      { id: 'field-14', name: '', role: 'field', pin: '0732', hourlyRate: 25, lang: 'es', created: nowISO() },
+      { id: 'field-15', name: '', role: 'field', pin: '0733', hourlyRate: 22, lang: 'en', created: nowISO() }
     ];
     // A couple of genuinely useful plumbing SOPs and workflow templates.
     d.sops = [
@@ -1122,22 +1122,43 @@
     function draw() {
       if (!selUser) {
         lg.innerHTML = `
-          <div class="logo"><i class="fas fa-faucet-drip"></i></div>
-          <h1>OTTO Plumbing</h1>
-          <p>${esc(t('pickUser'))}</p>
+          <div style="text-align:center;margin-bottom:24px;">
+            <img src="./logo.jpg" style="width:180px;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.25);" />
+          </div>
+          <p style="margin-top:0;">${esc(t('pickUser'))}</p>
           <div class="card-login">
             ${(() => {
-              const owners = db.users.filter(u => u.role === 'owner').map(u => `<div class="list-item" onclick="window.__pick('${u.id}')"><div class="avatar" style="background:${colorFor(u.name)}">${initials(u.name)}</div><div class="li-main"><div class="li-title">${esc(u.name)}</div><div class="li-sub">${t(u.role)}</div></div><i class="fas fa-chevron-right chev"></i></div>`).join('');
-              const mgrs = db.users.filter(u => u.role === 'office').map(u => `<div class="list-item" onclick="window.__pick('${u.id}')"><div class="avatar" style="background:${colorFor(u.name)}">${initials(u.name)}</div><div class="li-main"><div class="li-title">${esc(u.name)}</div><div class="li-sub">${t(u.role)}</div></div><i class="fas fa-chevron-right chev"></i></div>`).join('');
-              const fields = db.users.filter(u => u.role === 'field').map(u => `<div class="list-item" onclick="window.__pick('${u.id}')"><div class="avatar" style="background:${colorFor(u.name)}">${initials(u.name)}</div><div class="li-main"><div class="li-title">${esc(u.name)}</div><div class="li-sub">${t(u.role)}</div></div><i class="fas fa-chevron-right chev"></i></div>`).join('');
+              const owners = db.users.filter(u => u.role === 'owner').map(u => {
+                const isSarays = u.name && u.name.includes('Sarays');
+                const titleStyle = isSarays ? ' style="color:#EC4899;font-weight:bold;"' : '';
+                const avatarBg = isSarays ? '#EC4899' : colorFor(u.name);
+                const displayName = u.name ? esc(u.name) : `<span style="color:var(--text3);font-style:italic;">${lang === 'es' ? 'Vacante' : 'Vacant'}</span>`;
+                return `<div class="list-item" onclick="window.__pick('${u.id}')"><div class="avatar" style="background:${avatarBg}">${initials(u.name)}</div><div class="li-main"><div class="li-title"${titleStyle}>${displayName}</div><div class="li-sub">${t(u.role)}</div></div><i class="fas fa-chevron-right chev"></i></div>`;
+              }).join('');
+              const mgrs = db.users.filter(u => u.role === 'office').map(u => {
+                const isSarays = u.name && u.name.includes('Sarays');
+                const titleStyle = isSarays ? ' style="color:#EC4899;font-weight:bold;"' : '';
+                const avatarBg = isSarays ? '#EC4899' : colorFor(u.name);
+                const displayName = u.name ? esc(u.name) : `<span style="color:var(--text3);font-style:italic;">${lang === 'es' ? 'Vacante' : 'Vacant'}</span>`;
+                const roleText = u.id === 'it-1' ? (lang === 'es' ? 'Soporte / TI' : 'Logging / IT') : t(u.role);
+                return `<div class="list-item" onclick="window.__pick('${u.id}')"><div class="avatar" style="background:${avatarBg}">${initials(u.name)}</div><div class="li-main"><div class="li-title"${titleStyle}>${displayName}</div><div class="li-sub">${roleText}</div></div><i class="fas fa-chevron-right chev"></i></div>`;
+              }).join('');
+              const fields = db.users.filter(u => u.role === 'field').map(u => {
+                const displayName = u.name ? esc(u.name) : `<span style="color:var(--text3);font-style:italic;">${lang === 'es' ? 'Vacante' : 'Vacant'}</span>`;
+                return `<div class="list-item" onclick="window.__pick('${u.id}')"><div class="avatar" style="background:${colorFor(u.name)}">${initials(u.name)}</div><div class="li-main"><div class="li-title">${displayName}</div><div class="li-sub">${t(u.role)}</div></div><i class="fas fa-chevron-right chev"></i></div>`;
+              }).join('');
               return `<div style="font-size:12px;color:var(--text2);margin-bottom:4px">OWNERS</div>${owners || ''}<div style="font-size:12px;color:var(--text2);margin:8px 0 4px">OPS & IT</div>${mgrs || ''}<div style="font-size:12px;color:var(--text2);margin:8px 0 4px">FIELD TEAM (${fields.length})</div>${fields || ''}`;
             })()}
           </div>
           <div class="langtoggle"><button class="${lang === 'en' ? 'on' : ''}" onclick="setLang('en')">EN</button><button class="${lang === 'es' ? 'on' : ''}" onclick="setLang('es')">ES</button></div>`;
       } else {
+        const isSarays = selUser.name && selUser.name.includes('Sarays');
+        const nameStyle = isSarays ? ' style="color:#EC4899;font-weight:bold;"' : '';
+        const avatarBg = isSarays ? 'background:#EC4899;' : `background:${colorFor(selUser.name)};`;
+        const displayName = selUser.name ? esc(selUser.name) : (lang === 'es' ? 'Vacante' : 'Vacant');
         lg.innerHTML = `
-          <div class="logo">${initials(selUser.name)}</div>
-          <h1>${esc(selUser.name)}</h1>
+          <div class="logo" style="${avatarBg}">${initials(selUser.name)}</div>
+          <h1${nameStyle}>${displayName}</h1>
           <p>${esc(t('enterPin'))}</p>
           <div class="card-login">
             <div class="pindots">${[0, 1, 2, 3].map(i => `<span class="${i < pin.length ? 'f' : ''}"></span>`).join('')}</div>
@@ -3872,22 +3893,36 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     document.documentElement.setAttribute('data-theme', localStorage.getItem('otto_theme') || 'dark');
     await load();
     
-    // Force PIN updates for requested users if they exist
+    // Force PIN & name updates for requested users if they exist
     let _changed = false;
-    const fixPin = (id, p, role) => { 
+    const fixUser = (id, p, name, role) => { 
       const u = get('users', id); 
       if (u) {
         if (u.pin !== p) { u.pin = p; _changed = true; }
+        if (typeof name === 'string' && u.name !== name) { u.name = name; _changed = true; }
         if (role && u.role !== role) { u.role = role; _changed = true; }
       }
     };
-    fixPin('owner-1', '0721');
-    fixPin('owner-2', '0722');
-    fixPin('ops-1', '0723');
-    fixPin('it-1', '0724');
-    // Ensure fields have their pins (first few)
-    fixPin('field-1', '0715', 'field');
-    fixPin('field-2', '0716', 'field');
+    fixUser('owner-1', '0721', 'Otto');
+    fixUser('owner-2', '0722', 'El Príncipe');
+    fixUser('ops-1', '0723', 'Sarays');
+    fixUser('it-1', '0724', 'Taylor Kim - Logs/IT');
+    // Ensure all 15 field workers have correct PINs and empty names
+    fixUser('field-1', '0715', '', 'field');
+    fixUser('field-2', '0716', '', 'field');
+    fixUser('field-3', '0717', '', 'field');
+    fixUser('field-4', '0718', '', 'field');
+    fixUser('field-5', '0719', '', 'field');
+    fixUser('field-6', '0720', '', 'field');
+    fixUser('field-7', '0725', '', 'field');
+    fixUser('field-8', '0726', '', 'field');
+    fixUser('field-9', '0727', '', 'field');
+    fixUser('field-10', '0728', '', 'field');
+    fixUser('field-11', '0729', '', 'field');
+    fixUser('field-12', '0730', '', 'field');
+    fixUser('field-13', '0731', '', 'field');
+    fixUser('field-14', '0732', '', 'field');
+    fixUser('field-15', '0733', '', 'field');
     
     // Clean up legacy duplicated users (keep only the exact 19)
     const validIds = ['owner-1','owner-2','ops-1','it-1','field-1','field-2','field-3','field-4','field-5','field-6','field-7','field-8','field-9','field-10','field-11','field-12','field-13','field-14','field-15'];
