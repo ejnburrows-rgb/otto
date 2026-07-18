@@ -10,7 +10,7 @@
 // (let the owner type the estimate by hand). The default model can be overridden
 // with the NVIDIA_MODEL environment variable.
 
-const NVIDIA_URL = 'https://integrate.api.nvidia.com/v1/chat/completions';
+const NVIDIA_URL = process.env.NVIDIA_URL || 'https://integrate.api.nvidia.com/v1/chat/completions';
 const DEFAULT_MODEL = 'meta/llama-3.3-70b-instruct';
 
 export default async function handler(req, res) {
