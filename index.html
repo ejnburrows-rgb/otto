@@ -964,24 +964,67 @@
     clearTimeout(_cloudTimer);
     _cloudTimer = setTimeout(async () => {
       try {
-        const url = `https://firestore.googleapis.com/v1/projects/${cfg.projectId}/databases/(default)/documents/otto_crm/data?key=${cfg.apiKey}`;
-        await fetch(url, { method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fields: { json: { stringValue: JSON.stringify(db) } } }) });
+        // Migration logic is inherent: we just write to new collections.
+        await Promise.all(COLLECTIONS.map(async (col) => {
+          const url = `https://firestore.googleapis.com/v1/projects/${cfg.projectId}/databases/(default)/documents/${col}/data?key=${cfg.apiKey}`;
+          return fetch(url, { method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fields: { json: { stringValue: JSON.stringify(db[col] || []) } } }) });
+        }));
+        // Also save meta
+        const metaUrl = `https://firestore.googleapis.com/v1/projects/${cfg.projectId}/databases/(default)/documents/meta/data?key=${cfg.apiKey}`;
+        await fetch(metaUrl, { method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ fields: { json: { stringValue: JSON.stringify(db.meta || {}) } } }) });
       } catch (e) { console.warn('cloud push failed', e); }
     }, 1500);
   }
   async function cloudPull() {
     const cfg = fbConfig(); if (!cfg || !cfg.projectId || !cfg.apiKey) return false;
     try {
-      const url = `https://firestore.googleapis.com/v1/projects/${cfg.projectId}/databases/(default)/documents/otto_crm/data?key=${cfg.apiKey}`;
-      const r = await fetch(url); if (!r.ok) return false;
-      const d = await r.json();
-      const json = d && d.fields && d.fields.json && d.fields.json.stringValue;
-      if (json) { db = JSON.parse(json); COLLECTIONS.forEach(c => { if (!Array.isArray(db[c])) db[c] = []; }); 
-        // Ensure rate_cards and companyProfile are initialized after cloud pull
+      let anyLoaded = false;
+      let newDb = blankDB();
+
+      // Pull per-collection
+      await Promise.all(COLLECTIONS.map(async (col) => {
+        const url = `https://firestore.googleapis.com/v1/projects/${cfg.projectId}/databases/(default)/documents/${col}/data?key=${cfg.apiKey}`;
+        const r = await fetch(url);
+        if (r.ok) {
+          const d = await r.json();
+          const json = d && d.fields && d.fields.json && d.fields.json.stringValue;
+          if (json) { newDb[col] = JSON.parse(json); anyLoaded = true; }
+        }
+      }));
+      // Pull meta
+      const metaUrl = `https://firestore.googleapis.com/v1/projects/${cfg.projectId}/databases/(default)/documents/meta/data?key=${cfg.apiKey}`;
+      const mr = await fetch(metaUrl);
+      if (mr.ok) {
+        const md = await mr.json();
+        const mjson = md && md.fields && md.fields.json && md.fields.json.stringValue;
+        if (mjson) { newDb.meta = JSON.parse(mjson); }
+      }
+
+      if (!anyLoaded) {
+        // Migration check: if new collections are empty, try the old monolithic document
+        const oldUrl = `https://firestore.googleapis.com/v1/projects/${cfg.projectId}/databases/(default)/documents/otto_crm/data?key=${cfg.apiKey}`;
+        const oldR = await fetch(oldUrl);
+        if (oldR.ok) {
+          const oldD = await oldR.json();
+          const oldJson = oldD && oldD.fields && oldD.fields.json && oldD.fields.json.stringValue;
+          if (oldJson) {
+            newDb = JSON.parse(oldJson);
+            anyLoaded = true;
+            // The next local save() will automatically cloudPush in the new format.
+          }
+        }
+      }
+
+      if (anyLoaded) {
+        db = newDb;
+        COLLECTIONS.forEach(c => { if (!Array.isArray(db[c])) db[c] = []; });
         if (!db.rate_cards || db.rate_cards.length === 0) { db.rate_cards = blankDB().rate_cards; }
         if (!db.companyProfile) { db.companyProfile = blankDB().companyProfile; }
-        await idbPut('kv', 'db', JSON.stringify(db)); return true; }
+        await idbPut('kv', 'db', JSON.stringify(db));
+        return true;
+      }
     } catch (e) { console.warn('cloud pull failed', e); }
     return false;
   }

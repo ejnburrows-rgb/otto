@@ -18,6 +18,11 @@
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') { res.status(405).json({ error: 'method_not_allowed' }); return; }
+
+  if (!process.env.WEBHOOK_SECRET) { res.status(503).json({ error: 'webhook_secret_not_configured' }); return; }
+  const secret = req.query.secret || req.headers.authorization;
+  if (secret !== process.env.WEBHOOK_SECRET) { res.status(401).json({ error: 'unauthorized' }); return; }
+
   const projectId = process.env.FIREBASE_PROJECT_ID;
   const apiKey = process.env.FIREBASE_API_KEY;
   if (!projectId || !apiKey) { res.status(503).json({ error: 'no_firestore_config' }); return; }
@@ -62,7 +67,7 @@ function normalize(b) {
   const subject = b.subject || b.Subject || '';
   const text = b.text || b.TextBody || b['body-plain'] || b['stripped-text'] || b.plain || '';
   const html = b.html || b.HtmlBody || b['body-html'] || '';
-  const body = String(text || stripHtml(html) || '').slice(0, 20000);
+  const body = sanitizeBody(String(text || stripHtml(html) || '').slice(0, 20000));
   const dateStr = b.date || b.Date || b.timestamp;
   const date = dateStr && !isNaN(new Date(dateStr)) ? new Date(dateStr).toISOString() : new Date().toISOString();
   // Attachment metadata only (binaries are not stored in the JSON doc).
@@ -81,3 +86,5 @@ function normalize(b) {
 function stripHtml(h) { return String(h || '').replace(/<style[\s\S]*?<\/style>/gi, '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/[ \t]{2,}/g, ' ').trim(); }
 function safeParse(s) { try { return JSON.parse(s); } catch (e) { /* maybe urlencoded */ } const o = {}; String(s).split('&').forEach(p => { const i = p.indexOf('='); if (i > 0) o[decodeURIComponent(p.slice(0, i))] = decodeURIComponent(p.slice(i + 1).replace(/\+/g, ' ')); }); return o; }
 function readRaw(req) { return new Promise((resolve, reject) => { let d = ''; req.on('data', c => d += c); req.on('end', () => resolve(d)); req.on('error', reject); }); }
+
+function sanitizeBody(str) { return String(str).replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '').replace(/<\/?(?:html|head|body|iframe|object|embed)[^>]*>/gi, ''); }
