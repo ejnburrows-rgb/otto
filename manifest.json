@@ -4,8 +4,8 @@
   "description": "Miami's Elite Plumbing Services — Premium plumbing solutions across Miami-Dade and Broward.",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#0C2D48",
-  "theme_color": "#0C91B2",
+  "background_color": "#0b1220",
+  "theme_color": "#0b1220",
   "orientation": "portrait-primary",
   "lang": "en",
   "icons": [
