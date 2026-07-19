@@ -6,7 +6,15 @@
 - Default branch: `main`
 - Current purpose: field-service CRM / O.T.T.O. Plumbing CRM workstream
 - Current root shape: single-file PWA plus API helpers and legacy reference
-- **Recent:** QA scripts tightened (better detection, +SW + jobs coverage, 17/17 on live http server). Local test server helper added. Rebrand to plumbing appears complete in code.
+- **Rebrand:** complete in code — no "Dream Cooling" strings remain in
+  `index.html` or `landing.html`. (GitHub's repo description metadata still
+  reads "Dream Cooling CRM Pro" as of this pass — that's a GitHub setting, not
+  a file in this repo, and out of scope here.)
+- **Dark-first UI facelift:** shipped to `main` (commit `48107d2`) — opaque
+  dark surfaces, Housecall-blue accent, `sw.js` bumped to `otto-crm-v4`.
+- QA script pass counts are not evergreen — see `docs/QA_CHECKLIST.md` for
+  why, and re-run `scripts/qa-check.mjs` / `scripts/qa-browser.mjs` for a
+  current number rather than trusting any number written here.
 
 ## Current root inventory
 
@@ -24,37 +32,37 @@ Keep visible at root:
 
 ## Open PR management
 
-### PR #4 — Rebrand from Dream Cooling CRM to O.T.T.O. Plumbing CRM
+PR #4 (the rebrand PR this section used to track) no longer exists — the
+rebrand it was for is already complete in `main`. As of this pass, the real
+open PRs are:
 
-Status: open.
+| PR | Title | Adds |
+|---|---|---|
+| #13 | docs: inventory legacy folder contents and reference status | `docs/LEGACY_INVENTORY.md` |
+| #14 | docs: add firebase setup guide for ejn | `docs/FIREBASE_SETUP_EJN.md` |
+| #15 | docs: Add SPEC vs REALITY gap report | SPEC.md-vs-code gap report |
+| #16 | Add SECURITY_AUDIT.md and proof screenshots | `docs/SECURITY_AUDIT.md` — flags that seeded demo PINs and `window.__db` are console-accessible |
+| #17 | Accessibility (ADA/WCAG) Audit Report | `docs/A11Y_AUDIT.md` |
 
-Observed scope:
-
-- Changes 2 files: `README.md` and `index.html`.
-- Large app rewrite: about 1,850 additions and 2,390 deletions.
-- Purpose is a domain pivot from Dream Cooling / HVAC to O.T.T.O. Plumbing CRM.
-
-Recommended next steps before merge:
-
-1. Confirm the business direction is definitely plumbing, not HVAC.
-2. Review the large `index.html` rewrite manually in browser.
-3. Verify the app still boots offline as a static PWA.
-4. Confirm default/demo PINs are intentional and not production credentials.
-5. Check that `legacy/otto.html` remains preserved for rollback/reference.
-6. After review, either merge PR #4 or close it as superseded.
+All five are unreviewed and unmerged as of this pass. Recommended next step:
+review and merge/close each on its own merits — they touch disjoint new doc
+files, so order doesn't matter, but PR #16's finding (console-visible
+seeded PINs) is worth prioritizing given it's a security item.
 
 ## Branch cleanup candidates
 
-Review these branches after PR decisions:
+The three branches previously listed here
+(`claude/otto-ai-server-key`, `claude/otto-plumbing-crm-fdsaf9`,
+`claude/plumbing-crm-bilingual-8hplz5`) no longer exist on the remote — already
+cleaned up. Current remote branches other than `main`, as of this pass:
 
-- `claude/otto-ai-server-key`
-- `claude/otto-plumbing-crm-fdsaf9`
-- `claude/plumbing-crm-bilingual-8hplz5`
+- `claude/repo-website-linking-ge3amu`
+- `feat/otto-backend-fixes-2508006757931382798` — base branch of closed PR #12; PR #11 (also based here) was closed unmerged
+- `main-13118038372817789804` (PR #17), `main-13714816785519993407` (PR #15), `main-8209447042964602781` (PR #13), `security-audit-13322456363879212751` (PR #16), `submit-firebase-guide-10380598989076462137` (PR #14) — each backs one of the open PRs above
+- `o.t.t.o.-plumbing-crm-production-release-43b74` — head of open PR #12, based on `feat/otto-backend-fixes-...` rather than `main`
 
-Suggested rule:
-
-- Keep branches only if they back an open, active PR.
-- Delete branches after their PR is merged, closed, or superseded.
+Suggested rule (unchanged): keep a branch only while it backs an open, active
+PR; delete once that PR is merged, closed, or superseded.
 
 ## Clutter cleanup plan
 
@@ -67,7 +75,7 @@ Suggested rule:
 ### Medium-risk repo cleanup
 
 - Confirm whether `legacy/` is needed long term.
-- If kept, add a short `legacy/README.md` explaining why the old Dream Cooling app remains.
+- `legacy/README.md` already exists, explaining why `legacy/dream-cooling-crm.html` (the old HVAC app) remains.
 - Keep `api/` documented because serverless functions are part of the deployment story.
 
 ### High-risk cleanup
@@ -102,24 +110,17 @@ Security items to verify manually:
 
 ## Suggested next cleanup commit
 
-A safe follow-up commit could:
+Status of the original list (all were `otto`-repo items):
 
-1. Add `legacy/README.md`.
-2. Add a repo status banner to `README.md`.
-3. Add a short deployment checklist under `docs/DEPLOYMENT_CHECKLIST.md`.
-4. Avoid changing `index.html` until PR #4 is resolved.
+1. ~~Add `legacy/README.md`~~ — done, already present.
+2. ~~Add a repo status banner to `README.md`~~ — done, already present.
+3. ~~Add a short deployment checklist under `docs/DEPLOYMENT_CHECKLIST.md`~~ — done, already present.
+4. ~~Avoid changing `index.html` until PR #4 is resolved~~ — moot, PR #4 no longer exists; `index.html` has since shipped the dark-first facelift (see Status above).
 
 ## Open PRs across repos
 
-Current open PRs found across `ejnburrows-rgb`:
-
-- `otto` PR #4 — rebrand to O.T.T.O. Plumbing CRM.
-- `cartilla-de-gretel` PR #41 — faithful HTML region schema pilot.
-- `cartilla-de-gretel` PR #42 — draft Juego Payaso Chano pilot game.
-- `tucker-pool-crm` PR #22 — landing page/env/IDE cleanup fixes.
-
-Suggested triage:
-
-1. Resolve `otto` PR #4 first because it defines product direction.
-2. Review `tucker-pool-crm` PR #22 next because it fixes deployment/env problems.
-3. Keep `cartilla-de-gretel` PR #41/#42 active only if those are current workbook priorities.
+This session's repository access is scoped to `ejnburrows-rgb/otto` only, so
+PR status for `cartilla-de-gretel` and `tucker-pool-crm` (previously listed
+here) can't be re-verified from here — treat those two lines as unconfirmed.
+For `otto` itself, see **Open PR management** above for the current, verified
+list (PRs #13–#17; PR #4 no longer exists).

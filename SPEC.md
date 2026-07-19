@@ -3,7 +3,28 @@
 **Repository:** `ejnburrows-rgb/otto`
 **Stack:** Single-file PWA (HTML/CSS/JS) · IndexedDB · Firebase Firestore/Storage · Vercel · Service Worker
 **Languages:** English / Spanish (full bilingual parity required on all UI)
-**Last updated:** June 20, 2026
+**Last updated:** June 20, 2026 (design spec) · status note added July 19, 2026
+
+> **Status note (docs truth pass):** this file is the original pre-build design
+> spec. Most of it matches what shipped, but a few sections describe an earlier
+> design that changed during implementation — **README.md is the source of
+> truth for current behavior.** Known deltas:
+> - **Roles:** shipped with four roles — `owner`, `office`, `field`,
+>   `accounting` — not the two (Owner/Worker) described in §3.
+> - **Storage:** the shipped app *does* use `localStorage` (theme, language,
+>   and a full state mirror), contradicting the "no localStorage" hard rule in
+>   §2.3. Treat §2.3 as superseded.
+> - **GPS:** shipped GPS is **work-only** — captured only between job
+>   check-in and check-out — not the always-on/app-open-close tracking
+>   described in §3.2, §7, and §9.3.
+> - **Email inbox:** shipped via an inbound webhook
+>   (`api/inbound-email.js`, token-authenticated) for `.eml` import and
+>   provider webhooks (SendGrid/Mailgun/Postmark), not the Gmail OAuth push
+>   integration described in §5.2 and the `GMAIL_CLIENT_ID` env var in §10.
+> - **Env vars:** the shipped app reads `ANTHROPIC_API_KEY`, `NVIDIA_API_KEY`,
+>   `NVIDIA_MODEL` (optional), `FIREBASE_PROJECT_ID`, `FIREBASE_API_KEY`, and
+>   `INBOUND_WEBHOOK_TOKEN` — see README.md § AI features and § Inbox for the
+>   current list; §10 below is stale.
 
 ---
 
@@ -21,7 +42,7 @@ The system has two distinct role views:
 
 1. Single `index.html` file — no multi-page routing, no separate HTML files
 2. No npm or Node.js build dependencies — CDN only for all libraries
-3. No `localStorage` or `sessionStorage` — use in-memory variables; persist to IndexedDB
+3. ~~No `localStorage` or `sessionStorage`~~ — **superseded, see status note above:** the shipped app uses `localStorage` for theme/language and a state mirror; primary records still live in IndexedDB
 4. All pages reachable via in-page navigation (hash routing or JS view switching)
 5. Bilingual parity — every string must exist in both `en` and `es` in the i18n object
 6. Touch targets minimum 44×44px — all interactive elements

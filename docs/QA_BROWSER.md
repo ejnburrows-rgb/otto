@@ -1,8 +1,8 @@
 # OTTO Browser QA
 
-**Run:** 2026-07-17T21:38:53.700Z
+**Run:** 2026-07-19T12:36:34.227Z
 **URL:** http://localhost:8000
-**Score:** 17/17 (100%)
+**Score:** 14/16 (88%)
 
 - [x] Page loads
 - [x] Dark theme default
@@ -10,7 +10,7 @@
 - [x] Login screen shows
 - [x] Owner login PIN 0721
 - [x] Owner home renders — OTTO
-Jul 16, 2026
+Jul 19, 2026
 Jobs today
 3
 Customers
@@ -22,8 +22,10 @@ Customers
 - [x] Backups screen
 - [x] Spanish toggle
 - [x] Backup export function
-- [x] No JS crashes
-- [x] Field worker login PIN 0715
-- [x] Field worker home renders
+- [ ] No JS crashes — Failed to load resource: net::ERR_CONNECTION_RESET; Failed to load resource: net::ERR_CONNECTION_RESET; Failed to load resource: net::ERR_CONNECTION_RESET
+- [ ] Browser test run — page.waitForSelector: Timeout 12000ms exceeded.
+Call log:
+[2m  - waiting for locator('#app:not(.hidden)') to be visible[22m
 
-**Console errors:** none
+
+**Console errors:** Failed to load resource: net::ERR_CONNECTION_RESET; Failed to load resource: net::ERR_CONNECTION_RESET; Failed to load resource: net::ERR_CONNECTION_RESET; Failed to load resource: net::ERR_CONNECTION_RESET; Failed to load resource: net::ERR_CONNECTION_RESET; Failed to load resource: net::ERR_CONNECTION_RESET; Failed to load resource: net::ERR_CONNECTION_RESET; Failed to load resource: net::ERR_CONNECTION_RESET; Failed to load resource: net::ERR_CONNECTION_RESET; Failed to load resource: net::ERR_CONNECTION_RESET; Failed to load resource: net::ERR_CONNECTION_RESET; Failed to load resource: net::ERR_CONNECTION_RESET; Failed to load resource: net::ERR_CONNECTION_RESET; Failed to load resource: net::ERR_CONNECTION_RESET

@@ -4,9 +4,10 @@
 
 | URL | Status |
 |-----|--------|
-| https://otto-plumbing-site.vercel.app | **Production** — OTTO Plumbing CRM (Miami Luxe) |
-| https://otto-crm-git-main-ejns-projects-1b938dd2.vercel.app | Git `main` preview |
-| https://otto-crm.vercel.app | Alias for crew access |
+| https://otto-kohl.vercel.app | **Production** — verified serving this repo's current `index.html` (title matches) |
+| https://otto-plumbing-site.vercel.app | Responds, but serves a different/stale build (title: "Otto PLUMBING INC. — Miami's Elite Services") — do not send to crew |
+| https://otto-crm.vercel.app | Responds, but serves an unrelated app (title: "Otto") — do not send to crew |
+| https://otto-crm-git-main-ejns-projects-1b938dd2.vercel.app | Dead (404) |
 
 ## Worker install
 
@@ -29,6 +30,7 @@
 | `NVIDIA_API_KEY` | Blueprint / PDF estimator |
 | `ANTHROPIC_API_KEY` | Ask OTTO, OCR, photo→customer |
 | `FIREBASE_PROJECT_ID` + `FIREBASE_API_KEY` | Cloud sync + inbound email webhook |
+| `INBOUND_WEBHOOK_TOKEN` | Auth token required by `/api/inbound-email` |
 | `QB_CLIENT_ID` + `QB_CLIENT_SECRET` | QuickBooks connect (when ready) |
 | `TWILIO_SID` + `TWILIO_AUTH` + `TWILIO_FROM` | Customer SMS |
 | `SENDGRID_API_KEY` | Customer email |

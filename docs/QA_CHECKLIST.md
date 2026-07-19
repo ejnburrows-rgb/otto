@@ -21,12 +21,18 @@
 
 ## Live internet checks
 
-- [x] Production site online
-- [x] User guide online
-- [x] Phone install file (manifest) online
-- [x] Offline helper (service worker) online
-- [x] QuickBooks helper responds
-- [x] Text/email helper responds (waiting for your Twilio/SendGrid accounts — expected)
+`scripts/qa-check.mjs` currently points at `otto-plumbing-site.vercel.app`,
+which is a stale/different deployment, not the real production URL
+(`otto-kohl.vercel.app` — see `docs/DEPLOYMENT_CHECKLIST.md`). Until the
+script's URL is corrected, its live-site results below are not meaningful;
+verify manually against the real production URL instead.
+
+- [ ] Production site online (last run checked the wrong URL — see note above)
+- [ ] User guide online (same)
+- [ ] Phone install file (manifest) online (same)
+- [ ] Offline helper (service worker) online (same)
+- [ ] QuickBooks helper responds (same)
+- [ ] Text/email helper responds (same)
 
 ## Bugs fixed during this QA
 
@@ -44,7 +50,7 @@
 ## Re-run tests anytime
 
 ```
-cd D:\Projects\otto-fresh
+cd otto
 node scripts/qa-browser.mjs
 node scripts/qa-check.mjs
 ```

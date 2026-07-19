@@ -1,7 +1,7 @@
 # OTTO Plumbing CRM
 
 > **Status:** Crew-ready demo · Live: https://otto-kohl.vercel.app · Landing Page: https://otto-kohl.vercel.app/landing.html · Guide: `/guide.html`
-> QA: Static + full browser tests (17/17 on local server). Run `node scripts/qa-check.mjs` and `node scripts/qa-browser.mjs` (or use `scripts/local-server.js`).
+> QA: static checks + full browser click-through. Run `node scripts/qa-check.mjs` and `node scripts/qa-browser.mjs` (or use `scripts/local-server.js`) to see current pass/fail counts — they vary with network access and seed data, so no fixed score is claimed here.
 
 The operating system for **Auto Plumbing / O.T.T.O. Plumbing** — a bilingual
 (English / Spanish), mobile-first, minimal CRM built for a 15-person plumbing
@@ -63,11 +63,12 @@ static host, or install it to a phone's home screen.
   when the data isn't there — turning repeat phone calls into searchable knowledge.
 
 ## Roles & sign-in
-Four seeded users (PIN `1234` each — change them in **Team**):
+19 seeded demo users (2 owners, 2 office, 15 field), each with their own
+4-digit PIN — change them in **Team**. Four roles are supported:
 - **Owner** — everything.
 - **Office** — everything except team management.
 - **Field worker** — jobs, customers, follow-ups, knowledge, assistant. Simplest screen.
-- **Accounting** — customers, estimates, invoices, payments, checks, reports.
+- **Accounting** — customers, estimates, invoices, payments, checks, payroll, reports, knowledge, assistant. (Supported role; no demo user is seeded by default — create one in **Team**.)
 
 ## AI features (one key, all devices)
 Voice-to-text uses the browser's speech recognition and needs no key. OCR
