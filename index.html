@@ -978,7 +978,15 @@
   async function getFileURL(id) { const b = await idbGet('files', id); return b ? URL.createObjectURL(b) : null; }
 
   /* ============================ optional Firebase REST cloud sync ============================ */
-  function fbConfig() { try { const s = JSON.parse(localStorage.getItem('otto_fb') || 'null'); if (s && s.projectId && s.apiKey) return s; } catch (e) { } return { projectId: 'otto-crm-7f951', apiKey: 'AIzaSyBcOfUbUfFc7PBkKUNAALIEtTO7YCznjH4' }; }
+  // Cloud sync settings are entered by the owner in Settings → Cloud Sync (Sincronización en la nube)
+  // and are deliberately not stored in the code to protect live customer data.
+  function fbConfig() {
+    try {
+      const s = JSON.parse(localStorage.getItem('otto_fb') || 'null');
+      if (s && s.projectId && s.apiKey) return s;
+    } catch (e) { }
+    return null;
+  }
   let _cloudTimer = null;
   let _lastCloudState = {};
   function cloudPush() {

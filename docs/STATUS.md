@@ -138,3 +138,4 @@ time and git reports a conflict here, the correct fix is to keep both lines.
 
 - 2026-07-21 — Full sweep of code and live site; corrected the previous status
   report; filed the remaining work as numbered tasks in `docs/issues/`.
+- 2026-07-21 — Stopped shipping the hardcoded fallback Firebase project ID and API key in index.html, returning null from fbConfig() instead when no custom settings are configured in localStorage.

@@ -4,6 +4,8 @@ A dated log of technical choices and why they were made. Plain language. Add a
 new line here whenever a real decision is made — see the DOCUMENTATION DUTY
 section of [../AGENTS.md](../AGENTS.md).
 
+- **2026-07-21** — Stopped shipping the hardcoded fallback Firebase project ID and API key in index.html, returning null from fbConfig() instead, to ensure that public access to the client CRM's database cannot be obtained from reading index.html source code.
+
 - **2026-07-21** — Full sweep completed; execution plan created. Every claim was
   re-checked against `origin/main` and the live site rather than a local copy,
   after an earlier sweep was found to have run against out-of-date code and
