@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 // Proves the merge rules inside index.html behave identically to the tested
 // module in scripts/sync-merge.mjs.
 //
@@ -41,7 +42,7 @@ writeFileSync(testPath, suite);
 
 console.log('Running the merge test suite against the copy inside index.html:\n');
 try {
-  const out = execFileSync(process.execPath, [testPath.pathname.replace(/^\//, '')], { encoding: 'utf8' });
+  const out = execFileSync(process.execPath, [fileURLToPath(testPath)], { encoding: 'utf8' });
   console.log(out);
 } catch (e) {
   console.log(e.stdout || '');
