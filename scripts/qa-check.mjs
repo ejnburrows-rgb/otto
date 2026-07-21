@@ -14,7 +14,7 @@ for (const m of script.matchAll(/(?:async\s+)?function\s+([a-zA-Z_$][\w$]*)\s*\(
 for (const m of script.matchAll(/(?:^|[\s;{])(?:const|let|var)\s+([a-zA-Z_$][\w$]*)\s*=\s*(?:async\s+)?(?:function\b|\()/gm)) funcs.add(m[1]);
 
 // Catch direct window.xxx = assignments (e.g. the __pin handlers)
-for (const m of script.matchAll(/window\.([a-zA-Z_$][\w$]*)\s*=\s*(?:async\s+)?(?:function\b|\()/g)) funcs.add(m[1]);
+for (const m of script.matchAll(/window\.([a-zA-Z_$][\w$]*)\s*=\s*(?:async\s+)?(?:function\b|\(|[a-zA-Z_$][\w$]*\s*=>)/g)) funcs.add(m[1]);
 
 // Pull names from Object.assign(window, { shorthand1, shorthand2, ... })
 const assignBlock = script.match(/Object\.assign\(window,\s*\{([\s\S]*?)\}\s*\);/);
