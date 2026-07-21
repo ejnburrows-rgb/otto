@@ -68,11 +68,11 @@ function fetchUrl(url) {
 }
 
 const urls = [
-  ['prod', 'https://otto-plumbing-site.vercel.app'],
+  ['prod', 'https://otto-kohl.vercel.app'],
   ['local', 'http://localhost:8000'],
-  ['guide', 'https://otto-plumbing-site.vercel.app/guide.html'],
-  ['manifest', 'https://otto-plumbing-site.vercel.app/manifest.json'],
-  ['sw', 'https://otto-plumbing-site.vercel.app/sw.js'],
+  ['guide', 'https://otto-kohl.vercel.app/guide.html'],
+  ['manifest', 'https://otto-kohl.vercel.app/manifest.json'],
+  ['sw', 'https://otto-kohl.vercel.app/sw.js'],
 ];
 
 const urlResults = {};
@@ -80,9 +80,9 @@ for (const [name, url] of urls) {
   urlResults[name] = await fetchUrl(url);
 }
 
-const apiQb = await fetchUrl('https://otto-plumbing-site.vercel.app/api/quickbooks?action=status');
+const apiQb = await fetchUrl('https://otto-kohl.vercel.app/api/quickbooks?action=status');
 const apiNotify = await new Promise((resolve) => {
-  const req = https.request('https://otto-plumbing-site.vercel.app/api/notify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, timeout: 15000 }, (res) => {
+  const req = https.request('https://otto-kohl.vercel.app/api/notify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, timeout: 15000 }, (res) => {
     let data = '';
     res.on('data', (c) => (data += c));
     res.on('end', () => resolve({ status: res.statusCode, body: data, ok: true }));

@@ -58,26 +58,38 @@ Branch: `main`. Live app: **https://otto-kohl.vercel.app** (verified working).
 
 ## 3. BROKEN OR RISKY
 
-### 3.1 CRITICAL — live customer data is readable by anyone on the internet
+### 3.1 CRITICAL — the OLD Firebase database is still live and still exposed
 
-This is verified, not theoretical, and it is the single most serious problem in
-the project.
+**The app no longer uses Firebase.** As of 2026-07-21 the code was moved to
+Supabase and the Firebase key was deleted from `index.html` entirely. But that
+only stops *this app* from using it. The old Firebase database itself is still
+sitting on Google's servers, still holding a copy of the customer data, and
+still readable by anyone who has the key — and the key is in this project's
+git history, so it is permanently public.
 
-- `index.html` contains a hardcoded fallback Firebase (Google cloud database)
-  project ID `otto-crm-7f951` and API key beginning `AIzaSyBcOfUbUf…`.
-- That key is served to the public in the page source at
-  `https://otto-kohl.vercel.app` — anyone who opens the site and views source
-  can copy it.
-- Firestore's security rules are open. On 2026-07-21 an anonymous request using
-  only that key successfully read the live `customers`, `jobs`, and `invoices`
-  collections (HTTP 200 with data returned). Only status codes and sizes were
-  recorded during this check; no customer data was read or stored.
-- The app's own sync writes using nothing but this key, so writes and deletes are
-  almost certainly open too. This was **not** tested, because testing it would
-  mean altering real client records.
+- Old project: `otto-crm-7f951`
+- Console: https://console.firebase.google.com/project/otto-crm-7f951
+- Verified 2026-07-21: anonymous reads of `customers`, `jobs`, `invoices` all
+  returned HTTP 200 with data. Only status codes and byte sizes were recorded;
+  no customer data was read or stored.
 
-**Only the owner can fully fix this** — see NEEDS OWNER DECISION in the sweep
-report. Code can stop shipping the key, but that does not close an open database.
+**Only the owner can close this**, by getting into that Firebase console and
+either locking the Firestore rules or deleting the project. Until then this
+remains the single largest open risk in the project. Everything currently in
+that database has been exported to local backups, so deleting the project would
+not lose data.
+
+### 3.1b Supabase migration is written but NOT yet live
+
+The new schema and the server-side data function are committed, but the tables
+have not been created in Supabase yet — that step needs a database credential
+only the owner can retrieve. Until it is run:
+
+- The app runs entirely from each device (which it is designed to do); cloud
+  sync answers 503 and is simply switched off.
+- The claim "the new database is sealed" is **unproven**. An anonymous request
+  currently returns `404 — table does not exist`, which is not the same thing as
+  being denied. Re-test after the tables exist.
 
 ### 3.2 Sign-in is weak
 
@@ -139,3 +151,9 @@ time and git reports a conflict here, the correct fix is to keep both lines.
 - 2026-07-21 — Full sweep of code and live site; corrected the previous status
   report; filed the remaining work as numbered tasks in `docs/issues/`.
 - 2026-07-21 — Removed published demo login PIN values (0721 and 0715) from DEPLOYMENT_CHECKLIST.md, replacing them with a plain-language security notice.
+- 2026-07-21 — Exported all 44 Firebase collections to local backups, then
+  migrated the backend to Supabase: added `supabase/migrations/0001_init_schema.sql`
+  (43 tables, all locked to the public) and `api/data.js` (server-side database
+  access), and removed the hardcoded Firebase key and its Settings screen from
+  `index.html`. Also corrected `scripts/qa-check.mjs`, which had been testing the
+  marketing site instead of the real app. QA now passes.

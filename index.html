@@ -547,7 +547,7 @@
   "use strict";
   /* ============================================================================
      OTTO PLUMBING CRM — single-file application
-     Sections: i18n · storage (IndexedDB + optional Firebase) · auth/roles ·
+     Sections: i18n · storage (IndexedDB + optional Supabase cloud sync) · auth/roles ·
      router · views · workflows · voice · OCR · chatbot · QuickBooks · reports
      ========================================================================== */
 
@@ -977,23 +977,30 @@
   async function storeFile(blob) { const id = 'f_' + uid(); await idbPut('files', id, blob); return id; }
   async function getFileURL(id) { const b = await idbGet('files', id); return b ? URL.createObjectURL(b) : null; }
 
-  /* ============================ optional Firebase REST cloud sync ============================ */
-  function fbConfig() { try { const s = JSON.parse(localStorage.getItem('otto_fb') || 'null'); if (s && s.projectId && s.apiKey) return s; } catch (e) { } return { projectId: 'otto-crm-7f951', apiKey: 'AIzaSyBcOfUbUfFc7PBkKUNAALIEtTO7YCznjH4' }; }
+  /* ============================ cloud sync (Supabase, via our own server) ============================ */
+  /* The browser never holds a database key. It calls /api/data on our own site,
+     and that server-side function talks to Supabase using a secret key that
+     only exists in Vercel's settings. This replaced Firebase, whose key had to
+     sit in this file and was therefore visible to anyone who viewed the page. */
   let _cloudTimer = null;
   let _lastCloudState = {};
+  let _cloudAvailable = false;   // true once a cloud pull has actually succeeded
   function cloudPush() {
-    const cfg = fbConfig(); if (!cfg || !cfg.projectId || !cfg.apiKey) return;
     clearTimeout(_cloudTimer);
     _cloudTimer = setTimeout(async () => {
       try {
         const promises = [];
         const colsToSync = [...COLLECTIONS, 'companyProfile'];
         for (const col of colsToSync) {
-          const currentStr = JSON.stringify(db[col] || (col === 'companyProfile' ? {} : []));
+          const value = db[col] || (col === 'companyProfile' ? {} : []);
+          const currentStr = JSON.stringify(value);
           if (currentStr !== _lastCloudState[col]) {
             _lastCloudState[col] = currentStr;
-            const url = `https://firestore.googleapis.com/v1/projects/${cfg.projectId}/databases/(default)/documents/otto_crm/${col}?key=${cfg.apiKey}`;
-            promises.push(fetch(url, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ fields: { json: { stringValue: currentStr } } }) }).catch(e => console.warn('push error', col, e)));
+            promises.push(fetch('/api/data', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ collection: col, records: value })
+            }).catch(e => console.warn('push error', col, e)));
           }
         }
         if (promises.length) await Promise.all(promises);
@@ -1001,49 +1008,32 @@
     }, 1500);
   }
   async function cloudPull() {
-    const cfg = fbConfig(); if (!cfg || !cfg.projectId || !cfg.apiKey) return false;
     try {
-      const url = `https://firestore.googleapis.com/v1/projects/${cfg.projectId}/databases/(default)/documents/otto_crm?key=${cfg.apiKey}`;
-      const r = await fetch(url); if (!r.ok) return false;
+      const r = await fetch('/api/data');
+      if (!r.ok) return false;           // 503 means cloud sync is not set up yet
       const d = await r.json();
-      
-      let newDb = null;
-      let isMigrating = false;
+      if (!d || typeof d !== 'object') return false;
 
-      if (d && d.documents) {
-        newDb = blankDB();
-        let hasNewFormat = false;
-        
-        d.documents.forEach(doc => {
-          const nameParts = doc.name.split('/');
-          const docId = nameParts[nameParts.length - 1];
-          if (docId === 'data' && !hasNewFormat) {
-             const json = doc.fields && doc.fields.json && doc.fields.json.stringValue;
-             if (json) { try { newDb = JSON.parse(json); isMigrating = true; } catch (e) {} }
-          } else if (COLLECTIONS.includes(docId) || docId === 'companyProfile') {
-             hasNewFormat = true;
-             isMigrating = false;
-             const json = doc.fields && doc.fields.json && doc.fields.json.stringValue;
-             if (json) { try { newDb[docId] = JSON.parse(json); } catch(e) {} }
-          }
-        });
+      const newDb = blankDB();
+      let got = false;
+      for (const col of [...COLLECTIONS, 'companyProfile']) {
+        const rows = d[col];
+        if (!Array.isArray(rows)) continue;
+        got = true;
+        // companyProfile is a single record, not a list.
+        newDb[col] = (col === 'companyProfile') ? (rows[0] || blankDB().companyProfile) : rows;
       }
-      
-      if (newDb) {
-        db = newDb;
-        COLLECTIONS.forEach(c => { if (!Array.isArray(db[c])) db[c] = []; }); 
-        if (!db.rate_cards || db.rate_cards.length === 0) { db.rate_cards = blankDB().rate_cards; }
-        if (!db.companyProfile) { db.companyProfile = blankDB().companyProfile; }
-        await idbPut('kv', 'db', JSON.stringify(db));
-        
-        if (!isMigrating) {
-           for (const col of COLLECTIONS) _lastCloudState[col] = JSON.stringify(db[col]);
-           _lastCloudState['companyProfile'] = JSON.stringify(db.companyProfile);
-        } else {
-           cloudPush();
-        }
-        return true; 
-      }
+      if (!got) return false;
+
+      db = newDb;
+      COLLECTIONS.forEach(c => { if (!Array.isArray(db[c])) db[c] = []; });
+      if (!db.rate_cards || db.rate_cards.length === 0) { db.rate_cards = blankDB().rate_cards; }
+      if (!db.companyProfile) { db.companyProfile = blankDB().companyProfile; }
+      await idbPut('kv', 'db', JSON.stringify(db));
+
+      for (const col of COLLECTIONS) _lastCloudState[col] = JSON.stringify(db[col]);
+      _lastCloudState['companyProfile'] = JSON.stringify(db.companyProfile);
+      return true;
     } catch (e) { console.warn('cloud pull failed', e); }
     return false;
   }
@@ -2145,7 +2135,6 @@
 
   /* ============================ SETTINGS ============================ */
   function viewSettings() {
-    const fb = fbConfig() || {};
     const dark = document.documentElement.getAttribute('data-theme') === 'dark';
     let html = pageHead(t('settings'), '');
     html += `<div class="card" style="padding:14px">
@@ -2218,11 +2207,8 @@
 
     html += `<div class="section-title"><i class="fas fa-cloud"></i> ${lang === 'es' ? 'Sincronización en la nube' : 'Cloud Sync'}</div>
       <div class="card" style="padding:14px">
-        <div class="muted" style="margin-bottom:10px">${lang === 'es' ? 'Requerido: Firebase Firestore para compartir datos entre dispositivos en v1.' : 'Required: Firebase Firestore to share data across devices in v1.'}</div>
-        <div class="field"><label>Project ID</label><input id="fb-proj" value="${esc(fb.projectId || '')}"></div>
-        <div class="field"><label>Web API Key</label><input id="fb-key" value="${esc(fb.apiKey || '')}"></div>
+        <div class="muted" style="margin-bottom:10px">${lang === 'es' ? 'La sincronización se configura en el servidor. No hay claves que escribir aquí.' : 'Cloud sync is configured on the server. There are no keys to enter here.'}</div>
         <div class="btnrow">
-          <button class="btn" onclick="saveFirebase()"><i class="fas fa-check"></i> ${t('save')}</button>
           <button class="btn ghost" onclick="cloudPullNow()"><i class="fas fa-cloud-arrow-down"></i> ${lang === 'es' ? 'Bajar' : 'Pull'}</button>
         </div>
       </div>`;
@@ -2348,7 +2334,6 @@
   }
 
   function toggleTheme() { const cur = document.documentElement.getAttribute('data-theme'); const n = cur === 'dark' ? 'light' : 'dark'; document.documentElement.setAttribute('data-theme', n); localStorage.setItem('otto_theme', n); render(); }
-  function saveFirebase() { localStorage.setItem('otto_fb', JSON.stringify({ projectId: $('#fb-proj').value.trim(), apiKey: $('#fb-key').value.trim() })); toast(t('saved'), 'success'); }
   async function cloudPullNow() { toast('…'); const ok = await cloudPull(); toast(ok ? t('saved') : t('readFailed'), ok ? 'success' : 'error'); if (ok) render(); }
   function exportAll() { downloadFile('otto-backup-' + todayISO() + '.json', JSON.stringify(db, null, 2), 'application/json'); }
   function importAll() {
@@ -3777,7 +3762,7 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
       const json = JSON.stringify(db);
       const id = 'bk_' + uid();
       await idbPut('files', id, json); // versioned snapshot, never overwritten
-      const rec = { id, ts: nowISO(), size: json.length, checksum: checksum(json), location: fbConfig() ? 'local+cloud' : 'local', verified: false };
+      const rec = { id, ts: nowISO(), size: json.length, checksum: checksum(json), location: _cloudAvailable ? 'local+cloud' : 'local', verified: false };
       const back = await idbGet('files', id);
       rec.verified = typeof back === 'string' && checksum(back) === rec.checksum;
       db.backups.unshift(rec);
@@ -3817,7 +3802,7 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     const last = list[0];
     let html = pageHead(t('backups'), list.length + ' ' + t('copies'));
     html += `<div class="btnrow"><button class="btn green" onclick="backupNow(true)"><i class="fas fa-database"></i> ${t('backupNow')}</button><button class="btn" onclick="restoreTest()"><i class="fas fa-rotate"></i> ${t('testRestore')}</button><button class="btn ghost" onclick="exportAll()"><i class="fas fa-download"></i> ${lang === 'es' ? 'Descargar' : 'Download'}</button></div>`;
-    html += `<div class="card" style="padding:14px;margin:10px 0">${kv(t('lastBackup'), last ? timeAgo(last.ts) : '—')}${kv(t('lastRestoreTest'), db.meta.lastRestoreTest ? timeAgo(db.meta.lastRestoreTest) : '—')}${kv(t('copies'), String(list.length))}${kv(lang === 'es' ? 'Nube' : 'Cloud', fbConfig() ? '✅' : '—')}</div>`;
+    html += `<div class="card" style="padding:14px;margin:10px 0">${kv(t('lastBackup'), last ? timeAgo(last.ts) : '—')}${kv(t('lastRestoreTest'), db.meta.lastRestoreTest ? timeAgo(db.meta.lastRestoreTest) : '—')}${kv(t('copies'), String(list.length))}${kv(lang === 'es' ? 'Nube' : 'Cloud', _cloudAvailable ? '✅' : '—')}</div>`;
     html += `<div class="section-title">${t('backupLog')}</div><div class="card">${list.length ? list.slice(0, 50).map(b => `<div class="list-item"><div class="avatar" style="background:${b.verified ? 'var(--green)' : 'var(--amber)'}"><i class="fas fa-database"></i></div><div class="li-main"><div class="li-title">${fmtDate(b.ts)}</div><div class="li-sub">${(b.size / 1024 | 0)} KB · ${esc(b.location)}${b.verified ? ' · ' + t('verified') : ''}${b.restorePass != null ? ' · ' + (b.restorePass ? t('restorePass') : t('restoreFail')) : ''}</div></div></div>`).join('') : emptyState()}</div>`;
     $('#main').innerHTML = html;
   }
@@ -3949,8 +3934,9 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     if (_changed) save();
 
     await calcAllWeeklyHours();
-    // Try cloud pull on boot if configured (best-effort).
-    if (fbConfig()) { try { await cloudPull(); } catch (e) { } }
+    // Try cloud pull on boot (best-effort). If the server has no database
+    // configured it answers 503 and the app just runs from this device.
+    try { _cloudAvailable = await cloudPull(); } catch (e) { }
     const sid = localStorage.getItem('otto_session');
     if (sid) { session = get('users', sid); }
     if (session) startApp(); else showLogin();
@@ -4453,7 +4439,7 @@ Return ONLY valid JSON: { "fixtures": [], "pipes": [], "fittings": [], "notes": 
     openNoteForm, saveNote, quickPhoto, chooseJob, runJobAction, uploadDoc, openDoc, quickVoiceNote, voiceInto,
     openEstimateForm, saveEstimate, estimateToInvoice, openInvoiceForm, saveInvoice, openInvoiceView, openPaymentForm, savePayment,
     openCheckForm, saveCheck, quickScanCheck, openFollowForm, saveFollow, toggleFollow, openWorkflow, openWorkflowForm, saveWorkflow,
-    openSop, openSopForm, saveSop, shareLocation, exportCSV, exportQuickBooks, openUserForm, saveUser, toggleTheme, saveFirebase,
+    openSop, openSopForm, saveSop, shareLocation, exportCSV, exportQuickBooks, openUserForm, saveUser, toggleTheme,
     cloudPullNow, exportAll, importAll, askAssistant,
     analyzeDrawing, askDrawingQuestion, answerDrawingQ, skipDrawingQ, showDrawingReview, addMaterialRow, saveDrawingEstimate, estimateFromDrawing,
     viewEmails, openEmailForm, saveEmailForm, importEml, openEmail, relinkEmail, saveEmailLink, emailToNote, summarizeEmail,

@@ -4,6 +4,20 @@ A dated log of technical choices and why they were made. Plain language. Add a
 new line here whenever a real decision is made — see the DOCUMENTATION DUTY
 section of [../AGENTS.md](../AGENTS.md).
 
+- **2026-07-21** — Migrated backend from Firebase to Supabase; old Firebase DB
+  pending shutdown. The Firebase database was publicly readable and the owner
+  could not get into its console to lock it, so the project moved to Supabase,
+  which the owner controls. All 44 stored collections were exported to local
+  backups first, before anything was changed.
+
+- **2026-07-21** — The browser no longer talks to the database directly. It calls
+  a small server-side function (`api/data.js`) that holds the secret key in
+  Vercel's settings, the same pattern already used for the Anthropic and NVIDIA
+  keys. The alternative — letting the browser use Supabase's public key with
+  "anonymous sign-in" turned on — was rejected because it would have repeated
+  the Firebase mistake: a key in the page source that grants database access.
+  Every table denies the public key outright instead.
+
 - **2026-07-21** — Full sweep completed; execution plan created. Every claim was
   re-checked against `origin/main` and the live site rather than a local copy,
   after an earlier sweep was found to have run against out-of-date code and
