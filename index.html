@@ -23,9 +23,9 @@
       --blue2: #143A61;       /* Slightly lighter navy for gradients/hovers */
       --accent: #0066FF;      /* Crisp, bright primary blue for buttons */
       --accent-hover: #005CE6;
-      --green: #059669;       /* Calm, legible emerald */
-      --amber: #D97706;       /* Warm amber, not too bright */
-      --red: #DC2626;         /* Confident red */
+      --green: #047857;       /* Calm, legible emerald */
+      --amber: #B45309;       /* Warm amber, not too bright */
+      --red: #B91C1C;         /* Confident red */
       
       /* Surface Colors */
       --bg: #F8FAFC;          /* Very subtle cool off-white */
@@ -237,7 +237,8 @@
     .btn.ghost { background: var(--card); color: var(--text); border: 1px solid var(--line); box-shadow: var(--shadow-sm); }
     .btn.ghost:hover { background: var(--card-hover); border-color: var(--accent); color: var(--text); box-shadow: var(--shadow); }
     
-    .btn.sm { min-height: 40px; padding: 0 16px; font-size: 14px; border-radius: var(--radius-sm); }
+    .iconbtn { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+    .btn.sm { min-height: 44px; padding: 0 16px; font-size: 14px; border-radius: var(--radius-sm); }
     .btnrow { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
     .btnrow .btn { flex: 1; }
 
@@ -272,7 +273,7 @@
 
     /* ===== FORMS ===== */
     .field { margin-bottom: 20px; }
-    .field label { display: block; font-weight: 500; font-size: 14px; margin-bottom: 8px; color: var(--text2); }
+    .field label, .field .field-heading { display: block; font-weight: 500; font-size: 14px; margin-bottom: 8px; color: var(--text2); }
     .field input, .field select, .field textarea {
       width: 100%; min-height: var(--tap); padding: 14px 16px; 
       border: 1px solid var(--line); border-radius: var(--radius-sm); 
@@ -529,7 +530,7 @@
   <div id="login" class="login hidden"></div>
   <div id="app" class="hidden">
     <header class="topbar">
-      <div class="brand"><img src="./logo.jpg" style="height:36px;object-fit:contain;border-radius:6px;" /></div>
+      <div class="brand"><img src="./logo.jpg" alt="OTTO Plumbing" style="height:36px;object-fit:contain;border-radius:6px;" /></div>
       <div class="spacer"></div>
       <div class="langtoggle">
         <button id="lang-en" onclick="setLang('en')">EN</button>
@@ -538,8 +539,8 @@
       <button class="iconbtn" onclick="nav('assistant')" title="Assistant"><i class="fas fa-robot"></i></button>
       <button class="iconbtn" onclick="nav('settings')" title="Settings"><i class="fas fa-gear"></i></button>
     </header>
-    <main id="main" class="wrap"></main>
-    <button id="fab" class="fab hidden" onclick="quickAdd()"><i class="fas fa-plus"></i></button>
+    <main id="main" class="wrap" role="main"></main>
+    <button id="fab" class="fab hidden" aria-label="${t('add')}" onclick="quickAdd()"><i class="fas fa-plus"></i></button>
     <nav class="bottomnav" id="bottomnav"></nav>
   </div>
 
@@ -1269,7 +1270,7 @@
     return fmtDate(s);
   }
   const initials = (s) => (s || '?').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
-  const colorFor = (s) => { let h = 0; for (const c of (s || 'x')) h = (h * 31 + c.charCodeAt(0)) % 360; return `hsl(${h},55%,45%)`; };
+  const colorFor = (s) => { let h = 0; for (const c of (s || 'x')) h = (h * 31 + c.charCodeAt(0)) % 360; return `hsl(${h},55%,30%)`; };
 
   /* status helpers */
   function statusPill(s) {
@@ -1311,7 +1312,7 @@
       if (!selUser) {
         lg.innerHTML = `
           <div style="text-align:center;margin-bottom:24px;">
-            <img src="./logo.jpg" style="width:180px;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.25);" />
+            <img src="./logo.jpg" alt="OTTO Plumbing" style="width:180px;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.25);" />
           </div>
           <p style="margin-top:0;">${esc(t('pickUser'))}</p>
           <div class="card-login">
@@ -1508,7 +1509,7 @@
     return `<div class="pagehead">${withBack ? `<button class="back" onclick="${withBack}"><i class="fas fa-arrow-left"></i></button>` : ''}
       <div><h1>${esc(title)}</h1>${sub ? `<div class="sub">${esc(sub)}</div>` : ''}</div></div>`;
   }
-  function searchBox(id, ph) { return `<div class="searchbar"><i class="fas fa-magnifying-glass"></i><input id="${id}" placeholder="${esc(ph || t('search'))}" oninput="render()" value="${esc(_search[id] || '')}"></div>`; }
+  function searchBox(id, ph) { return `<div class="searchbar"><i class="fas fa-magnifying-glass"></i><input id="${id}" aria-label="${esc(ph || t('search'))}" placeholder="${esc(ph || t('search'))}" oninput="render()" value="${esc(_search[id] || '')}"></div>`; }
   const _search = {};
   function bindSearch(id) { const el = $('#' + id); if (el) el.oninput = () => { _search[id] = el.value; render(); el2focus(id); }; }
   function el2focus(id) { const el = $('#' + id); if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); } }
@@ -1646,13 +1647,13 @@
   function openCustomerForm(id) {
     const c = id ? get('customers', id) : {};
     modal(`<h2>${id ? t('edit') : t('addCustomer')}</h2>
-      <div class="field"><label>${t('name')}</label><div class="with-voice"><input id="c-name" value="${esc(c.name || '')}">${voiceBtn('c-name')}</div></div>
+      <div class="field"><label for="c-name">${t('name')}</label><div class="with-voice"><input id="c-name" value="${esc(c.name || '')}">${voiceBtn('c-name')}</div></div>
       <div class="row2">
-        <div class="field"><label>${t('phone')}</label><input id="c-phone" type="tel" value="${esc(c.phone || '')}"></div>
-        <div class="field"><label>${t('email')}</label><input id="c-email" type="email" value="${esc(c.email || '')}"></div>
+        <div class="field"><label for="c-phone">${t('phone')}</label><input id="c-phone" type="tel" value="${esc(c.phone || '')}"></div>
+        <div class="field"><label for="c-email">${t('email')}</label><input id="c-email" type="email" value="${esc(c.email || '')}"></div>
       </div>
-      <div class="field"><label>${t('address')}</label><div class="with-voice"><input id="c-address" value="${esc(c.address || '')}">${voiceBtn('c-address')}</div></div>
-      <div class="field"><label>${t('notesLabel')}</label><div class="with-voice"><textarea id="c-notes">${esc(c.notes || '')}</textarea>${voiceBtn('c-notes')}</div></div>
+      <div class="field"><label for="c-address">${t('address')}</label><div class="with-voice"><input id="c-address" value="${esc(c.address || '')}">${voiceBtn('c-address')}</div></div>
+      <div class="field"><label for="c-notes">${t('notesLabel')}</label><div class="with-voice"><textarea id="c-notes">${esc(c.notes || '')}</textarea>${voiceBtn('c-notes')}</div></div>
       <button class="btn block" onclick="saveCustomer('${id || ''}')"><i class="fas fa-check"></i> ${t('save')}</button>`);
   }
   function saveCustomer(id) {
@@ -1766,19 +1767,19 @@
     const custOpts = db.customers.map(c => `<option value="${c.id}" ${j.customerId === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
     const workerOpts = db.users.filter(u => u.role === 'field' || u.role === 'owner').map(u => `<option value="${u.id}" ${j.assignedTo === u.id ? 'selected' : ''}>${esc(u.name)}</option>`).join('');
     modal(`<h2>${id ? t('edit') : t('newJob')}</h2>
-      <div class="field"><label>${t('linkCustomer')}</label><select id="j-cust"><option value="">—</option>${custOpts}</select>
+      <div class="field"><label for="j-cust">${t('linkCustomer')}</label><select id="j-cust"><option value="">—</option>${custOpts}</select>
         <button class="btn ghost sm" style="margin-top:8px" onclick="closeModal();openCustomerForm()"><i class="fas fa-plus"></i> ${t('addCustomer')}</button></div>
-      <div class="field"><label>${t('title')}</label><div class="with-voice"><input id="j-title" value="${esc(j.title || '')}" placeholder="${lang === 'es' ? 'Ej: Fuga en cocina' : 'e.g. Kitchen leak'}">${voiceBtn('j-title')}</div></div>
-      <div class="field"><label>${t('description')}</label><div class="with-voice"><textarea id="j-desc">${esc(j.description || '')}</textarea>${voiceBtn('j-desc')}</div></div>
-      <div class="field"><label>${t('address')}</label><input id="j-addr" value="${esc(j.address || '')}"></div>
+      <div class="field"><label for="j-title">${t('title')}</label><div class="with-voice"><input id="j-title" value="${esc(j.title || '')}" placeholder="${lang === 'es' ? 'Ej: Fuga en cocina' : 'e.g. Kitchen leak'}">${voiceBtn('j-title')}</div></div>
+      <div class="field"><label for="j-desc">${t('description')}</label><div class="with-voice"><textarea id="j-desc">${esc(j.description || '')}</textarea>${voiceBtn('j-desc')}</div></div>
+      <div class="field"><label for="j-addr">${t('address')}</label><input id="j-addr" value="${esc(j.address || '')}"></div>
       <div class="row2">
-        <div class="field"><label>${t('scheduled')}</label><input id="j-date" type="date" value="${esc((j.scheduledDate || '').slice(0, 10))}"></div>
-        <div class="field"><label>${t('assignedTo')}</label><select id="j-worker"><option value="">—</option>${workerOpts}</select></div>
+        <div class="field"><label for="j-date">${t('scheduled')}</label><input id="j-date" type="date" value="${esc((j.scheduledDate || '').slice(0, 10))}"></div>
+        <div class="field"><label for="j-worker">${t('assignedTo')}</label><select id="j-worker"><option value="">—</option>${workerOpts}</select></div>
       </div>
       <div class="field">
         <label style="display:flex; align-items:center; gap:8px"><input type="checkbox" id="j-isot" ${j.isOT ? 'checked' : ''} style="width:20px;height:20px"> ${t('isOT')}</label>
       </div>
-      <div class="field"><label>${t('status')}</label><select id="j-status">${JOB_STATUSES.map(s => `<option value="${s}" ${j.status === s ? 'selected' : ''}>${t(s)}</option>`).join('')}</select></div>
+      <div class="field"><label for="j-status">${t('status')}</label><select id="j-status">${JOB_STATUSES.map(s => `<option value="${s}" ${j.status === s ? 'selected' : ''}>${t(s)}</option>`).join('')}</select></div>
       <button class="btn block" onclick="saveJob('${id || ''}')"><i class="fas fa-check"></i> ${t('save')}</button>`);
   }
   function saveJob(id) {
@@ -1838,10 +1839,10 @@
   // New-call workflow: capture caller, match/create customer, optionally create job.
   function newCall() {
     modal(`<h2>${t('newCall')}</h2><div class="sheet-sub">${t('callFrom')}</div>
-      <div class="field"><label>${t('whoCalled')}</label><div class="with-voice"><input id="call-name" list="cust-list">${voiceBtn('call-name')}</div>
+      <div class="field"><label for="call-name">${t('whoCalled')}</label><div class="with-voice"><input id="call-name" list="cust-list">${voiceBtn('call-name')}</div>
         <datalist id="cust-list">${db.customers.map(c => `<option value="${esc(c.name)}">`).join('')}</datalist></div>
-      <div class="field"><label>${t('callerPhone')}</label><input id="call-phone" type="tel"></div>
-      <div class="field"><label>${t('whatNeed')}</label><div class="with-voice"><textarea id="call-summary" placeholder="${lang === 'es' ? 'Ej: Fuga bajo el lavabo, urgente' : 'e.g. Leak under sink, urgent'}"></textarea>${voiceBtn('call-summary')}</div></div>
+      <div class="field"><label for="call-phone">${t('callerPhone')}</label><input id="call-phone" type="tel"></div>
+      <div class="field"><label for="call-summary">${t('whatNeed')}</label><div class="with-voice"><textarea id="call-summary" placeholder="${lang === 'es' ? 'Ej: Fuga bajo el lavabo, urgente' : 'e.g. Leak under sink, urgent'}"></textarea>${voiceBtn('call-summary')}</div></div>
       <label style="display:flex;gap:10px;align-items:center;margin:6px 0 14px"><input type="checkbox" id="call-makejob" checked style="width:22px;height:22px"> ${t('createJob')}</label>
       <button class="btn green block" onclick="saveCall()"><i class="fas fa-check"></i> ${t('logCall')}</button>`);
   }
@@ -2005,10 +2006,10 @@
     const job = e.jobId ? get('jobs', e.jobId) : null;
     modal(`<h2>${id ? t('edit') : t('addEstimate')}</h2>
       ${jobSelect('e-job', e.jobId)}
-      <div class="field"><label>${t('title')}</label><input id="e-title" value="${esc(e.title || (job ? job.title : ''))}"></div>
-      <div class="field"><label>${t('description')}</label><div class="with-voice"><textarea id="e-desc">${esc(e.description || '')}</textarea>${voiceBtn('e-desc')}</div></div>
-      <div class="row2"><div class="field"><label>${t('amount')}</label><input id="e-amount" type="number" step="0.01" value="${e.amount || ''}"></div>
-      <div class="field"><label>${t('status')}</label><select id="e-status">${['draft', 'sent', 'approved', 'canceled'].map(s => `<option value="${s}" ${e.status === s ? 'selected' : ''}>${t(s)}</option>`).join('')}</select></div></div>
+      <div class="field"><label for="e-title">${t('title')}</label><input id="e-title" value="${esc(e.title || (job ? job.title : ''))}"></div>
+      <div class="field"><label for="e-desc">${t('description')}</label><div class="with-voice"><textarea id="e-desc">${esc(e.description || '')}</textarea>${voiceBtn('e-desc')}</div></div>
+      <div class="row2"><div class="field"><label for="e-amount">${t('amount')}</label><input id="e-amount" type="number" step="0.01" value="${e.amount || ''}"></div>
+      <div class="field"><label for="e-status">${t('status')}</label><select id="e-status">${['draft', 'sent', 'approved', 'canceled'].map(s => `<option value="${s}" ${e.status === s ? 'selected' : ''}>${t(s)}</option>`).join('')}</select></div></div>
       <button class="btn block" onclick="saveEstimate('${id || ''}')"><i class="fas fa-check"></i> ${t('save')}</button>
       ${id ? `<button class="btn green block" style="margin-top:10px" onclick="estimateToInvoice('${id}')"><i class="fas fa-file-invoice-dollar"></i> ${lang === 'es' ? 'Convertir a factura' : 'Convert to invoice'}</button>` : ''}`);
   }
@@ -2039,10 +2040,10 @@
     const job = i.jobId ? get('jobs', i.jobId) : null;
     modal(`<h2>${id ? t('edit') : t('addInvoice')}</h2>
       ${jobSelect('i-job', i.jobId)}
-      <div class="field"><label>#</label><input id="i-number" value="${esc(i.number || autoInvNumber())}"></div>
-      <div class="field"><label>${t('title')}</label><input id="i-title" value="${esc(i.title || pre.title || (job ? job.title : ''))}"></div>
-      <div class="row2"><div class="field"><label>${t('amount')}</label><input id="i-amount" type="number" step="0.01" value="${i.amount || pre.amount || ''}"></div>
-      <div class="field"><label>${t('dueDate')}</label><input id="i-due" type="date" value="${esc((i.dueDate || '').slice(0, 10))}"></div></div>
+      <div class="field"><label for="i-number">#</label><input id="i-number" value="${esc(i.number || autoInvNumber())}"></div>
+      <div class="field"><label for="i-title">${t('title')}</label><input id="i-title" value="${esc(i.title || pre.title || (job ? job.title : ''))}"></div>
+      <div class="row2"><div class="field"><label for="i-amount">${t('amount')}</label><input id="i-amount" type="number" step="0.01" value="${i.amount || pre.amount || ''}"></div>
+      <div class="field"><label for="i-due">${t('dueDate')}</label><input id="i-due" type="date" value="${esc((i.dueDate || '').slice(0, 10))}"></div></div>
       <button class="btn block" onclick="saveInvoice('${id || ''}')"><i class="fas fa-check"></i> ${t('save')}</button>`);
   }
   function autoInvNumber() { return 'INV-' + (1000 + db.invoices.length + 1); }
@@ -2087,9 +2088,9 @@
     const inv = invoiceId ? get('invoices', invoiceId) : null;
     const invOpts = db.invoices.map(i => `<option value="${i.id}" ${invoiceId === i.id ? 'selected' : ''}>${esc(i.number)} — ${esc(customerName(i.customerId))} (${money((i.amount || 0) - (i.paid || 0))})</option>`).join('');
     modal(`<h2>${t('addPayment')}</h2>
-      <div class="field"><label>${t('linkInvoice')}</label><select id="p-inv"><option value="">—</option>${invOpts}</select></div>
-      <div class="row2"><div class="field"><label>${t('amount')}</label><input id="p-amount" type="number" step="0.01" value="${inv ? ((inv.amount || 0) - (inv.paid || 0)) : ''}"></div>
-      <div class="field"><label>${lang === 'es' ? 'Método' : 'Method'}</label><select id="p-method"><option>Cash</option><option>Check</option><option>Card</option><option>Transfer</option><option>QuickBooks</option></select></div></div>
+      <div class="field"><label for="p-inv">${t('linkInvoice')}</label><select id="p-inv"><option value="">—</option>${invOpts}</select></div>
+      <div class="row2"><div class="field"><label for="p-amount">${t('amount')}</label><input id="p-amount" type="number" step="0.01" value="${inv ? ((inv.amount || 0) - (inv.paid || 0)) : ''}"></div>
+      <div class="field"><label for="p-method">${lang === 'es' ? 'Método' : 'Method'}</label><select id="p-method"><option>Cash</option><option>Check</option><option>Card</option><option>Transfer</option><option>QuickBooks</option></select></div></div>
       <button class="btn green block" onclick="savePayment()"><i class="fas fa-check"></i> ${t('save')}</button>`);
   }
   function savePayment() {
@@ -2114,12 +2115,12 @@
     c = c || {};
     const invOpts = db.invoices.map(i => `<option value="${i.id}" ${c.invoiceId === i.id ? 'selected' : ''}>${esc(i.number)} — ${esc(customerName(i.customerId))}</option>`).join('');
     modal(`<h2>${c.id ? t('edit') : t('addCheck')}</h2>
-      <div class="row2"><div class="field"><label>${t('payer')}</label><input id="ck-payer" value="${esc(c.payer || '')}"></div>
-      <div class="field"><label>${t('amount')}</label><input id="ck-amount" type="number" step="0.01" value="${c.amount || ''}"></div></div>
-      <div class="row2"><div class="field"><label>${t('checkNumber')}</label><input id="ck-num" value="${esc(c.checkNumber || '')}"></div>
-      <div class="field"><label>${t('date')}</label><input id="ck-date" type="date" value="${esc((c.date || todayISO()).slice(0, 10))}"></div></div>
-      <div class="field"><label>${t('memo')}</label><input id="ck-memo" value="${esc(c.memo || '')}"></div>
-      <div class="field"><label>${t('linkInvoice')}</label><select id="ck-inv"><option value="">—</option>${invOpts}</select></div>
+      <div class="row2"><div class="field"><label for="ck-payer">${t('payer')}</label><input id="ck-payer" value="${esc(c.payer || '')}"></div>
+      <div class="field"><label for="ck-amount">${t('amount')}</label><input id="ck-amount" type="number" step="0.01" value="${c.amount || ''}"></div></div>
+      <div class="row2"><div class="field"><label for="ck-num">${t('checkNumber')}</label><input id="ck-num" value="${esc(c.checkNumber || '')}"></div>
+      <div class="field"><label for="ck-date">${t('date')}</label><input id="ck-date" type="date" value="${esc((c.date || todayISO()).slice(0, 10))}"></div></div>
+      <div class="field"><label for="ck-memo">${t('memo')}</label><input id="ck-memo" value="${esc(c.memo || '')}"></div>
+      <div class="field"><label for="ck-inv">${t('linkInvoice')}</label><select id="ck-inv"><option value="">—</option>${invOpts}</select></div>
       <button class="btn block" onclick="saveCheck('${c.id || ''}','${c.jobId || ''}')"><i class="fas fa-check"></i> ${t('save')}</button>`);
   }
   function saveCheck(id, jobId) {
@@ -2181,11 +2182,11 @@
     const f = id ? get('followups', id) : { priority: 'normal', jobId: jobId || '', dueDate: todayISO(), status: 'pending' };
     const workerOpts = db.users.map(u => `<option value="${u.id}" ${f.assignedTo === u.id ? 'selected' : ''}>${esc(u.name)}</option>`).join('');
     modal(`<h2>${id ? t('edit') : t('addFollowup')}</h2>
-      <div class="field"><label>${t('title')}</label><div class="with-voice"><input id="f-title" value="${esc(f.title || '')}">${voiceBtn('f-title')}</div></div>
+      <div class="field"><label for="f-title">${t('title')}</label><div class="with-voice"><input id="f-title" value="${esc(f.title || '')}">${voiceBtn('f-title')}</div></div>
       ${jobSelect('f-job', f.jobId)}
-      <div class="row2"><div class="field"><label>${t('dueDate')}</label><input id="f-due" type="date" value="${esc((f.dueDate || '').slice(0, 10))}"></div>
-      <div class="field"><label>${t('priority')}</label><select id="f-pri">${['high', 'normal', 'low'].map(p => `<option value="${p}" ${f.priority === p ? 'selected' : ''}>${t(p)}</option>`).join('')}</select></div></div>
-      <div class="field"><label>${t('assignedTo')}</label><select id="f-worker"><option value="">—</option>${workerOpts}</select></div>
+      <div class="row2"><div class="field"><label for="f-due">${t('dueDate')}</label><input id="f-due" type="date" value="${esc((f.dueDate || '').slice(0, 10))}"></div>
+      <div class="field"><label for="f-pri">${t('priority')}</label><select id="f-pri">${['high', 'normal', 'low'].map(p => `<option value="${p}" ${f.priority === p ? 'selected' : ''}>${t(p)}</option>`).join('')}</select></div></div>
+      <div class="field"><label for="f-worker">${t('assignedTo')}</label><select id="f-worker"><option value="">—</option>${workerOpts}</select></div>
       <button class="btn block" onclick="saveFollow('${id || ''}')"><i class="fas fa-check"></i> ${t('save')}</button>`);
   }
   function saveFollow(id) {
@@ -2215,10 +2216,10 @@
   }
   function openWorkflowForm() {
     modal(`<h2>${t('addWorkflow')}</h2>
-      <div class="field"><label>${t('name')} (EN)</label><input id="w-name"></div>
-      <div class="field"><label>${t('name')} (ES)</label><input id="w-name-es"></div>
-      <div class="field"><label>${lang === 'es' ? 'Disparador' : 'Trigger'}</label><select id="w-trigger"><option value="manual">Manual</option><option value="call">New call</option><option value="job_completed">Job completed</option></select></div>
-      <div class="field"><label>${t('steps')} (${lang === 'es' ? 'uno por línea' : 'one per line'})</label><textarea id="w-steps"></textarea></div>
+      <div class="field"><label for="w-name">${t('name')} (EN)</label><input id="w-name"></div>
+      <div class="field"><label for="w-name-es">${t('name')} (ES)</label><input id="w-name-es"></div>
+      <div class="field"><label for="w-trigger">${lang === 'es' ? 'Disparador' : 'Trigger'}</label><select id="w-trigger"><option value="manual">Manual</option><option value="call">New call</option><option value="job_completed">Job completed</option></select></div>
+      <div class="field"><label for="w-steps">${t('steps')} (${lang === 'es' ? 'uno por línea' : 'one per line'})</label><textarea id="w-steps"></textarea></div>
       <button class="btn block" onclick="saveWorkflow()"><i class="fas fa-check"></i> ${t('save')}</button>`);
   }
   function saveWorkflow() {
@@ -2263,11 +2264,11 @@
   function openSopForm(id) {
     const s = id ? get('sops', id) : {};
     modal(`<h2>${id ? t('edit') : t('addSop')}</h2>
-      <div class="field"><label>${t('title')} (EN)</label><input id="s-title" value="${esc(s.title || '')}"></div>
-      <div class="field"><label>${t('title')} (ES)</label><input id="s-title-es" value="${esc(s.title_es || '')}"></div>
-      <div class="field"><label>${t('category')}</label><input id="s-cat" value="${esc(s.category || '')}"></div>
-      <div class="field"><label>${lang === 'es' ? 'Contenido' : 'Body'} (EN)</label><div class="with-voice"><textarea id="s-body">${esc(s.body || '')}</textarea>${voiceBtn('s-body')}</div></div>
-      <div class="field"><label>${lang === 'es' ? 'Contenido' : 'Body'} (ES)</label><div class="with-voice"><textarea id="s-body-es">${esc(s.body_es || '')}</textarea>${voiceBtn('s-body-es')}</div></div>
+      <div class="field"><label for="s-title">${t('title')} (EN)</label><input id="s-title" value="${esc(s.title || '')}"></div>
+      <div class="field"><label for="s-title-es">${t('title')} (ES)</label><input id="s-title-es" value="${esc(s.title_es || '')}"></div>
+      <div class="field"><label for="s-cat">${t('category')}</label><input id="s-cat" value="${esc(s.category || '')}"></div>
+      <div class="field"><label for="s-body">${lang === 'es' ? 'Contenido' : 'Body'} (EN)</label><div class="with-voice"><textarea id="s-body">${esc(s.body || '')}</textarea>${voiceBtn('s-body')}</div></div>
+      <div class="field"><label for="s-body-es">${lang === 'es' ? 'Contenido' : 'Body'} (ES)</label><div class="with-voice"><textarea id="s-body-es">${esc(s.body_es || '')}</textarea>${voiceBtn('s-body-es')}</div></div>
       <button class="btn block" onclick="saveSop('${id || ''}')"><i class="fas fa-check"></i> ${t('save')}</button>`);
   }
   function saveSop(id) {
@@ -2345,10 +2346,10 @@
   function openUserForm(id) {
     const u = id ? get('users', id) : { role: 'field', lang: 'es', pin: '1234' };
     modal(`<h2>${id ? t('edit') : t('addTeam')}</h2>
-      <div class="field"><label>${t('name')}</label><input id="u-name" value="${esc(u.name || '')}"></div>
-      <div class="field"><label>${t('role')}</label><select id="u-role">${['owner', 'office', 'field'].map(r => `<option value="${r}" ${u.role === r ? 'selected' : ''}>${t(r)}</option>`).join('')}</select></div>
-      <div class="row2"><div class="field"><label>${id ? (lang === 'es' ? 'Nuevo PIN (opcional)' : 'Set a new PIN (optional)') : 'PIN'}</label><input id="u-pin" type="password" inputmode="numeric" maxlength="4" value="" placeholder="${id ? (lang === 'es' ? 'Dejar vacío para no cambiar' : 'Leave empty to keep current') : '••••'}"></div>
-      <div class="field"><label>${lang === 'es' ? 'Idioma' : 'Language'}</label><select id="u-lang"><option value="en" ${u.lang === 'en' ? 'selected' : ''}>English</option><option value="es" ${u.lang === 'es' ? 'selected' : ''}>Español</option></select></div></div>
+      <div class="field"><label for="u-name">${t('name')}</label><input id="u-name" value="${esc(u.name || '')}"></div>
+      <div class="field"><label for="u-role">${t('role')}</label><select id="u-role">${['owner', 'office', 'field'].map(r => `<option value="${r}" ${u.role === r ? 'selected' : ''}>${t(r)}</option>`).join('')}</select></div>
+      <div class="row2"><div class="field"><label for="u-pin">${id ? (lang === 'es' ? 'Nuevo PIN (opcional)' : 'Set a new PIN (optional)') : 'PIN'}</label><input id="u-pin" type="password" inputmode="numeric" maxlength="4" value="" placeholder="${id ? (lang === 'es' ? 'Dejar vacío para no cambiar' : 'Leave empty to keep current') : '••••'}"></div>
+      <div class="field"><label for="u-lang">${lang === 'es' ? 'Idioma' : 'Language'}</label><select id="u-lang"><option value="en" ${u.lang === 'en' ? 'selected' : ''}>English</option><option value="es" ${u.lang === 'es' ? 'selected' : ''}>Español</option></select></div></div>
       <button class="btn block" onclick="saveUser('${id || ''}')"><i class="fas fa-check"></i> ${t('save')}</button>
       ${id && db.users.length > 1 ? `<button class="btn red block" style="margin-top:10px" onclick="confirmDel(()=>{remove('users','${id}');closeModal();render()})"><i class="fas fa-trash"></i> ${t('delete')}</button>` : ''}`);
   }
@@ -2401,8 +2402,8 @@
     html += `<div class="section-title"><i class="fas fa-robot"></i> ${t('assistant')} & AI</div>
       <div class="card" style="padding:14px">
         <div class="muted" style="margin-bottom:10px">${lang === 'es' ? 'Clave de Anthropic Claude y NVIDIA para usar el asistente y OCR.' : 'Anthropic Claude & NVIDIA keys for assistant & OCR.'}</div>
-        <div class="field"><label>${lang === 'es' ? 'Clave Anthropic (opcional, este dispositivo)' : 'Anthropic API Key (optional, this device)'}</label><input id="set-aikey" type="password" value="${esc(localStorage.getItem('otto_ai_key') || '')}" placeholder="sk-ant-..."></div>
-        <div class="field"><label>${lang === 'es' ? 'Clave NVIDIA (para estimado de planos)' : 'NVIDIA API Key (for floor plan takeoff)'}</label><input id="set-nvi-key" type="password" value="${esc(db.meta?.nvidiaKey || '')}" placeholder="nvapi-..."></div>
+        <div class="field"><label for="set-aikey">${lang === 'es' ? 'Clave Anthropic (opcional, este dispositivo)' : 'Anthropic API Key (optional, this device)'}</label><input id="set-aikey" type="password" value="${esc(localStorage.getItem('otto_ai_key') || '')}" placeholder="sk-ant-..."></div>
+        <div class="field"><label for="set-nvi-key">${lang === 'es' ? 'Clave NVIDIA (para estimado de planos)' : 'NVIDIA API Key (for floor plan takeoff)'}</label><input id="set-nvi-key" type="password" value="${esc(db.meta?.nvidiaKey || '')}" placeholder="nvapi-..."></div>
         <button class="btn block" onclick="saveAIKey()"><i class="fas fa-check"></i> ${t('save')}</button>
       </div>`;
 
@@ -2410,7 +2411,7 @@
       html += `<div class="section-title"><i class="fas fa-shield-halved"></i> ${t('security')}</div>
         <div class="card" style="padding:14px">
           <div class="muted" style="margin-bottom:10px">${lang === 'es' ? 'Código extra de 4 dígitos que se pedirá al entrar como dueño. Déjalo vacío para desactivar.' : '4-digit extra code asked at owner login. Leave blank to disable.'}</div>
-          <div class="field"><label>${t('mfaOwner')}</label><input id="set-mfa" type="password" inputmode="numeric" maxlength="4" value="" placeholder="${hasPin(session, 'mfaPin') ? (lang === 'es' ? 'Configurado — escribe para cambiar' : 'Set — type to change') : '••••'}"></div>
+          <div class="field"><label for="set-mfa">${t('mfaOwner')}</label><input id="set-mfa" type="password" inputmode="numeric" maxlength="4" value="" placeholder="${hasPin(session, 'mfaPin') ? (lang === 'es' ? 'Configurado — escribe para cambiar' : 'Set — type to change') : '••••'}"></div>
           ${hasPin(session, 'mfaPin') ? `<button class="btn ghost block" style="margin-top:8px" onclick="clearMfa()"><i class="fas fa-xmark"></i> ${lang === 'es' ? 'Quitar código extra' : 'Remove extra code'}</button>` : ''}
           <button class="btn block" onclick="saveMfa()"><i class="fas fa-check"></i> ${t('save')}</button>
         </div>`;
@@ -2428,14 +2429,14 @@
         <div class="card" style="padding:14px">
           <div class="muted" style="margin-bottom:10px">${lang === 'es' ? 'SMS y correo al cliente (recordatorios, técnico en camino). Configura en Vercel cuando tengas Twilio/SendGrid.' : 'Customer SMS & email (reminders, tech on the way). Configure Twilio/SendGrid in Vercel when ready.'}</div>
           <div id="notify-status" class="muted" style="margin-bottom:10px">…</div>
-          <div class="field"><label>Twilio From (preview)</label><input id="set-twilio-from" value="${esc(db.meta?.twilioFrom || '')}" placeholder="+1…"></div>
-          <div class="field"><label>Company email From (preview)</label><input id="set-email-from" value="${esc(db.meta?.emailFrom || '')}" placeholder="service@yourcompany.com"></div>
+          <div class="field"><label for="set-twilio-from">Twilio From (preview)</label><input id="set-twilio-from" value="${esc(db.meta?.twilioFrom || '')}" placeholder="+1…"></div>
+          <div class="field"><label for="set-email-from">Company email From (preview)</label><input id="set-email-from" value="${esc(db.meta?.emailFrom || '')}" placeholder="service@yourcompany.com"></div>
           <button class="btn block" onclick="saveNotifyPrefs()"><i class="fas fa-check"></i> ${t('save')}</button>
         </div>`;
       html += `<div class="section-title"><i class="fas fa-envelope"></i> Email Integration (Gmail API)</div>
         <div class="card" style="padding:14px">
           <div class="muted" style="margin-bottom:10px">${lang === 'es' ? 'Ingresa tu Client ID de Google para activar la bandeja de entrada.' : 'Enter your Google Client ID to enable the real-time inbox.'}</div>
-          <div class="field"><label>Google Client ID</label><input id="set-gclient" type="password" value="${esc(db.meta?.googleClientId || '')}" placeholder="12345678-abcd.apps.googleusercontent.com"></div>
+          <div class="field"><label for="set-gclient">Google Client ID</label><input id="set-gclient" type="password" value="${esc(db.meta?.googleClientId || '')}" placeholder="12345678-abcd.apps.googleusercontent.com"></div>
           <div class="btnrow">
             <button class="btn" onclick="saveGoogleClient()"><i class="fas fa-check"></i> ${t('save')}</button>
             <button class="btn ghost" onclick="connectGmail()"><i class="fas fa-link"></i> ${t('connectEmail')}</button>
@@ -2489,7 +2490,7 @@
   }
   function openUrgentForm() {
     modal(`<h2>${t('urgentQuestion')}</h2>
-      <div class="field"><label>${t('question')}</label><div class="with-voice"><textarea id="urgent-text" placeholder="${lang === 'es' ? 'Ej: No encuentro la válvula principal' : 'e.g. Cannot find main shut-off'}"></textarea>${voiceBtn('urgent-text')}</div></div>
+      <div class="field"><label for="urgent-text">${t('question')}</label><div class="with-voice"><textarea id="urgent-text" placeholder="${lang === 'es' ? 'Ej: No encuentro la válvula principal' : 'e.g. Cannot find main shut-off'}"></textarea>${voiceBtn('urgent-text')}</div></div>
       <button class="btn red block" onclick="submitUrgentMessage()"><i class="fas fa-bolt"></i> ${t('sendUrgent')}</button>`);
   }
   function submitUrgentMessage() {
@@ -2543,8 +2544,8 @@
   }
   function openPTOForm() {
     modal(`<h2>${t('timeOff')}</h2>
-      <div class="field"><label>${t('ptoDates')} (Start to End)</label><input type="date" id="pto-start" style="margin-bottom:8px"> <input type="date" id="pto-end"></div>
-      <div class="field"><label>${t('ptoReason')}</label><textarea id="pto-reason" placeholder="Vacation, sick..."></textarea></div>
+      <div class="field"><label>${t('ptoDates')} (Start to End)</label><input type="date" id="pto-start" aria-label="${t('ptoDates')} — start" style="margin-bottom:8px"> <input type="date" id="pto-end" aria-label="${t('ptoDates')} — end"></div>
+      <div class="field"><label for="pto-reason">${t('ptoReason')}</label><textarea id="pto-reason" placeholder="Vacation, sick..."></textarea></div>
       <button class="btn block" onclick="savePTO()"><i class="fas fa-check"></i> ${t('save')}</button>
     `);
   }
@@ -2605,7 +2606,7 @@
   function downloadFile(name, content, type) { const blob = new Blob([content], { type }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
 
   /* ============================ VOICE INPUT ============================ */
-  function voiceBtn(targetId) { return `<button type="button" class="iconbtn" style="background:var(--amber);width:var(--tap);height:var(--tap);flex:0 0 auto" onclick="voiceInto('${targetId}',this)"><i class="fas fa-microphone"></i></button>`; }
+  function voiceBtn(targetId) { return `<button type="button" class="iconbtn" aria-label="${t('voiceNote')}" style="background:var(--amber);width:var(--tap);height:var(--tap);flex:0 0 auto" onclick="voiceInto('${targetId}',this)"><i class="fas fa-microphone"></i></button>`; }
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   function voiceInto(targetId, btn) {
     if (!SR) return toast(t('noVoice'), 'error');
@@ -2885,8 +2886,8 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     const qtys = (e.quantities || []).filter(q => q && (q.label || q.count));
     modal(`<h2><i class="fas fa-vector-square"></i> ${t('reviewEdit')}</h2>
       <div class="sheet-sub">${esc(d.name)}</div>
-      <div class="field"><label>${t('jobSummaryL')}</label><div class="with-voice"><textarea id="est-summary" style="min-height:84px">${esc(e.jobSummary || '')}</textarea>${voiceBtn('est-summary')}</div></div>
-      <div class="field"><label>${t('scopeOfWork')}</label><textarea id="est-scope" style="min-height:84px" placeholder="${lang === 'es' ? 'Un punto por línea' : 'One item per line'}">${esc((e.scope || []).join('\n'))}</textarea></div>
+      <div class="field"><label for="est-summary">${t('jobSummaryL')}</label><div class="with-voice"><textarea id="est-summary" style="min-height:84px">${esc(e.jobSummary || '')}</textarea>${voiceBtn('est-summary')}</div></div>
+      <div class="field"><label for="est-scope">${t('scopeOfWork')}</label><textarea id="est-scope" style="min-height:84px" placeholder="${lang === 'es' ? 'Un punto por línea' : 'One item per line'}">${esc((e.scope || []).join('\n'))}</textarea></div>
       <label style="font-weight:600;display:block;margin:4px 0 6px">${t('materials')}</label>
       <div id="mat-rows">${matRows}</div>
       <button class="btn ghost sm" style="margin:4px 0 12px" onclick="addMaterialRow()"><i class="fas fa-plus"></i> ${t('addItem')}</button>
@@ -2966,9 +2967,9 @@ Rules: Never invent precise counts you cannot support from the data — instead 
   }
   function openEmailForm() {
     modal(`<h2>${t('addEmail')}</h2>
-      <div class="field"><label>${t('from')}</label><input id="em-from" placeholder="name@email.com"></div>
-      <div class="field"><label>${t('subject')}</label><input id="em-subj"></div>
-      <div class="field"><label>${t('message')}</label><div class="with-voice"><textarea id="em-body" style="min-height:120px"></textarea>${voiceBtn('em-body')}</div></div>
+      <div class="field"><label for="em-from">${t('from')}</label><input id="em-from" placeholder="name@email.com"></div>
+      <div class="field"><label for="em-subj">${t('subject')}</label><input id="em-subj"></div>
+      <div class="field"><label for="em-body">${t('message')}</label><div class="with-voice"><textarea id="em-body" style="min-height:120px"></textarea>${voiceBtn('em-body')}</div></div>
       <button class="btn green block" onclick="saveEmailForm()"><i class="fas fa-check"></i> ${t('save')}</button>`);
   }
   function saveEmailForm() {
@@ -3037,8 +3038,8 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     const custOpts = db.customers.map(c => `<option value="${c.id}" ${e.customerId === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
     const jobOpts = db.jobs.map(j => `<option value="${j.id}" ${e.jobId === j.id ? 'selected' : ''}>${esc(j.title)} — ${esc(customerName(j.customerId))}</option>`).join('');
     modal(`<h2>${t('matchCustomer')}</h2>
-      <div class="field"><label>${t('customer')}</label><select id="em-cust"><option value="">—</option>${custOpts}</select></div>
-      <div class="field"><label>${t('job')}</label><select id="em-job"><option value="">—</option>${jobOpts}</select></div>
+      <div class="field"><label for="em-cust">${t('customer')}</label><select id="em-cust"><option value="">—</option>${custOpts}</select></div>
+      <div class="field"><label for="em-job">${t('job')}</label><select id="em-job"><option value="">—</option>${jobOpts}</select></div>
       <button class="btn green block" onclick="saveEmailLink('${id}')"><i class="fas fa-check"></i> ${t('save')}</button>`);
   }
   function saveEmailLink(id) {
@@ -3240,7 +3241,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     }
     html += `</div>`;
     html += `<div class="field" style="position:fixed;left:0;right:0;bottom:calc(70px + env(safe-area-inset-bottom));max-width:1100px;margin:0 auto;padding:10px 14px;background:var(--bg);z-index:10">
-      <div class="with-voice"><input id="chat-in" placeholder="${t('askPlaceholder')}" onkeydown="if(event.key==='Enter')askAssistant()">${voiceBtn('chat-in')}<button class="btn" style="flex:0 0 auto" onclick="askAssistant()"><i class="fas fa-paper-plane"></i></button></div></div>`;
+      <div class="with-voice"><input id="chat-in" placeholder="${t('askPlaceholder')}" onkeydown="if(event.key==='Enter')askAssistant()">${voiceBtn('chat-in')}<button class="btn" aria-label="${t('send')||'Send'}" style="flex:0 0 auto" onclick="askAssistant()"><i class="fas fa-paper-plane"></i></button></div></div>`;
     $('#main').innerHTML = html;
     const cl = $('#chatlog'); if (cl) cl.scrollTop = cl.scrollHeight;
   }
@@ -3421,7 +3422,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     db.meta.notifications = db.meta.notifications.slice(0, 50); save();
   }
   function jobSelect(id, sel) {
-    return `<div class="field"><label>${t('job')}</label><select id="${id}"><option value="">—</option>${db.jobs.map(j => `<option value="${j.id}" ${sel === j.id ? 'selected' : ''}>${esc(j.title)} — ${esc(customerName(j.customerId))}</option>`).join('')}</select></div>`;
+    return `<div class="field"><label>${t('job')}</label><select id="${id}" aria-label="${t('job')}"><option value="">—</option>${db.jobs.map(j => `<option value="${j.id}" ${sel === j.id ? 'selected' : ''}>${esc(j.title)} — ${esc(customerName(j.customerId))}</option>`).join('')}</select></div>`;
   }
   function listView(col, title, sk, rowFn, addFn) {
     const q = _search[sk] || '';
@@ -3702,7 +3703,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
   function promptChecklistNote(jobId, key) {
     const cl = ensureChecklist(jobId); const it = cl.items.find(i => i.key === key); if (!it) return;
     modal(`<h2>${t('cantComplete')}</h2><p style="margin-bottom:12px">${lang==='es'?it.es:it.en}</p>
-      <div class="field"><label>${t('addNoteToContinue')}</label><textarea id="cl-note">${esc(it.note||'')}</textarea></div>
+      <div class="field"><label for="cl-note">${t('addNoteToContinue')}</label><textarea id="cl-note">${esc(it.note||'')}</textarea></div>
       <button class="btn block" onclick="saveChecklistNote('${jobId}','${key}')">${t('save')}</button>`);
   }
   function saveChecklistNote(jobId, key) {
@@ -3900,11 +3901,11 @@ Rules: Never invent precise counts you cannot support from the data — instead 
   function openProjectAIForm(jobId) {
     const j = get('jobs', jobId); const ai = j.ai || {};
     modal(`<h2>${t('projectAI')}</h2>
-      <div class="field"><label>${t('overview')}</label><textarea id="ai-overview">${esc(ai.overview || '')}</textarea></div>
-      <div class="field"><label>${t('goal')}</label><input id="ai-goal" value="${esc(ai.goal || '')}"></div>
-      <div class="field"><label>${t('phase')}</label><input id="ai-phase" value="${esc(ai.phase || '')}"></div>
-      <div class="field"><label>${t('rules')}</label><textarea id="ai-rules">${esc(ai.rules || '')}</textarea></div>
-      <div class="field"><label>${t('faq')}</label><textarea id="ai-faq">${esc(ai.faq || '')}</textarea></div>
+      <div class="field"><label for="ai-overview">${t('overview')}</label><textarea id="ai-overview">${esc(ai.overview || '')}</textarea></div>
+      <div class="field"><label for="ai-goal">${t('goal')}</label><input id="ai-goal" value="${esc(ai.goal || '')}"></div>
+      <div class="field"><label for="ai-phase">${t('phase')}</label><input id="ai-phase" value="${esc(ai.phase || '')}"></div>
+      <div class="field"><label for="ai-rules">${t('rules')}</label><textarea id="ai-rules">${esc(ai.rules || '')}</textarea></div>
+      <div class="field"><label for="ai-faq">${t('faq')}</label><textarea id="ai-faq">${esc(ai.faq || '')}</textarea></div>
       <button class="btn block" onclick="saveProjectAI('${jobId}')"><i class="fas fa-check"></i> ${t('save')}</button>`);
   }
   function saveProjectAI(jobId) {
@@ -4616,7 +4617,7 @@ Return ONLY valid JSON: { "fixtures": [], "pipes": [], "fittings": [], "notes": 
         <div style="margin:12px 0; background:var(--bg); padding:10px; border-radius:8px">
           <div><b>${t('foundFixtures')}:</b> ${(parsed.fixtures||[]).length} ${t('fixturesL')} &middot; ${(parsed.pipes||[]).length} ${t('pipesL')} &middot; ${(parsed.fittings||[]).length} ${t('fittingsL')}</div>
         </div>
-        <div class="field"><label>${t('assignTo')}</label>
+        <div class="field"><span class="field-heading">${t('assignTo')}</span>
           <div style="display:flex; gap:8px">
             <button class="btn" style="flex:1" onclick="assignTakeoff('${emailId}', ${attIdx}, 'new', '${esc(JSON.stringify(parsed))}')"><i class="fas fa-folder-plus"></i> ${t('createNewProject')}</button>
             <button class="btn ghost" style="flex:1" onclick="selectJobForTakeoff('${emailId}', ${attIdx}, '${esc(JSON.stringify(parsed))}')"><i class="fas fa-search"></i> ${t('existingJob')}</button>
