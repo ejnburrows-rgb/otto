@@ -183,3 +183,9 @@ time and git reports a conflict here, the correct fix is to keep both lines.
 - 2026-07-21 — Owner deleted the exposed Firebase project `otto-crm-7f951`.
   Verified: anonymous reads now return `403 Permission denied` where they
   previously returned `200` with customer data. The data exposure is closed.
+- 2026-07-21 — Simplification pass over the new sync code. Named the synced
+  collection list once instead of rebuilding it in three places, and split
+  `api/data.js` into named functions. The pass also found and fixed a real
+  fault: if the server failed to return one collection, the app replaced that
+  collection with nothing and saved it, destroying good records over a
+  temporary glitch. It now keeps the device's copy in that case.
