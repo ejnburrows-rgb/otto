@@ -1,6 +1,6 @@
 # OTTO QA Report
 
-**Run:** 2026-07-21T22:45:29.805Z
+**Run:** 2026-07-21T22:53:33.145Z
 **Overall:** PASS (with notes below)
 
 ## Button wiring
@@ -30,7 +30,7 @@
 ## JSON
 ```json
 {
-  "ts": "2026-07-21T22:45:29.805Z",
+  "ts": "2026-07-21T22:53:33.145Z",
   "functions": 376,
   "onclickCalls": 118,
   "missingHandlers": [],

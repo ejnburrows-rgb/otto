@@ -277,3 +277,17 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   `sub` argument (which is correctly still escaped for real subtitle text).
   No other screen's header changed. `npm test` (57 checks) and
   `node scripts/qa-check.mjs` both pass.
+- 2026-07-21 — Fixed blank "?" avatars and the 15-vs-19 team count mismatch
+  (Wave 5). `blankDB()` now gives the 15 seeded field workers real placeholder
+  names ("Field Tech 1"..."Field Tech 15") instead of `''`. Found and fixed
+  the actual root cause while verifying live in the browser: `boot()` was
+  forcibly resetting every field worker's name back to `''` on *every app
+  launch* — the same reset-on-every-boot pattern already fixed for PINs, just
+  never caught for names, which is why the seed data alone did not fix the
+  "?" avatars. Replaced that reset with a one-time backfill that only fills
+  in a placeholder name when one is still blank, so an owner-renamed worker
+  is never overwritten. Also gave the hub tile and the Team screen distinct,
+  explicit labels ("Field Crew: 15" on the hub tile; "19 · 15 Field Crew" on
+  the Team header) instead of the same bare "Team" label showing two
+  different numbers. `npm test` (57 checks) and `node scripts/qa-check.mjs`
+  both pass.
