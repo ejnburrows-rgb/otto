@@ -1333,11 +1333,15 @@
                 return `<div class="list-item" onclick="window.__pick('${u.id}')"><div class="avatar" style="background:${avatarBg}">${initials(u.name)}</div><div class="li-main"><div class="li-title"${titleStyle}>${displayName}</div><div class="li-sub">${roleText}</div></div><i class="fas fa-chevron-right chev"></i></div>`;
               }).join('');
               const fieldUsers = db.users.filter(u => u.role === 'field');
-              const fields = fieldUsers.map(u => {
-                const displayName = u.name ? esc(u.name) : `<span style="color:var(--text3);font-style:italic;">${lang === 'es' ? 'Vacante' : 'Vacant'}</span>`;
-                return `<div class="list-item" onclick="window.__pick('${u.id}')"><div class="avatar" style="background:${colorFor(u.name)}">${initials(u.name)}</div><div class="li-main"><div class="li-title">${displayName}</div><div class="li-sub">${t(u.role)}</div></div><i class="fas fa-chevron-right chev"></i></div>`;
-              }).join('');
-              return `<div style="font-size:12px;color:var(--text2);margin-bottom:4px">OWNERS</div>${owners || ''}<div style="font-size:12px;color:var(--text2);margin:8px 0 4px">OPS & IT</div>${mgrs || ''}<div style="font-size:12px;color:var(--text2);margin:8px 0 4px">FIELD TEAM (${fieldUsers.length})</div>${fields || ''}`;
+              // Named staff first; empty slots collapse behind one row.
+              const namedFields = fieldUsers.filter(u => u.name);
+              const vacantFields = fieldUsers.filter(u => !u.name);
+              const rowFor = (u) => `<div class="list-item" onclick="window.__pick('${u.id}')"><div class="avatar" style="background:${colorFor(u.name)}">${initials(u.name)}</div><div class="li-main"><div class="li-title">${u.name ? esc(u.name) : `<span style="color:var(--text3);font-style:italic;">${lang === 'es' ? 'Vacante' : 'Vacant'}</span>`}</div><div class="li-sub">${t(u.role)}</div></div><i class="fas fa-chevron-right chev"></i></div>`;
+              const fields = namedFields.map(rowFor).join('')
+                + (vacantFields.length
+                  ? `<div id="vacant-rows" class="hidden">${vacantFields.map(rowFor).join('')}</div><div class="list-item" role="button" tabindex="0" onclick="window.__toggleVacant(this)" style="justify-content:center;color:var(--text2);font-size:13px">${lang === 'es' ? 'Mostrar' : 'Show'} ${vacantFields.length} ${lang === 'es' ? 'puestos sin asignar' : 'unassigned'}</div>`
+                  : '');
+              return `<div style="font-size:12px;color:var(--text2);margin-bottom:4px">OWNERS</div>${owners || ''}<div style="font-size:12px;color:var(--text2);margin:8px 0 4px">OPS & IT</div>${mgrs || ''}<div style="font-size:12px;color:var(--text2);margin:8px 0 4px">FIELD TEAM${namedFields.length ? ` (${namedFields.length})` : ``}</div>${fields || ''}`;
             })()}
           </div>
           <div class="langtoggle"><button class="${lang === 'en' ? 'on' : ''}" onclick="setLang('en')">EN</button><button class="${lang === 'es' ? 'on' : ''}" onclick="setLang('es')">ES</button></div>`;
@@ -1361,6 +1365,14 @@
           </div>`;
       }
     }
+    window.__toggleVacant = (el) => {
+      const box = document.getElementById('vacant-rows');
+      if (!box) return;
+      const nowHidden = box.classList.toggle('hidden');
+      const n = box.children.length;
+      const es = lang === 'es';
+      el.textContent = (nowHidden ? (es ? 'Mostrar' : 'Show') : (es ? 'Ocultar' : 'Hide')) + ' ' + n + ' ' + (es ? 'puestos sin asignar' : 'unassigned');
+    };
     window.__pick = (id) => { selUser = get('users', id); pin = ''; draw(); };
     window.__back2 = () => { selUser = null; pin = ''; draw(); };
     window.__pinDel = () => { pin = pin.slice(0, -1); draw(); };
