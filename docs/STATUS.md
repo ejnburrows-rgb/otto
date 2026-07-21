@@ -241,3 +241,4 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   launch; fixed the npm scripts (#19) and the Vercel routing rule (#20); replaced
   a GitHub deploy that had never once worked with a workflow that runs the tests;
   blocked force-pushing with a git hook; stopped tracking node_modules.
+- 2026-07-21 — Added unit tests for the `stripHtml` function in `api/inbound-email.js` to ensure proper parsing of inbound email HTML bodies, and fixed test runner bugs for `test-inpage-merge.mjs`.
