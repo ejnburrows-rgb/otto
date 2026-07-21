@@ -2,9 +2,9 @@
   "name": "otto-plumbing-crm",
   "private": true,
   "scripts": {
-    "dev": "python3 -m http.server 3000 --directory /home/daytona/codebase",
-    "start": "python3 -m http.server 3000 --directory /home/daytona/codebase",
-    "preview": "python3 -m http.server 3000 --directory /home/daytona/codebase",
+    "dev": "npx --yes http-server . -p 8000 -c-1",
+    "start": "npx --yes http-server . -p 8000 -c-1",
+    "preview": "npx --yes http-server . -p 8000 -c-1",
     "build": "echo 'No build step — static single-file PWA' && ls -la index.html"
   },
   "devDependencies": {

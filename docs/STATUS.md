@@ -138,3 +138,4 @@ time and git reports a conflict here, the correct fix is to keep both lines.
 
 - 2026-07-21 — Full sweep of code and live site; corrected the previous status
   report; filed the remaining work as numbered tasks in `docs/issues/`.
+- 2026-07-21 — Fixed the broken npm scripts (dev, start, preview) in package.json to run portable http-server on port 8000.
