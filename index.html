@@ -1331,11 +1331,12 @@
                 const roleText = u.id === 'it-1' ? (lang === 'es' ? 'Soporte / TI' : 'Logging / IT') : t(u.role);
                 return `<div class="list-item" onclick="window.__pick('${u.id}')"><div class="avatar" style="background:${avatarBg}">${initials(u.name)}</div><div class="li-main"><div class="li-title"${titleStyle}>${displayName}</div><div class="li-sub">${roleText}</div></div><i class="fas fa-chevron-right chev"></i></div>`;
               }).join('');
-              const fields = db.users.filter(u => u.role === 'field').map(u => {
+              const fieldUsers = db.users.filter(u => u.role === 'field');
+              const fields = fieldUsers.map(u => {
                 const displayName = u.name ? esc(u.name) : `<span style="color:var(--text3);font-style:italic;">${lang === 'es' ? 'Vacante' : 'Vacant'}</span>`;
                 return `<div class="list-item" onclick="window.__pick('${u.id}')"><div class="avatar" style="background:${colorFor(u.name)}">${initials(u.name)}</div><div class="li-main"><div class="li-title">${displayName}</div><div class="li-sub">${t(u.role)}</div></div><i class="fas fa-chevron-right chev"></i></div>`;
               }).join('');
-              return `<div style="font-size:12px;color:var(--text2);margin-bottom:4px">OWNERS</div>${owners || ''}<div style="font-size:12px;color:var(--text2);margin:8px 0 4px">OPS & IT</div>${mgrs || ''}<div style="font-size:12px;color:var(--text2);margin:8px 0 4px">FIELD TEAM (${fields.length})</div>${fields || ''}`;
+              return `<div style="font-size:12px;color:var(--text2);margin-bottom:4px">OWNERS</div>${owners || ''}<div style="font-size:12px;color:var(--text2);margin:8px 0 4px">OPS & IT</div>${mgrs || ''}<div style="font-size:12px;color:var(--text2);margin:8px 0 4px">FIELD TEAM (${fieldUsers.length})</div>${fields || ''}`;
             })()}
           </div>
           <div class="langtoggle"><button class="${lang === 'en' ? 'on' : ''}" onclick="setLang('en')">EN</button><button class="${lang === 'es' ? 'on' : ''}" onclick="setLang('es')">ES</button></div>`;
