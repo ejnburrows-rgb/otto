@@ -1,0 +1,37 @@
+# Runs the automated checks on every push and pull request.
+#
+# This replaced a GitHub Pages deploy workflow that failed on every single push,
+# because Pages was never switched on for this repository. The live site is
+# hosted on Vercel, which deploys on its own, so nothing here needs to publish
+# anything — it only needs to check the code is sound.
+
+name: Checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Checks the cloud sync merge rules and the sign-in code handling.
+      # These are the parts where a mistake silently loses customer records.
+      - name: Run the tests
+        run: npm test
+
+      - name: Check the app still holds together
+        run: node scripts/qa-check.mjs

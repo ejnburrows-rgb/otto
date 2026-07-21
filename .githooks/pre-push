@@ -1,0 +1,31 @@
+#!/bin/sh
+# Blocks force-pushing.
+#
+# On 2026-07-20 something force-pushed the main branch of this project. Every
+# commit id changed and a branch that held a session's work vanished from
+# GitHub. AGENTS.md forbids force-pushing for exactly this reason.
+#
+# GitHub's own branch protection needs a paid plan on a private repository, so
+# this hook is the protection that is actually available. It stops the mistake
+# on this computer.
+#
+# Turned on with:  git config core.hooksPath .githooks
+
+for arg in "$@"; do
+  case "$arg" in
+    --force|-f|--force-with-lease|--force-if-includes)
+      echo "BLOCKED: force-push is not allowed in this project." >&2
+      echo "It can permanently erase other people's work. See AGENTS.md." >&2
+      exit 1
+      ;;
+  esac
+done
+
+# git also signals a forced update by passing a '+' prefixed refspec.
+while read -r local_ref local_sha remote_ref remote_sha; do
+  case "$local_ref" in
+    +*) echo "BLOCKED: forced update of $remote_ref is not allowed. See AGENTS.md." >&2; exit 1 ;;
+  esac
+done
+
+exit 0
