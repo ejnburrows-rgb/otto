@@ -241,3 +241,5 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   launch; fixed the npm scripts (#19) and the Vercel routing rule (#20); replaced
   a GitHub deploy that had never once worked with a workflow that runs the tests;
   blocked force-pushing with a git hook; stopped tracking node_modules.
+
+* **2026-07-21**: Added missing test file for QuickBooks sync stub (`api/quickbooks.js`). Created `scripts/test-quickbooks.mjs` containing mock environment objects and tested all permutations of the API endpoint. Updated package.json to include the test in `npm test` script. Fixed a path error in `scripts/test-inpage-merge.mjs` to ensure the test suite passes on multiple operating systems.

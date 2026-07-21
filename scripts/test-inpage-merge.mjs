@@ -9,6 +9,7 @@
 // Run with:  node scripts/test-inpage-merge.mjs
 
 import { readFileSync, writeFileSync, unlinkSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { execFileSync } from 'node:child_process';
 
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
@@ -41,7 +42,7 @@ writeFileSync(testPath, suite);
 
 console.log('Running the merge test suite against the copy inside index.html:\n');
 try {
-  const out = execFileSync(process.execPath, [testPath.pathname.replace(/^\//, '')], { encoding: 'utf8' });
+  const out = execFileSync(process.execPath, [fileURLToPath(testPath)], { encoding: 'utf8' });
   console.log(out);
 } catch (e) {
   console.log(e.stdout || '');
