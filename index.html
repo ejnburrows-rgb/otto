@@ -2334,15 +2334,9 @@
   /* ============================ TEAM ============================ */
   function viewTeam() {
     let html = pageHead(t('team'), db.users.length + '');
-    const owners = [];
-    const mgrs = [];
-    const fields = [];
-    for (let i = 0; i < db.users.length; i++) {
-      const u = db.users[i];
-      if (u.role === 'owner') owners.push(u);
-      else if (u.role === 'office') mgrs.push(u);
-      else if (u.role === 'field') fields.push(u);
-    }
+    const owners = db.users.filter(u => u.role === 'owner');
+    const mgrs = db.users.filter(u => u.role === 'office');
+    const fields = db.users.filter(u => u.role === 'field');
     const makeList = (title, arr) => arr.length ? `<div style="font-size:11px;color:var(--text2);padding:4px 8px">${title} (${arr.length})</div>` + arr.map(u => `<div class="list-item" onclick="openUserForm('${u.id}')"><div class="avatar" style="background:${colorFor(u.name)}">${initials(u.name)}</div><div class="li-main"><div class="li-title">${esc(u.name)}</div><div class="li-sub">${t(u.role)}</div></div><i class="fas fa-chevron-right chev"></i></div>`).join('') : '';
     html += `<div class="card">${makeList('OWNERS', owners)}${makeList('OPS & IT', mgrs)}${makeList('FIELD', fields)}</div>`;
     $('#main').innerHTML = html;
