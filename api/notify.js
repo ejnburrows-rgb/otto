@@ -6,6 +6,9 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'method_not_allowed' });
   }
+  if (!req.headers['x-user-id']) {
+    return res.status(401).json({ error: 'unauthorized', message: 'Missing x-user-id header' });
+  }
 
   let body = req.body;
   if (body == null || typeof body === 'string') {

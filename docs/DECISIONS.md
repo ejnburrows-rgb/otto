@@ -116,3 +116,5 @@ isn't lost.
 - The previous product — a Dream Cooling (HVAC) CRM — was kept as
   `legacy/dream-cooling-crm.html`, explicitly for rollback reference only,
   rather than deleted, when the business pivoted to OTTO Plumbing.
+
+- **2026-07-21** — Prevent unauthenticated access to internal API routes. Added \`x-user-id\` header requirements to \`notify.js\`, \`claude.js\`, \`nvidia.js\`, and \`quickbooks.js\`. This stops attackers from using these proxy endpoints without having an authenticated session on the PWA frontend. \`data.js\` is excluded from this list because it's deliberately left open to let the PWA fetch the initial customer lists needed to login.

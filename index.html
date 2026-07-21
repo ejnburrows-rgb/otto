@@ -2465,17 +2465,17 @@
   async function refreshIntegrationStatus() {
     const qbEl = $('#qb-status'); const nEl = $('#notify-status');
     try {
-      const qb = await fetch('/api/quickbooks?action=status').then(r => r.json()).catch(() => null);
+      const qb = await fetch('/api/quickbooks?action=status', { headers: { 'x-user-id': localStorage.getItem('otto_session') || '' } }).then(r => r.json()).catch(() => null);
       if (qbEl) qbEl.textContent = qb?.configured ? (qb.connected ? 'QuickBooks: connected' : 'QuickBooks: credentials on server — connect OAuth when ready') : t('notConfigured');
     } catch (e) { if (qbEl) qbEl.textContent = t('notConfigured'); }
     try {
-      const test = await fetch('/api/notify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ channel: 'sms', to: '+10000000000', body: 'test' }) }).then(r => r.json()).catch(() => null);
+      const test = await fetch('/api/notify', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-user-id': localStorage.getItem('otto_session') || '' }, body: JSON.stringify({ channel: 'sms', to: '+10000000000', body: 'test' }) }).then(r => r.json()).catch(() => null);
       if (nEl) nEl.textContent = test?.error === 'sms_not_configured' ? 'SMS/Email: ' + t('notConfigured') + ' (stubs ready)' : 'SMS/Email: ' + t('smsReady');
     } catch (e) { if (nEl) nEl.textContent = t('notConfigured'); }
   }
   async function connectQuickBooks() {
     try {
-      const d = await fetch('/api/quickbooks?action=auth_url').then(r => r.json());
+      const d = await fetch('/api/quickbooks?action=auth_url', { headers: { 'x-user-id': localStorage.getItem('otto_session') || '' } }).then(r => r.json());
       if (d.authUrl) { window.open(d.authUrl, '_blank'); toast(lang === 'es' ? 'Abre QuickBooks para conectar' : 'Complete QuickBooks connect in the new tab', 'success'); }
       else toast(d.message || t('notConfigured'), 'error');
     } catch (e) { toast(t('notConfigured'), 'error'); }
@@ -2531,7 +2531,7 @@
       const e = get('ai_escalations', id); if (e) { e.ownerReply = reply; e.status = 'answered'; save(); }
     } else {
       const m = get('employee_messages', id); if (m) { m.ownerReply = reply; save(); }
-      try { fetch('/api/notify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ channel: 'sms', to: '', body: reply }) }); } catch (e) { }
+      try { fetch('/api/notify', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-user-id': localStorage.getItem('otto_session') || '' }, body: JSON.stringify({ channel: 'sms', to: '', body: reply }) }); } catch (e) { }
     }
     toast(t('saved'), 'success'); render();
   }
@@ -2640,7 +2640,7 @@
   async function callClaude(body) {
     // 1) Server-side proxy — preferred. 503 = no server key configured.
     try {
-      const r = await fetch('/api/claude', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const r = await fetch('/api/claude', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-user-id': localStorage.getItem('otto_session') || '' }, body: JSON.stringify(body) });
       if (r.ok) { const d = await r.json(); if (d && d.content) return d; }
     } catch (e) { /* no function / offline — fall through */ }
     // 2) Personal key entered in Settings (direct browser call).
@@ -2713,7 +2713,7 @@
     const body = { messages, max_tokens: opts.max_tokens || 1600, temperature: opts.temperature == null ? 0.2 : opts.temperature };
     if (opts.model) body.model = opts.model;
     try {
-      const r = await fetch('/api/nvidia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const r = await fetch('/api/nvidia', { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-user-id': localStorage.getItem('otto_session') || '' }, body: JSON.stringify(body) });
       if (r.ok) { const d = await r.json(); const m = d && d.choices && d.choices[0] && d.choices[0].message; if (m && m.content) return m.content; }
     } catch (e) { /* offline / no function — fall through */ }
     return null;
@@ -4579,7 +4579,7 @@ Return ONLY valid JSON: { "fixtures": [], "pipes": [], "fittings": [], "notes": 
       try {
         const proxy = await fetch('/api/nvidia', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', 'x-user-id': localStorage.getItem('otto_session') || '' },
           body: JSON.stringify({
             model: 'nvidia/llama-3.1-nemotron-nano-vl-8b-v1',
             messages: [{ role: 'user', content: prompt + ` <img src="data:image/jpeg;base64,${imgB64}" />` }],

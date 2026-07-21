@@ -18,6 +18,10 @@ export default async function handler(req, res) {
     res.status(405).json({ error: 'method_not_allowed' });
     return;
   }
+  if (!req.headers['x-user-id']) {
+    res.status(401).json({ error: 'unauthorized', message: 'Missing x-user-id header' });
+    return;
+  }
   const key = process.env.NVIDIA_API_KEY;
   if (!key) {
     res.status(503).json({ error: 'no_server_key' });

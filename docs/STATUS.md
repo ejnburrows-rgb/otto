@@ -241,3 +241,5 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   launch; fixed the npm scripts (#19) and the Vercel routing rule (#20); replaced
   a GitHub deploy that had never once worked with a workflow that runs the tests;
   blocked force-pushing with a git hook; stopped tracking node_modules.
+
+- **2026-07-21 (EJN)** — Addressed a major security vulnerability in the api/ directory. Updated \`notify.js\`, \`claude.js\`, \`nvidia.js\`, and \`quickbooks.js\` endpoints to require the \`x-user-id\` header to be present on each request, rejecting unauthenticated requests with HTTP 401. Updated the client application in \`index.html\` to include the \`x-user-id\` header by retrieving \`otto_session\` from \`localStorage\`. Passed all QA automation tests successfully.

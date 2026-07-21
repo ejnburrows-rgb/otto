@@ -6,6 +6,9 @@ const QB_AUTH = 'https://appcenter.intuit.com/connect/oauth2';
 const QB_TOKEN = 'https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer';
 
 export default async function handler(req, res) {
+  if (!req.headers['x-user-id'] && req.query?.action !== 'callback') {
+    return res.status(401).json({ error: 'unauthorized', message: 'Missing x-user-id header' });
+  }
   const clientId = process.env.QB_CLIENT_ID;
   const clientSecret = process.env.QB_CLIENT_SECRET;
   const configured = !!(clientId && clientSecret);
