@@ -241,3 +241,10 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   launch; fixed the npm scripts (#19) and the Vercel routing rule (#20); replaced
   a GitHub deploy that had never once worked with a workflow that runs the tests;
   blocked force-pushing with a git hook; stopped tracking node_modules.
+
+- 2026-07-21 — Reviewed 22 open pull requests from the background agent. Merged
+  the genuinely useful parts: tests for `api/notify.js`, `api/quickbooks.js` and
+  `api/inbound-email.js` (the test suite went from 3 files to 6, and from ~70 to
+  101 checks), parallel attachment loading when opening an email (measured 238ms
+  to 103ms), parallel cleanup of old backup files (109ms to 44ms), and a `var`
+  to `const` tidy-up. Rejected the rest, with reasons on each pull request.

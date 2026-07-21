@@ -10,6 +10,7 @@
 
 import { readFileSync, writeFileSync, unlinkSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 
@@ -41,7 +42,7 @@ writeFileSync(testPath, suite);
 
 console.log('Running the merge test suite against the copy inside index.html:\n');
 try {
-  const out = execFileSync(process.execPath, [testPath.pathname.replace(/^\//, '')], { encoding: 'utf8' });
+  const out = execFileSync(process.execPath, [fileURLToPath(testPath)], { encoding: 'utf8' });
   console.log(out);
 } catch (e) {
   console.log(e.stdout || '');
