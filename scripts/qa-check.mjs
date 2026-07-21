@@ -35,7 +35,7 @@ const builtins = new Set([
 
 for (const oc of onclick) {
   // Improved extraction: match bare calls or window.XXX( but skip .method( calls using negative lookbehind
-  for (const m of oc.matchAll(/(?<![\w$.])((?:window\.)?[a-zA-Z_$][\w$]*)\s*\(/g)) {
+  for (const m of oc.matchAll(/(?<![\w$])(?<!\.\s*)((?:window\.)?[a-zA-Z_$][\w$]*)\s*\(/g)) {
     let full = m[1];
     let n = full.replace(/^window\./, '');
     if (!builtins.has(n)) calls.add(n);
