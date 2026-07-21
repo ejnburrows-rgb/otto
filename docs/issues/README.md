@@ -36,9 +36,18 @@ have to wait.
 | 1 | Remove published demo PINs from the checklist | `docs/DEPLOYMENT_CHECKLIST.md` |
 | 2 | Stop cloud sync erasing a colleague's work | `index.html` |
 | 3 | Stop storing and displaying PINs in plain text | `index.html` |
+| 4 | Fix the Inbox "Refresh" button showing as raw text | `index.html` |
+| 5 | Fix blank team names ("?") and the 15-vs-19 count | `index.html` |
+| 6 | Make the KPIs screen show real demo numbers | `index.html` |
+| landing | Fix faint service-card text → centralize phone → add booking form | `landing.html` |
 
-Waves 2 and 3 both change `index.html`, which is why they are separated from Wave 1
-and from each other.
+Waves 2–6 all change `index.html`, which is why they are separated from Wave 1 and
+from each other — only one `index.html` task runs at a time. The **landing** lane
+edits `landing.html` instead, so it runs in parallel with the `index.html` waves;
+within the landing lane, run `landing-01` → `landing-02` → `landing-03` in order
+(they share `landing.html`).
+
+The self-driving runner for these is `LOOP-CLAUDE.md` in the repo root.
 
 ## Important
 
