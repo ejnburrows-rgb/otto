@@ -1,6 +1,6 @@
 # OTTO QA Report
 
-**Run:** 2026-07-21T06:39:00.018Z
+**Run:** 2026-07-21T12:35:35.947Z
 **Overall:** PASS (with notes below)
 
 ## Button wiring
@@ -17,7 +17,7 @@
 
 ## Live checks
 - prod: OK 200
-- local: OK 200
+- local: FAIL 0
 - guide: OK 200
 - manifest: OK 200
 - sw: OK 200
@@ -30,7 +30,7 @@
 ## JSON
 ```json
 {
-  "ts": "2026-07-21T06:39:00.018Z",
+  "ts": "2026-07-21T12:35:35.947Z",
   "functions": 368,
   "onclickCalls": 114,
   "missingHandlers": [],
@@ -45,8 +45,9 @@
       "ok": true
     },
     "local": {
-      "status": 200,
-      "ok": true
+      "status": 0,
+      "ok": false,
+      "error": ""
     },
     "guide": {
       "status": 200,

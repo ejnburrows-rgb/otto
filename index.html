@@ -4005,7 +4005,7 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
       db.backups.unshift(rec);
       // keep full history but cap the in-DB log; snapshots beyond the last 12 are pruned from blob store
       const old = db.backups.slice(12);
-      for (const o of old) { try { await idbDel('files', o.id); } catch (e) { } }
+      await Promise.all(old.map(o => idbDel('files', o.id).catch(() => {})));
       save(); audit('backup.create', 'backup', id, { verified: rec.verified });
       if (!rec.verified) raiseAlert('backup-failed', 'backup', id, t('restoreFail'));
       if (manual) toast(t('backupOk'), 'success');
