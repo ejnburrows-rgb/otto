@@ -785,6 +785,11 @@
     'contracts', 'proposals', 'plans', 'alerts', 'backups', 'daily_summaries', 'audit_log', 'checklist_submissions', 'pto_requests', 'employee_messages',
     // Auto-Estimating Workflow Collections
     'rate_cards', 'estimate_projects', 'estimate_records', 'verification_logs', 'pricing_exceptions'];
+  /* Everything that gets synced to the cloud. Same as COLLECTIONS plus the
+     company profile, which is a single record rather than a list of them.
+     NOTE: api/data.js keeps its own copy of this list — if you add a
+     collection here, add it there too or it will not sync. */
+  const SYNCED_COLLECTIONS = [...COLLECTIONS, 'companyProfile'];
   let db = null;
   let session = null; // current user
 
@@ -990,8 +995,7 @@
     _cloudTimer = setTimeout(async () => {
       try {
         const promises = [];
-        const colsToSync = [...COLLECTIONS, 'companyProfile'];
-        for (const col of colsToSync) {
+        for (const col of SYNCED_COLLECTIONS) {
           const value = db[col] || (col === 'companyProfile' ? {} : []);
           const currentStr = JSON.stringify(value);
           if (currentStr !== _lastCloudState[col]) {
@@ -1014,25 +1018,33 @@
       const d = await r.json();
       if (!d || typeof d !== 'object') return false;
 
+      const defaults = blankDB();
       const newDb = blankDB();
-      let got = false;
-      for (const col of [...COLLECTIONS, 'companyProfile']) {
+      let receivedAnyCollection = false;
+      for (const col of SYNCED_COLLECTIONS) {
         const rows = d[col];
-        if (!Array.isArray(rows)) continue;
-        got = true;
-        // companyProfile is a single record, not a list.
-        newDb[col] = (col === 'companyProfile') ? (rows[0] || blankDB().companyProfile) : rows;
+        if (Array.isArray(rows)) {
+          receivedAnyCollection = true;
+          // companyProfile is a single record, not a list.
+          newDb[col] = (col === 'companyProfile') ? (rows[0] || defaults.companyProfile) : rows;
+        } else {
+          // The server could not read this one (it sends null rather than an
+          // empty list to say so). Keep whatever is already on this device —
+          // replacing it with nothing would destroy good records over a
+          // temporary network or server problem.
+          if (db && db[col] !== undefined) newDb[col] = db[col];
+          console.warn('cloud pull: kept local copy of', col, '(server did not return it)');
+        }
       }
-      if (!got) return false;
+      if (!receivedAnyCollection) return false;
 
       db = newDb;
       COLLECTIONS.forEach(c => { if (!Array.isArray(db[c])) db[c] = []; });
-      if (!db.rate_cards || db.rate_cards.length === 0) { db.rate_cards = blankDB().rate_cards; }
-      if (!db.companyProfile) { db.companyProfile = blankDB().companyProfile; }
+      if (!db.rate_cards || db.rate_cards.length === 0) { db.rate_cards = defaults.rate_cards; }
+      if (!db.companyProfile) { db.companyProfile = defaults.companyProfile; }
       await idbPut('kv', 'db', JSON.stringify(db));
 
-      for (const col of COLLECTIONS) _lastCloudState[col] = JSON.stringify(db[col]);
-      _lastCloudState['companyProfile'] = JSON.stringify(db.companyProfile);
+      for (const col of SYNCED_COLLECTIONS) _lastCloudState[col] = JSON.stringify(db[col]);
       return true;
     } catch (e) { console.warn('cloud pull failed', e); }
     return false;
