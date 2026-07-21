@@ -1,7 +1,7 @@
 import fs from 'fs';
-import path from 'path';
+import { fileURLToPath } from 'node:url';
 
-const filePath = new URL('../api/inbound-email.js', import.meta.url).pathname;
+const filePath = fileURLToPath(new URL('../api/inbound-email.js', import.meta.url));
 const source = fs.readFileSync(filePath, 'utf8');
 
 function extractFunction(name) {
