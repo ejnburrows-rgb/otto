@@ -637,7 +637,7 @@
       newCall: 'New Call', newJob: 'New Job', myJobs: 'My Jobs', addPhoto: 'Add Photo',
       voiceNote: 'Voice Note', scanCheck: 'Scan Check', ask: 'Ask OTTO', estimates: 'Estimates',
       invoices: 'Invoices', payments: 'Payments', checks: 'Checks', followups: 'Follow-ups',
-      workflows: 'Workflows', knowledge: 'Knowledge', team: 'Team', reports: 'Reports',
+      workflows: 'Workflows', knowledge: 'Knowledge', team: 'Team', fieldCrew: 'Field Crew', reports: 'Reports',
       settings: 'Settings', map: 'Map', documents: 'Documents', notes: 'Notes', photos: 'Photos',
       assistant: 'Assistant', search: 'Search…', save: 'Save', cancel: 'Cancel', delete: 'Delete',
       print: 'Print', notSetUp: 'No code yet', askOwnerForCode: 'No sign-in code yet. Ask an owner to set one for you in Team.', setUpOwner: 'Set up this device', chooseOwnerCode: 'Choose a 4-digit code for the first owner. You can set everyone else up afterwards, in Team.', codeSaved: 'Code saved. Sign in with it now.', add: 'Add', edit: 'Edit', name: 'Name', phone: 'Phone', email: 'Email', address: 'Address',
@@ -720,7 +720,7 @@
       newCall: 'Nueva Llamada', newJob: 'Nuevo Trabajo', myJobs: 'Mis Trabajos', addPhoto: 'Agregar Foto',
       voiceNote: 'Nota de Voz', scanCheck: 'Escanear Cheque', ask: 'Pregunta a OTTO', estimates: 'Presupuestos',
       invoices: 'Facturas', payments: 'Pagos', checks: 'Cheques', followups: 'Seguimientos',
-      workflows: 'Flujos', knowledge: 'Guías', team: 'Equipo', reports: 'Reportes',
+      workflows: 'Flujos', knowledge: 'Guías', team: 'Equipo', fieldCrew: 'Cuadrilla de Campo', reports: 'Reportes',
       settings: 'Ajustes', map: 'Mapa', documents: 'Documentos', notes: 'Notas', photos: 'Fotos',
       assistant: 'Asistente', search: 'Buscar…', save: 'Guardar', cancel: 'Cancelar', delete: 'Eliminar',
       print: 'Imprimir', notSetUp: 'Sin código', askOwnerForCode: 'Aún no tiene código. Pida a un dueño que le asigne uno en Equipo.', setUpOwner: 'Configurar este dispositivo', chooseOwnerCode: 'Elija un código de 4 dígitos para el primer dueño. Después puede configurar a los demás en Equipo.', codeSaved: 'Código guardado. Inicie sesión con él.', add: 'Agregar', edit: 'Editar', name: 'Nombre', phone: 'Teléfono', email: 'Correo', address: 'Dirección',
@@ -834,21 +834,21 @@
       { id: 'owner-2', name: 'El Príncipe', role: 'owner', lang: 'es', created: nowISO() },
       { id: 'ops-1', name: 'Sarays', role: 'office', lang: 'en', created: nowISO() },
       { id: 'it-1', name: 'Taylor Kim - Logs/IT', role: 'office', lang: 'en', created: nowISO() },
-      { id: 'field-1', name: '', role: 'field', hourlyRate: 22, lang: 'en', created: nowISO() },
-      { id: 'field-2', name: '', role: 'field', hourlyRate: 23, lang: 'es', created: nowISO() },
-      { id: 'field-3', name: '', role: 'field', hourlyRate: 21, lang: 'en', created: nowISO() },
-      { id: 'field-4', name: '', role: 'field', hourlyRate: 24, lang: 'es', created: nowISO() },
-      { id: 'field-5', name: '', role: 'field', hourlyRate: 22, lang: 'en', created: nowISO() },
-      { id: 'field-6', name: '', role: 'field', hourlyRate: 20, lang: 'es', created: nowISO() },
-      { id: 'field-7', name: '', role: 'field', hourlyRate: 23, lang: 'en', created: nowISO() },
-      { id: 'field-8', name: '', role: 'field', hourlyRate: 22, lang: 'es', created: nowISO() },
-      { id: 'field-9', name: '', role: 'field', hourlyRate: 21, lang: 'en', created: nowISO() },
-      { id: 'field-10', name: '', role: 'field', hourlyRate: 24, lang: 'es', created: nowISO() },
-      { id: 'field-11', name: '', role: 'field', hourlyRate: 22, lang: 'en', created: nowISO() },
-      { id: 'field-12', name: '', role: 'field', hourlyRate: 23, lang: 'es', created: nowISO() },
-      { id: 'field-13', name: '', role: 'field', hourlyRate: 20, lang: 'en', created: nowISO() },
-      { id: 'field-14', name: '', role: 'field', hourlyRate: 25, lang: 'es', created: nowISO() },
-      { id: 'field-15', name: '', role: 'field', hourlyRate: 22, lang: 'en', created: nowISO() }
+      { id: 'field-1', name: 'Field Tech 1', role: 'field', hourlyRate: 22, lang: 'en', created: nowISO() },
+      { id: 'field-2', name: 'Field Tech 2', role: 'field', hourlyRate: 23, lang: 'es', created: nowISO() },
+      { id: 'field-3', name: 'Field Tech 3', role: 'field', hourlyRate: 21, lang: 'en', created: nowISO() },
+      { id: 'field-4', name: 'Field Tech 4', role: 'field', hourlyRate: 24, lang: 'es', created: nowISO() },
+      { id: 'field-5', name: 'Field Tech 5', role: 'field', hourlyRate: 22, lang: 'en', created: nowISO() },
+      { id: 'field-6', name: 'Field Tech 6', role: 'field', hourlyRate: 20, lang: 'es', created: nowISO() },
+      { id: 'field-7', name: 'Field Tech 7', role: 'field', hourlyRate: 23, lang: 'en', created: nowISO() },
+      { id: 'field-8', name: 'Field Tech 8', role: 'field', hourlyRate: 22, lang: 'es', created: nowISO() },
+      { id: 'field-9', name: 'Field Tech 9', role: 'field', hourlyRate: 21, lang: 'en', created: nowISO() },
+      { id: 'field-10', name: 'Field Tech 10', role: 'field', hourlyRate: 24, lang: 'es', created: nowISO() },
+      { id: 'field-11', name: 'Field Tech 11', role: 'field', hourlyRate: 22, lang: 'en', created: nowISO() },
+      { id: 'field-12', name: 'Field Tech 12', role: 'field', hourlyRate: 23, lang: 'es', created: nowISO() },
+      { id: 'field-13', name: 'Field Tech 13', role: 'field', hourlyRate: 20, lang: 'en', created: nowISO() },
+      { id: 'field-14', name: 'Field Tech 14', role: 'field', hourlyRate: 25, lang: 'es', created: nowISO() },
+      { id: 'field-15', name: 'Field Tech 15', role: 'field', hourlyRate: 22, lang: 'en', created: nowISO() }
     ];
     // A couple of genuinely useful plumbing SOPs and workflow templates.
     d.sops = [
@@ -2491,10 +2491,10 @@
 
   /* ============================ TEAM ============================ */
   function viewTeam() {
-    let html = pageHead(t('team'), db.users.length + '');
     const owners = db.users.filter(u => u.role === 'owner');
     const mgrs = db.users.filter(u => u.role === 'office');
     const fields = db.users.filter(u => u.role === 'field');
+    let html = pageHead(t('team'), `${db.users.length} · ${fields.length} ${t('fieldCrew')}`);
     const makeList = (title, arr) => arr.length ? `<div style="font-size:11px;color:var(--text2);padding:4px 8px">${title} (${arr.length})</div>` + arr.map(u => `<div class="list-item" onclick="openUserForm('${u.id}')"><div class="avatar" style="background:${colorFor(u.name)}">${initials(u.name)}</div><div class="li-main"><div class="li-title">${esc(u.name)}</div><div class="li-sub">${t(u.role)}</div></div><i class="fas fa-chevron-right chev"></i></div>`).join('') : '';
     html += `<div class="card">${makeList('OWNERS', owners)}${makeList('OPS & IT', mgrs)}${makeList('FIELD', fields)}</div>`;
     $('#main').innerHTML = html;
@@ -3899,7 +3899,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     const tiles = [
       ['fa-calendar-day', 'var(--blue)', t('jobsToday'), today.length, "nav('jobs')"],
       ['fa-users', 'var(--accent)', t('customers'), db.customers.length, "nav('customers')"],
-      ['fa-person-digging', 'var(--green)', t('team'), db.users.filter(u=>u.role==='field').length, "nav('team')"],
+      ['fa-person-digging', 'var(--green)', t('fieldCrew'), db.users.filter(u=>u.role==='field').length, "nav('team')"],
       ['fa-robot', 'var(--blue2)', t('ask'), '', "nav('assistant')"],
     ];
     let html = pageHead('OTTO', fmtDate(todayISO()));
@@ -4296,7 +4296,18 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     fixUser('owner-2', 'El Príncipe');
     fixUser('ops-1', 'Sarays');
     fixUser('it-1', 'Taylor Kim - Logs/IT');
-    for (let i = 1; i <= 15; i++) fixUser('field-' + i, '', 'field');
+    // Field workers keep whatever name blankDB() seeded or the owner later set
+    // in Team — do not reset it to blank on every boot (that was the same
+    // reset-on-every-launch bug already fixed for PINs above, just for names).
+    // A one-time backfill fills in a placeholder ONLY where the name is still
+    // blank (from before this fix); it never overwrites a name already set.
+    for (let i = 1; i <= 15; i++) {
+      const fu = get('users', 'field-' + i);
+      if (fu) {
+        if (!fu.name) { fu.name = 'Field Tech ' + i; _changed = true; }
+        if (fu.role !== 'field') { fu.role = 'field'; _changed = true; }
+      }
+    }
 
     // Clean up legacy duplicated users (keep only the exact 19)
     const validIds = ['owner-1','owner-2','ops-1','it-1','field-1','field-2','field-3','field-4','field-5','field-6','field-7','field-8','field-9','field-10','field-11','field-12','field-13','field-14','field-15'];
