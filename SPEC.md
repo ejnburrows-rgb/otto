@@ -1,5 +1,10 @@
 # OTTO Plumbing CRM — Full Project Specification
 
+> Read [AGENTS.md](AGENTS.md) first — it is this repo's single source of truth
+> for how to work. This file holds the original product requirements; a few
+> rules below have been corrected to match what the app actually does (see
+> notes marked **Corrected 2026-07-20**).
+
 **Repository:** `ejnburrows-rgb/otto`
 **Stack:** Single-file PWA (HTML/CSS/JS) · IndexedDB · Firebase Firestore/Storage · Vercel · Service Worker
 **Languages:** English / Spanish (full bilingual parity required on all UI)
@@ -21,21 +26,30 @@ The system has two distinct role views:
 
 1. Single `index.html` file — no multi-page routing, no separate HTML files
 2. No npm or Node.js build dependencies — CDN only for all libraries
-3. No `localStorage` or `sessionStorage` — use in-memory variables; persist to IndexedDB
+3. ~~No `localStorage` or `sessionStorage`~~ — **Corrected 2026-07-20:** the
+   app does use `localStorage`, as a mirror/fallback alongside IndexedDB
+   (15 uses in `index.html`). Treat IndexedDB as primary storage, localStorage
+   as a backup, not as forbidden.
 4. All pages reachable via in-page navigation (hash routing or JS view switching)
 5. Bilingual parity — every string must exist in both `en` and `es` in the i18n object
 6. Touch targets minimum 44×44px — all interactive elements
 7. PWA integrity maintained — `manifest.json` and `sw.js` must stay valid after every change
 8. Role access enforced client-side — `role === 'worker'` never sees owner views; no exceptions
 9. GPS permission requested on first launch and required for app use — no geofencing logic needed
-10. NVIDIA NIM API key stored in owner Settings — never hardcoded
+10. ~~NVIDIA NIM API key stored in owner Settings — never hardcoded~~ —
+    **Corrected 2026-07-20:** the key now lives server-side, read from the
+    `NVIDIA_API_KEY` environment variable in `api/nvidia.js`, which is safer
+    than owner Settings (never touches the browser at all). A personal key
+    in Settings remains a fallback if the server key is not configured.
 
 ---
 
 ## 3. Role System
 
 ### 3.1 Owner
-- Single owner account; authenticates via PIN
+- ~~Single owner account~~ — **Corrected 2026-07-20:** the app actually seeds
+  multiple roles (2 owners, 1 office/ops, 1 IT/logs, 15 field workers — see
+  `docs/STATUS.md`), not one owner account; authenticates via PIN
 - Full access to all modules
 - Receives all worker submissions, GPS logs, escalations, time-off requests
 - Approves/denies time-off requests (one tap → worker notified instantly)

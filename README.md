@@ -1,5 +1,10 @@
 # OTTO Plumbing CRM
 
+> **Working on this repo? Read [AGENTS.md](AGENTS.md) first** — it is the
+> single source of truth for how agents (AI or human) work here. Current
+> project status: [docs/STATUS.md](docs/STATUS.md). Decision log:
+> [docs/DECISIONS.md](docs/DECISIONS.md).
+
 > **Status:** Crew-ready demo · Live: https://otto-plumbing-site.vercel.app · Landing Page: https://otto-plumbing-site.vercel.app/landing.html · Guide: `/guide.html`
 > QA: Static + full browser tests (17/17 on local server). Run `node scripts/qa-check.mjs` and `node scripts/qa-browser.mjs` (or use `scripts/local-server.js`).
 
@@ -172,11 +177,15 @@ the device.
 
 ## Run / deploy
 ```bash
-# locally
-python3 -m http.server 8000   # then open http://localhost:8000
+# locally (Windows: use "python", not "python3")
+python -m http.server 8000   # then open http://localhost:8000
 
 # or just open index.html, or deploy the folder to Vercel / Netlify / any static host
 ```
+> Note: the `npm run dev` / `start` / `preview` scripts in `package.json` are
+> left over from a cloud dev machine (`/home/daytona/codebase`) and will not
+> work on this machine — use the command above instead. See
+> [docs/STATUS.md](docs/STATUS.md) Known Issue #4.
 
 ## Data model
 `customers · jobs · calls · notes · photos · documents · estimates · invoices ·

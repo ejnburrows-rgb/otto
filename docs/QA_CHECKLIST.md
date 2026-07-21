@@ -44,7 +44,7 @@
 ## Re-run tests anytime
 
 ```
-cd D:\Projects\otto-fresh
+cd C:\Users\EJN\otto
 node scripts/qa-browser.mjs
 node scripts/qa-check.mjs
 ```
