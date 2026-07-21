@@ -3016,8 +3016,8 @@ Rules: Never invent precise counts you cannot support from the data — instead 
   }
   async function openEmail(id) {
     const e = get('emails', id); if (!e) return;
-    const atts = e.attachments || []; const links = [];
-    for (const a of atts) { const url = a.fileId ? await getFileURL(a.fileId) : null; links.push(url ? `<a class="btn ghost sm" href="${url}" download="${esc(a.name)}"><i class="fas fa-paperclip"></i> ${esc(a.name)}</a>` : `<span class="pill gray"><i class="fas fa-paperclip"></i> ${esc(a.name)}</span>`); }
+    const atts = e.attachments || [];
+    const links = await Promise.all(atts.map(async (a) => { const url = a.fileId ? await getFileURL(a.fileId) : null; return url ? `<a class="btn ghost sm" href="${url}" download="${esc(a.name)}"><i class="fas fa-paperclip"></i> ${esc(a.name)}</a>` : `<span class="pill gray"><i class="fas fa-paperclip"></i> ${esc(a.name)}</span>`; }));
     const matched = e.customerId ? `<a onclick="closeModal();nav('customer','${e.customerId}')" style="cursor:pointer">${esc(customerName(e.customerId))}</a>` + (e.jobId ? ` · <a onclick="closeModal();nav('job','${e.jobId}')" style="cursor:pointer">${esc(jobTitle(e.jobId))}</a>` : '') : t('noMatch');
     modal(`<h2>${esc(e.subject || '(no subject)')}</h2>
       <div class="card" style="padding:14px">${kv(t('from'), esc(e.fromName || e.from || '—'))}${kv(t('date'), fmtDate(e.date || e.created))}${kv(t('matchedTo'), matched)}</div>
