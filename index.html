@@ -4434,46 +4434,40 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
       if (!data.messages) return;
 
       let added = false;
-      const newMessages = data.messages.filter(m => !db.inbox_emails.find(e => e.id === m.id));
-      if (newMessages.length > 0) {
-        const emailPromises = newMessages.map(async (m) => {
-          const detailRes = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}`, { headers: { Authorization: `Bearer ${_gmailToken}` } });
-          const detail = await detailRes.json();
+      for (const m of data.messages) {
+        if (db.inbox_emails.find(e => e.id === m.id)) continue;
+        const detailRes = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}`, { headers: { Authorization: `Bearer ${_gmailToken}` } });
+        const detail = await detailRes.json();
 
-          let subject = '(no subject)', from = '', preview = detail.snippet;
-          const headers = detail.payload.headers;
-          headers.forEach(h => {
-            if (h.name.toLowerCase() === 'subject') subject = h.value;
-            if (h.name.toLowerCase() === 'from') from = h.value;
-          });
-
-          const attachments = [];
-          if (detail.payload.parts) {
-            const attachmentPromises = detail.payload.parts
-              .filter(p => p.filename && p.body && p.body.attachmentId)
-              .map(async p => {
-                const attRes = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}/attachments/${p.body.attachmentId}`, { headers: { Authorization: `Bearer ${_gmailToken}` } });
-                const attData = await attRes.json();
-                return {
-                  name: p.filename,
-                  mimeType: p.mimeType,
-                  data: attData.data.replace(/-/g, '+').replace(/_/g, '/') // base64url to standard base64
-                };
-              });
-            attachments.push(...(await Promise.all(attachmentPromises)));
-          }
-
-          return {
-            id: m.id, from, subject, preview,
-            receivedAt: new Date(parseInt(detail.internalDate)).toISOString(),
-            attachments,
-            aiTakeoffStatus: 'none',
-            read: false
-          };
+        let subject = '(no subject)', from = '', preview = detail.snippet;
+        const headers = detail.payload.headers;
+        headers.forEach(h => {
+          if (h.name.toLowerCase() === 'subject') subject = h.value;
+          if (h.name.toLowerCase() === 'from') from = h.value;
         });
 
-        const newEmails = await Promise.all(emailPromises);
-        db.inbox_emails.push(...newEmails);
+        const attachments = [];
+        if (detail.payload.parts) {
+          for (const p of detail.payload.parts) {
+            if (p.filename && p.body && p.body.attachmentId) {
+              const attRes = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}/attachments/${p.body.attachmentId}`, { headers: { Authorization: `Bearer ${_gmailToken}` } });
+              const attData = await attRes.json();
+              attachments.push({
+                name: p.filename,
+                mimeType: p.mimeType,
+                data: attData.data.replace(/-/g, '+').replace(/_/g, '/') // base64url to standard base64
+              });
+            }
+          }
+        }
+
+        db.inbox_emails.push({
+          id: m.id, from, subject, preview,
+          receivedAt: new Date(parseInt(detail.internalDate)).toISOString(),
+          attachments,
+          aiTakeoffStatus: 'none',
+          read: false
+        });
         added = true;
       }
       
