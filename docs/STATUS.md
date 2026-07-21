@@ -79,17 +79,32 @@ remains the single largest open risk in the project. Everything currently in
 that database has been exported to local backups, so deleting the project would
 not lose data.
 
-### 3.1b Supabase migration is written but NOT yet live
+### 3.1b Supabase database is live and verified — one step remains
 
-The new schema and the server-side data function are committed, but the tables
-have not been created in Supabase yet — that step needs a database credential
-only the owner can retrieve. Until it is run:
+Confirmed on 2026-07-21 in project `huaehartegjbihyygqgb` (display name
+"otto-live"):
 
-- The app runs entirely from each device (which it is designed to do); cloud
-  sync answers 503 and is simply switched off.
-- The claim "the new database is sealed" is **unproven**. An anonymous request
-  currently returns `404 — table does not exist`, which is not the same thing as
-  being denied. Re-test after the tables exist.
+- **All data moved.** The count check returned
+  `ALL 43 TABLES MATCH - 93 rows total`, comparing every table against the
+  records rescued from Firebase (3 customers, 3 jobs, 1 invoice, 19 users,
+  48 audit log entries). Nothing was lost.
+- **The public is locked out.** A request using only the public key returns
+  `401 permission denied`. This is the real test — an earlier check returned
+  `404 table does not exist`, which only meant the tables were absent. For
+  comparison, the same request against Firebase returned `200` with customer
+  data.
+
+**Still to do:** the two settings below are not yet set in Vercel, so the live
+site cannot reach the new database (`/api/data` returns 503) and cloud sync is
+switched off. The app still works — it runs from each device, as designed.
+
+| Setting | Value |
+|---|---|
+| `SUPABASE_URL` | `https://huaehartegjbihyygqgb.supabase.co` |
+| `SUPABASE_SERVICE_ROLE_KEY` | the secret "service_role" key from Supabase → Settings → API |
+
+Set both in Vercel → Settings → Environment Variables, then redeploy. The secret
+key belongs only in Vercel and a local `.env` file — never in the code.
 
 ### 3.2 Sign-in is weak
 
@@ -159,3 +174,7 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   access), and removed the hardcoded Firebase key and its Settings screen from
   `index.html`. Also corrected `scripts/qa-check.mjs`, which had been testing the
   marketing site instead of the real app. QA now passes.
+- 2026-07-21 — Verified the Supabase migration: all 43 tables match the Firebase
+  record counts (93 rows total), and an anonymous request is refused with
+  `401 permission denied` rather than returning data. Remaining step is setting
+  the two Supabase settings in Vercel.
