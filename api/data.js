@@ -46,56 +46,74 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
-      const out = {};
-      // Ask for every collection at once rather than one after another, so a
-      // slow connection in the field does not make sign-in crawl.
-      await Promise.all(COLLECTIONS.map(async (col) => {
-        const r = await fetch(`${url}/rest/v1/${encodeURIComponent(col)}?select=data`, { headers });
-        if (!r.ok) { out[col] = null; return; }
-        const rows = await r.json();
-        out[col] = rows.map((row) => row.data);
-      }));
-      res.status(200).json(out);
+      const result = await readEveryCollection(url, headers);
+      res.status(200).json(result);
       return;
     }
-
     if (req.method === 'POST') {
-      let body = req.body;
-      if (body == null || typeof body === 'string') {
-        const raw = typeof body === 'string' ? body : await readRaw(req);
-        body = raw ? JSON.parse(raw) : {};
-      }
-      const { collection, records } = body;
-      if (!COLLECTIONS.includes(collection)) {
-        res.status(400).json({ error: 'unknown_collection' });
-        return;
-      }
-      const list = Array.isArray(records) ? records : [records];
-      const rows = list
-        .filter((rec) => rec && rec.id)
-        .map((rec) => ({ id: String(rec.id), data: rec, updated_at: new Date().toISOString() }));
-      if (!rows.length) { res.status(200).json({ saved: 0 }); return; }
-
-      // "resolution=merge-duplicates" means: insert new records, and update any
-      // record whose id is already there, instead of failing.
-      const r = await fetch(`${url}/rest/v1/${encodeURIComponent(collection)}`, {
-        method: 'POST',
-        headers: { ...headers, Prefer: 'resolution=merge-duplicates,return=minimal' },
-        body: JSON.stringify(rows)
-      });
-      if (!r.ok) {
-        const text = await r.text();
-        res.status(r.status).json({ error: 'save_failed', detail: text.slice(0, 300) });
-        return;
-      }
-      res.status(200).json({ saved: rows.length });
+      const { status, body } = await saveOneCollection(url, headers, await parseBody(req));
+      res.status(status).json(body);
       return;
     }
-
     res.status(405).json({ error: 'method_not_allowed' });
   } catch (e) {
     res.status(500).json({ error: 'proxy_error', detail: String(e && e.message || e).slice(0, 300) });
   }
+}
+
+// Downloads every collection. Asks for them all at once rather than one after
+// another, so a slow connection in the field does not make sign-in crawl.
+// A collection that fails comes back as null, which the app treats as "skip
+// this one" rather than "this collection is empty" — important, because
+// treating a failed read as empty would wipe good data off the device.
+async function readEveryCollection(url, headers) {
+  const out = {};
+  await Promise.all(COLLECTIONS.map(async (col) => {
+    const r = await fetch(`${url}/rest/v1/${encodeURIComponent(col)}?select=data`, { headers });
+    if (!r.ok) {
+      console.warn(`read failed for ${col}: HTTP ${r.status}`);
+      out[col] = null;
+      return;
+    }
+    const rows = await r.json();
+    out[col] = rows.map((row) => row.data);
+  }));
+  return out;
+}
+
+// Saves the records of a single collection. Returns the status and body for
+// the caller to send, rather than writing to the response itself, so the
+// routing above stays easy to follow.
+async function saveOneCollection(url, headers, { collection, records }) {
+  if (!COLLECTIONS.includes(collection)) {
+    return { status: 400, body: { error: 'unknown_collection' } };
+  }
+  const list = Array.isArray(records) ? records : [records];
+  const rows = list
+    .filter((rec) => rec && rec.id)
+    .map((rec) => ({ id: String(rec.id), data: rec, updated_at: new Date().toISOString() }));
+  if (!rows.length) return { status: 200, body: { saved: 0 } };
+
+  // "resolution=merge-duplicates" means: insert new records, and update any
+  // record whose id is already there, instead of failing.
+  const r = await fetch(`${url}/rest/v1/${encodeURIComponent(collection)}`, {
+    method: 'POST',
+    headers: { ...headers, Prefer: 'resolution=merge-duplicates,return=minimal' },
+    body: JSON.stringify(rows)
+  });
+  if (!r.ok) {
+    const text = await r.text();
+    return { status: r.status, body: { error: 'save_failed', detail: text.slice(0, 300) } };
+  }
+  return { status: 200, body: { saved: rows.length } };
+}
+
+// Vercel usually parses JSON bodies for us, but not always — fall back to
+// reading the raw request when it hasn't.
+async function parseBody(req) {
+  if (req.body != null && typeof req.body !== 'string') return req.body;
+  const raw = typeof req.body === 'string' ? req.body : await readRaw(req);
+  return raw ? JSON.parse(raw) : {};
 }
 
 function readRaw(req) {
