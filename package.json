@@ -2,10 +2,12 @@
   "name": "otto-plumbing-crm",
   "private": true,
   "scripts": {
-    "dev": "python3 -m http.server 3000 --directory /home/daytona/codebase",
-    "start": "python3 -m http.server 3000 --directory /home/daytona/codebase",
-    "preview": "python3 -m http.server 3000 --directory /home/daytona/codebase",
-    "build": "echo 'No build step — static single-file PWA' && ls -la index.html"
+    "dev": "node scripts/local-server.js",
+    "start": "node scripts/local-server.js",
+    "preview": "node scripts/local-server.js",
+    "build": "echo \"No build step - static single-file PWA\" && node -e \"console.log('index.html', require('fs').statSync('index.html').size, 'bytes')\"",
+    "test": "node scripts/test-merge.mjs && node scripts/test-inpage-merge.mjs",
+    "qa": "node scripts/qa-check.mjs"
   },
   "devDependencies": {
     "playwright": "^1.61.1"
