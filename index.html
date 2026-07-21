@@ -4446,19 +4446,20 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
           if (h.name.toLowerCase() === 'from') from = h.value;
         });
 
-        const attachments = [];
+        let attachments = [];
         if (detail.payload.parts) {
-          for (const p of detail.payload.parts) {
-            if (p.filename && p.body && p.body.attachmentId) {
+          const promises = detail.payload.parts
+            .filter(p => p.filename && p.body && p.body.attachmentId)
+            .map(async p => {
               const attRes = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}/attachments/${p.body.attachmentId}`, { headers: { Authorization: `Bearer ${_gmailToken}` } });
               const attData = await attRes.json();
-              attachments.push({
+              return {
                 name: p.filename,
                 mimeType: p.mimeType,
                 data: attData.data.replace(/-/g, '+').replace(/_/g, '/') // base64url to standard base64
-              });
-            }
-          }
+              };
+            });
+          attachments = await Promise.all(promises);
         }
 
         db.inbox_emails.push({
