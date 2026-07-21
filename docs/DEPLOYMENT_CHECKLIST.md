@@ -18,10 +18,7 @@
 
 ## Demo PINs (testing)
 
-| Role | PIN |
-|------|-----|
-| Owner | 0721 |
-| Field | 0715 |
+Each crew member is assigned their own unique PIN inside the app under the Team screen. PINs are never written down or stored in this repository. Note that the previously published demo codes remain in the project's git history, so deleting them from this current file does not erase them from the past. For security, the owner must change those specific codes within the app itself so that they can no longer be used.
 
 ## Vercel environment variables
 

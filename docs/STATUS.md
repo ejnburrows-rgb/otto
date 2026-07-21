@@ -138,3 +138,4 @@ time and git reports a conflict here, the correct fix is to keep both lines.
 
 - 2026-07-21 — Full sweep of code and live site; corrected the previous status
   report; filed the remaining work as numbered tasks in `docs/issues/`.
+- 2026-07-21 — Removed published demo login PIN values (0721 and 0715) from DEPLOYMENT_CHECKLIST.md, replacing them with a plain-language security notice.
