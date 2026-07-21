@@ -3016,8 +3016,8 @@ Rules: Never invent precise counts you cannot support from the data — instead 
   }
   async function openEmail(id) {
     const e = get('emails', id); if (!e) return;
-    const atts = e.attachments || []; const links = [];
-    for (const a of atts) { const url = a.fileId ? await getFileURL(a.fileId) : null; links.push(url ? `<a class="btn ghost sm" href="${url}" download="${esc(a.name)}"><i class="fas fa-paperclip"></i> ${esc(a.name)}</a>` : `<span class="pill gray"><i class="fas fa-paperclip"></i> ${esc(a.name)}</span>`); }
+    const atts = e.attachments || [];
+    const links = await Promise.all(atts.map(async (a) => { const url = a.fileId ? await getFileURL(a.fileId) : null; return url ? `<a class="btn ghost sm" href="${url}" download="${esc(a.name)}"><i class="fas fa-paperclip"></i> ${esc(a.name)}</a>` : `<span class="pill gray"><i class="fas fa-paperclip"></i> ${esc(a.name)}</span>`; }));
     const matched = e.customerId ? `<a onclick="closeModal();nav('customer','${e.customerId}')" style="cursor:pointer">${esc(customerName(e.customerId))}</a>` + (e.jobId ? ` · <a onclick="closeModal();nav('job','${e.jobId}')" style="cursor:pointer">${esc(jobTitle(e.jobId))}</a>` : '') : t('noMatch');
     modal(`<h2>${esc(e.subject || '(no subject)')}</h2>
       <div class="card" style="padding:14px">${kv(t('from'), esc(e.fromName || e.from || '—'))}${kv(t('date'), fmtDate(e.date || e.created))}${kv(t('matchedTo'), matched)}</div>
@@ -4005,7 +4005,7 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
       db.backups.unshift(rec);
       // keep full history but cap the in-DB log; snapshots beyond the last 12 are pruned from blob store
       const old = db.backups.slice(12);
-      for (const o of old) { try { await idbDel('files', o.id); } catch (e) { } }
+      await Promise.all(old.map(o => idbDel('files', o.id).catch(() => {})));
       save(); audit('backup.create', 'backup', id, { verified: rec.verified });
       if (!rec.verified) raiseAlert('backup-failed', 'backup', id, t('restoreFail'));
       if (manual) toast(t('backupOk'), 'success');
@@ -4055,9 +4055,9 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
             autoScroll: true,
             listeners: {
               move (event) {
-                var target = event.target;
-                var x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
-                var y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
+                const target = event.target;
+                const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
+                const y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
                 target.style.transform = 'translate(' + x + 'px, ' + y + 'px)';
                 target.setAttribute('data-x', x);
                 target.setAttribute('data-y', y);
