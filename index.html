@@ -640,7 +640,7 @@
       workflows: 'Workflows', knowledge: 'Knowledge', team: 'Team', reports: 'Reports',
       settings: 'Settings', map: 'Map', documents: 'Documents', notes: 'Notes', photos: 'Photos',
       assistant: 'Assistant', search: 'Search…', save: 'Save', cancel: 'Cancel', delete: 'Delete',
-      print: 'Print', add: 'Add', edit: 'Edit', name: 'Name', phone: 'Phone', email: 'Email', address: 'Address',
+      print: 'Print', notSetUp: 'No code yet', askOwnerForCode: 'No sign-in code yet. Ask an owner to set one for you in Team.', setUpOwner: 'Set up this device', chooseOwnerCode: 'Choose a 4-digit code for the first owner. You can set everyone else up afterwards, in Team.', codeSaved: 'Code saved. Sign in with it now.', add: 'Add', edit: 'Edit', name: 'Name', phone: 'Phone', email: 'Email', address: 'Address',
       title: 'Title', status: 'Status', date: 'Date', amount: 'Amount', notesLabel: 'Notes',
       customer: 'Customer', job: 'Job', open: 'Open', noResults: 'Nothing here yet.',
       welcome: 'Welcome', tapToStart: 'Tap a big button to get started.',
@@ -723,7 +723,7 @@
       workflows: 'Flujos', knowledge: 'Guías', team: 'Equipo', reports: 'Reportes',
       settings: 'Ajustes', map: 'Mapa', documents: 'Documentos', notes: 'Notas', photos: 'Fotos',
       assistant: 'Asistente', search: 'Buscar…', save: 'Guardar', cancel: 'Cancelar', delete: 'Eliminar',
-      print: 'Imprimir', add: 'Agregar', edit: 'Editar', name: 'Nombre', phone: 'Teléfono', email: 'Correo', address: 'Dirección',
+      print: 'Imprimir', notSetUp: 'Sin código', askOwnerForCode: 'Aún no tiene código. Pida a un dueño que le asigne uno en Equipo.', setUpOwner: 'Configurar este dispositivo', chooseOwnerCode: 'Elija un código de 4 dígitos para el primer dueño. Después puede configurar a los demás en Equipo.', codeSaved: 'Código guardado. Inicie sesión con él.', add: 'Agregar', edit: 'Editar', name: 'Nombre', phone: 'Teléfono', email: 'Correo', address: 'Dirección',
       title: 'Título', status: 'Estado', date: 'Fecha', amount: 'Monto', notesLabel: 'Notas',
       customer: 'Cliente', job: 'Trabajo', open: 'Abrir', noResults: 'Todavía no hay nada aquí.',
       welcome: 'Bienvenido', tapToStart: 'Toca un botón grande para empezar.',
@@ -830,25 +830,25 @@
     // Seed exact team per business spec: 2 owners + 1 ops manager + 1 logging/IT + 15 field workers.
     // Non-tech/ADHD friendly: realistic names, clear roles. Use 'office' internally for managers (full non-field access).
     d.users = [
-      { id: 'owner-1', name: 'Otto', role: 'owner', pin: '0721', lang: 'en', created: nowISO() },
-      { id: 'owner-2', name: 'El Príncipe', role: 'owner', pin: '0722', lang: 'es', created: nowISO() },
-      { id: 'ops-1', name: 'Sarays', role: 'office', pin: '0723', lang: 'en', created: nowISO() },
-      { id: 'it-1', name: 'Taylor Kim - Logs/IT', role: 'office', pin: '0724', lang: 'en', created: nowISO() },
-      { id: 'field-1', name: '', role: 'field', pin: '0715', hourlyRate: 22, lang: 'en', created: nowISO() },
-      { id: 'field-2', name: '', role: 'field', pin: '0716', hourlyRate: 23, lang: 'es', created: nowISO() },
-      { id: 'field-3', name: '', role: 'field', pin: '0717', hourlyRate: 21, lang: 'en', created: nowISO() },
-      { id: 'field-4', name: '', role: 'field', pin: '0718', hourlyRate: 24, lang: 'es', created: nowISO() },
-      { id: 'field-5', name: '', role: 'field', pin: '0719', hourlyRate: 22, lang: 'en', created: nowISO() },
-      { id: 'field-6', name: '', role: 'field', pin: '0720', hourlyRate: 20, lang: 'es', created: nowISO() },
-      { id: 'field-7', name: '', role: 'field', pin: '0725', hourlyRate: 23, lang: 'en', created: nowISO() },
-      { id: 'field-8', name: '', role: 'field', pin: '0726', hourlyRate: 22, lang: 'es', created: nowISO() },
-      { id: 'field-9', name: '', role: 'field', pin: '0727', hourlyRate: 21, lang: 'en', created: nowISO() },
-      { id: 'field-10', name: '', role: 'field', pin: '0728', hourlyRate: 24, lang: 'es', created: nowISO() },
-      { id: 'field-11', name: '', role: 'field', pin: '0729', hourlyRate: 22, lang: 'en', created: nowISO() },
-      { id: 'field-12', name: '', role: 'field', pin: '0730', hourlyRate: 23, lang: 'es', created: nowISO() },
-      { id: 'field-13', name: '', role: 'field', pin: '0731', hourlyRate: 20, lang: 'en', created: nowISO() },
-      { id: 'field-14', name: '', role: 'field', pin: '0732', hourlyRate: 25, lang: 'es', created: nowISO() },
-      { id: 'field-15', name: '', role: 'field', pin: '0733', hourlyRate: 22, lang: 'en', created: nowISO() }
+      { id: 'owner-1', name: 'Otto', role: 'owner', lang: 'en', created: nowISO() },
+      { id: 'owner-2', name: 'El Príncipe', role: 'owner', lang: 'es', created: nowISO() },
+      { id: 'ops-1', name: 'Sarays', role: 'office', lang: 'en', created: nowISO() },
+      { id: 'it-1', name: 'Taylor Kim - Logs/IT', role: 'office', lang: 'en', created: nowISO() },
+      { id: 'field-1', name: '', role: 'field', hourlyRate: 22, lang: 'en', created: nowISO() },
+      { id: 'field-2', name: '', role: 'field', hourlyRate: 23, lang: 'es', created: nowISO() },
+      { id: 'field-3', name: '', role: 'field', hourlyRate: 21, lang: 'en', created: nowISO() },
+      { id: 'field-4', name: '', role: 'field', hourlyRate: 24, lang: 'es', created: nowISO() },
+      { id: 'field-5', name: '', role: 'field', hourlyRate: 22, lang: 'en', created: nowISO() },
+      { id: 'field-6', name: '', role: 'field', hourlyRate: 20, lang: 'es', created: nowISO() },
+      { id: 'field-7', name: '', role: 'field', hourlyRate: 23, lang: 'en', created: nowISO() },
+      { id: 'field-8', name: '', role: 'field', hourlyRate: 22, lang: 'es', created: nowISO() },
+      { id: 'field-9', name: '', role: 'field', hourlyRate: 21, lang: 'en', created: nowISO() },
+      { id: 'field-10', name: '', role: 'field', hourlyRate: 24, lang: 'es', created: nowISO() },
+      { id: 'field-11', name: '', role: 'field', hourlyRate: 22, lang: 'en', created: nowISO() },
+      { id: 'field-12', name: '', role: 'field', hourlyRate: 23, lang: 'es', created: nowISO() },
+      { id: 'field-13', name: '', role: 'field', hourlyRate: 20, lang: 'en', created: nowISO() },
+      { id: 'field-14', name: '', role: 'field', hourlyRate: 25, lang: 'es', created: nowISO() },
+      { id: 'field-15', name: '', role: 'field', hourlyRate: 22, lang: 'en', created: nowISO() }
     ];
     // A couple of genuinely useful plumbing SOPs and workflow templates.
     d.sops = [
@@ -1349,6 +1349,25 @@
     const lg = $('#login'); lg.classList.remove('hidden');
     let pin = '', selUser = null;
     function draw() {
+      /* First run: nobody has a sign-in code yet, because codes are no longer
+         shipped in this file. Let the first owner choose theirs, otherwise a
+         fresh install has no way in at all. Everyone else is set up afterwards
+         from the Team screen. */
+      if (!db.users.some(u => hasPin(u))) {
+        const first = db.users.find(u => u.role === 'owner') || db.users[0];
+        lg.innerHTML = `
+          <div style="text-align:center;margin-bottom:24px;">
+            <img src="./logo.jpg" alt="OTTO Plumbing" style="width:180px;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.25);" />
+          </div>
+          <h2 style="margin-top:0">${esc(t('setUpOwner'))}</h2>
+          <p class="muted">${esc(t('chooseOwnerCode'))}</p>
+          <div class="field">
+            <label for="boot-pin">${esc(first && first.name ? first.name : t('owner'))}</label>
+            <input id="boot-pin" type="password" inputmode="numeric" maxlength="4" placeholder="••••">
+          </div>
+          <button class="btn green block" onclick="window.__bootstrap()"><i class="fas fa-check"></i> ${esc(t('save'))}</button>`;
+        return;
+      }
       if (!selUser) {
         lg.innerHTML = `
           <div style="text-align:center;margin-bottom:24px;">
@@ -1357,26 +1376,30 @@
           <p style="margin-top:0;">${esc(t('pickUser'))}</p>
           <div class="card-login">
             ${(() => {
-              const owners = db.users.filter(u => u.role === 'owner').map(u => {
-                const isSarays = u.name && u.name.includes('Sarays');
-                const titleStyle = isSarays ? ' style="color:#EC4899;font-weight:bold;"' : '';
-                const avatarBg = isSarays ? '#EC4899' : colorFor(u.name);
-                const displayName = u.name ? esc(u.name) : `<span style="color:var(--text3);font-style:italic;">${lang === 'es' ? 'Vacante' : 'Vacant'}</span>`;
-                return `<div class="list-item" onclick="window.__pick('${u.id}')"><div class="avatar" style="background:${avatarBg}">${initials(u.name)}</div><div class="li-main"><div class="li-title"${titleStyle}>${displayName}</div><div class="li-sub">${t(u.role)}</div></div><i class="fas fa-chevron-right chev"></i></div>`;
-              }).join('');
-              const mgrs = db.users.filter(u => u.role === 'office').map(u => {
+              /* One row on the sign-in list, used for every role. An account
+                 with no code set cannot be tapped — codes are no longer shipped
+                 in this file, so a new account has none until an owner sets it
+                 in the Team screen. */
+              const signInRow = (u) => {
+                const ready = hasPin(u);
                 const isSarays = u.name && u.name.includes('Sarays');
                 const titleStyle = isSarays ? ' style="color:#EC4899;font-weight:bold;"' : '';
                 const avatarBg = isSarays ? '#EC4899' : colorFor(u.name);
                 const displayName = u.name ? esc(u.name) : `<span style="color:var(--text3);font-style:italic;">${lang === 'es' ? 'Vacante' : 'Vacant'}</span>`;
                 const roleText = u.id === 'it-1' ? (lang === 'es' ? 'Soporte / TI' : 'Logging / IT') : t(u.role);
-                return `<div class="list-item" onclick="window.__pick('${u.id}')"><div class="avatar" style="background:${avatarBg}">${initials(u.name)}</div><div class="li-main"><div class="li-title"${titleStyle}>${displayName}</div><div class="li-sub">${roleText}</div></div><i class="fas fa-chevron-right chev"></i></div>`;
-              }).join('');
+                const sub = ready ? roleText : `${roleText} · ${t('notSetUp')}`;
+                const attrs = ready
+                  ? `onclick="window.__pick('${u.id}')"`
+                  : `onclick="window.__noCode()" style="opacity:.45" aria-disabled="true"`;
+                return `<div class="list-item" ${attrs}><div class="avatar" style="background:${avatarBg}">${initials(u.name)}</div><div class="li-main"><div class="li-title"${titleStyle}>${displayName}</div><div class="li-sub">${sub}</div></div><i class="fas fa-chevron-right chev"></i></div>`;
+              };
+              const owners = db.users.filter(u => u.role === 'owner').map(signInRow).join('');
+              const mgrs = db.users.filter(u => u.role === 'office').map(signInRow).join('');
               const fieldUsers = db.users.filter(u => u.role === 'field');
               // Named staff first; empty slots collapse behind one row.
               const namedFields = fieldUsers.filter(u => u.name);
               const vacantFields = fieldUsers.filter(u => !u.name);
-              const rowFor = (u) => `<div class="list-item" onclick="window.__pick('${u.id}')"><div class="avatar" style="background:${colorFor(u.name)}">${initials(u.name)}</div><div class="li-main"><div class="li-title">${u.name ? esc(u.name) : `<span style="color:var(--text3);font-style:italic;">${lang === 'es' ? 'Vacante' : 'Vacant'}</span>`}</div><div class="li-sub">${t(u.role)}</div></div><i class="fas fa-chevron-right chev"></i></div>`;
+              const rowFor = signInRow;
               const fields = namedFields.map(rowFor).join('')
                 + (vacantFields.length
                   ? `<div id="vacant-rows" class="hidden">${vacantFields.map(rowFor).join('')}</div><div class="list-item" role="button" tabindex="0" onclick="window.__toggleVacant(this)" style="justify-content:center;color:var(--text2);font-size:13px">${lang === 'es' ? 'Mostrar' : 'Show'} ${vacantFields.length} ${lang === 'es' ? 'puestos sin asignar' : 'unassigned'}</div>`
@@ -1412,6 +1435,18 @@
       const n = box.children.length;
       const es = lang === 'es';
       el.textContent = (nowHidden ? (es ? 'Mostrar' : 'Show') : (es ? 'Ocultar' : 'Hide')) + ' ' + n + ' ' + (es ? 'puestos sin asignar' : 'unassigned');
+    };
+    window.__noCode = () => toast(t('askOwnerForCode'), 'error');
+    window.__bootstrap = async () => {
+      const el = document.getElementById('boot-pin');
+      const code = (el && el.value || '').trim();
+      if (!/^\d{4}$/.test(code)) return toast(t('wrongPin'), 'error');
+      const first = db.users.find(u => u.role === 'owner') || db.users[0];
+      if (!first) return;
+      await setUserPin(first, code);   // salts, hashes, drops the readable copy
+      save();
+      toast(t('codeSaved'), 'success');
+      selUser = null; pin = ''; draw();
     };
     window.__pick = (id) => { selUser = get('users', id); pin = ''; draw(); };
     window.__back2 = () => { selUser = null; pin = ''; draw(); };
@@ -2465,7 +2500,7 @@
     $('#main').innerHTML = html;
   }
   function openUserForm(id) {
-    const u = id ? get('users', id) : { role: 'field', lang: 'es', pin: '1234' };
+    const u = id ? get('users', id) : { role: 'field', lang: 'es' };
     modal(`<h2>${id ? t('edit') : t('addTeam')}</h2>
       <div class="field"><label for="u-name">${t('name')}</label><input id="u-name" value="${esc(u.name || '')}"></div>
       <div class="field"><label for="u-role">${t('role')}</label><select id="u-role">${['owner', 'office', 'field'].map(r => `<option value="${r}" ${u.role === r ? 'selected' : ''}>${t(r)}</option>`).join('')}</select></div>

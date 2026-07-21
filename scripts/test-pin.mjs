@@ -130,5 +130,26 @@ console.log('\nthe extra owner code (MFA) gets the same treatment');
   check('hasPin is false for someone without one', pin.hasPin({ id: 'x' }, 'mfaPin'), false);
 }
 
+console.log('\nno sign-in code is shipped in the source (regression guard)');
+{
+  // index.html is served to the public. The seeded staff list used to carry
+  // every code in plain text, so anyone could read all 20 of them straight out
+  // of the page source at otto-kohl.vercel.app. These checks stop that
+  // returning.
+  const seeded = html.match(/pin: *'[0-9]{4}'/g) || [];
+  check('no readable 4-digit code appears in index.html', seeded.length, 0);
+
+  const seedBlock = (html.match(/d\.users = \[([\s\S]*?)\];/) || ['', ''])[1];
+  check('the seeded staff list is still there (so this guard means something)',
+    seedBlock.includes('owner-1'), true);
+  check('no pin field on any seeded user', /\bpin:/.test(seedBlock), false);
+  check('no stored fingerprint on any seeded user either', /pinHash/.test(seedBlock), false);
+
+  check('sign-in refuses accounts that have no code yet',
+    html.includes('window.__noCode()'), true);
+  check('a fresh install can still set up the first owner',
+    html.includes('window.__bootstrap'), true);
+}
+
 console.log(`\n${passed} passed, ${failed} failed\n`);
 process.exit(failed ? 1 : 0);
