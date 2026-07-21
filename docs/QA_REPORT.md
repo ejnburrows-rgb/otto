@@ -1,13 +1,13 @@
 # OTTO QA Report
 
-**Run:** 2026-07-21T06:33:12.723Z
+**Run:** 2026-07-21T06:34:42.425Z
 **Overall:** PASS (with notes below)
 
 ## Button wiring
-- Functions in app: 369
+- Functions in app: 368
 - Buttons checked: 114
 - Broken buttons: NONE
-- New features not on window export list: photoScanCreateCustomer, viewUrgentHub, openUrgentForm, submitUrgentMessage, replyUrgent, resolveUrgent, connectQuickBooks, saveNotifyPrefs, refreshIntegrationStatus
+- New features not on window export list: NONE (browser still OK)
 
 ## Spanish labels
 - Missing Spanish translations: 0
@@ -30,21 +30,11 @@
 ## JSON
 ```json
 {
-  "ts": "2026-07-21T06:33:12.723Z",
-  "functions": 369,
+  "ts": "2026-07-21T06:34:42.425Z",
+  "functions": 368,
   "onclickCalls": 114,
   "missingHandlers": [],
-  "notOnWindowExport": [
-    "photoScanCreateCustomer",
-    "viewUrgentHub",
-    "openUrgentForm",
-    "submitUrgentMessage",
-    "replyUrgent",
-    "resolveUrgent",
-    "connectQuickBooks",
-    "saveNotifyPrefs",
-    "refreshIntegrationStatus"
-  ],
+  "notOnWindowExport": [],
   "missingSpanishKeys": [],
   "missingSpanishCount": 0,
   "collections": 42,

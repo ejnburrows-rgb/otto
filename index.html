@@ -4681,14 +4681,6 @@ Return ONLY valid JSON: { "fixtures": [], "pipes": [], "fittings": [], "notes": 
     toast(t('saved'), 'success');
   }
 
-  /* Hooks used only by the automated tests in scripts/. They expose existing
-     behaviour for checking; they do not add any new ability. */
-  Object.assign(window, {
-    __save: () => save(), __verifyPin: (u, p, f) => verifyPin(u, p, f),
-    __recordFailedPin: (id) => recordFailedPin(id), __clearFailedPins: (id) => clearFailedPins(id),
-    __pinLockRemaining: (id) => pinLockRemainingMs(id),
-    __mergeCollections: (a, b) => mergeCollections(a, b)
-  });
   Object.assign(window, { __db: () => db, setSearch, saveAIKey, saveMfa, clearMfa, t, toast, closeModal, modal,
     setLang, nav, back, signOut, quickAdd, openMore, get, remove, update, confirmDel, render,
     newCall, saveCall, jobFromCall, openCallView, openCustomerForm, saveCustomer, openJobForm, saveJob, changeJobStatus, setJobStatus,
@@ -4707,6 +4699,17 @@ Return ONLY valid JSON: { "fixtures": [], "pipes": [], "fittings": [], "notes": 
     saveGoogleClient, connectGmail, fetchNewEmails, viewInbox, previewPDF, analyzePdfAI, selectJobForTakeoff, assignTakeoff,
     photoScanCreateCustomer, viewUrgentHub, openUrgentForm, submitUrgentMessage, replyUrgent, resolveUrgent,
     connectQuickBooks, saveNotifyPrefs, refreshIntegrationStatus });
+
+  /* Hooks used only by the automated tests in scripts/. They expose existing
+     behaviour so tests can check it; they add no new ability. Deliberately kept
+     below the export list above, which the QA script reads as the first
+     Object.assign(window, ...) block it finds. */
+  window.__save = () => save();
+  window.__verifyPin = (user, pin, field) => verifyPin(user, pin, field);
+  window.__recordFailedPin = (id) => recordFailedPin(id);
+  window.__clearFailedPins = (id) => clearFailedPins(id);
+  window.__pinLockRemaining = (id) => pinLockRemainingMs(id);
+  window.__mergeCollections = (a, b) => mergeCollections(a, b);
   
   boot().then(() => { setTimeout(seedMockKPIs, 500); render(); });
   </script>
