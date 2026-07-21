@@ -6,7 +6,7 @@
     "start": "node scripts/local-server.js",
     "preview": "node scripts/local-server.js",
     "build": "echo \"No build step - static single-file PWA\" && node -e \"console.log('index.html', require('fs').statSync('index.html').size, 'bytes')\"",
-    "test": "node scripts/test-merge.mjs && node scripts/test-inpage-merge.mjs && node scripts/test-pin.mjs && node scripts/test-inbound-email.mjs && node scripts/test-notify.mjs && node scripts/test-quickbooks.mjs",
+    "test": "node scripts/test-merge.mjs && node scripts/test-inpage-merge.mjs && node scripts/test-pin.mjs && node scripts/test-inbound-email.mjs && node scripts/test-notify.mjs && node scripts/test-quickbooks.mjs && node scripts/test-nvidia.mjs",
     "qa": "node scripts/qa-check.mjs"
   },
   "devDependencies": {
