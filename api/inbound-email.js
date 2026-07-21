@@ -2,32 +2,32 @@
 //
 // Point an email provider's inbound webhook (SendGrid Inbound Parse, Mailgun
 // Routes, Postmark inbound, etc.) at POST /api/inbound-email. This function
-// normalizes the payload into the CRM's email-record shape and appends it to the
-// same Firestore document the app already syncs from, so forwarded mail shows up
-// in the Inbox automatically — the owner does nothing technical.
+// normalizes the payload into the CRM's email-record shape and inserts it into
+// the "emails" table in Supabase, so forwarded mail shows up in the Inbox
+// automatically the next time a device syncs — the owner does nothing technical.
 //
-// Requires the project's Firestore web config in env (the same project used by
-// Settings → Cloud Sync):
-//   FIREBASE_PROJECT_ID = your-project-id
-//   FIREBASE_API_KEY     = your-web-api-key
+// Requires the same two settings api/data.js uses (Vercel -> Settings ->
+// Environment Variables):
+//   SUPABASE_URL
+//   SUPABASE_SERVICE_ROLE_KEY
 // If they are missing it returns 503 and the in-app .eml import still works.
 //
-// Note: the app stores everything as one JSON document, so this does a
-// read-modify-write. Fine for normal mail volume; it is not built for bursts of
-// hundreds of simultaneous inbound messages.
+// NOTE: this used to write to Firebase. That project was deleted on 2026-07-21
+// after its access key was found exposed in the app's page source (see
+// docs/DECISIONS.md). This file was migrated to Supabase the same day.
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') { res.status(405).json({ error: 'method_not_allowed' }); return; }
-  
+
   const token = process.env.INBOUND_WEBHOOK_TOKEN;
   if (!token || req.query.token !== token) {
     res.status(401).json({ error: 'unauthorized', message: 'Invalid or missing webhook token.' });
     return;
   }
 
-  const projectId = process.env.FIREBASE_PROJECT_ID;
-  const apiKey = process.env.FIREBASE_API_KEY;
-  if (!projectId || !apiKey) { res.status(503).json({ error: 'no_firestore_config' }); return; }
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) { res.status(503).json({ error: 'no_server_key' }); return; }
 
   try {
     let body = req.body;
@@ -37,24 +37,17 @@ export default async function handler(req, res) {
     }
     const email = normalize(body);
 
-    const docUrl = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/otto_crm/emails?key=${apiKey}`;
-    // Read current emails JSON (may not exist yet).
-    let emailsArr = [];
-    const getR = await fetch(docUrl);
-    if (getR.ok) {
-      const doc = await getR.json();
-      const jsonStr = doc && doc.fields && doc.fields.json && doc.fields.json.stringValue;
-      if (jsonStr) { try { emailsArr = JSON.parse(jsonStr); } catch (e) { /* start fresh-ish */ } }
-    }
-    if (!Array.isArray(emailsArr)) emailsArr = [];
-    emailsArr.unshift(email);
-
-    const putR = await fetch(docUrl, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fields: { json: { stringValue: JSON.stringify(emailsArr) } } }),
+    const putR = await fetch(`${url}/rest/v1/emails`, {
+      method: 'POST',
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+        'Content-Type': 'application/json',
+        Prefer: 'resolution=merge-duplicates,return=minimal'
+      },
+      body: JSON.stringify([{ id: email.id, data: email, updated_at: new Date().toISOString() }])
     });
-    if (!putR.ok) { const txt = await putR.text(); res.status(502).json({ error: 'firestore_write_failed', detail: txt.slice(0, 500) }); return; }
+    if (!putR.ok) { const txt = await putR.text(); res.status(502).json({ error: 'save_failed', detail: txt.slice(0, 500) }); return; }
     res.status(200).json({ ok: true, id: email.id });
   } catch (e) {
     res.status(500).json({ error: 'inbound_error', detail: String(e && e.message || e) });
