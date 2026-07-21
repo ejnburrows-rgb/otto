@@ -1,31 +1,45 @@
 #!/bin/sh
-# Blocks force-pushing.
+# Blocks force-pushing (rewriting history that is already on GitHub).
 #
 # On 2026-07-20 something force-pushed the main branch of this project. Every
-# commit id changed and a branch that held a session's work vanished from
-# GitHub. AGENTS.md forbids force-pushing for exactly this reason.
+# commit id changed and a branch holding a session's work vanished from GitHub.
+# AGENTS.md forbids force-pushing for exactly this reason.
 #
 # GitHub's own branch protection needs a paid plan on a private repository, so
-# this hook is the protection that is actually available. It stops the mistake
-# on this computer.
+# this hook is the protection actually available here. It stops the mistake on
+# this computer.
 #
 # Turned on with:  git config core.hooksPath .githooks
+#
+# HOW IT DETECTS A FORCE PUSH: git does NOT tell a pre-push hook whether --force
+# was typed — the hook only receives the remote's name and address. What git
+# does give, on standard input, is one line per branch being pushed:
+#     <local ref> <local sha> <remote ref> <remote sha>
+# A normal push only ever adds commits on top of what GitHub already has, so the
+# remote's commit is an ancestor of the local one. If it is NOT an ancestor,
+# this push would erase commits that exist on GitHub — that is a force push.
 
-for arg in "$@"; do
-  case "$arg" in
-    --force|-f|--force-with-lease|--force-if-includes)
-      echo "BLOCKED: force-push is not allowed in this project." >&2
-      echo "It can permanently erase other people's work. See AGENTS.md." >&2
-      exit 1
-      ;;
-  esac
-done
+zero='0000000000000000000000000000000000000000'
+blocked=0
 
-# git also signals a forced update by passing a '+' prefixed refspec.
 while read -r local_ref local_sha remote_ref remote_sha; do
-  case "$local_ref" in
-    +*) echo "BLOCKED: forced update of $remote_ref is not allowed. See AGENTS.md." >&2; exit 1 ;;
-  esac
+  # Deleting a branch — nothing is being rewritten.
+  case "$local_sha" in *[!0]*) ;; *) continue ;; esac
+  # Brand new branch on GitHub — nothing there yet to overwrite.
+  case "$remote_sha" in *[!0]*) ;; *) continue ;; esac
+
+  if ! git merge-base --is-ancestor "$remote_sha" "$local_sha" 2>/dev/null; then
+    echo "" >&2
+    echo "BLOCKED: this would force-push $remote_ref" >&2
+    echo "" >&2
+    echo "It would erase commits that are already on GitHub. That is how a" >&2
+    echo "session's work was lost on 2026-07-20. AGENTS.md forbids it." >&2
+    echo "" >&2
+    echo "Pull and merge first instead. In a genuine emergency the bypass is" >&2
+    echo "  git push --no-verify" >&2
+    echo "" >&2
+    blocked=1
+  fi
 done
 
-exit 0
+exit $blocked
