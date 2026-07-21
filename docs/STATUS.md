@@ -58,26 +58,28 @@ Branch: `main`. Live app: **https://otto-kohl.vercel.app** (verified working).
 
 ## 3. BROKEN OR RISKY
 
-### 3.1 CRITICAL — the OLD Firebase database is still live and still exposed
+### 3.1 RESOLVED 2026-07-21 — the exposed Firebase database has been deleted
 
-**The app no longer uses Firebase.** As of 2026-07-21 the code was moved to
-Supabase and the Firebase key was deleted from `index.html` entirely. But that
-only stops *this app* from using it. The old Firebase database itself is still
-sitting on Google's servers, still holding a copy of the customer data, and
-still readable by anyone who has the key — and the key is in this project's
-git history, so it is permanently public.
+For the record, because this was the most serious problem the project had:
 
-- Old project: `otto-crm-7f951`
-- Console: https://console.firebase.google.com/project/otto-crm-7f951
-- Verified 2026-07-21: anonymous reads of `customers`, `jobs`, `invoices` all
-  returned HTTP 200 with data. Only status codes and byte sizes were recorded;
-  no customer data was read or stored.
+The old Firebase project `otto-crm-7f951` held a live copy of the customer data
+and its access key was published in `index.html`, so anyone who viewed the page
+source could read every customer, job, and invoice. This was verified as real,
+not theoretical — an anonymous request returned HTTP 200 with data.
 
-**Only the owner can close this**, by getting into that Firebase console and
-either locking the Firestore rules or deleting the project. Until then this
-remains the single largest open risk in the project. Everything currently in
-that database has been exported to local backups, so deleting the project would
-not lose data.
+The owner deleted the project on 2026-07-21. Verified immediately afterwards:
+the same request now returns
+`HTTP 403 — Permission denied on resource project otto-crm-7f951`.
+
+All 43 collections (93 records) were exported to local backups before deletion
+and confirmed readable, then loaded into Supabase and count-checked. No data was
+lost. Google retains a deleted project for 30 days, so recovery is possible until
+approximately 2026-08-20 if anything was missed.
+
+**Lesson worth keeping:** the key is still in this repository's git history and
+always will be. It is dead now, but the pattern is what mattered — a credential
+committed to a repo cannot be un-published, only revoked. See
+[DECISIONS.md](DECISIONS.md) for why the replacement keeps its key server-side.
 
 ### 3.1b Supabase database is live and verified — one step remains
 
@@ -147,8 +149,8 @@ breaks a future deploy.
 
 Before a real person can safely use this with real customers:
 
-1. Close the open database and stop shipping the key (3.1). Nothing else matters
-   until this is done.
+1. ~~Close the open database and stop shipping the key.~~ **Done 2026-07-21** —
+   Firebase deleted, key removed from the code, data moved to Supabase (3.1).
 2. Real per-person sign-in credentials, not shared 4-digit PINs (3.2, 3.3).
 3. Sync that cannot silently erase a colleague's work (2).
 4. A rehearsed backup restore — proof that recovery works, not just that backups exist.
@@ -178,3 +180,6 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   record counts (93 rows total), and an anonymous request is refused with
   `401 permission denied` rather than returning data. Remaining step is setting
   the two Supabase settings in Vercel.
+- 2026-07-21 — Owner deleted the exposed Firebase project `otto-crm-7f951`.
+  Verified: anonymous reads now return `403 Permission denied` where they
+  previously returned `200` with customer data. The data exposure is closed.
