@@ -253,3 +253,11 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   14 closed with the reason written on each. Notable rejections: a security fix
   whose check any value satisfied, and a change that would have put the deleted
   Firebase code back into `index.html`. Accessibility findings filed as #45.
+- 2026-07-21 — Design pass. Fixed a bug on the sign-in screen where the heading
+  read "FIELD TEAM (4896)" — it was printing the length of the generated HTML
+  instead of the number of workers. Collapsed the 15 unassigned field-worker
+  slots behind a "Show unassigned" row so real staff appear first. Met the
+  WCAG AA contrast requirement everywhere (avatars went from 2.26:1 to 4.72:1,
+  red/green/amber buttons all now above 5:1), tied 70 form labels to their
+  inputs, and added spoken names to the icon-only buttons. Accessibility issue
+  #45 is now largely addressed; print styles remain open.
