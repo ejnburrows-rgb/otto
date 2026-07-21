@@ -4,6 +4,39 @@ A dated log of technical choices and why they were made. Plain language. Add a
 new line here whenever a real decision is made — see the DOCUMENTATION DUTY
 section of [../AGENTS.md](../AGENTS.md).
 
+- **2026-07-21** — Cloud sync updates by checking every 20 seconds rather than
+  staying permanently connected for instant updates. Instant updates require each
+  phone to hold an open connection straight to the database, which means the
+  browser must carry a database key — the exact thing whose removal closed the
+  Firebase breach. Twenty seconds is indistinguishable from instant when
+  dispatching a plumber, and it survives basements and crawlspaces where a
+  permanent connection would drop constantly. Worth revisiting once sign-in is
+  enforced on a server rather than in the browser; until then "restrict access to
+  whoever is signed in" does not mean much here.
+
+- **2026-07-21** — Deleting a record hides it instead of destroying it. An
+  accidental delete stays recoverable, invoice history survives for accounting,
+  and a phone that was offline when a delete happened cannot bring the record
+  back to life. Cost: the database keeps rows nobody can see any more.
+
+- **2026-07-21** — Conflicts are settled per whole record by "most recently
+  edited wins", not by merging individual fields. The crew almost always work on
+  different records, so the clash is rare; field-level merging would add real
+  complexity to handle something that seldom happens.
+
+- **2026-07-21** — The cloud sync merge rules exist in two places on purpose:
+  `scripts/sync-merge.mjs` (where they are tested) and inside `index.html` (where
+  they run). The app is deliberately one file with no build step, so it cannot
+  import anything. `scripts/test-inpage-merge.mjs` pulls the rules back out of
+  `index.html` and runs the same tests against them, so the two copies cannot
+  quietly drift apart.
+
+- **2026-07-21** — Replaced the GitHub Pages deploy workflow with one that runs
+  the tests. Pages was never switched on, so that workflow had failed on every
+  push since it was written. A permanently red tick teaches everyone to ignore
+  failures, which is worse than having no check at all. The live site is on
+  Vercel and deploys itself.
+
 - **2026-07-21** — Migrated backend from Firebase to Supabase; old Firebase DB
   pending shutdown. The Firebase database was publicly readable and the owner
   could not get into its console to lock it, so the project moved to Supabase,

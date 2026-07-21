@@ -32,17 +32,23 @@ Branch: `main`. Live app: **https://otto-kohl.vercel.app** (verified working).
 - **Inbound email webhook is now secured.** It requires `INBOUND_WEBHOOK_TOKEN`
   and returns 401 (unauthorized) without it — this closes the prompt-injection
   path into "Ask OTTO" that an earlier sweep flagged.
-- **Cloud sync split per collection.** Firestore writes now go to one document
-  per collection instead of one giant document.
+- **Automated tests.** 57 checks run with `npm test`: the cloud sync merge rules,
+  the same rules as embedded in `index.html` (so the two copies cannot drift),
+  and the sign-in code handling. A further 9 drive the real app in a real browser
+  (`node scripts/test-signin-browser.mjs`). They run on every push via GitHub.
 - **CSV export** for every record type, including QuickBooks-format invoices.
 - **Documentation standard** — `AGENTS.md` plus this file and `DECISIONS.md`.
 
 ## 2. HALF-DONE — started, not finished
 
-- **Cloud sync conflict handling.** Splitting into per-collection documents helps,
-  but each push still overwrites a whole collection. If two people edit different
-  customers at the same time, one person's change can still be silently erased.
-  Not safe for 19 people working at once.
+- **Cloud sync conflict handling — rewritten 2026-07-21, not yet proven in the
+  field.** Records now merge one at a time instead of collections being
+  overwritten, so two people editing different customers no longer erase each
+  other. Deleting hides a record rather than destroying it. The app now checks
+  for other people's changes every 20 seconds while it is open instead of only at
+  startup. 22 automated tests cover the merge rules. What is *not* proven is 19
+  real phones on real Miami cell service — expect a week of actual crew use
+  before trusting it.
 - **Backups.** Local snapshots with a checksum (a fingerprint that detects
   corruption) and a restore log exist. True offsite, write-once backup does not —
   and no restore has actually been rehearsed, so "we can recover" is unproven.
@@ -108,42 +114,80 @@ switched off. The app still works — it runs from each device, as designed.
 Set both in Vercel → Settings → Environment Variables, then redeploy. The secret
 key belongs only in Vercel and a local `.env` file — never in the code.
 
-### 3.2 Sign-in is weak
+### 3.2 Sign-in — hardened 2026-07-21, but still browser-only
 
-- PINs are stored, compared, and displayed in plain text (`u.pin`,
-  `if (pin === selUser.pin)`), and the Team screen shows each person's PIN in an
-  editable box.
-- PINs are 4 digits with no lockout, so guessing is easy.
-- All checks happen in the browser, so anyone able to edit the page in their own
-  browser can bypass them. For a CRM holding client data this is not adequate.
+Fixed on 2026-07-21:
 
-### 3.3 Demo PINs — removed from the docs, still live in the app
+- PINs are no longer stored as readable numbers. Each person has a random salt
+  and only a fingerprint (hash) is kept. Existing PINs convert automatically on
+  first load; nobody is locked out or asked to re-enter anything.
+- The Team screen no longer displays anyone's PIN. It offers an empty box to set
+  a new one, and leaving it blank keeps the current code.
+- Five wrong tries now forces a 60-second wait, per person, so all 10,000
+  combinations can no longer be tried.
+- The owner's extra code (MFA) gets the same treatment.
+- **Removed a much worse problem found while doing this:** startup code was
+  resetting every person's PIN back to a hardcoded value on *every launch*. The
+  owner could not actually change anybody's sign-in code — it came back the next
+  time the app opened. Those hardcoded codes were the ones published in the docs.
 
-The PIN values were taken out of `docs/DEPLOYMENT_CHECKLIST.md` on 2026-07-21.
-They remain in the project's git history permanently, so **the codes themselves
-still need to be changed inside the app** (Team screen). Until that happens,
-anyone who reads the old history can sign in.
+**Still true, and it is a real limit:** all checking happens in the browser, so
+somebody able to edit the page in their own browser can still get past the
+sign-in screen. This removed the obvious weaknesses; it did not make the app
+bank-grade. Real enforcement needs sign-in to happen on a server.
 
-### 3.4 `package.json` scripts do not run
+### 3.3 The published PINs still need changing — OWNER ACTION
 
-`dev`, `start`, and `preview` all point at `/home/daytona/codebase`, a folder from
-a different (cloud) machine. On this computer use `python -m http.server 8000`.
+The values were removed from the documentation on 2026-07-21, and the startup
+code that kept resetting them was removed the same day. But they remain in the
+project's git history permanently, so **the codes themselves must be changed in
+the app**: Team screen, pick a person, type a new PIN, save.
 
-### 3.5 Project history was force-pushed
+Until that is done, anyone who reads the old history can sign in. This is now a
+two-minute job and nothing else blocks it.
+
+### 3.4 FIXED 2026-07-21 — `package.json` scripts
+
+They pointed at `/home/daytona/codebase`, a folder on a different machine, and
+called `python3`. They now run the project's own Node server. `npm start` serves
+the app on http://localhost:8000, `npm test` runs the automated checks, `npm run
+qa` runs the wider check.
+
+### 3.5 Force-pushing is now blocked on this computer
 
 Between 2026-07-20 and 2026-07-21 the `main` branch history was rewritten and
-force-pushed by another tool. Every commit ID changed, and a previously pushed
-branch (`feat/otto-finish`) disappeared from GitHub, taking a session's
-documentation work with it — recovered from a local copy. `AGENTS.md` forbids
-force-pushing precisely because it destroys work like this. Whatever automation
-did this needs to stop.
+force-pushed by another tool. Every commit id changed and a previously pushed
+branch (`feat/otto-finish`) vanished from GitHub, taking a session's work with
+it — recovered from a local copy.
 
-### 3.6 `vercel.json` routing pattern is malformed
+A `pre-push` hook now refuses any push that would erase commits already on
+GitHub (`.githooks/pre-push`, switched on with
+`git config core.hooksPath .githooks`). It was tested against a real force push
+on a throwaway branch: blocked, while ordinary pushes still work.
 
-The rule `{"src": "/^.*$", "dest": "/index.html"}` mixes a path and a regular
-expression (a text-matching pattern). Vercel currently tolerates it and the site
-works, but it is fragile and should be corrected or removed before it silently
-breaks a future deploy.
+**This only protects this computer.** GitHub's own branch protection, which would
+protect the repository from everything and everyone, needs a paid GitHub plan on
+a private repository — see NEEDS OWNER DECISION. The culprit was never
+identified; several agent-created branches (`main-<numbers>`, `jules-<numbers>`)
+exist on the remote and one of them is the likely source.
+
+### 3.6 FIXED 2026-07-21 — `vercel.json` routing
+
+The rule `{"src": "/^.*$", "dest": "/index.html"}` mixed a path with a regular
+expression and almost certainly never matched anything. It was removed rather
+than rewritten: the app never reads or changes the web address (navigation is
+held in memory), so there are no deep links needing a fallback rule.
+
+### 3.7 FIXED 2026-07-21 — the GitHub deploy that never worked
+
+A workflow tried to publish the app to GitHub Pages on every push. Pages was
+never switched on for this repository, so it failed every single time — a red
+cross on every commit, which trains everyone to ignore failures. The live site is
+on Vercel and deploys itself, so nothing was ever actually broken by this.
+
+It was replaced with a workflow that runs the automated checks instead. Also
+confirmed while doing this: no second public copy of the app was ever published,
+so the old Firebase key was not exposed there as well.
 
 ## 4. MISSING FOR LAUNCH
 
@@ -189,3 +233,11 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   fault: if the server failed to return one collection, the app replaced that
   collection with nothing and saved it, destroying good records over a
   temporary glitch. It now keeps the device's copy in that case.
+- 2026-07-21 — Large batch of work, all verified: migrated the inbound email
+  webhook off the deleted Firebase database; rewrote cloud sync to merge record
+  by record with soft deletes and 20-second polling (#22); stored sign-in codes
+  as salted fingerprints with a wrong-attempt lockout (#23); removed startup code
+  that was silently resetting every PIN back to its published value on every
+  launch; fixed the npm scripts (#19) and the Vercel routing rule (#20); replaced
+  a GitHub deploy that had never once worked with a workflow that runs the tests;
+  blocked force-pushing with a git hook; stopped tracking node_modules.
