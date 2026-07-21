@@ -138,3 +138,4 @@ time and git reports a conflict here, the correct fix is to keep both lines.
 
 - 2026-07-21 — Full sweep of code and live site; corrected the previous status
   report; filed the remaining work as numbered tasks in `docs/issues/`.
+- 2026-07-21 — Corrected the malformed Vercel routing rule in vercel.json following Option A, removing the unnecessary rule and simplifying the configuration.
