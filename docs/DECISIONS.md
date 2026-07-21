@@ -116,3 +116,6 @@ isn't lost.
 - The previous product — a Dream Cooling (HVAC) CRM — was kept as
   `legacy/dream-cooling-crm.html`, explicitly for rollback reference only,
   rather than deleted, when the business pivoted to OTTO Plumbing.
+
+## 2026-07-21 — Replaced deprecated var in interact.js listener
+Changed `var` declarations to `const` inside the `move` event listener of the interact.js initialization block in `index.html` because those variables are not reassigned and `const` provides better block-scoping guarantees.
