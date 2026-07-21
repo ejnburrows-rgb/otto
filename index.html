@@ -620,7 +620,7 @@
       pending: 'Pending', listen: 'Listening…', speakNow: 'Speak now', addNote: 'Add note',
       takePhoto: 'Take / choose photo', uploadDoc: 'Upload document', scanDoc: 'Scan document',
       clockIn: 'Share my location', located: 'Location saved', signIn: 'Sign In', pickUser: 'Who are you?',
-      enterPin: 'Enter your PIN', wrongPin: 'Wrong PIN', signOut: 'Sign Out', role: 'Role',
+      enterPin: 'Enter your PIN', wrongPin: 'Wrong PIN', tooManyTries: 'Too many wrong tries. Wait {s} seconds.', signOut: 'Sign Out', role: 'Role',
       owner: 'Owner', office: 'Office Manager', field: 'Field Worker', accounting: 'Accounting', ops: 'Operations Manager', logging: 'Logging / IT',
       total: 'Total', thisMonth: 'This month', outstanding: 'Outstanding', activeJobs: 'Active jobs',
       askPlaceholder: 'Ask about a job, customer, or how-to…', send: 'Send',
@@ -703,7 +703,7 @@
       pending: 'Pendiente', listen: 'Escuchando…', speakNow: 'Hable ahora', addNote: 'Agregar nota',
       takePhoto: 'Tomar / elegir foto', uploadDoc: 'Subir documento', scanDoc: 'Escanear documento',
       clockIn: 'Compartir mi ubicación', located: 'Ubicación guardada', signIn: 'Entrar', pickUser: '¿Quién eres?',
-      enterPin: 'Ingresa tu PIN', wrongPin: 'PIN incorrecto', signOut: 'Salir', role: 'Rol',
+      enterPin: 'Ingresa tu PIN', wrongPin: 'PIN incorrecto', tooManyTries: 'Demasiados intentos. Espera {s} segundos.', signOut: 'Salir', role: 'Rol',
       owner: 'Dueño', office: 'Gerente de Oficina', field: 'Trabajador', accounting: 'Contabilidad', ops: 'Gerente de Operaciones', logging: 'Registro / TI',
       total: 'Total', thisMonth: 'Este mes', outstanding: 'Por cobrar', activeJobs: 'Trabajos activos',
       askPlaceholder: 'Pregunta sobre un trabajo, cliente o cómo hacer algo…', send: 'Enviar',
@@ -981,6 +981,85 @@
   /* file blobs (photos, documents, CAD) stored separately */
   async function storeFile(blob) { const id = 'f_' + uid(); await idbPut('files', id, blob); return id; }
   async function getFileURL(id) { const b = await idbGet('files', id); return b ? URL.createObjectURL(b) : null; }
+
+  /* ============================ sign-in codes ============================ */
+  /* PINs are not stored as readable numbers. Each user gets a random "salt" (an
+     extra random value mixed in) and we store only a hash (a one-way scrambled
+     fingerprint — you can check whether a typed PIN matches it, but you cannot
+     read the original PIN back out of it). Two people using the same PIN get
+     different fingerprints because their salts differ.
+
+     Be clear about the limit: this app has no login server, so someone who can
+     edit the page in their own browser can still get past the sign-in screen.
+     This removes the obvious weaknesses — readable stored PINs, PINs shown on
+     screen, and unlimited guessing — it does not make the app bank-grade. Real
+     enforcement needs sign-in to happen on a server. */
+
+  /* crypto.subtle only exists on https and localhost. If someone opens
+     index.html straight off the disk it is missing, so we fall back to the old
+     readable comparison rather than locking everybody out. */
+  const _canHash = !!(window.crypto && window.crypto.subtle);
+
+  function randomSalt() {
+    const bytes = new Uint8Array(16);
+    window.crypto.getRandomValues(bytes);
+    return [...bytes].map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+  async function hashPin(pin, salt) {
+    const data = new TextEncoder().encode(`${salt}:${pin}`);
+    const digest = await window.crypto.subtle.digest('SHA-256', data);
+    return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+  /* Stores a PIN as salt + fingerprint, and removes any readable copy. */
+  async function setUserPin(user, pin, field = 'pin') {
+    if (!_canHash) { user[field] = pin; return; }
+    const salt = randomSalt();
+    user[`${field}Salt`] = salt;
+    user[`${field}Hash`] = await hashPin(pin, salt);
+    delete user[field];
+  }
+  /* True if the typed PIN matches what is stored for this user. */
+  async function verifyPin(user, pin, field = 'pin') {
+    if (!user) return false;
+    const salt = user[`${field}Salt`], hash = user[`${field}Hash`];
+    if (salt && hash && _canHash) return (await hashPin(pin, salt)) === hash;
+    // Not converted yet (or hashing unavailable) — fall back to the old check.
+    return user[field] != null && String(user[field]) === String(pin);
+  }
+  function hasPin(user, field = 'pin') {
+    return !!(user && (user[`${field}Hash`] || user[field]));
+  }
+  /* Converts any readable PIN still stored on a user into a fingerprint. Runs
+     once at startup; nobody is locked out and nobody is asked to re-enter
+     anything. */
+  async function migratePlainPins() {
+    if (!_canHash) return;
+    let converted = 0;
+    for (const user of (db.users || [])) {
+      if (user.pin) { await setUserPin(user, String(user.pin), 'pin'); converted++; }
+      if (user.mfaPin) { await setUserPin(user, String(user.mfaPin), 'mfaPin'); converted++; }
+    }
+    if (converted) { console.log('converted', converted, 'stored codes to fingerprints'); save(); }
+  }
+
+  /* Wrong-attempt lockout. Kept on the device, per user. */
+  const MAX_PIN_ATTEMPTS = 5, LOCKOUT_MS = 60000;
+  function _attemptKey(userId) { return `otto_attempts_${userId}`; }
+  function pinLockRemainingMs(userId) {
+    try {
+      const rec = JSON.parse(localStorage.getItem(_attemptKey(userId)) || 'null');
+      if (rec && rec.until && rec.until > Date.now()) return rec.until - Date.now();
+    } catch (e) { }
+    return 0;
+  }
+  function recordFailedPin(userId) {
+    let rec = { count: 0, until: 0 };
+    try { rec = JSON.parse(localStorage.getItem(_attemptKey(userId)) || 'null') || rec; } catch (e) { }
+    rec.count = (rec.count || 0) + 1;
+    if (rec.count >= MAX_PIN_ATTEMPTS) { rec.until = Date.now() + LOCKOUT_MS; rec.count = 0; }
+    localStorage.setItem(_attemptKey(userId), JSON.stringify(rec));
+  }
+  function clearFailedPins(userId) { localStorage.removeItem(_attemptKey(userId)); }
 
   /* ============================ cloud sync (Supabase, via our own server) ============================ */
   /* The browser never holds a database key. It calls /api/data on our own site,
@@ -1283,14 +1362,28 @@
     window.__pick = (id) => { selUser = get('users', id); pin = ''; draw(); };
     window.__back2 = () => { selUser = null; pin = ''; draw(); };
     window.__pinDel = () => { pin = pin.slice(0, -1); draw(); };
-    window.__pin = (n) => {
+    window.__pin = async (n) => {
+      const locked = pinLockRemainingMs(selUser.id);
+      if (locked > 0) {
+        toast(t('tooManyTries').replace('{s}', Math.ceil(locked / 1000)), 'error');
+        pin = ''; draw(); return;
+      }
       pin += n; draw();
       if (pin.length === 4) {
-        if (pin === selUser.pin) {
+        const typed = pin;
+        pin = ''; // clear immediately so a slow check cannot be typed past
+        if (await verifyPin(selUser, typed)) {
+          clearFailedPins(selUser.id);
           // Second factor for owner/admin if an extra code is configured.
-          if ((selUser.role === 'owner') && selUser.mfaPin) { askMfa(selUser); return; }
+          if ((selUser.role === 'owner') && hasPin(selUser, 'mfaPin')) { askMfa(selUser); return; }
           finishLogin(selUser);
-        } else { toast(t('wrongPin'), 'error'); pin = ''; setTimeout(draw, 400); }
+        } else {
+          recordFailedPin(selUser.id);
+          const waitMs = pinLockRemainingMs(selUser.id);
+          if (waitMs > 0) toast(t('tooManyTries').replace('{s}', Math.ceil(waitMs / 1000)), 'error');
+          else toast(t('wrongPin'), 'error');
+          setTimeout(draw, 400);
+        }
       }
     };
     function finishLogin(u) {
@@ -1298,9 +1391,13 @@
       if (u.lang) setLang(u.lang);
       if (typeof audit === 'function') audit('auth.login', 'user', u.id);
       startApp();
-      if (u.pin === '0721' || (u.name && u.name.includes('Otto'))) document.body.className = 'theme-otto';
-      else if (u.pin === '0722' || (u.name && (u.name.includes('Principe') || u.name.includes('Príncipe')))) document.body.className = 'theme-principe';
-      else if (u.pin === '0723' || (u.name && u.name.includes('Sarays'))) document.body.className = 'theme-sarays';
+      // Personal colour scheme, chosen by name. This used to compare PIN values
+      // directly, which stopped working once PINs became fingerprints — and
+      // picking a theme from a secret was a poor idea anyway.
+      const who = u.name || '';
+      if (who.includes('Otto')) document.body.className = 'theme-otto';
+      else if (who.includes('Principe') || who.includes('Príncipe')) document.body.className = 'theme-principe';
+      else if (who.includes('Sarays')) document.body.className = 'theme-sarays';
       else document.body.className = '';
     }
     function askMfa(u) {
@@ -1309,7 +1406,21 @@
         <div class="card-login"><div class="pindots">${[0,1,2,3].map(i=>`<span class="${i<m.length?'f':''}"></span>`).join('')}</div>
         <div class="pinpad">${[1,2,3,4,5,6,7,8,9].map(n=>`<button onclick="window.__mfa('${n}')">${n}</button>`).join('')}<button onclick="window.__back2()"><i class="fas fa-arrow-left"></i></button><button onclick="window.__mfa('0')">0</button><button onclick="window.__mfaDel()"><i class="fas fa-delete-left"></i></button></div></div>`; };
       window.__mfaDel = () => { m = m.slice(0, -1); drawM(); };
-      window.__mfa = (n) => { m += n; drawM(); if (m.length === 4) { if (m === u.mfaPin) finishLogin(u); else { toast(t('wrongPin'), 'error'); m = ''; setTimeout(drawM, 400); } } };
+      window.__mfa = async (n) => {
+        const locked = pinLockRemainingMs(u.id + '_mfa');
+        if (locked > 0) { toast(t('tooManyTries').replace('{s}', Math.ceil(locked / 1000)), 'error'); m = ''; drawM(); return; }
+        m += n; drawM();
+        if (m.length === 4) {
+          const typed = m; m = '';
+          if (await verifyPin(u, typed, 'mfaPin')) { clearFailedPins(u.id + '_mfa'); finishLogin(u); }
+          else {
+            recordFailedPin(u.id + '_mfa');
+            const waitMs = pinLockRemainingMs(u.id + '_mfa');
+            toast(waitMs > 0 ? t('tooManyTries').replace('{s}', Math.ceil(waitMs / 1000)) : t('wrongPin'), 'error');
+            setTimeout(drawM, 400);
+          }
+        }
+      };
       drawM();
     };
     draw();
@@ -2235,16 +2346,26 @@
     modal(`<h2>${id ? t('edit') : t('addTeam')}</h2>
       <div class="field"><label>${t('name')}</label><input id="u-name" value="${esc(u.name || '')}"></div>
       <div class="field"><label>${t('role')}</label><select id="u-role">${['owner', 'office', 'field'].map(r => `<option value="${r}" ${u.role === r ? 'selected' : ''}>${t(r)}</option>`).join('')}</select></div>
-      <div class="row2"><div class="field"><label>PIN</label><input id="u-pin" inputmode="numeric" maxlength="4" value="${esc(u.pin || '')}"></div>
+      <div class="row2"><div class="field"><label>${id ? (lang === 'es' ? 'Nuevo PIN (opcional)' : 'Set a new PIN (optional)') : 'PIN'}</label><input id="u-pin" type="password" inputmode="numeric" maxlength="4" value="" placeholder="${id ? (lang === 'es' ? 'Dejar vacío para no cambiar' : 'Leave empty to keep current') : '••••'}"></div>
       <div class="field"><label>${lang === 'es' ? 'Idioma' : 'Language'}</label><select id="u-lang"><option value="en" ${u.lang === 'en' ? 'selected' : ''}>English</option><option value="es" ${u.lang === 'es' ? 'selected' : ''}>Español</option></select></div></div>
       <button class="btn block" onclick="saveUser('${id || ''}')"><i class="fas fa-check"></i> ${t('save')}</button>
       ${id && db.users.length > 1 ? `<button class="btn red block" style="margin-top:10px" onclick="confirmDel(()=>{remove('users','${id}');closeModal();render()})"><i class="fas fa-trash"></i> ${t('delete')}</button>` : ''}`);
   }
-  function saveUser(id) {
+  async function saveUser(id) {
     const name = $('#u-name').value.trim(); if (!name) return toast(t('name') + '?', 'error');
-    const pin = $('#u-pin').value.trim(); if (!/^\d{4}$/.test(pin)) return toast('PIN = 4 #', 'error');
-    const data = { name, role: $('#u-role').value, pin, lang: $('#u-lang').value };
-    if (id) update('users', id, data); else add('users', data);
+    const pin = $('#u-pin').value.trim();
+    // On an existing person, an empty box means "keep their current code".
+    if (!id && !/^\d{4}$/.test(pin)) return toast('PIN = 4 #', 'error');
+    if (pin && !/^\d{4}$/.test(pin)) return toast('PIN = 4 #', 'error');
+
+    const data = { name, role: $('#u-role').value, lang: $('#u-lang').value };
+    const user = id ? update('users', id, data) : add('users', data);
+    if (pin) {
+      await setUserPin(user, pin);
+      clearFailedPins(user.id);          // a new code clears any lockout
+      user.updated = nowISO();
+      save();
+    }
     closeModal(); toast(t('saved'), 'success'); render();
   }
 
@@ -2288,7 +2409,8 @@
       html += `<div class="section-title"><i class="fas fa-shield-halved"></i> ${t('security')}</div>
         <div class="card" style="padding:14px">
           <div class="muted" style="margin-bottom:10px">${lang === 'es' ? 'Código extra de 4 dígitos que se pedirá al entrar como dueño. Déjalo vacío para desactivar.' : '4-digit extra code asked at owner login. Leave blank to disable.'}</div>
-          <div class="field"><label>${t('mfaOwner')}</label><input id="set-mfa" type="password" inputmode="numeric" maxlength="4" value="${esc(session.mfaPin || '')}" placeholder="••••"></div>
+          <div class="field"><label>${t('mfaOwner')}</label><input id="set-mfa" type="password" inputmode="numeric" maxlength="4" value="" placeholder="${hasPin(session, 'mfaPin') ? (lang === 'es' ? 'Configurado — escribe para cambiar' : 'Set — type to change') : '••••'}"></div>
+          ${hasPin(session, 'mfaPin') ? `<button class="btn ghost block" style="margin-top:8px" onclick="clearMfa()"><i class="fas fa-xmark"></i> ${lang === 'es' ? 'Quitar código extra' : 'Remove extra code'}</button>` : ''}
           <button class="btn block" onclick="saveMfa()"><i class="fas fa-check"></i> ${t('save')}</button>
         </div>`;
     }
@@ -3997,37 +4119,27 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     document.documentElement.setAttribute('data-theme', localStorage.getItem('otto_theme') || 'dark');
     await load();
     
-    // Force PIN & name updates for requested users if they exist
+    /* Keep names and roles consistent for the fixed set of 19 people.
+       This used to reset everyone's PIN to a hardcoded value on EVERY startup,
+       which meant the owner could not actually change anybody's sign-in code —
+       it came back the next time the app opened. Those codes were also
+       published in the project's documentation and remain in its git history.
+       PIN setting now lives only in the Team screen, where the owner controls
+       it. Do not reintroduce codes here. */
     let _changed = false;
-    const fixUser = (id, p, name, role) => { 
-      const u = get('users', id); 
+    const fixUser = (id, name, role) => {
+      const u = get('users', id);
       if (u) {
-        if (u.pin !== p) { u.pin = p; _changed = true; }
         if (typeof name === 'string' && u.name !== name) { u.name = name; _changed = true; }
         if (role && u.role !== role) { u.role = role; _changed = true; }
       }
     };
-    fixUser('owner-1', '0721', 'Otto');
-    fixUser('owner-2', '0722', 'El Príncipe');
-    fixUser('ops-1', '0723', 'Sarays');
-    fixUser('it-1', '0724', 'Taylor Kim - Logs/IT');
-    // Ensure all 15 field workers have correct PINs and empty names
-    fixUser('field-1', '0715', '', 'field');
-    fixUser('field-2', '0716', '', 'field');
-    fixUser('field-3', '0717', '', 'field');
-    fixUser('field-4', '0718', '', 'field');
-    fixUser('field-5', '0719', '', 'field');
-    fixUser('field-6', '0720', '', 'field');
-    fixUser('field-7', '0725', '', 'field');
-    fixUser('field-8', '0726', '', 'field');
-    fixUser('field-9', '0727', '', 'field');
-    fixUser('field-10', '0728', '', 'field');
-    fixUser('field-11', '0729', '', 'field');
-    fixUser('field-12', '0730', '', 'field');
-    fixUser('field-13', '0731', '', 'field');
-    fixUser('field-14', '0732', '', 'field');
-    fixUser('field-15', '0733', '', 'field');
-    
+    fixUser('owner-1', 'Otto');
+    fixUser('owner-2', 'El Príncipe');
+    fixUser('ops-1', 'Sarays');
+    fixUser('it-1', 'Taylor Kim - Logs/IT');
+    for (let i = 1; i <= 15; i++) fixUser('field-' + i, '', 'field');
+
     // Clean up legacy duplicated users (keep only the exact 19)
     const validIds = ['owner-1','owner-2','ops-1','it-1','field-1','field-2','field-3','field-4','field-5','field-6','field-7','field-8','field-9','field-10','field-11','field-12','field-13','field-14','field-15'];
     const oldUsers = db.users.filter(u => !validIds.includes(u.id) || ['Owner', 'Office', 'Field Worker', 'Accounting', 'Employee Three', 'Employee Four', 'Employee Five'].includes(u.name));
@@ -4052,6 +4164,7 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     // Try cloud pull on boot (best-effort). If the server has no database
     // configured it answers 503 and the app just runs from this device.
     backfillUpdatedStamps();
+    await migratePlainPins();
     try { _cloudAvailable = await cloudPull(); } catch (e) { }
     startCloudPolling();
     const sid = localStorage.getItem('otto_session');
@@ -4066,7 +4179,25 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     save();
     toast(t('saved'), 'success'); 
   }
-  function saveMfa() { const v = ($('#set-mfa').value || '').trim(); const ok = /^\d{4}$/.test(v) || v === ''; if (!ok) return toast(lang === 'es' ? '4 dígitos' : '4 digits', 'error'); update('users', session.id, { mfaPin: v }); session.mfaPin = v; audit('security.mfa_set', 'user', session.id, { enabled: !!v }); toast(t('saved'), 'success'); }
+  async function saveMfa() {
+    const v = ($('#set-mfa').value || '').trim();
+    if (v === '') return toast(lang === 'es' ? 'Escribe 4 dígitos' : 'Type 4 digits', 'error');
+    if (!/^\d{4}$/.test(v)) return toast(lang === 'es' ? '4 dígitos' : '4 digits', 'error');
+    const user = get('users', session.id) || session;
+    await setUserPin(user, v, 'mfaPin');
+    user.updated = nowISO(); save();
+    session = user;
+    audit('security.mfa_set', 'user', session.id, { enabled: true });
+    toast(t('saved'), 'success'); render();
+  }
+  function clearMfa() {
+    const user = get('users', session.id) || session;
+    delete user.mfaPin; delete user.mfaPinSalt; delete user.mfaPinHash;
+    user.updated = nowISO(); save();
+    session = user;
+    audit('security.mfa_set', 'user', session.id, { enabled: false });
+    toast(t('saved'), 'success'); render();
+  }
   // expose functions used in inline handlers
   /* ============================ OWNER KPI DASHBOARD ============================ */
   let kpiMode = 'summary'; // 'summary' or 'aggregate'
@@ -4550,7 +4681,15 @@ Return ONLY valid JSON: { "fixtures": [], "pipes": [], "fittings": [], "notes": 
     toast(t('saved'), 'success');
   }
 
-  Object.assign(window, { __db: () => db, setSearch, saveAIKey, saveMfa, t, toast, closeModal, modal,
+  /* Hooks used only by the automated tests in scripts/. They expose existing
+     behaviour for checking; they do not add any new ability. */
+  Object.assign(window, {
+    __save: () => save(), __verifyPin: (u, p, f) => verifyPin(u, p, f),
+    __recordFailedPin: (id) => recordFailedPin(id), __clearFailedPins: (id) => clearFailedPins(id),
+    __pinLockRemaining: (id) => pinLockRemainingMs(id),
+    __mergeCollections: (a, b) => mergeCollections(a, b)
+  });
+  Object.assign(window, { __db: () => db, setSearch, saveAIKey, saveMfa, clearMfa, t, toast, closeModal, modal,
     setLang, nav, back, signOut, quickAdd, openMore, get, remove, update, confirmDel, render,
     newCall, saveCall, jobFromCall, openCallView, openCustomerForm, saveCustomer, openJobForm, saveJob, changeJobStatus, setJobStatus,
     openNoteForm, saveNote, quickPhoto, chooseJob, runJobAction, uploadDoc, openDoc, quickVoiceNote, voiceInto,

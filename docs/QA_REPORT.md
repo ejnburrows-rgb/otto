@@ -1,13 +1,13 @@
 # OTTO QA Report
 
-**Run:** 2026-07-21T06:26:52.302Z
+**Run:** 2026-07-21T06:33:12.723Z
 **Overall:** PASS (with notes below)
 
 ## Button wiring
-- Functions in app: 351
-- Buttons checked: 113
+- Functions in app: 369
+- Buttons checked: 114
 - Broken buttons: NONE
-- New features not on window export list: NONE (browser still OK)
+- New features not on window export list: photoScanCreateCustomer, viewUrgentHub, openUrgentForm, submitUrgentMessage, replyUrgent, resolveUrgent, connectQuickBooks, saveNotifyPrefs, refreshIntegrationStatus
 
 ## Spanish labels
 - Missing Spanish translations: 0
@@ -17,7 +17,7 @@
 
 ## Live checks
 - prod: OK 200
-- local: FAIL 0
+- local: OK 200
 - guide: OK 200
 - manifest: OK 200
 - sw: OK 200
@@ -30,11 +30,21 @@
 ## JSON
 ```json
 {
-  "ts": "2026-07-21T06:26:52.302Z",
-  "functions": 351,
-  "onclickCalls": 113,
+  "ts": "2026-07-21T06:33:12.723Z",
+  "functions": 369,
+  "onclickCalls": 114,
   "missingHandlers": [],
-  "notOnWindowExport": [],
+  "notOnWindowExport": [
+    "photoScanCreateCustomer",
+    "viewUrgentHub",
+    "openUrgentForm",
+    "submitUrgentMessage",
+    "replyUrgent",
+    "resolveUrgent",
+    "connectQuickBooks",
+    "saveNotifyPrefs",
+    "refreshIntegrationStatus"
+  ],
   "missingSpanishKeys": [],
   "missingSpanishCount": 0,
   "collections": 42,
@@ -45,9 +55,8 @@
       "ok": true
     },
     "local": {
-      "status": 0,
-      "ok": false,
-      "error": ""
+      "status": 200,
+      "ok": true
     },
     "guide": {
       "status": 200,
