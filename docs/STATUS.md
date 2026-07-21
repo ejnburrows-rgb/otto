@@ -100,10 +100,12 @@ only the owner can retrieve. Until it is run:
 - All checks happen in the browser, so anyone able to edit the page in their own
   browser can bypass them. For a CRM holding client data this is not adequate.
 
-### 3.3 Demo PINs published
+### 3.3 Demo PINs — removed from the docs, still live in the app
 
-`docs/DEPLOYMENT_CHECKLIST.md` lists Owner PIN `0721` and Field PIN `0715` and
-describes them as crew logins. They are also in the git history.
+The PIN values were taken out of `docs/DEPLOYMENT_CHECKLIST.md` on 2026-07-21.
+They remain in the project's git history permanently, so **the codes themselves
+still need to be changed inside the app** (Team screen). Until that happens,
+anyone who reads the old history can sign in.
 
 ### 3.4 `package.json` scripts do not run
 
