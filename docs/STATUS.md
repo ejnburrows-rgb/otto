@@ -248,3 +248,8 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   101 checks), parallel attachment loading when opening an email (measured 238ms
   to 103ms), parallel cleanup of old backup files (109ms to 44ms), and a `var`
   to `const` tidy-up. Rejected the rest, with reasons on each pull request.
+- 2026-07-21 — Cleared the pull request backlog: 22 open PRs reviewed, 8 merged
+  (tests, two measured speed-ups, a tidy-up, and the accessibility audit),
+  14 closed with the reason written on each. Notable rejections: a security fix
+  whose check any value satisfied, and a change that would have put the deleted
+  Firebase code back into `index.html`. Accessibility findings filed as #45.
