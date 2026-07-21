@@ -261,3 +261,12 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   red/green/amber buttons all now above 5:1), tied 70 form labels to their
   inputs, and added spoken names to the icon-only buttons. Accessibility issue
   #45 is now largely addressed; print styles remain open.
+- 2026-07-21 — Added printable invoices and estimates. A Print button on each
+  produces a plain black-on-white document — company details, customer, work
+  description, amount, what has been paid, balance, and terms — instead of
+  printing the app interface. Use the browser's "Save as PDF" option to email
+  one to a customer. Works in English and Spanish.
+- 2026-07-21 — Fixed a date fault found while building the above: any date
+  entered as a plain day (a job date, an invoice due date, time off) displayed
+  one day EARLIER than it should. A due date of the 15th printed as the 14th on
+  customer invoices. Affected the whole app, not just printing.
