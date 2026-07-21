@@ -1592,9 +1592,9 @@
   }
 
   /* ---------- shared building blocks ---------- */
-  function pageHead(title, sub, withBack) {
+  function pageHead(title, sub, withBack, actions) {
     return `<div class="pagehead">${withBack ? `<button class="back" onclick="${withBack}"><i class="fas fa-arrow-left"></i></button>` : ''}
-      <div><h1>${esc(title)}</h1>${sub ? `<div class="sub">${esc(sub)}</div>` : ''}</div></div>`;
+      <div><h1>${esc(title)}</h1>${sub ? `<div class="sub">${esc(sub)}</div>` : ''}</div>${actions || ''}</div>`;
   }
   function searchBox(id, ph) { return `<div class="searchbar"><i class="fas fa-magnifying-glass"></i><input id="${id}" aria-label="${esc(ph || t('search'))}" placeholder="${esc(ph || t('search'))}" oninput="render()" value="${esc(_search[id] || '')}"></div>`; }
   const _search = {};
@@ -4636,7 +4636,7 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
   }
 
   function viewInbox() {
-    let html = pageHead(t('inbox'), `<button class="btn" onclick="fetchNewEmails()"><i class="fas fa-rotate"></i> ${t('inboxRefresh')}</button>`);
+    let html = pageHead(t('inbox'), '', null, `<button class="btn" onclick="fetchNewEmails()"><i class="fas fa-rotate"></i> ${t('inboxRefresh')}</button>`);
     const list = [...db.inbox_emails].sort((a,b) => new Date(b.receivedAt) - new Date(a.receivedAt));
     if (!list.length) {
       html += `<div class="card" style="padding:20px;text-align:center"><div class="muted">${t('noInboxMessages')}</div></div>`;

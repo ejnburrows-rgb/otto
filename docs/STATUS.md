@@ -270,3 +270,10 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   entered as a plain day (a job date, an invoice due date, time off) displayed
   one day EARLIER than it should. A due date of the 15th printed as the 14th on
   customer invoices. Affected the whole app, not just printing.
+- 2026-07-21 — Fixed the Inbox "Refresh" button (Wave 4) showing as literal
+  escaped HTML text instead of a real button. `pageHead()` now takes a fourth
+  `actions` parameter for trusted action HTML that is never passed through
+  `esc()`, and `viewInbox()` uses it instead of stuffing the button into the
+  `sub` argument (which is correctly still escaped for real subtitle text).
+  No other screen's header changed. `npm test` (57 checks) and
+  `node scripts/qa-check.mjs` both pass.
