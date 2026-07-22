@@ -863,10 +863,10 @@
       <a href="#contact" class=""><i class="fas fa-envelope"></i></a>
     </div>
     <div class="sidebar-bottom">
-      <button class="lang-toggle">
+      <div class="lang-toggle">
         <button class="active">EN</button>
         <button>ES</button>
-      </button>
+      </div>
       <a href="tel:+13055551234" class="cta-book">
         <i class="fas fa-calendar-plus"></i>
         Book Now
@@ -1085,15 +1085,87 @@
     }, { threshold: 0.12 });
     document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
 
-    // Language toggle
-    document.querySelectorAll('.lang-toggle button').forEach(btn => {
-      btn.addEventListener('click', function() {
-        this.classList.toggle('active');
-        if (!this.classList.contains('active')) {
-          this.classList.add('active');
-        }
+    // ─── Language toggle (EN ⇄ ES) ───
+    var ES = {
+      "Trusted Plumbers": "Plomeros de Confianza",
+      "Miami's Most": "Los Mejores de Miami:",
+      "Fast, professional plumbing for residential and commercial properties. Available 7 days a week across Miami-Dade and Broward.": "Plomería rápida y profesional para propiedades residenciales y comerciales. Disponibles los 7 días de la semana en Miami-Dade y Broward.",
+      "Call Now": "Llamar Ahora",
+      "Our Services": "Nuestros Servicios",
+      "Call or Text Anytime": "Llama o Escribe a Cualquier Hora",
+      "What We Do": "Lo Que Hacemos",
+      "Plumbing Done Right": "Plomería Bien Hecha",
+      "From a dripping faucet to a full re-pipe, our licensed team handles every job with care and precision.": "Desde una llave que gotea hasta un recambio completo de tuberías, nuestro equipo con licencia atiende cada trabajo con cuidado y precisión.",
+      "Leak Repair": "Reparación de Fugas",
+      "Faucets, pipes, and fixtures diagnosed and fixed the same day.": "Llaves, tuberías y accesorios diagnosticados y reparados el mismo día.",
+      "Water Heater": "Calentador de Agua",
+      "Installation and replacement of tank and tankless water heaters.": "Instalación y reemplazo de calentadores con tanque y sin tanque.",
+      "Drain & Sewer": "Drenaje y Alcantarillado",
+      "Camera inspection, hydro-jetting, and sewer line repair.": "Inspección con cámara, hidrojet y reparación de líneas de alcantarillado.",
+      "Emergency Service": "Servicio de Emergencia",
+      "Burst pipes, flooding, and urgent repairs — we respond fast.": "Tuberías rotas, inundaciones y reparaciones urgentes — respondemos rápido.",
+      "Commercial": "Comercial",
+      "Reliable plumbing solutions for offices, restaurants, and buildings.": "Soluciones de plomería confiables para oficinas, restaurantes y edificios.",
+      "Remodeling": "Remodelación",
+      "Bathroom and kitchen plumbing upgrades tailored to your vision.": "Mejoras de plomería para baños y cocinas a la medida de tu visión.",
+      "Why Otto": "Por Qué Otto",
+      "Built on Reliability": "Construido sobre la Confiabilidad",
+      "Numbers that speak louder than words.": "Números que hablan más que las palabras.",
+      "Years in Business": "Años en el Negocio",
+      "Serving Miami-Dade and Broward since 2009.": "Sirviendo a Miami-Dade y Broward desde 2009.",
+      "Jobs Completed": "Trabajos Completados",
+      "Residential and commercial projects, on time.": "Proyectos residenciales y comerciales, a tiempo.",
+      "Average Rating": "Calificación Promedio",
+      "Hundreds of 5-star reviews from happy customers.": "Cientos de reseñas de 5 estrellas de clientes felices.",
+      "Fast Response": "Respuesta Rápida",
+      "Most jobs scheduled within one business day.": "La mayoría de los trabajos se agendan en un día hábil.",
+      "Request a Callback": "Solicita una Llamada",
+      "Tell us what's going on and we'll get right back to you.": "Cuéntanos qué pasa y te contactaremos enseguida.",
+      "Request Callback": "Solicitar Llamada",
+      "Got a Plumbing Problem?": "¿Tienes un Problema de Plomería?",
+      "Call us now and we'll get someone to you fast.": "Llámanos ahora y te enviaremos a alguien rápido.",
+      "Book Now": "Reservar",
+      "Book a Plumber": "Reservar un Plomero",
+      "Services": "Servicios", "Why": "Por Qué", "Portfolio": "Portafolio",
+      "Mastery": "Maestría", "Contact": "Contacto"
+    };
+    var PH_ES = { 'bk-name': 'Tu nombre', 'bk-phone': 'Número de teléfono', 'bk-problem': 'Describe brevemente el problema' };
+
+    // Snapshot the original EN text nodes once so we can restore exactly.
+    var i18nNodes = [];
+    (function collect(node) {
+      for (var i = 0; i < node.childNodes.length; i++) {
+        var c = node.childNodes[i];
+        if (c.nodeType === 3) { if (c.nodeValue.trim()) i18nNodes.push({ node: c, en: c.nodeValue }); }
+        else if (c.nodeType === 1 && c.tagName !== 'SCRIPT' && c.tagName !== 'STYLE') collect(c);
+      }
+    })(document.body);
+    var phBase = {};
+    Object.keys(PH_ES).forEach(function (id) { var el = document.getElementById(id); if (el) phBase[id] = el.getAttribute('placeholder') || ''; });
+
+    function setLang(lang) {
+      i18nNodes.forEach(function (r) {
+        var key = r.en.trim();
+        r.node.nodeValue = (lang === 'es' && ES[key]) ? r.en.replace(key, ES[key]) : r.en;
       });
+      Object.keys(PH_ES).forEach(function (id) {
+        var el = document.getElementById(id); if (el) el.setAttribute('placeholder', lang === 'es' ? PH_ES[id] : phBase[id]);
+      });
+      document.documentElement.lang = lang;
+      document.querySelectorAll('.lang-toggle button').forEach(function (b) {
+        b.classList.toggle('active', b.textContent.trim().toLowerCase() === lang);
+      });
+      try { localStorage.setItem('otto_landing_lang', lang); } catch (e) {}
+    }
+
+    document.querySelectorAll('.lang-toggle button').forEach(function (btn) {
+      btn.addEventListener('click', function () { setLang(this.textContent.trim().toLowerCase() === 'es' ? 'es' : 'en'); });
     });
+    var mobileLang = document.querySelector('.mobile-topbar .lang-btn');
+    if (mobileLang) mobileLang.addEventListener('click', function () {
+      setLang((localStorage.getItem('otto_landing_lang') || 'en') === 'en' ? 'es' : 'en');
+    });
+    setLang(localStorage.getItem('otto_landing_lang') || 'en');
 
     // Sidebar nav active state
     document.querySelectorAll('.sidebar-nav a').forEach(link => {
