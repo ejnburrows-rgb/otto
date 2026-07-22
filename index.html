@@ -4398,7 +4398,7 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     // A couple of completed jobs from earlier this week (not "today", so they
     // don't inflate the dashboard's "Jobs today" tile) so "Jobs Done" is
     // non-zero, plus a matching check-in each for more hours history.
-    const c1 = add('jobs', { title: 'Garbage disposal replacement', customerId: db.customers[0] && db.customers[0].id, assignedTo: w1.id, status: 'completed', scheduledDate: daysAgoISO(2).slice(0, 10), description: 'Demo completed job.' });
+    const c1 = add('jobs', { title: 'Garbage disposal replacement', customerId: db.customers[0] && db.customers[0].id, assignedTo: w1.id, status: 'completed', isOT: true, scheduledDate: daysAgoISO(2).slice(0, 10), description: 'Demo completed job.' });
     const c2 = add('jobs', { title: 'Toilet flange repair', customerId: db.customers[1] && db.customers[1].id, assignedTo: w3.id, status: 'completed', scheduledDate: daysAgoISO(4).slice(0, 10), description: 'Demo completed job.' });
     add('job_events', { type: 'check_in', jobId: c1.id, workerId: w1.id, userId: w1.id, ts: daysAgoISO(2) });
     add('job_events', { type: 'check_in', jobId: c2.id, workerId: w3.id, userId: w3.id, ts: daysAgoISO(4) });
@@ -4513,11 +4513,13 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     const workers = db.users.filter(u => u.role === 'field');
     const labels = workers.map(w => w.name);
     
-    // Mock data based on workers
-    const completed = workers.map(() => Math.floor(Math.random() * 10) + 1);
-    const assigned = completed.map(c => c + Math.floor(Math.random() * 3));
-    const escalations = workers.map(() => Math.floor(Math.random() * 4));
-    const otHours = workers.map(() => Math.floor(Math.random() * 8));
+    // Real per-worker metrics derived from the seeded job history — never
+    // Math.random (which produced fake numbers that changed on every render).
+    const jobsFor = (id) => db.jobs.filter(j => j.assignedTo === id);
+    const assigned = workers.map(w => jobsFor(w.id).length);
+    const completed = workers.map(w => jobsFor(w.id).filter(j => j.status === 'completed').length);
+    const escalations = workers.map(w => (db.ai_escalations || []).filter(e => e.workerId === w.id).length);
+    const otHours = workers.map(w => jobsFor(w.id).filter(j => j.isOT).length);
 
     new Chart($('#chart1'), {
       type: 'line',
@@ -4545,7 +4547,7 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
 
     new Chart($('#chart4'), {
       type: 'bar',
-      data: { labels, datasets: [{ label: 'OT Hours', data: otHours, backgroundColor: '#3b82f6' }]},
+      data: { labels, datasets: [{ label: 'OT Jobs', data: otHours, backgroundColor: '#3b82f6' }]},
       options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }
     });
   }
@@ -4559,10 +4561,18 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     // Calendar Heatmap
     html += `<div class="section-title">${t('daysWorked')}</div><div class="card" style="padding:16px;">`;
     html += `<div style="display:grid; grid-template-columns:repeat(7, 1fr); gap:4px;">`;
-    for(let i=0; i<28; i++) {
-      const h = Math.random() * 10;
-      const bg = h > 8 ? '#1e40af' : (h > 4 ? '#3b82f6' : (h > 0 ? '#dbeafe' : 'var(--bg)'));
-      html += `<div style="aspect-ratio:1; border-radius:4px; background:${bg};" title="${h.toFixed(1)}h"></div>`;
+    // Real days-worked from this worker's check-in events over the last 28
+    // days (deterministic — never Math.random).
+    const checkinsByDay = {};
+    (db.job_events || [])
+      .filter(e => e.workerId === w.id && e.type === 'check_in')
+      .forEach(e => { const day = (e.ts || '').slice(0, 10); checkinsByDay[day] = (checkinsByDay[day] || 0) + 1; });
+    for(let i=27; i>=0; i--) {
+      const d = new Date(); d.setDate(d.getDate() - i);
+      const iso = d.toISOString().slice(0, 10);
+      const c = checkinsByDay[iso] || 0;
+      const bg = c >= 2 ? '#1e40af' : (c === 1 ? '#3b82f6' : 'var(--bg)');
+      html += `<div style="aspect-ratio:1; border-radius:4px; background:${bg};" title="${iso}: ${c} ${c === 1 ? 'check-in' : 'check-ins'}"></div>`;
     }
     html += `</div></div>`;
 
