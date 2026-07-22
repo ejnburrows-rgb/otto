@@ -80,5 +80,5 @@ function normalize(b) {
   };
 }
 function stripHtml(h) { return String(h || '').replace(/<style[\s\S]*?<\/style>/gi, '').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/[ \t]{2,}/g, ' ').trim(); }
-function safeParse(s) { try { return JSON.parse(s); } catch (e) { /* maybe urlencoded */ } const o = {}; String(s).split('&').forEach(p => { const i = p.indexOf('='); if (i > 0) o[decodeURIComponent(p.slice(0, i))] = decodeURIComponent(p.slice(i + 1).replace(/\+/g, ' ')); }); return o; }
+function safeParse(s) { try { return JSON.parse(s); } catch (e) { /* maybe urlencoded */ } const o = Object.create(null); String(s).split('&').forEach(p => { const i = p.indexOf('='); if (i > 0) { const k = decodeURIComponent(p.slice(0, i)); if (k !== '__proto__' && k !== 'constructor' && k !== 'prototype') o[k] = decodeURIComponent(p.slice(i + 1).replace(/\+/g, ' ')); } }); return o; }
 function readRaw(req) { return new Promise((resolve, reject) => { let d = ''; req.on('data', c => d += c); req.on('end', () => resolve(d)); req.on('error', reject); }); }

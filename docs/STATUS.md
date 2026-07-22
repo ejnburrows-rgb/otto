@@ -291,3 +291,4 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   the Team header) instead of the same bare "Team" label showing two
   different numbers. `npm test` (57 checks) and `node scripts/qa-check.mjs`
   both pass.
+- 2026-07-22 — Fixed prototype pollution vulnerability in `safeParse` inside `api/inbound-email.js` and added tests to `scripts/test-inbound-email.mjs`.
