@@ -291,3 +291,16 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   the Team header) instead of the same bare "Team" label showing two
   different numbers. `npm test` (57 checks) and `node scripts/qa-check.mjs`
   both pass.
+- 2026-07-22 — Made the KPIs screen show real demo numbers instead of all 0s
+  (Wave 6). `seedMockKPIs()` now adds a small, clearly demo-only slice of
+  activity across a handful of the named field workers -- check-ins on
+  their already-assigned jobs, two completed jobs earlier this week (not
+  "today", so the dashboard's Jobs-today tile isn't skewed), and two AI
+  escalations -- guarded by a one-time `db.meta.kpiDemoSeeded` flag instead
+  of the old per-collection-length check, since this runs on every boot.
+  For the Aggregate/Charts view, added an explicit bilingual placeholder
+  ("Charts appear here once connected.") instead of silently blank canvases
+  when `window.Chart` isn't loaded -- chose this over adding a Chart.js CDN
+  script since the app is offline-first with a service worker and the chart
+  data was already `Math.random()` mock. `npm test` (57 checks) and
+  `node scripts/qa-check.mjs` both pass.
