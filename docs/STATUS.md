@@ -291,3 +291,4 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   the Team header) instead of the same bare "Team" label showing two
   different numbers. `npm test` (57 checks) and `node scripts/qa-check.mjs`
   both pass.
+- 2026-07-22 — Added missing test for SMS JSON parsing exception in scripts/test-notify.mjs, covering the error path in api/notify.js.
