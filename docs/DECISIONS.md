@@ -4,6 +4,39 @@ A dated log of technical choices and why they were made. Plain language. Add a
 new line here whenever a real decision is made — see the DOCUMENTATION DUTY
 section of [../AGENTS.md](../AGENTS.md).
 
+- **2026-07-28** — Photo upload timing: queued, not immediate. Photos are stored
+  locally in IndexedDB the moment they are taken (instant offline display). A
+  persistent upload queue in IndexedDB (`photo_upload_queue` object store) retries
+  every 30 seconds and on every `online` event. The queue survives the app being
+  closed mid-upload. The plumber is never blocked or shown a spinner.
+
+- **2026-07-28** — Photo resize before upload: longest edge capped at 1600 px,
+  JPEG quality 0.82, using the existing `downscale()` function already applied at
+  capture time. This is not silent — this decision log and the upload code
+  comments document it explicitly. A plumber who needs the original image for an
+  insurance or dispute matter can retrieve it from their device before the browser
+  cache is cleared, because the original blob remains in local IDB until the
+  upload succeeds.
+
+- **2026-07-28** — Photo fetch is lazy: images are downloaded only when a job is
+  opened, not on startup or during the 20-second sync poll. The signed URL is
+  fetched from `api/photos.js`; the blob is cached in IDB so the same image is
+  not re-downloaded on the next open. This keeps mobile data use in check for a
+  15-phone crew.
+
+- **2026-07-28** — Photo storage bucket (`job-photos`) is private. The bucket
+  denies all anonymous access. The browser calls `api/photos.js` for both upload
+  and download; the Supabase service-role key never appears in `index.html` or any
+  browser-visible file. This repeats the pattern established 2026-07-21 for
+  `api/data.js` and avoids repeating the Firebase exposure that was closed the
+  same day.
+
+- **2026-07-28** — Offline photo display is preserved exactly as before. A photo
+  just taken is stored by `storeFile()` into IndexedDB before any upload attempt.
+  `getFileURL()` returns the local blob URL instantly (fast path). The cloud fetch
+  only runs when IDB has no blob — i.e., on a different device. The plumber never
+  sees a spinner where their own photo should be.
+
 - **2026-07-21** — Cloud sync updates by checking every 20 seconds rather than
   staying permanently connected for instant updates. Instant updates require each
   phone to hold an open connection straight to the database, which means the
