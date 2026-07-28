@@ -149,3 +149,18 @@ isn't lost.
 - The previous product — a Dream Cooling (HVAC) CRM — was kept as
   `legacy/dream-cooling-crm.html`, explicitly for rollback reference only,
   rather than deleted, when the business pivoted to OTTO Plumbing.
+
+
+## 6. Backup Restores
+
+OTTO stores backup snapshots locally in JSON format via the `db.backups` store. If disaster strikes, you can restore a backup snapshot to the live Supabase server using the script in `scripts/restore-backup.mjs`.
+
+### How to Rehearse a Restore
+
+1. Ensure you have the latest code and `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` are present in your `.env` file.
+2. Get a backup JSON file (e.g. from the app Settings -> Backups -> Export).
+3. Run a dry run to verify parsing and authentication:
+   `node scripts/restore-backup.mjs my-backup.json --dry-run`
+4. Once you are comfortable, you can remove the `--dry-run` flag to actually push the data to Supabase (WARNING: This writes real data!).
+
+This script reads the JSON objects and pushes each row using Supabase's bulk merge REST API.

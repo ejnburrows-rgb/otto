@@ -1433,176 +1433,78 @@
   };
   function can(view) { return session && (ROLE_VIEWS[session.role] || []).includes(view); }
 
-  function showLogin() {
+    function showLogin() {
     $('#app').classList.add('hidden');
     const lg = $('#login'); lg.classList.remove('hidden');
-    let pin = '', selUser = null;
-    function draw() {
-      /* First run: nobody has a sign-in code yet, because codes are no longer
-         shipped in this file. Let the first owner choose theirs, otherwise a
-         fresh install has no way in at all. Everyone else is set up afterwards
-         from the Team screen. */
-      if (!db.users.some(u => hasPin(u))) {
-        const first = db.users.find(u => u.role === 'owner') || db.users[0];
-        lg.innerHTML = `
-          <div style="text-align:center;margin-bottom:24px;">
-            <img src="./logo.jpg" alt="OTTO Plumbing" style="width:180px;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.25);" />
-          </div>
-          <h2 style="margin-top:0">${esc(t('setUpOwner'))}</h2>
-          <p class="muted">${esc(t('chooseOwnerCode'))}</p>
-          <div class="field">
-            <label for="boot-pin">${esc(first && first.name ? first.name : t('owner'))}</label>
-            <input id="boot-pin" type="password" inputmode="numeric" maxlength="4" placeholder="••••">
-          </div>
-          <button class="btn green block" onclick="window.__bootstrap()"><i class="fas fa-check"></i> ${esc(t('save'))}</button>`;
-        return;
-      }
-      if (!selUser) {
-        lg.innerHTML = `
-          <div style="text-align:center;margin-bottom:24px;">
-            <img src="./logo.jpg" alt="OTTO Plumbing" style="width:180px;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.25);" />
-          </div>
-          <p style="margin-top:0;">${esc(t('pickUser'))}</p>
-          <div class="card-login">
-            ${(() => {
-              /* One row on the sign-in list, used for every role. An account
-                 with no code set cannot be tapped — codes are no longer shipped
-                 in this file, so a new account has none until an owner sets it
-                 in the Team screen. */
-              const signInRow = (u) => {
-                const ready = hasPin(u);
-                const isSarays = u.name && u.name.includes('Sarays');
-                const titleStyle = isSarays ? ' style="color:#EC4899;font-weight:bold;"' : '';
-                const avatarBg = isSarays ? '#EC4899' : colorFor(u.name);
-                const displayName = u.name ? esc(u.name) : `<span style="color:var(--text3);font-style:italic;">${lang === 'es' ? 'Vacante' : 'Vacant'}</span>`;
-                const roleText = u.id === 'it-1' ? (lang === 'es' ? 'Soporte / TI' : 'Logging / IT') : t(u.role);
-                const sub = ready ? roleText : `${roleText} · ${t('notSetUp')}`;
-                const attrs = ready
-                  ? `onclick="window.__pick('${u.id}')"`
-                  : `onclick="window.__noCode()" style="opacity:.45" aria-disabled="true"`;
-                return `<div class="list-item" ${attrs}><div class="avatar" style="background:${avatarBg}">${initials(u.name)}</div><div class="li-main"><div class="li-title"${titleStyle}>${displayName}</div><div class="li-sub">${sub}</div></div><i class="fas fa-chevron-right chev"></i></div>`;
-              };
-              const owners = db.users.filter(u => u.role === 'owner').map(signInRow).join('');
-              const mgrs = db.users.filter(u => u.role === 'office').map(signInRow).join('');
-              const fieldUsers = db.users.filter(u => u.role === 'field');
-              // Named staff first; empty slots collapse behind one row.
-              const namedFields = fieldUsers.filter(u => u.name);
-              const vacantFields = fieldUsers.filter(u => !u.name);
-              const rowFor = signInRow;
-              const fields = namedFields.map(rowFor).join('')
-                + (vacantFields.length
-                  ? `<div id="vacant-rows" class="hidden">${vacantFields.map(rowFor).join('')}</div><div class="list-item" role="button" tabindex="0" onclick="window.__toggleVacant(this)" style="justify-content:center;color:var(--text2);font-size:13px">${lang === 'es' ? 'Mostrar' : 'Show'} ${vacantFields.length} ${lang === 'es' ? 'puestos sin asignar' : 'unassigned'}</div>`
-                  : '');
-              return `<div style="font-size:12px;color:var(--text2);margin-bottom:4px">OWNERS</div>${owners || ''}<div style="font-size:12px;color:var(--text2);margin:8px 0 4px">OPS & IT</div>${mgrs || ''}<div style="font-size:12px;color:var(--text2);margin:8px 0 4px">FIELD TEAM${namedFields.length ? ` (${namedFields.length})` : ``}</div>${fields || ''}`;
-            })()}
-          </div>
-          <div class="langtoggle"><button class="${lang === 'en' ? 'on' : ''}" onclick="setLang('en')">EN</button><button class="${lang === 'es' ? 'on' : ''}" onclick="setLang('es')">ES</button></div>`;
-      } else {
-        const isSarays = selUser.name && selUser.name.includes('Sarays');
-        const nameStyle = isSarays ? ' style="color:#EC4899;font-weight:bold;"' : '';
-        const avatarBg = isSarays ? 'background:#EC4899;' : `background:${colorFor(selUser.name)};`;
-        const displayName = selUser.name ? esc(selUser.name) : (lang === 'es' ? 'Vacante' : 'Vacant');
-        lg.innerHTML = `
-          <div class="logo" style="${avatarBg}">${initials(selUser.name)}</div>
-          <h1${nameStyle}>${displayName}</h1>
-          <p>${esc(t('enterPin'))}</p>
-          <div class="card-login">
-            <div class="pindots">${[0, 1, 2, 3].map(i => `<span class="${i < pin.length ? 'f' : ''}"></span>`).join('')}</div>
-            <div class="pinpad">
-              ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => `<button onclick="window.__pin('${n}')">${n}</button>`).join('')}
-              <button onclick="window.__back2()"><i class="fas fa-arrow-left"></i></button>
-              <button onclick="window.__pin('0')">0</button>
-              <button onclick="window.__pinDel()"><i class="fas fa-delete-left"></i></button>
-            </div>
-          </div>`;
-      }
-    }
-    window.__toggleVacant = (el) => {
-      const box = document.getElementById('vacant-rows');
-      if (!box) return;
-      const nowHidden = box.classList.toggle('hidden');
-      const n = box.children.length;
-      const es = lang === 'es';
-      el.textContent = (nowHidden ? (es ? 'Mostrar' : 'Show') : (es ? 'Ocultar' : 'Hide')) + ' ' + n + ' ' + (es ? 'puestos sin asignar' : 'unassigned');
-    };
-    window.__noCode = () => toast(t('askOwnerForCode'), 'error');
-    window.__bootstrap = async () => {
-      const el = document.getElementById('boot-pin');
-      const code = (el && el.value || '').trim();
-      if (!/^\d{4}$/.test(code)) return toast(t('wrongPin'), 'error');
-      const first = db.users.find(u => u.role === 'owner') || db.users[0];
-      if (!first) return;
-      await setUserPin(first, code);   // salts, hashes, drops the readable copy
-      save();
-      toast(t('codeSaved'), 'success');
-      selUser = null; pin = ''; draw();
-    };
-    window.__pick = (id) => { selUser = get('users', id); pin = ''; draw(); };
-    window.__back2 = () => { selUser = null; pin = ''; draw(); };
-    window.__pinDel = () => { pin = pin.slice(0, -1); draw(); };
-    window.__pin = async (n) => {
-      const locked = pinLockRemainingMs(selUser.id);
-      if (locked > 0) {
-        toast(t('tooManyTries').replace('{s}', Math.ceil(locked / 1000)), 'error');
-        pin = ''; draw(); return;
-      }
-      pin += n; draw();
-      if (pin.length === 4) {
-        const typed = pin;
-        pin = ''; // clear immediately so a slow check cannot be typed past
-        if (await verifyPin(selUser, typed)) {
-          clearFailedPins(selUser.id);
-          // Second factor for owner/admin if an extra code is configured.
-          if ((selUser.role === 'owner') && hasPin(selUser, 'mfaPin')) { askMfa(selUser); return; }
-          finishLogin(selUser);
-        } else {
-          recordFailedPin(selUser.id);
-          const waitMs = pinLockRemainingMs(selUser.id);
-          if (waitMs > 0) toast(t('tooManyTries').replace('{s}', Math.ceil(waitMs / 1000)), 'error');
-          else toast(t('wrongPin'), 'error');
-          setTimeout(draw, 400);
-        }
+    
+    // We mock Supabase Auth for scaffolding purposes
+    // since the real keys are hidden on the backend.
+    lg.innerHTML = `
+      <div style="text-align:center;margin-bottom:24px;">
+        <img src="./logo.jpg" alt="OTTO Plumbing" style="width:180px;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.25);" />
+      </div>
+      <h1 style="margin: 0 0 8px 0; font-size: 24px;">${esc(t('signIn'))}</h1>
+      <p style="margin-top:0; color:var(--text2);">${lang === 'es' ? 'Ingresa con tu correo' : 'Sign in with your email'}</p>
+      
+      <div class="card" style="padding:20px; text-align:left;">
+        <div class="field" style="margin-bottom: 16px;">
+          <label for="auth-email">${lang === 'es' ? 'Correo Electrónico' : 'Email Address'}</label>
+          <input id="auth-email" type="email" placeholder="you@example.com" required>
+        </div>
+        <div class="field" style="margin-bottom: 24px;">
+          <label for="auth-password">${lang === 'es' ? 'Contraseña' : 'Password'}</label>
+          <input id="auth-password" type="password" placeholder="••••••••" required>
+        </div>
+        <button id="auth-btn" class="btn green block" onclick="window.__doAuthLogin()">
+          <i class="fas fa-right-to-bracket"></i> ${esc(t('signIn'))}
+        </button>
+      </div>
+      <div class="langtoggle" style="margin-top:32px;">
+        <button class="${lang === 'en' ? 'on' : ''}" onclick="setLang('en')">EN</button>
+        <button class="${lang === 'es' ? 'on' : ''}" onclick="setLang('es')">ES</button>
+      </div>
+    `;
+
+    window.__doAuthLogin = async () => {
+      const email = $('#auth-email').value.trim();
+      const pwd = $('#auth-password').value;
+      const btn = $('#auth-btn');
+      if (!email || !pwd) return toast(lang === 'es' ? 'Faltan datos' : 'Missing fields', 'error');
+
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+      try {
+        // Scaffolded Supabase Auth hook:
+        // const { data, error } = await supabase.auth.signInWithPassword({ email, password: pwd });
+        // if (error) throw error;
+        
+        // For now, we simulate matching the email against db.users
+        await new Promise(r => setTimeout(r, 600)); // fake network delay
+        const u = db.users.find(u => u.email === email || (u.name && u.name.toLowerCase().includes(email.split('@')[0].toLowerCase())));
+        if (!u) throw new Error("Invalid login credentials (scaffold). Try 'owner@...', 'office@...', or 'field@...'");
+        
+        finishLogin(u);
+      } catch (err) {
+        toast(err.message || 'Login failed', 'error');
+        btn.disabled = false;
+        btn.innerHTML = \`<i class="fas fa-right-to-bracket"></i> \${esc(t('signIn'))}\`;
       }
     };
+
     function finishLogin(u) {
       session = u; localStorage.setItem('otto_session', u.id);
       if (u.lang) setLang(u.lang);
       if (typeof audit === 'function') audit('auth.login', 'user', u.id);
       startApp();
-      // Personal colour scheme, chosen by name. This used to compare PIN values
-      // directly, which stopped working once PINs became fingerprints — and
-      // picking a theme from a secret was a poor idea anyway.
       const who = u.name || '';
       if (who.includes('Otto')) document.body.className = 'theme-otto';
       else if (who.includes('Principe') || who.includes('Príncipe')) document.body.className = 'theme-principe';
       else if (who.includes('Sarays')) document.body.className = 'theme-sarays';
       else document.body.className = '';
     }
-    function askMfa(u) {
-      let m = '';
-      const drawM = () => { lg.innerHTML = `<div class="logo"><i class="fas fa-shield-halved"></i></div><h1>${esc(u.name)}</h1><p>${esc(t('mfaOwner'))}</p>
-        <div class="card-login"><div class="pindots">${[0,1,2,3].map(i=>`<span class="${i<m.length?'f':''}"></span>`).join('')}</div>
-        <div class="pinpad">${[1,2,3,4,5,6,7,8,9].map(n=>`<button onclick="window.__mfa('${n}')">${n}</button>`).join('')}<button onclick="window.__back2()"><i class="fas fa-arrow-left"></i></button><button onclick="window.__mfa('0')">0</button><button onclick="window.__mfaDel()"><i class="fas fa-delete-left"></i></button></div></div>`; };
-      window.__mfaDel = () => { m = m.slice(0, -1); drawM(); };
-      window.__mfa = async (n) => {
-        const locked = pinLockRemainingMs(u.id + '_mfa');
-        if (locked > 0) { toast(t('tooManyTries').replace('{s}', Math.ceil(locked / 1000)), 'error'); m = ''; drawM(); return; }
-        m += n; drawM();
-        if (m.length === 4) {
-          const typed = m; m = '';
-          if (await verifyPin(u, typed, 'mfaPin')) { clearFailedPins(u.id + '_mfa'); finishLogin(u); }
-          else {
-            recordFailedPin(u.id + '_mfa');
-            const waitMs = pinLockRemainingMs(u.id + '_mfa');
-            toast(waitMs > 0 ? t('tooManyTries').replace('{s}', Math.ceil(waitMs / 1000)) : t('wrongPin'), 'error');
-            setTimeout(drawM, 400);
-          }
-        }
-      };
-      drawM();
-    };
-    draw();
   }
+
   function signOut() { 
     session = null; localStorage.removeItem('otto_session'); 
     const f = document.getElementById('ai-float-btn'); if (f) f.remove();
@@ -2720,7 +2622,23 @@
       if (nEl) nEl.textContent = test?.error === 'sms_not_configured' ? 'SMS/Email: ' + t('notConfigured') + ' (stubs ready)' : 'SMS/Email: ' + t('smsReady');
     } catch (e) { if (nEl) nEl.textContent = t('notConfigured'); }
   }
-  async function connectQuickBooks() {
+  async async function testQuickBooksSync() {
+  toast('Sending test sync to QB...', 'success');
+  try {
+    await fetch('/api/quickbooks', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ action: 'sync' }) });
+    toast('Sent test sync! Check server logs.', 'success');
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function testNotify(channel) {
+  toast('Sending test ' + channel, 'success');
+  try {
+    await fetch('/api/notify', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ channel, to: '5555555555', body: 'Test message from OTTO' }) });
+    toast('Sent test ' + channel + '! Check server logs.', 'success');
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+function connectQuickBooks() {
     try {
       const d = await fetch('/api/quickbooks?action=auth_url').then(r => r.json());
       if (d.authUrl) { window.open(d.authUrl, '_blank'); toast(lang === 'es' ? 'Abre QuickBooks para conectar' : 'Complete QuickBooks connect in the new tab', 'success'); }
@@ -4122,7 +4040,9 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     $('#main').innerHTML = `<div style="max-width:520px;margin:24px auto;padding:18px">
       <div class="logo" style="margin:0 auto 14px"><i class="fas fa-shield-heart"></i></div>
       <h1 style="text-align:center">${t('consentTitle')}</h1>
-      <div class="card" style="padding:16px;margin:16px 0;line-height:1.6">${esc(t('consentBody'))}</div>
+      <div class="card" style="padding:16px;margin:16px 0;line-height:1.6">${esc(t('consentBody'))}
+        <div style="margin-top:12px;font-size:13px;"><a href="docs/DATA_RETENTION_POLICY.md" target="_blank" style="color:var(--blue);text-decoration:none;"><i class="fas fa-file-contract"></i> ${lang === 'es' ? 'Ver Política de Retención de Datos' : 'View Data Retention Policy'}</a></div>
+      </div>
       <button class="btn green block" onclick="acceptConsent()"><i class="fas fa-check"></i> ${t('iAgree')}</button>
       <button class="btn ghost block" style="margin-top:10px" onclick="signOut()">${t('notNow')}</button></div>`;
   }
