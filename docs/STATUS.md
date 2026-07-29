@@ -356,3 +356,7 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   are 22 + 22 + 32 + 15 + 16 + 19 + 16 + 23 = **165 checks, 0 failed**. The
   "0 failed" part was correct throughout; only the totals were wrong. Worth
   making the per-script summary lines consistent so this cannot recur.
+- 2026-07-29 — Wrote `docs/SCRUB-REPORT.md`: what to do next in priority order,
+  based on faults found during this session rather than invented work. Top three
+  are the seeded demo data writing itself into the live jobs table, CI never
+  having run, and the landing-page language toggle being unclickable.
