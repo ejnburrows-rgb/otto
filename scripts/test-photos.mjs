@@ -174,5 +174,5 @@ console.log('\nDELETE file');
 global.fetch = originalFetch;
 process.env = { ...originalEnv };
 
-console.log(`\n${passed} passed, ${failed} failed`);
+console.log(`\n${passed} passed, ${failed} failed\n`);
 process.exit(failed ? 1 : 0);

@@ -113,7 +113,7 @@ async function runTests() {
     process.env = originalEnv;
   }
 
-  console.log(`\nResults: ${passed} passed, ${failed} failed`);
+  console.log(`\n${passed} passed, ${failed} failed\n`);
   if (failed > 0) process.exit(1);
 }
 

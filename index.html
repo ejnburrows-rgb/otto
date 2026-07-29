@@ -26,7 +26,19 @@
       --green: #047857;       /* Calm, legible emerald */
       --amber: #B45309;       /* Warm amber, not too bright */
       --red: #B91C1C;         /* Confident red */
-      
+
+      /* Solid button fills. Deliberately the same in both themes: these always
+         carry white text, so they must stay dark enough to clear WCAG AA 4.5:1
+         against #fff. The --green/--amber/--red above are the *text* colours and
+         are allowed to be brighter in dark mode, where they sit on a dark card.
+         Measured against #fff: blue 6.70:1, green 5.48:1, amber 5.02:1,
+         red 6.47:1. */
+      --accent-fill: #1D4ED8;
+      --accent-fill-hover: #1E40AF;
+      --green-fill: #047857;
+      --amber-fill: #B45309;
+      --red-fill: #B91C1C;
+
       /* Surface Colors */
       --bg: #F8FAFC;          /* Very subtle cool off-white */
       --bg2: #F1F5F9;
@@ -60,7 +72,7 @@
       --line: #2b3852;
       --text: #eef2f8;
       --text2: #a9b4c7;
-      --text3: #74829a;
+      --text3: #94a3b8;   /* 6.43:1 on --card, 7.30:1 on --bg — was #74829a (4.24:1) */
       --blue: #1e3a8a;
       --blue2: #7bd0ff;
       --accent: #2f6bff;
@@ -129,7 +141,7 @@
       display: flex; background: rgba(255, 255, 255, 0.08); border-radius: var(--radius-sm); overflow: hidden;
     }
     .langtoggle button {
-      border: none; background: transparent; color: #94A3B8; padding: 6px 12px; 
+      border: none; background: transparent; color: #CBD5E1; padding: 6px 12px;
       font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.2s ease;
     }
     .langtoggle button.on { background: #FFFFFF; color: var(--blue); }
@@ -219,20 +231,20 @@
     .btn {
       display: inline-flex; align-items: center; justify-content: center; gap: 8px;
       min-height: var(--tap); padding: 0 24px; border-radius: var(--radius-sm); border: none; cursor: pointer;
-      font-weight: 600; font-size: 15px; background: var(--accent); color: #fff;
+      font-weight: 600; font-size: 15px; background: var(--accent-fill); color: #fff;
       box-shadow: 0 2px 4px rgba(47, 107, 255, 0.25); transition: all 0.2s ease;
     }
-    .btn:hover { background: var(--accent-hover); box-shadow: 0 4px 8px rgba(47, 107, 255, 0.35); transform: translateY(-1px); }
+    .btn:hover { background: var(--accent-fill-hover); box-shadow: 0 4px 8px rgba(47, 107, 255, 0.35); transform: translateY(-1px); }
     .btn:active { transform: translateY(1px); box-shadow: 0 1px 2px rgba(47, 107, 255, 0.25); }
     .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     
     .btn.block { width: 100%; }
-    .btn.green { background: var(--green); box-shadow: 0 2px 4px rgba(5, 150, 105, 0.2); }
-    .btn.green:hover { background: #047857; box-shadow: 0 4px 8px rgba(5, 150, 105, 0.3); }
-    .btn.amber { background: var(--amber); box-shadow: 0 2px 4px rgba(217, 119, 6, 0.2); }
-    .btn.amber:hover { background: #B45309; box-shadow: 0 4px 8px rgba(217, 119, 6, 0.3); }
-    .btn.red { background: var(--red); box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2); }
-    .btn.red:hover { background: #B91C1C; box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3); }
+    .btn.green { background: var(--green-fill); box-shadow: 0 2px 4px rgba(5, 150, 105, 0.2); }
+    .btn.green:hover { background: #036347; box-shadow: 0 4px 8px rgba(5, 150, 105, 0.3); }
+    .btn.amber { background: var(--amber-fill); box-shadow: 0 2px 4px rgba(217, 119, 6, 0.2); }
+    .btn.amber:hover { background: #96450A; box-shadow: 0 4px 8px rgba(217, 119, 6, 0.3); }
+    .btn.red { background: var(--red-fill); box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2); }
+    .btn.red:hover { background: #991818; box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3); }
     
     .btn.ghost { background: var(--card); color: var(--text); border: 1px solid var(--line); box-shadow: var(--shadow-sm); }
     .btn.ghost:hover { background: var(--card-hover); border-color: var(--accent); color: var(--text); box-shadow: var(--shadow); }
@@ -269,6 +281,9 @@
     .bottomnav button i { font-size: 22px; transition: transform 0.2s ease; }
     .bottomnav button:hover { color: var(--text2); }
     .bottomnav button.on { color: var(--accent); font-weight: 600; }
+    /* The active tab label sits on the dark card surface, where --accent is only
+       3.67:1. #7EA6FF is 6.90:1 and still reads as the same "selected blue". */
+    [data-theme="dark"] .bottomnav button.on { color: #7EA6FF; }
     .bottomnav button.on i { transform: translateY(-2px); }
 
     /* ===== FORMS ===== */
@@ -328,7 +343,7 @@
     .pill.red { background: #FEF2F2; color: var(--red); }
     
     [data-theme="dark"] .pill.gray { background: rgba(148, 163, 184, 0.14); color: var(--text2); }
-    [data-theme="dark"] .pill.blue { background: rgba(47, 107, 255, 0.2); color: var(--accent-hover); }
+    [data-theme="dark"] .pill.blue { background: rgba(47, 107, 255, 0.2); color: #93B4FF; }  /* 6.46:1 on the composited pill background; --accent-hover was 3.70:1 */
     [data-theme="dark"] .pill.green { background: rgba(34, 197, 94, 0.18); color: var(--green); }
     [data-theme="dark"] .pill.amber { background: rgba(245, 158, 11, 0.18); color: var(--amber); }
     [data-theme="dark"] .pill.red { background: rgba(248, 113, 113, 0.18); color: var(--red); }
@@ -360,7 +375,7 @@
       transition: all 0.2s ease;
     }
     .tabs button:hover { background: var(--card-hover); color: var(--text); }
-    .tabs button.on { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; box-shadow: 0 2px 6px rgba(47, 107, 255, 0.3); }
+    .tabs button.on { background: var(--accent-fill); color: #fff; border-color: var(--accent-fill); font-weight: 600; box-shadow: 0 2px 6px rgba(47, 107, 255, 0.3); }
 
     .toast {
       position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(100px + env(safe-area-inset-bottom));
@@ -378,8 +393,12 @@
     /* ===== LOGIN ===== */
     .login { 
       min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; 
-      padding: 24px; gap: 24px; background: var(--blue); color: #fff; 
+      padding: 24px; gap: 24px; background: var(--blue); color: #fff;
     }
+    /* Secondary text on the sign-in screen sits on the navy background, not on a
+       card, so it needs its own lighter value — var(--text2) only clears AA
+       against the card surfaces. #CBD5E1 on --blue is 6.98:1. */
+    .login .muted { color: #CBD5E1; }
     .login .logo { 
       width: 80px; height: 80px; border-radius: 20px; background: rgba(255,255,255,0.1); 
       display: flex; align-items: center; justify-content: center; font-size: 36px;
@@ -640,7 +659,7 @@
       workflows: 'Workflows', knowledge: 'Knowledge', team: 'Team', fieldCrew: 'Field Crew', reports: 'Reports',
       settings: 'Settings', map: 'Map', documents: 'Documents', notes: 'Notes', photos: 'Photos',
       assistant: 'Assistant', search: 'Search…', save: 'Save', cancel: 'Cancel', delete: 'Delete',
-      print: 'Print', notSetUp: 'No code yet', askOwnerForCode: 'No sign-in code yet. Ask an owner to set one for you in Team.', setUpOwner: 'Set up this device', chooseOwnerCode: 'Choose a 4-digit code for the first owner. You can set everyone else up afterwards, in Team.', codeSaved: 'Code saved. Sign in with it now.', add: 'Add', edit: 'Edit', name: 'Name', phone: 'Phone', email: 'Email', address: 'Address',
+      print: 'Print', goBack: 'Go back', notSetUp: 'No code yet', askOwnerForCode: 'No sign-in code yet. Ask an owner to set one for you in Team.', setUpOwner: 'Set up this device', chooseOwnerCode: 'Choose a 4-digit code for the first owner. You can set everyone else up afterwards, in Team.', codeSaved: 'Code saved. Sign in with it now.', add: 'Add', edit: 'Edit', name: 'Name', phone: 'Phone', email: 'Email', address: 'Address',
       title: 'Title', status: 'Status', date: 'Date', amount: 'Amount', notesLabel: 'Notes',
       customer: 'Customer', job: 'Job', open: 'Open', noResults: 'Nothing here yet.',
       welcome: 'Welcome', tapToStart: 'Tap a big button to get started.',
@@ -723,7 +742,7 @@
       workflows: 'Flujos', knowledge: 'Guías', team: 'Equipo', fieldCrew: 'Cuadrilla de Campo', reports: 'Reportes',
       settings: 'Ajustes', map: 'Mapa', documents: 'Documentos', notes: 'Notas', photos: 'Fotos',
       assistant: 'Asistente', search: 'Buscar…', save: 'Guardar', cancel: 'Cancelar', delete: 'Eliminar',
-      print: 'Imprimir', notSetUp: 'Sin código', askOwnerForCode: 'Aún no tiene código. Pida a un dueño que le asigne uno en Equipo.', setUpOwner: 'Configurar este dispositivo', chooseOwnerCode: 'Elija un código de 4 dígitos para el primer dueño. Después puede configurar a los demás en Equipo.', codeSaved: 'Código guardado. Inicie sesión con él.', add: 'Agregar', edit: 'Editar', name: 'Nombre', phone: 'Teléfono', email: 'Correo', address: 'Dirección',
+      print: 'Imprimir', goBack: 'Volver', notSetUp: 'Sin código', askOwnerForCode: 'Aún no tiene código. Pida a un dueño que le asigne uno en Equipo.', setUpOwner: 'Configurar este dispositivo', chooseOwnerCode: 'Elija un código de 4 dígitos para el primer dueño. Después puede configurar a los demás en Equipo.', codeSaved: 'Código guardado. Inicie sesión con él.', add: 'Agregar', edit: 'Editar', name: 'Nombre', phone: 'Teléfono', email: 'Correo', address: 'Dirección',
       title: 'Título', status: 'Estado', date: 'Fecha', amount: 'Monto', notesLabel: 'Notas',
       customer: 'Cliente', job: 'Trabajo', open: 'Abrir', noResults: 'Todavía no hay nada aquí.',
       welcome: 'Bienvenido', tapToStart: 'Toca un botón grande para empezar.',
@@ -1682,7 +1701,7 @@
 
   /* ---------- shared building blocks ---------- */
   function pageHead(title, sub, withBack, actions) {
-    return `<div class="pagehead">${withBack ? `<button class="back" onclick="${withBack}"><i class="fas fa-arrow-left"></i></button>` : ''}
+    return `<div class="pagehead">${withBack ? `<button class="back" aria-label="${esc(t('goBack'))}" onclick="${withBack}"><i class="fas fa-arrow-left"></i></button>` : ''}
       <div><h1>${esc(title)}</h1>${sub ? `<div class="sub">${esc(sub)}</div>` : ''}</div>${actions || ''}</div>`;
   }
   function searchBox(id, ph) { return `<div class="searchbar"><i class="fas fa-magnifying-glass"></i><input id="${id}" aria-label="${esc(ph || t('search'))}" placeholder="${esc(ph || t('search'))}" oninput="render()" value="${esc(_search[id] || '')}"></div>`; }
