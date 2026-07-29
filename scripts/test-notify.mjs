@@ -152,7 +152,7 @@ async function runTests() {
   await handler({ method: 'POST', body: JSON.stringify({ channel: 'email', to: 'str@example.com' }) }, res);
   check('Parses stringified body', { status: res.statusCode, ok: res.body.ok }, { status: 200, ok: true });
 
-  console.log(`\nTests complete. Passed: ${passed}, Failed: ${failed}`);
+  console.log(`\n${passed} passed, ${failed} failed\n`);
   process.exit(failed > 0 ? 1 : 0);
 }
 

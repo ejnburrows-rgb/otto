@@ -1,7 +1,7 @@
 # OTTO Plumbing CRM — Full Project Specification
 
 **Repository:** `ejnburrows-rgb/otto`
-**Stack:** Single-file PWA (HTML/CSS/JS) · IndexedDB · Firebase Firestore/Storage · Vercel · Service Worker
+**Stack:** Single-file PWA (HTML/CSS/JS) · IndexedDB · Supabase (Postgres/Storage) via serverless `/api` · Vercel · Service Worker
 **Languages:** English / Spanish (full bilingual parity required on all UI)
 **Last updated:** June 20, 2026 (design spec) · status note added July 19, 2026
 
@@ -22,9 +22,10 @@
 >   provider webhooks (SendGrid/Mailgun/Postmark), not the Gmail OAuth push
 >   integration described in §5.2 and the `GMAIL_CLIENT_ID` env var in §10.
 > - **Env vars:** the shipped app reads `ANTHROPIC_API_KEY`, `NVIDIA_API_KEY`,
->   `NVIDIA_MODEL` (optional), `FIREBASE_PROJECT_ID`, `FIREBASE_API_KEY`, and
+>   `NVIDIA_MODEL` (optional), `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and
 >   `INBOUND_WEBHOOK_TOKEN` — see README.md § AI features and § Inbox for the
->   current list; §10 below is stale.
+>   current list; §10 below is stale. The Firebase variables named in earlier
+>   drafts are retired; that project was deleted on 2026-07-21.
 
 ---
 
