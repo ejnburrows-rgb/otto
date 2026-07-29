@@ -336,3 +336,4 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   no code sits in a tracked file. Also removed the codes from the tick-list
   labels in `docs/QA_CHECKLIST.md` and `docs/QA_BROWSER.md`. `npm test`
   (123 checks) and `npm run qa` both pass.
+- 2026-07-22 — Fixed prototype pollution vulnerability in `safeParse` inside `api/inbound-email.js` and added tests to `scripts/test-inbound-email.mjs`.
