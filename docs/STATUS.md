@@ -346,3 +346,13 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   decisions recorded in DECISIONS.md. `npm test` (124 checks) and
   `npm run qa` both pass.
 - [2026-07-21] Optimized KPI Summary view rendering by replacing nested `.filter` operations with pre-computed mappings resulting in a ~32x performance improvement (from 865ms to 27ms in benchmark testing).
+- 2026-07-22 — Added missing test for SMS JSON parsing exception in scripts/test-notify.mjs, covering the error path in api/notify.js.
+- 2026-07-29 — Backlog merge pass: #62, #53, #60, #49, #54, #51 brought up to
+  date with `main`, conflicts resolved by hand, and merged in that order.
+  **Correction to the check counts quoted during that pass:** they were
+  understated. `scripts/test-notify.mjs` ends with `Tests complete. Passed: N`
+  while every other script ends with `N passed`, so a summary grep silently
+  dropped it and mislabelled the quickbooks total as notify's. The true totals
+  are 22 + 22 + 32 + 15 + 16 + 19 + 16 + 23 = **165 checks, 0 failed**. The
+  "0 failed" part was correct throughout; only the totals were wrong. Worth
+  making the per-script summary lines consistent so this cannot recur.
