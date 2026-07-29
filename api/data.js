@@ -19,6 +19,8 @@
 //   GET  /api/data                  -> returns every collection as one object
 //   POST /api/data { collection, records } -> saves records for one collection
 
+import { hasServerAuth, denyUnauthenticated } from './_lib/serverAuth.js';
+
 const COLLECTIONS = ['customers', 'jobs', 'calls', 'notes', 'photos', 'documents', 'estimates',
   'invoices', 'payments', 'checks', 'followups', 'workflows', 'sops', 'users', 'locations', 'folders',
   'emails', 'inbox_emails', 'payroll', 'time_off', 'login_history',
@@ -28,7 +30,16 @@ const COLLECTIONS = ['customers', 'jobs', 'calls', 'notes', 'photos', 'documents
   'rate_cards', 'estimate_projects', 'estimate_records', 'verification_logs', 'pricing_exceptions',
   'companyProfile'];
 
+// Fail-closed gate first: no real server-side sign-in exists yet, so every
+// request is refused before it can reach Supabase. See api/_lib/serverAuth.js.
 export default async function handler(req, res) {
+  if (!hasServerAuth(req)) { denyUnauthenticated(res); return; }
+  return dataHandler(req, res);
+}
+
+// The real proxy logic, kept separate so it stays fully covered by tests even
+// while the gate above refuses every live request.
+export async function dataHandler(req, res) {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) {

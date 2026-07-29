@@ -17,9 +17,21 @@
 //                                  → { ok: true, path: '<storage path>' }
 //   DELETE /api/photos?fileId=<id>  → { ok: true }
 
+import { hasServerAuth, denyUnauthenticated } from './_lib/serverAuth.js';
+
 const BUCKET = 'job-photos';
 
+// Fail-closed gate first: no real server-side sign-in exists yet, so every
+// request is refused before it can reach Supabase Storage. See
+// api/_lib/serverAuth.js.
 export default async function handler(req, res) {
+  if (!hasServerAuth(req)) { denyUnauthenticated(res); return; }
+  return photosHandler(req, res);
+}
+
+// The real relay logic, kept separate so it stays fully covered by tests even
+// while the gate above refuses every live request.
+export async function photosHandler(req, res) {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) {

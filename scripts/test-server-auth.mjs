@@ -1,0 +1,112 @@
+// Regression tests for the fail-closed containment gate (api/_lib/serverAuth.js).
+//
+// Proves: an unauthenticated request to every sensitive route is refused
+// with the same machine-readable error, before it ever reaches Supabase,
+// Anthropic, NVIDIA, Twilio, SendGrid, or QuickBooks — even when the
+// server-side provider keys ARE configured. No customer data, signed photo
+// URL, provider response, or notification preview is ever returned.
+//
+// Run with: node scripts/test-server-auth.mjs
+
+import dataHandler from '../api/data.js';
+import photosHandler from '../api/photos.js';
+import claudeHandler from '../api/claude.js';
+import nvidiaHandler from '../api/nvidia.js';
+import notifyHandler from '../api/notify.js';
+import quickbooksHandler from '../api/quickbooks.js';
+
+let passed = 0, failed = 0;
+function check(name, actual, expected) {
+  const a = JSON.stringify(actual), e = JSON.stringify(expected);
+  if (a === e) { passed++; console.log(`  ok   ${name}`); }
+  else { failed++; console.log(`  FAIL ${name}\n       expected ${e}\n       got      ${a}`); }
+}
+
+function createRes() {
+  const r = { statusCode: null, body: null, headers: {} };
+  r.status = (c) => { r.statusCode = c; return r; };
+  r.json = (d) => { r.body = d; return r; };
+  r.setHeader = () => r;
+  r.send = (d) => { r.body = d; return r; };
+  return r;
+}
+
+function noopReq(overrides = {}) {
+  return {
+    method: 'GET',
+    query: {},
+    headers: {},
+    body: null,
+    on(ev, cb) { if (ev === 'end') cb(); return this; },
+    ...overrides,
+  };
+}
+
+const originalEnv = { ...process.env };
+let calledUpstream = false;
+const originalFetch = global.fetch;
+global.fetch = async (...args) => {
+  calledUpstream = true;
+  throw new Error('test setup error: the gate should have refused this request before any network call');
+};
+
+async function runTests() {
+  console.log('\nTesting the fail-closed containment gate (api/_lib/serverAuth.js)');
+
+  // Fully "configured" environment — proves the gate refuses regardless of
+  // whether the underlying provider keys are present.
+  process.env.SUPABASE_URL = 'https://test.supabase.co';
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'sk-test';
+  process.env.ANTHROPIC_API_KEY = 'sk-ant-test';
+  process.env.NVIDIA_API_KEY = 'nvapi-test';
+  process.env.TWILIO_SID = 'AC-test';
+  process.env.TWILIO_AUTH = 'auth-test';
+  process.env.TWILIO_FROM = '+15550000000';
+  process.env.SENDGRID_API_KEY = 'SG-test';
+  process.env.QB_CLIENT_ID = 'qb-id';
+  process.env.QB_CLIENT_SECRET = 'qb-secret';
+  process.env.QB_REFRESH_TOKEN = 'qb-refresh';
+
+  const cases = [
+    ['GET /api/data (read customer data)', dataHandler, noopReq({ method: 'GET' })],
+    ['POST /api/data (write customer data)', dataHandler, noopReq({ method: 'POST', body: { collection: 'customers', records: [{ id: '1' }] } })],
+    ['GET /api/photos (signed photo link)', photosHandler, noopReq({ method: 'GET', query: { fileId: 'f_1' } })],
+    ['POST /api/photos (upload photo)', photosHandler, noopReq({ method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ fileId: 'f_1', data: 'data:image/jpeg;base64,AA==' }) })],
+    ['DELETE /api/photos (delete photo)', photosHandler, noopReq({ method: 'DELETE', query: { fileId: 'f_1' } })],
+    ['POST /api/claude (AI proxy)', claudeHandler, noopReq({ method: 'POST', body: { messages: [{ role: 'user', content: 'hi' }] } })],
+    ['POST /api/nvidia (AI proxy)', nvidiaHandler, noopReq({ method: 'POST', body: { messages: [{ role: 'user', content: 'hi' }] } })],
+    ['POST /api/notify (send SMS)', notifyHandler, noopReq({ method: 'POST', body: { channel: 'sms', to: '+15551234567', body: 'secret job details' } })],
+    ['POST /api/notify (send email)', notifyHandler, noopReq({ method: 'POST', body: { channel: 'email', to: 'customer@example.com', subject: 'Invoice', body: 'secret invoice content' } })],
+    ['POST /api/quickbooks (sync action)', quickbooksHandler, noopReq({ method: 'POST', body: { action: 'sync', records: [{ id: 1 }] } })],
+  ];
+
+  for (const [name, handler, req] of cases) {
+    calledUpstream = false;
+    const res = createRes();
+    await handler(req, res);
+    check(`${name} returns 403`, res.statusCode, 403);
+    check(`${name} returns server_auth_not_configured`, res.body && res.body.error, 'server_auth_not_configured');
+    check(`${name} reveals no customer/provider data`, JSON.stringify(res.body).toLowerCase().includes('secret'), false);
+    check(`${name} never calls the upstream provider`, calledUpstream, false);
+  }
+
+  // The routes that are NOT gated (non-sensitive QuickBooks status/auth_url)
+  // must still work normally — proves the gate is scoped, not a global outage.
+  {
+    const res = createRes();
+    await quickbooksHandler(noopReq({ method: 'GET', query: { action: 'status' } }), res);
+    check('GET /api/quickbooks?action=status is not gated', res.statusCode, 200);
+  }
+
+  console.log(`\n${passed} passed, ${failed} failed\n`);
+  global.fetch = originalFetch;
+  process.env = { ...originalEnv };
+  process.exit(failed ? 1 : 0);
+}
+
+runTests().catch((e) => {
+  console.error(e);
+  global.fetch = originalFetch;
+  process.env = { ...originalEnv };
+  process.exit(1);
+});

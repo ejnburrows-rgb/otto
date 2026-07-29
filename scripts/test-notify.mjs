@@ -4,7 +4,7 @@
 // interactions.
 // Run with: node scripts/test-notify.mjs
 
-import handler from '../api/notify.js';
+import { notifyHandler as handler } from '../api/notify.js';
 
 let passed = 0, failed = 0;
 function check(name, actual, expected) {

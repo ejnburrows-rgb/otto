@@ -4,7 +4,7 @@
 // signed-URL fetch, delete, 503 without env vars, and 405 on unknown methods.
 // Run with:  node scripts/test-photos.mjs
 
-import handler from '../api/photos.js';
+import { photosHandler as handler } from '../api/photos.js';
 
 let passed = 0, failed = 0;
 function check(name, actual, expected) {

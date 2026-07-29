@@ -1,4 +1,4 @@
-import handler from '../api/nvidia.js';
+import { nvidiaHandler as handler } from '../api/nvidia.js';
 
 let passed = 0, failed = 0;
 function check(name, actual, expected) {
