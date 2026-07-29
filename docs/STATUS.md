@@ -33,14 +33,42 @@ Branch: `main`. Live app: **https://otto-kohl.vercel.app** (verified working).
   and returns 401 (unauthorized) without it — this closes the prompt-injection
   path into "Ask OTTO" that an earlier sweep flagged.
 - **Automated tests.** `npm test` runs the suite in `package.json` (merge rules,
-  in-page merge parity, PIN handling, inbound-email, notify, quickbooks, nvidia).
-  Session log 2026-07-21 recorded the suite growing to **~101 checks** after API
-  tests were added; older "57 checks" lines in this file referred to an earlier
-  subset and are retired. A further browser script
-  (`node scripts/test-signin-browser.mjs`) drives the real app. CI runs
-  `npm test` and `node scripts/qa-check.mjs` on every push via GitHub
-  (`.github/workflows/ci.yml`). **Re-run `npm test` locally and paste the count
-  if you need an exact number after the next code change.**
+  in-page merge parity, PIN handling, inbound-email, notify, quickbooks, nvidia,
+  photos). Counted directly on 2026-07-29: **165 checks** across eight scripts
+  (22 + 22 + 32 + 15 + 16 + 19 + 16 + 23). A further browser script
+  (`node scripts/test-signin-browser.mjs`) drives the real app.
+  > **Counting trap.** `scripts/test-notify.mjs` ends with
+  > `Tests complete. Passed: N, Failed: 0` while the other seven end with
+  > `N passed, 0 failed`. A summary grep for `passed` silently drops it and
+  > mislabels the quickbooks line as notify's. Read all eight summary lines, or
+  > make them consistent.
+
+## 1a. NOT TRUE — CI does not run
+
+The line that used to sit above, claiming CI runs `npm test` and
+`qa-check.mjs` on every push, is **false** and was false when written.
+Checked on 2026-07-29 against the GitHub Actions API:
+
+- `.github/workflows/ci.yml` has run **once, ever** — 2026-07-21, triggered by
+  hand (`workflow_dispatch`), and it ended in `startup_failure`, meaning it
+  never got as far as running a step.
+- It has run **zero** times since: not on any of the nine open pull requests,
+  and not on any push to `main`, including six merges on 2026-07-29.
+
+The workflow file itself is fine — it parses, and its `on:` block correctly
+lists `push` to `main`, `pull_request`, and `workflow_dispatch`. So the file is
+not the problem; Actions is not executing for this repository at all. The usual
+causes are Actions being switched off for the repo or a private-repo minutes
+limit, both of which are settings only the owner can see.
+
+**This is the same trap as §3.7** — a workflow everyone believes is guarding the
+code, which has in fact never guarded anything. Until it is fixed, `npm test &&
+npm run qa` run locally before opening a PR is the only real gate, and "CI is
+green" must not be treated as evidence.
+
+**Owner action:** GitHub → repo Settings → Actions → check Actions are enabled
+and the account has runner minutes, then re-run the workflow from the Actions
+tab and confirm it goes green.
 - **CSV export** for every record type, including QuickBooks-format invoices.
 - **Documentation standard** — `AGENTS.md` plus this file and `DECISIONS.md`.
 - **Tool-agnostic agent rules** — `AGENTS.md` no longer names Claude-only skills
