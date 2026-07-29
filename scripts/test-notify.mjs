@@ -27,7 +27,10 @@ global.fetch = async (url, options) => {
   return {
     ok: nextFetchResponse.ok,
     status: nextFetchResponse.status,
-    json: async () => nextFetchResponse.data,
+    json: async () => {
+      if (nextFetchResponse && nextFetchResponse.jsonError) throw nextFetchResponse.jsonError;
+      return nextFetchResponse.data;
+    },
     text: async () => nextFetchResponse.text,
   };
 };
@@ -101,6 +104,13 @@ async function runTests() {
   res = createRes();
   await handler({ method: 'POST', body: { channel: 'sms', to: '123' } }, res);
   check('SMS exception returns 500', { status: res.statusCode, error: res.body.error }, { status: 500, error: 'twilio_failed' });
+
+  // Test 6b: SMS JSON parse exception
+  fetchCalls = [];
+  nextFetchResponse = { ok: true, status: 200, jsonError: new Error('JSON Parse failed') };
+  res = createRes();
+  await handler({ method: 'POST', body: { channel: 'sms', to: '123' } }, res);
+  check('SMS JSON parse exception returns 500', { status: res.statusCode, error: res.body.error }, { status: 500, error: 'twilio_failed' });
 
   // Test 7: Email missing config
   resetEnv();
