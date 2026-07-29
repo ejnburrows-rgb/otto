@@ -337,3 +337,11 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   labels in `docs/QA_CHECKLIST.md` and `docs/QA_BROWSER.md`. `npm test`
   (123 checks) and `npm run qa` both pass.
 - 2026-07-22 — Fixed prototype pollution vulnerability in `safeParse` inside `api/inbound-email.js` and added tests to `scripts/test-inbound-email.mjs`.
+- 2026-07-28 — Built photo file sync (#30): photos now upload to Supabase Storage
+  via a queued background process (`photo_upload_queue` in IndexedDB, retries every
+  30 s and on reconnect) and are fetched lazily when a job is opened on another
+  device via `api/photos.js`. The `job-photos` bucket is private; anonymous access
+  is denied. Offline display is preserved — photos appear instantly on the
+  capturing device from local IDB. Delete propagates to Storage. Five design
+  decisions recorded in DECISIONS.md. `npm test` (124 checks) and
+  `npm run qa` both pass.
