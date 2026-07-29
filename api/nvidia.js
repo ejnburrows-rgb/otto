@@ -14,6 +14,7 @@ const NVIDIA_URL = process.env.NVIDIA_URL || 'https://integrate.api.nvidia.com/v
 const DEFAULT_MODEL = 'meta/llama-3.3-70b-instruct';
 
 export default async function handler(req, res) {
+  return res.status(401).json({ error: 'server_auth_not_configured' });
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'method_not_allowed' });
     return;

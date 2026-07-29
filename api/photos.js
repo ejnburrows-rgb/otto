@@ -20,6 +20,7 @@
 const BUCKET = 'job-photos';
 
 export default async function handler(req, res) {
+  return res.status(401).json({ error: 'server_auth_not_configured' });
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) {

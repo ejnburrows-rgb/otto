@@ -41,6 +41,7 @@ export default async function handler(req, res) {
   }
 
   if (action === 'sync') {
+    return res.status(401).json({ error: 'server_auth_not_configured' });
     if (!configured || !process.env.QB_REFRESH_TOKEN) {
       return res.status(503).json({ error: 'not_connected', message: 'Connect QuickBooks in Settings first.' });
     }
