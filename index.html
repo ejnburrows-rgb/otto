@@ -633,7 +633,7 @@
   let lang = localStorage.getItem('otto_lang') || 'en';
   const T = {
     en: {
-      home: 'Home', customers: 'Customers', jobs: 'Jobs', calls: 'Calls', more: 'More',
+      home: 'Home', customers: 'Customers', jobs: 'Jobs', calls: 'Calls', more: 'More', urgent: 'Urgent', kpis: 'KPIs',
       newCall: 'New Call', newJob: 'New Job', myJobs: 'My Jobs', addPhoto: 'Add Photo',
       voiceNote: 'Voice Note', scanCheck: 'Scan Check', ask: 'Ask OTTO', estimates: 'Estimates',
       invoices: 'Invoices', payments: 'Payments', checks: 'Checks', followups: 'Follow-ups',
@@ -716,7 +716,7 @@
       floatingChat: 'Chat with OTTO', chatTitle: 'OTTO Assistant', typing: 'OTTO is thinking…', copyMsg: 'Copy', copied: 'Copied!', close: 'Close', openAiChat: 'Open AI Chat', sendMessage: 'Send',
     },
     es: {
-      home: 'Inicio', customers: 'Clientes', jobs: 'Trabajos', calls: 'Llamadas', more: 'Más',
+      home: 'Inicio', customers: 'Clientes', jobs: 'Trabajos', calls: 'Llamadas', more: 'Más', urgent: 'Urgentes', kpis: 'KPIs',
       newCall: 'Nueva Llamada', newJob: 'Nuevo Trabajo', myJobs: 'Mis Trabajos', addPhoto: 'Agregar Foto',
       voiceNote: 'Nota de Voz', scanCheck: 'Escanear Cheque', ask: 'Pregunta a OTTO', estimates: 'Presupuestos',
       invoices: 'Facturas', payments: 'Pagos', checks: 'Cheques', followups: 'Seguimientos',
@@ -940,6 +940,7 @@
         if (!d.objectStoreNames.contains('estimate_records')) d.createObjectStore('estimate_records', { keyPath: 'id' });
         if (!d.objectStoreNames.contains('verification_logs')) d.createObjectStore('verification_logs', { keyPath: 'id' });
         if (!d.objectStoreNames.contains('pricing_exceptions')) d.createObjectStore('pricing_exceptions', { keyPath: 'id' });
+        if (!d.objectStoreNames.contains('photo_upload_queue')) d.createObjectStore('photo_upload_queue');
       };
       r.onsuccess = () => { _idb = r.result; res(_idb); };
       r.onerror = () => rej(r.error);
@@ -1010,8 +1011,96 @@
   }
 
   /* file blobs (photos, documents, CAD) stored separately */
-  async function storeFile(blob) { const id = 'f_' + uid(); await idbPut('files', id, blob); return id; }
-  async function getFileURL(id) { const b = await idbGet('files', id); return b ? URL.createObjectURL(b) : null; }
+  async function storeFile(blob, mime) { const id = 'f_' + uid(); await idbPut('files', id, blob); await enqueuePhotoUpload(id, mime || 'image/jpeg'); return id; }
+  async function getFileURL(id) {
+    // Fast path: blob is already on this device (just taken, or previously cached).
+    const b = await idbGet('files', id);
+    if (b) return URL.createObjectURL(b);
+    // Slow path: fetch from cloud and cache locally so the next open is instant.
+    // Only runs on a second device that does not have the local copy.
+    try {
+      const r = await fetch('/api/photos?fileId=' + encodeURIComponent(id));
+      if (!r.ok) return null;
+      const { url } = await r.json();
+      if (!url) return null;
+      const imgRes = await fetch(url);
+      if (!imgRes.ok) return null;
+      const blob = await imgRes.blob();
+      await idbPut('files', id, blob);
+      return URL.createObjectURL(blob);
+    } catch (_) {
+      return null; // offline or server not configured — show nothing rather than crash
+    }
+  }
+
+  /* ============================ photo upload queue ============================ */
+  /* Each entry: { fileId, mime, retries, added }. The blob stays in 'files'
+     until the upload succeeds. The queue persists in IndexedDB, so it survives
+     the app being closed mid-upload. */
+
+  async function enqueuePhotoUpload(fileId, mime) {
+    await idbPut('photo_upload_queue', fileId, { fileId, mime: mime || 'image/jpeg', retries: 0, added: Date.now() });
+  }
+
+  async function _drainPhotoQueue() {
+    let entries;
+    try { entries = await idbGetAll('photo_upload_queue'); } catch (e) { return; }
+    for (const entry of entries) {
+      const { fileId, mime } = entry;
+      const blob = await idbGet('files', fileId);
+      if (!blob) { await idbDel('photo_upload_queue', fileId); continue; }
+      try {
+        const b64 = await blobToBase64(blob);
+        const r = await fetch('/api/photos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fileId, mime, data: b64 }),
+        });
+        if (r.ok) {
+          await idbDel('photo_upload_queue', fileId);
+        } else {
+          await _bumpPhotoRetry(fileId, entry);
+        }
+      } catch (_) {
+        await _bumpPhotoRetry(fileId, entry);
+      }
+    }
+  }
+
+  async function _bumpPhotoRetry(fileId, entry) {
+    // Give up after 20 attempts (~10 min). Leave the blob so it is still
+    // visible locally; remove from queue to stop retrying.
+    if (entry.retries >= 20) {
+      await idbDel('photo_upload_queue', fileId);
+    } else {
+      await idbPut('photo_upload_queue', fileId, { ...entry, retries: entry.retries + 1 });
+    }
+  }
+
+  function blobToBase64(blob) {
+    return new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result);
+      r.onerror = rej;
+      r.readAsDataURL(blob);
+    });
+  }
+
+  /* Start the background queue drain: retry every 30 seconds and on reconnect.
+     The plumber is never blocked — photos appear instantly from local IDB. */
+  function startPhotoQueueDrainer() {
+    _drainPhotoQueue();
+    setInterval(_drainPhotoQueue, 30000);
+    window.addEventListener('online', _drainPhotoQueue);
+  }
+
+  function deletePhotoFile(fileId) {
+    if (!fileId) return;
+    idbDel('files', fileId).catch(() => {});
+    idbDel('photo_upload_queue', fileId).catch(() => {});
+    fetch('/api/photos?fileId=' + encodeURIComponent(fileId), { method: 'DELETE' })
+      .catch(() => {}); // fire-and-forget; soft-delete of the record is the primary delete
+  }
 
   /* ============================ sign-in codes ============================ */
   /* PINs are not stored as readable numbers. Each user gets a random "salt" (an
@@ -1842,7 +1931,7 @@
     $('#main').innerHTML = html;
     // lazy-load photo blobs
     const grid = $('#jobphotos');
-    if (grid) photos.forEach(async p => { const url = await getFileURL(p.fileId); if (url) { const im = document.createElement('img'); im.src = url; im.onclick = () => modal(`<h2>${t('photos')}</h2><img src="${url}" style="width:100%;border-radius:12px;margin-top:10px"><div class="muted" style="margin-top:8px">${esc(p.caption || '')} · ${fmtDate(p.created)}</div><button class="btn red block" style="margin-top:12px" onclick="confirmDel(()=>{remove('photos','${p.id}');closeModal();render()})"><i class='fas fa-trash'></i> ${t('delete')}</button>`); grid.appendChild(im); } });
+    if (grid) photos.forEach(async p => { const url = await getFileURL(p.fileId); if (url) { const im = document.createElement('img'); im.src = url; im.onclick = () => modal(`<h2>${t('photos')}</h2><img src="${url}" style="width:100%;border-radius:12px;margin-top:10px"><div class="muted" style="margin-top:8px">${esc(p.caption || '')} · ${fmtDate(p.created)}</div><button class="btn red block" style="margin-top:12px" onclick="confirmDel(()=>{deletePhotoFile(${JSON.stringify(p.fileId)});remove('photos','${p.id}');closeModal();render()})"><i class='fas fa-trash'></i> ${t('delete')}</button>`); grid.appendChild(im); } });
   }
 
   function noteHTML(n) {
@@ -4336,6 +4425,7 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     await migratePlainPins();
     try { _cloudAvailable = await cloudPull(); } catch (e) { }
     startCloudPolling();
+    startPhotoQueueDrainer();
     const sid = localStorage.getItem('otto_session');
     if (sid) { session = get('users', sid); }
     if (session) startApp(); else showLogin();
@@ -4442,14 +4532,42 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     if (kpiMode === 'summary') {
       const workers = db.users.filter(u => u.role === 'field');
       html += `<div class="tiles" style="grid-template-columns:1fr; gap:12px;">`;
+
+      // Optimization: pre-group data by workerId to avoid O(N*M) lookups
+      const eventsByWorker = {};
+      for (const e of db.job_events) {
+        if (!eventsByWorker[e.workerId]) eventsByWorker[e.workerId] = [];
+        eventsByWorker[e.workerId].push(e);
+      }
+
+      const jobsByWorker = {};
+      for (const j of db.jobs) {
+        if (!jobsByWorker[j.assignedTo]) jobsByWorker[j.assignedTo] = [];
+        jobsByWorker[j.assignedTo].push(j);
+      }
+
+      const escalationsByWorker = {};
+      for (const e of db.ai_escalations) {
+        escalationsByWorker[e.workerId] = (escalationsByWorker[e.workerId] || 0) + 1;
+      }
+
+      const ptoByWorker = {};
+      for (const p of db.time_off) {
+        if (!ptoByWorker[p.workerId]) ptoByWorker[p.workerId] = [];
+        ptoByWorker[p.workerId].push(p);
+      }
+
+      const today = todayISO();
+
       workers.forEach(w => {
-        const checkins = db.job_events.filter(e => e.workerId === w.id && e.type === 'check_in');
-        const jobsDone = db.jobs.filter(j => j.assignedTo === w.id && j.status === 'completed').length;
-        const escalations = db.ai_escalations.filter(e => e.workerId === w.id).length;
+        const checkins = (eventsByWorker[w.id] || []).filter(e => e.type === 'check_in');
+        const jobsDone = (jobsByWorker[w.id] || []).filter(j => j.status === 'completed').length;
+        const escalations = escalationsByWorker[w.id] || 0;
         const locations = new Set(checkins.map(e => e.jobId)).size;
         
-        const approvedPTO = db.time_off.find(p => p.workerId === w.id && p.status === 'approved' && p.endDate >= todayISO());
-        const pendingCount = db.time_off.filter(p => p.workerId === w.id && p.status === 'pending').length;
+        const wPTO = ptoByWorker[w.id] || [];
+        const approvedPTO = wPTO.find(p => p.status === 'approved' && p.endDate >= today);
+        const pendingCount = wPTO.filter(p => p.status === 'pending').length;
         let ptoStr = t('noPtoPending');
         if (approvedPTO) ptoStr = `${t('approvedThrough')} ${fmtDate(approvedPTO.endDate)}`;
         else if (pendingCount) ptoStr = `[${pendingCount}] ${t('pendingCount')}`;
@@ -4912,7 +5030,7 @@ Return ONLY valid JSON: { "fixtures": [], "pipes": [], "fittings": [], "notes": 
     uploadProjectDoc, openProjectDoc, approveProjectDoc, backupNow, restoreTest,
     viewKpis, viewWorkerProfile, approvePTO, denyPTO, renderCharts, seedMockKPIs,
     saveGoogleClient, connectGmail, fetchNewEmails, viewInbox, previewPDF, analyzePdfAI, selectJobForTakeoff, assignTakeoff,
-    photoScanCreateCustomer, viewUrgentHub, openUrgentForm, submitUrgentMessage, replyUrgent, resolveUrgent,
+    photoScanCreateCustomer, viewUrgentHub, openUrgentForm, submitUrgentMessage, replyUrgent, resolveUrgent, deletePhotoFile,
     connectQuickBooks, saveNotifyPrefs, refreshIntegrationStatus });
 
   /* Hooks used only by the automated tests in scripts/. They expose existing
