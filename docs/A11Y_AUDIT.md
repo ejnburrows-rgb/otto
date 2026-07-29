@@ -101,4 +101,31 @@ Below are examples of the worst accessibility violations found during the mobile
 Settings screen no longer has Firebase key inputs, so that specific finding no
 longer applies. Everything else was re-checked and still stands.
 
-Tracked as a GitHub issue; the findings here have not yet been fixed.
+**Status update 2026-07-29 (issue #45).** Every fix enumerated above is now in
+`index.html` and verified by measurement, not by eye. Most had already landed in
+the 2026-07-21 design pass — `role="main"`, the logo `alt`, the FAB `aria-label`,
+`colorFor` at 30% lightness, `searchBox` and `voiceBtn` labels, the light-theme
+`--red`/`--green`, and the 44px floor on `.iconbtn`.
+
+Re-auditing the running app rather than re-reading this list then found six
+failures it does not mention, all now fixed:
+
+| Failure | Measured | Fix |
+|---|---|---|
+| `.btn.green` / `.toast.success`, white on dark-theme `--green` | 2.28:1 | scoped dark override `#15803d` (5.0:1) |
+| `.btn.red` / `.toast.error`, white on dark-theme `--red` | 2.77:1 | scoped dark override `#B91C1C` (6.5:1) |
+| `.btn.amber`, white on dark-theme `--amber` | 2.15:1 | scoped dark override `#B45309` (5.0:1) |
+| Active bottom-nav label, accent as text on dark | 3.67:1 | `--blue2` in dark theme (9.7:1) |
+| Inactive bottom-nav label at 11px | 4.24:1 | `--text2` instead of `--text3` (8.5:1) |
+| `.langtoggle button` inactive | 4.04:1 | `#CBD5E1` (7.0:1) |
+| `.pill.blue` (light theme only) | 4.44:1 | `#0052CC` (6.3:1) |
+| dark `--accent` behind white text | 4.499:1 | `#2563eb` (5.2:1) |
+
+The dark-theme status colours are deliberately left bright as *text* on tinted
+pills; only the surfaces carrying white text were darkened.
+
+Also fixed: the page-header back button had no accessible name, and three
+control types were under the 44px target size (`.tabs button` 27px,
+`.langtoggle button` 27px, `.back` 40px).
+
+The Firebase key input item is void — that field was removed with Firebase.

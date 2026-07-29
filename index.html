@@ -63,7 +63,8 @@
       --text3: #74829a;
       --blue: #1e3a8a;
       --blue2: #7bd0ff;
-      --accent: #2f6bff;
+      /* #2f6bff gave white text exactly 4.499:1 — a hair under WCAG AA. */
+      --accent: #2563eb;
       --accent-hover: #4d80ff;
       --green: #22c55e;
       --amber: #f59e0b;
@@ -129,8 +130,11 @@
       display: flex; background: rgba(255, 255, 255, 0.08); border-radius: var(--radius-sm); overflow: hidden;
     }
     .langtoggle button {
-      border: none; background: transparent; color: #94A3B8; padding: 6px 12px; 
+      /* #94A3B8 on the header blue was 4.04:1; #CBD5E1 reaches 6.98:1.
+         44px minimum is the WCAG 2.1 AA target size — these were 27px tall. */
+      border: none; background: transparent; color: #CBD5E1; padding: 6px 12px;
       font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.2s ease;
+      min-width: 44px; min-height: 44px;
     }
     .langtoggle button.on { background: #FFFFFF; color: var(--blue); }
     .langtoggle button:not(.on):hover { color: #FFFFFF; }
@@ -148,6 +152,8 @@
     }
     .back:hover { background: var(--card-hover); color: var(--text); }
     .back:active { transform: scale(0.96); }
+    /* WCAG 2.1 AA target size — was 40x40. */
+    .back { min-width: 44px; min-height: 44px; }
 
     /* ===== DASHBOARD (Home Tiles & Schedule) ===== */
     .greet { font-size: 16px; color: var(--text2); margin-bottom: 4px; font-weight: 400; }
@@ -233,6 +239,18 @@
     .btn.amber:hover { background: #B45309; box-shadow: 0 4px 8px rgba(217, 119, 6, 0.3); }
     .btn.red { background: var(--red); box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2); }
     .btn.red:hover { background: #B91C1C; box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3); }
+
+    /* WCAG 2.1 AA — dark theme only.
+       --green/--amber/--red are deliberately bright in dark mode because they
+       are also used as *text* on tinted pills (.pill.green etc), where a dark
+       value would be unreadable. But the same variables sit behind WHITE text
+       on these buttons, giving 2.28:1 (green), 2.77:1 (red), 2.15:1 (amber).
+       So the fix is scoped to the surfaces that carry white text, leaving the
+       pills and status icons alone. */
+    [data-theme="dark"] .btn.green, [data-theme="dark"] .toast.success { background: #15803d; }
+    [data-theme="dark"] .btn.red,   [data-theme="dark"] .toast.error   { background: #B91C1C; }
+    [data-theme="dark"] .btn.amber { background: #B45309; }
+    [data-theme="dark"] .sched-pto { background: #15803d !important; border-color: #15803d !important; }
     
     .btn.ghost { background: var(--card); color: var(--text); border: 1px solid var(--line); box-shadow: var(--shadow-sm); }
     .btn.ghost:hover { background: var(--card-hover); border-color: var(--accent); color: var(--text); box-shadow: var(--shadow); }
@@ -262,7 +280,8 @@
     [data-theme="dark"] .bottomnav { background: var(--card); backdrop-filter: none; -webkit-backdrop-filter: none; box-shadow: 0 -4px 20px rgba(0,0,0,0.3); }
     
     .bottomnav button {
-      flex: 1; border: none; background: none; cursor: pointer; color: var(--text3);
+      /* --text3 gave these 11px labels only 4.24:1; --text2 reaches 8.5:1. */
+      flex: 1; border: none; background: none; cursor: pointer; color: var(--text2);
       display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 2px; 
       font-size: 11px; font-weight: 500; transition: all 0.2s ease;
     }
@@ -270,6 +289,10 @@
     .bottomnav button:hover { color: var(--text2); }
     .bottomnav button.on { color: var(--accent); font-weight: 600; }
     .bottomnav button.on i { transform: translateY(-2px); }
+    /* On the dark surface the accent blue as *text* is only 3.67:1, so the
+       active tab uses the light blue instead (9.7:1). Buttons that put white
+       text ON the accent are unaffected and keep the brand colour. */
+    [data-theme="dark"] .bottomnav button.on { color: var(--blue2); }
 
     /* ===== FORMS ===== */
     .field { margin-bottom: 20px; }
@@ -322,7 +345,8 @@
     /* ===== MISC / UTILS ===== */
     .pill { display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
     .pill.gray { background: #F1F5F9; color: var(--text2); }
-    .pill.blue { background: #EFF6FF; color: var(--accent); }
+    /* var(--accent) #0066FF on this tint is 4.44:1 at 11px — just under AA. */
+    .pill.blue { background: #EFF6FF; color: #0052CC; }
     .pill.green { background: #ECFDF5; color: var(--green); }
     .pill.amber { background: #FFFBEB; color: var(--amber); }
     .pill.red { background: #FEF2F2; color: var(--red); }
@@ -356,8 +380,9 @@
     .tabs::-webkit-scrollbar { display: none; }
     .tabs button { 
       white-space: nowrap; border: 1px solid var(--line); background: var(--card); color: var(--text2); 
-      padding: 10px 18px; border-radius: 999px; font-weight: 500; font-size: 14px; cursor: pointer; 
+      padding: 10px 18px; border-radius: 999px; font-weight: 500; font-size: 14px; cursor: pointer;
       transition: all 0.2s ease;
+      min-height: 44px; /* WCAG 2.1 AA target size — was 27px tall. */
     }
     .tabs button:hover { background: var(--card-hover); color: var(--text); }
     .tabs button.on { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 600; box-shadow: 0 2px 6px rgba(47, 107, 255, 0.3); }
@@ -634,6 +659,7 @@
   const T = {
     en: {
       home: 'Home', customers: 'Customers', jobs: 'Jobs', calls: 'Calls', more: 'More', urgent: 'Urgent', kpis: 'KPIs',
+      inbox: 'Inbox', back: 'Back',
       newCall: 'New Call', newJob: 'New Job', myJobs: 'My Jobs', addPhoto: 'Add Photo',
       voiceNote: 'Voice Note', scanCheck: 'Scan Check', ask: 'Ask OTTO', estimates: 'Estimates',
       invoices: 'Invoices', payments: 'Payments', checks: 'Checks', followups: 'Follow-ups',
@@ -717,6 +743,7 @@
     },
     es: {
       home: 'Inicio', customers: 'Clientes', jobs: 'Trabajos', calls: 'Llamadas', more: 'Más', urgent: 'Urgentes', kpis: 'KPIs',
+      inbox: 'Entrada', back: 'Atrás',
       newCall: 'Nueva Llamada', newJob: 'Nuevo Trabajo', myJobs: 'Mis Trabajos', addPhoto: 'Agregar Foto',
       voiceNote: 'Nota de Voz', scanCheck: 'Escanear Cheque', ask: 'Pregunta a OTTO', estimates: 'Presupuestos',
       invoices: 'Facturas', payments: 'Pagos', checks: 'Cheques', followups: 'Seguimientos',
@@ -1682,7 +1709,7 @@
 
   /* ---------- shared building blocks ---------- */
   function pageHead(title, sub, withBack, actions) {
-    return `<div class="pagehead">${withBack ? `<button class="back" onclick="${withBack}"><i class="fas fa-arrow-left"></i></button>` : ''}
+    return `<div class="pagehead">${withBack ? `<button class="back" aria-label="${t('back')}" onclick="${withBack}"><i class="fas fa-arrow-left"></i></button>` : ''}
       <div><h1>${esc(title)}</h1>${sub ? `<div class="sub">${esc(sub)}</div>` : ''}</div>${actions || ''}</div>`;
   }
   function searchBox(id, ph) { return `<div class="searchbar"><i class="fas fa-magnifying-glass"></i><input id="${id}" aria-label="${esc(ph || t('search'))}" placeholder="${esc(ph || t('search'))}" oninput="render()" value="${esc(_search[id] || '')}"></div>`; }

@@ -356,3 +356,17 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   are 22 + 22 + 32 + 15 + 16 + 19 + 16 + 23 = **165 checks, 0 failed**. The
   "0 failed" part was correct throughout; only the totals were wrong. Worth
   making the per-script summary lines consistent so this cannot recur.
+- 2026-07-29 — Accessibility pass for #45. Implemented the `docs/A11Y_AUDIT.md`
+  fixes, then re-audited the running app in a browser rather than trusting the
+  list — most audit items were already done in the 2026-07-21 design pass, but
+  measurement found eight contrast failures the audit never mentioned. The worst
+  were dark-theme buttons: white text on the bright green/red/amber gave 2.28:1,
+  2.77:1 and 2.15:1 against a 4.5:1 requirement. Those variables are also used as
+  text on tinted pills, so the fix darkens only the surfaces carrying white text
+  and leaves the pills alone. Also gave the page-header back button an accessible
+  name via `t()`, raised three control types to the 44px target size, and added
+  the missing `inbox` label to both string tables — the Spanish bottom nav had
+  been showing the raw English key, the same fault as #54. Audit script now
+  reports 0 nameless controls, 0 contrast failures and 0 undersized targets
+  across 7 screens x EN/ES x dark/light. `npm test` (165 checks) and
+  `npm run qa` both pass.
