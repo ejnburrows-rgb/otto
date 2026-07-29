@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OTTO Plumbing CRM — Features</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --blue: #0A2540;
+      --blue2: #143A61;
+      --accent: #0066FF;
+      --accent-hover: #005CE6;
+      --green: #047857;
+      --amber: #B45309;
+      --red: #B91C1C;
+      --bg: #F8FAFC;
+      --bg2: #F1F5F9;
+      --card: #FFFFFF;
+      --card-hover: #F1F5F9;
+      --card-elevated: #FFFFFF;
+      --line: #E2E8F0;
+      --glass-bg: rgba(255, 255, 255, 0.85);
+      --glass-border: #E2E8F0;
+      --text: #0F172A;
+      --text2: #475569;
+      --text3: #94A3B8;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --shadow-sm: 0 1px 3px rgba(10,37,64,0.04), 0 1px 2px rgba(10,37,64,0.02);
+      --shadow: 0 4px 12px rgba(10,37,64,0.06), 0 2px 4px rgba(10,37,64,0.03);
+      --shadow2: 0 12px 32px rgba(10,37,64,0.08), 0 4px 12px rgba(10,37,64,0.04);
+      --tap: 52px;
+    }
+    [data-theme="dark"] {
+      --bg: #080e1a;
+      --bg2: #0c1322;
+      --card: #131c2e;
+      --card-hover: #192640;
+      --card-elevated: #1a2744;
+      --line: rgba(255,255,255,.07);
+      --text: #f0f4ff;
+      --text2: #8899bb;
+      --text3: #4a5a75;
+      --blue: #1e3a8a;
+      --blue2: #7bd0ff;
+      --accent: #2f6bff;
+      --accent-hover: #4d80ff;
+      --green: #10b981;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.35);
+      --shadow: 0 6px 16px rgba(0,0,0,0.45);
+      --shadow2: 0 16px 40px rgba(0,0,0,0.55);
+      --glass-bg: #101827;
+      --glass-border: #2b3852;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html { background: var(--bg); }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 16px;
+      line-height: 1.5;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    button, input, select, textarea { font-family: inherit; font-size: 16px; color: inherit; }
+    .hidden { display: none !important; }
+    a { color: var(--accent); text-decoration: none; transition: color 0.15s ease; }
+    a:hover { color: var(--accent-hover); }
+
+    .topbar {
+      position: sticky; top: 0; z-index: 40;
+      background: linear-gradient(90deg, #0a1930 0%, #071225 60%, #0d2240 100%);
+      color: #fff;
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 20px; padding-top: max(12px, env(safe-area-inset-top));
+      box-shadow: var(--shadow-sm);
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    .topbar .brand {
+      font-family: 'Newsreader', serif; display: flex; align-items: center; gap: 8px;
+      font-weight: 600; font-size: 20px; letter-spacing: 0.02em;
+    }
+    .topbar .brand i { color: var(--accent-hover); }
+    .topbar .spacer { flex: 1; }
+    .langtoggle {
+      display: flex; background: rgba(255,255,255,0.08); border-radius: var(--radius-sm); overflow: hidden;
+    }
+    .langtoggle button {
+      border: none; background: transparent; color: #94A3B8; padding: 6px 12px;
+      font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.2s ease;
+    }
+    .langtoggle button.on { background: #FFFFFF; color: var(--blue); }
+    .langtoggle button:not(.on):hover { color: #FFFFFF; }
+
+    .layout {
+      display: flex;
+      max-width: 1200px;
+      margin: 0 auto;
+      min-height: calc(100vh - 60px);
+    }
+    .sidebar {
+      width: 260px;
+      flex-shrink: 0;
+      background: var(--card);
+      border-right: 1px solid var(--line);
+      padding: 24px 0;
+      overflow-y: auto;
+      position: sticky;
+      top: 60px;
+      height: calc(100vh - 60px);
+    }
+    [data-theme="dark"] .sidebar {
+      background: var(--card);
+      border-right: 1px solid var(--line);
+    }
+    .sidebar .nav-group {
+      padding: 0 16px;
+      margin-bottom: 20px;
+    }
+    .sidebar .nav-group-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text3);
+      margin-bottom: 8px;
+      padding: 0 12px;
+    }
+    .sidebar a {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: var(--radius-sm);
+      color: var(--text2);
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.15s ease;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .sidebar a:hover, .sidebar a.active {
+      background: var(--bg2);
+      color: var(--text);
+    }
+    .sidebar a i {
+      width: 20px;
+      text-align: center;
+      font-size: 14px;
+      color: var(--accent);
+    }
+    .main {
+      flex: 1;
+      padding: 32px 40px;
+      overflow-y: auto;
+    }
+    .pagehead {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .pagehead h1 {
+      font-family: 'Newsreader', serif;
+      font-size: 32px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: var(--text);
+    }
+    .pagehead .sub {
+      color: var(--text2);
+      font-size: 15px;
+      margin-top: 2px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .feature-card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s ease;
+    }
+    [data-theme="dark"] .feature-card {
+      background: var(--card);
+      border: 1px solid var(--line);
+    }
+    .feature-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow);
+      border-color: var(--accent);
+    }
+    .feature-card .fc-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: #fff;
+      margin-bottom: 12px;
+    }
+    .feature-card .fc-title {
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .feature-card .fc-desc {
+      font-size: 13px;
+      color: var(--text2);
+      line-height: 1.45;
+    }
+
+    .category-section {
+      margin-bottom: 32px;
+    }
+    .category-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text3);
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .main { padding: 20px; }
+      .features-grid { grid-template-columns: 1fr; }
+    }
+
+    @media print {
+      @page { margin: 18mm 15mm; }
+      html, body { background: #fff !important; color: #000 !important; }
+      .topbar, .sidebar { display: none !important; }
+      .layout { display: block; max-width: none; }
+      .main { padding: 0; overflow: visible; }
+      .feature-card {
+        background: #fff !important;
+        border: 1px solid #ddd !important;
+        box-shadow: none !important;
+        break-inside: avoid;
+        margin-bottom: 12px;
+      }
+      .feature-card .fc-title { color: #000 !important; }
+      .feature-card .fc-desc { color: #333 !important; }
+      .category-title { color: #333 !important; border-bottom: 1px solid #ccc !important; }
+      .pagehead h1 { color: #000 !important; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><i class="fas fa-faucet"></i> OTTO Plumbing</div>
+    <div class="spacer"></div>
+    <div class="langtoggle">
+      <button id="lang-en" onclick="setLang('en')">EN</button>
+      <button id="lang-es" onclick="setLang('es')">ES</button>
+    </div>
+  </header>
+  <div class="layout">
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main" id="main"></main>
+  </div>
+
+  <script>
+    "use strict";
+    const $ = (s, r = document) => r.querySelector(s);
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+    let lang = localStorage.getItem('otto_lang') || 'en';
+    let activeSection = 'overview';
+
+    const T = {
+      en: {
+        title: 'OTTO Plumbing CRM — Features',
+        subtitle: 'Everything your trades business needs, in one app.',
+        overview: 'Overview',
+        coreOps: 'Core Operations',
+        fieldTools: 'Field Tools & AI',
+        documents: 'Documents & Contracts',
+        teamPayroll: 'Team & Payroll',
+        integrations: 'Integrations & Security',
+        features: {
+          customers: 'Customers',
+          jobs: 'Jobs',
+          calls: 'Calls',
+          notes: 'Notes',
+          photos: 'Photos',
+          documents: 'Documents',
+          estimates: 'Estimates',
+          invoices: 'Invoices',
+          payments: 'Payments',
+          checks: 'Checks',
+          followups: 'Follow-ups',
+          workflows: 'Workflows',
+          knowledge: 'Knowledge base',
+          voiceInput: 'Voice input',
+          ocr: 'OCR',
+          askOtto: 'Ask OTTO AI assistant',
+          drawingEstimate: 'Drawing-to-estimate AI (NVIDIA)',
+          gpsMap: 'GPS/team map',
+          quickbooks: 'QuickBooks export',
+          roleAccess: 'Role-based access',
+          payroll: 'Payroll import',
+          inbox: 'Inbox/email register',
+          accountability: 'Worker accountability',
+          versionedDocs: 'Versioned documents',
+          backups: 'Backups',
+        },
+        desc: {
+          customers: 'Customer database with contact info, job history, and outstanding balances.',
+          jobs: 'Job scheduling, assignment, status tracking, and checklists.',
+          calls: 'Log inbound calls, link to customers and jobs, create jobs from calls.',
+          notes: 'Add timestamped notes to jobs and customers.',
+          photos: 'Before/after job photos, customer site photos, and document scanning.',
+          documents: 'Store contracts, proposals, plans, and CAD/AutoCAD files per job.',
+          estimates: 'Detailed estimates with line items, quantities, and scope of work.',
+          invoices: 'Professional invoices with payment tracking and QuickBooks export.',
+          payments: 'Record payments, link to invoices, track partial and full payments.',
+          checks: 'Scan and record checks, link to invoices, track clearing.',
+          followups: 'Automated and manual follow-ups to keep jobs moving.',
+          workflows: 'Customizable workflow templates that automate repetitive steps.',
+          knowledge: 'SOP library, how-to guides, and approved answers for the team.',
+          voiceInput: 'Dictate notes, calls, and job updates hands-free.',
+          ocr: 'Scan checks, documents, and drawings to extract text automatically.',
+          askOtto: 'AI assistant for job questions, customer lookups, and how-to help.',
+          drawingEstimate: 'Upload a floor plan or drawing and AI reads it to draft a materials list and estimate.',
+          gpsMap: 'Track worker locations between check-in and check-out for job site accountability.',
+          quickbooks: 'Export invoices, payments, and estimates directly to QuickBooks.',
+          roleAccess: 'Owner, office manager, field worker, and accounting roles with view and edit permissions.',
+          payroll: 'Import Excel or CSV payroll files — each row becomes a payroll record.',
+          inbox: 'Forwarded emails and attachments matched to the right customer and job.',
+          accountability: 'Check-in/check-out, GPS logs, location visits, and PTO tracking.',
+          versionedDocs: 'Upload new versions of contracts, proposals, and plans with full history.',
+          backups: '3+ versioned backup copies with verification and scheduled restore tests.',
+        }
+      },
+      es: {
+        title: 'OTTO Plumbing CRM — Características',
+        subtitle: 'Todo lo que necesita su negocio de plomería, en una sola app.',
+        overview: 'Resumen',
+        coreOps: 'Operaciones Principales',
+        fieldTools: 'Herramientas de Campo e IA',
+        documents: 'Documentos y Contratos',
+        teamPayroll: 'Equipo y Nómina',
+        integrations: 'Integraciones y Seguridad',
+        features: {
+          customers: 'Clientes',
+          jobs: 'Trabajos',
+          calls: 'Llamadas',
+          notes: 'Notas',
+          photos: 'Fotos',
+          documents: 'Documentos',
+          estimates: 'Presupuestos',
+          invoices: 'Facturas',
+          payments: 'Pagos',
+          checks: 'Cheques',
+          followups: 'Seguimientos',
+          workflows: 'Flujos',
+          knowledge: 'Guías',
+          voiceInput: 'Entrada de voz',
+          ocr: 'OCR',
+          askOtto: 'Asistente IA OTTO',
+          drawingEstimate: 'IA Plano a Presupuesto (NVIDIA)',
+          gpsMap: 'Mapa GPS/equipo',
+          quickbooks: 'Exportar a QuickBooks',
+          roleAccess: 'Acceso por rol',
+          payroll: 'Importar nómina',
+          inbox: 'Bandeja/correos',
+          accountability: 'Responsabilidad',
+          versionedDocs: 'Documentos versionados',
+          backups: 'Respaldos',
+        },
+        desc: {
+          customers: 'Base de datos de clientes con información de contacto, historial de trabajos y saldos pendientes.',
+          jobs: 'Programación, asignación, seguimiento de estado y checklists.',
+          calls: 'Registre llamadas entrantes, vincule a clientes y trabajos, cree trabajos desde llamadas.',
+          notes: 'Agregue notas con fecha y hora a trabajos y clientes.',
+          photos: 'Fotos antes/después del trabajo, fotos del sitio y escaneo de documentos.',
+          documents: 'Almacene contratos, propuestas, planos y archivos CAD/AutoCAD por trabajo.',
+          estimates: 'Presupuestos detallados con partidas, cantidades y alcance del trabajo.',
+          invoices: 'Facturas profesionales con seguimiento de pagos y exportación a QuickBooks.',
+          payments: 'Registre pagos, vincule a facturas, rastree pagos parciales y completos.',
+          checks: 'Escanee y registre cheques, vincule a facturas, rastree la liquidación.',
+          followups: 'Seguimientos automáticos y manuales para avanzar los trabajos.',
+          workflows: 'Plantillas de flujo personalizables que automatizan pasos repetitivos.',
+          knowledge: 'Biblioteca de SOP, guías prácticas y respuestas aprobadas para el equipo.',
+          voiceInput: 'Dicta notas, llamadas y actualizaciones de trabajo sin usar las manos.',
+          ocr: 'Escanee cheques, documentos y planos para extraer texto automáticamente.',
+          askOtto: 'Asistente de IA para preguntas sobre trabajos, búsqueda de clientes y ayuda práctica.',
+          drawingEstimate: 'Suba un plano o dibujo y la IA lo lee para redactar una lista de materiales y presupuesto.',
+          gpsMap: 'Rastree ubicaciones de trabajadores entre entrada y salida para responsabilidad en sitio.',
+          quickbooks: 'Exporte facturas, pagos y presupuestos directamente a QuickBooks.',
+          roleAccess: 'Roles de dueño, gerente de oficina, trabajador de campo y contabilidad con permisos.',
+          payroll: 'Importe archivos de nómina Excel o CSV — cada fila se convierte en un registro.',
+          inbox: 'Correos reenviados y adjuntos vinculados al cliente y trabajo correctos.',
+          accountability: 'Entrada/salida, registros GPS, visitas a ubicaciones y seguimiento de permisos.',
+          versionedDocs: 'Suba nuevas versiones de contratos, propuestas y planos con historial completo.',
+          backups: '3+ copias de respaldo versionadas con verificación y pruebas de restauración programadas.',
+        }
+      }
+    };
+    const t = (k) => {
+      if (k === 'features' || k === 'desc') return k;
+      return (T[lang] && T[lang][k]) || T.en[k] || k;
+    };
+    const tf = (k) => (T[lang] && T[lang].features && T[lang].features[k]) || T.en.features[k] || k;
+    const td = (k) => (T[lang] && T[lang].desc && T[lang].desc[k]) || T.en.desc[k] || '';
+
+    function setLang(l) {
+      lang = l; localStorage.setItem('otto_lang', l);
+      document.documentElement.lang = l;
+      $('#lang-en').classList.toggle('on', l === 'en');
+      $('#lang-es').classList.toggle('on', l === 'es');
+      render();
+    }
+
+    const sections = [
+      { id: 'overview', labelEn: 'Overview', labelEs: 'Resumen', icon: 'fa-house' },
+      { id: 'core', labelEn: 'Core Operations', labelEs: 'Operaciones', icon: 'fa-screwdriver-wrench' },
+      { id: 'field', labelEn: 'Field & AI', labelEs: 'Campo e IA', icon: 'fa-robot' },
+      { id: 'documents', labelEn: 'Documents', labelEs: 'Documentos', icon: 'fa-file-contract' },
+      { id: 'team', labelEn: 'Team & Payroll', labelEs: 'Equipo', icon: 'fa-users' },
+      { id: 'integrations', labelEn: 'Integrations', labelEs: 'Integraciones', icon: 'fa-plug' },
+    ];
+
+    const featureGroups = {
+      overview: [],
+      core: [
+        { key: 'customers', icon: 'fa-users', color: 'var(--accent)' },
+        { key: 'jobs', icon: 'fa-screwdriver-wrench', color: 'var(--blue)' },
+        { key: 'calls', icon: 'fa-phone', color: 'var(--green)' },
+        { key: 'notes', icon: 'fa-sticky-note', color: 'var(--amber)' },
+        { key: 'photos', icon: 'fa-camera', color: '#8b5cf6' },
+        { key: 'estimates', icon: 'fa-calculator', color: 'var(--accent)' },
+        { key: 'invoices', icon: 'fa-file-invoice', color: 'var(--green)' },
+        { key: 'payments', icon: 'fa-credit-card', color: 'var(--blue2)' },
+        { key: 'checks', icon: 'fa-money-check', color: 'var(--amber)' },
+        { key: 'followups', icon: 'fa-bell', color: 'var(--red)' },
+        { key: 'workflows', icon: 'fa-diagram-project', color: 'var(--blue2)' },
+        { key: 'knowledge', icon: 'fa-book', color: '#8b5cf6' },
+      ],
+      field: [
+        { key: 'voiceInput', icon: 'fa-microphone', color: 'var(--green)' },
+        { key: 'ocr', icon: 'fa-font', color: 'var(--text2)' },
+        { key: 'askOtto', icon: 'fa-robot', color: 'var(--accent)' },
+        { key: 'drawingEstimate', icon: 'fa-pen-ruler', color: '#8b5cf6' },
+        { key: 'gpsMap', icon: 'fa-location-dot', color: 'var(--red)' },
+      ],
+      documents: [
+        { key: 'documents', icon: 'fa-folder-open', color: 'var(--blue2)' },
+        { key: 'versionedDocs', icon: 'fa-code-branch', color: 'var(--green)' },
+        { key: 'backups', icon: 'fa-database', color: 'var(--blue)' },
+      ],
+      team: [
+        { key: 'roleAccess', icon: 'fa-user-shield', color: 'var(--blue)' },
+        { key: 'payroll', icon: 'fa-file-invoice-dollar', color: 'var(--green)' },
+        { key: 'inbox', icon: 'fa-inbox', color: 'var(--accent)' },
+        { key: 'accountability', icon: 'fa-clipboard-check', color: 'var(--amber)' },
+      ],
+      integrations: [
+        { key: 'quickbooks', icon: 'fa-money-bill-transfer', color: '#2d6a4f' },
+      ]
+    };
+
+    function renderSidebar() {
+      const sb = $('#sidebar');
+      const items = sections.map(s => {
+        const label = lang === 'es' ? s.labelEs : s.labelEn;
+        const count = featureGroups[s.id] ? featureGroups[s.id].length : 0;
+        return `<a class="${activeSection === s.id ? 'active' : ''}" onclick="navigateTo('${s.id}')">
+          <i class="fas ${s.icon}"></i>
+          <span>${label}</span>
+          ${count ? `<span style="margin-left:auto;font-size:11px;color:var(--text3);background:var(--bg2);padding:2px 8px;border-radius:10px;">${count}</span>` : ''}
+        </a>`;
+      }).join('');
+      sb.innerHTML = `<div class="nav-group"><div class="nav-group-title">${t('features').toUpperCase()}</div>${items}</div>`;
+    }
+
+    function navigateTo(section) {
+      activeSection = section;
+      render();
+      document.getElementById('main').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function renderOverview() {
+      const totalFeatures = Object.keys(T.en.features).length;
+      let html = `<div class="pagehead"><div><h1>${esc(t('title'))}</h1><div class="sub">${esc(t('subtitle'))}</div></div></div>`;
+      html += `<div class="features-grid">`;
+      const allFeatures = [
+        ...featureGroups.core, ...featureGroups.field, ...featureGroups.documents,
+        ...featureGroups.team, ...featureGroups.integrations
+      ];
+      allFeatures.forEach(f => {
+        html += featureCard(f);
+      });
+      html += `</div>`;
+      return html;
+    }
+
+    function renderSection(sectionId) {
+      const group = featureGroups[sectionId] || [];
+      const sectionLabel = sections.find(s => s.id === sectionId);
+      const label = sectionLabel ? (lang === 'es' ? sectionLabel.labelEs : sectionLabel.labelEn) : sectionId;
+      let html = `<div class="pagehead"><div><h1>${esc(label)}</h1></div></div>`;
+      html += `<div class="features-grid">`;
+      group.forEach(f => { html += featureCard(f); });
+      html += `</div>`;
+      return html;
+    }
+
+    function featureCard(f) {
+      const title = tf(f.key);
+      const desc = td(f.key);
+      return `<div class="feature-card">
+        <div class="fc-icon" style="background:${f.color}"><i class="fas ${f.icon}"></i></div>
+        <div class="fc-title">${esc(title)}</div>
+        <div class="fc-desc">${esc(desc)}</div>
+      </div>`;
+    }
+
+    function render() {
+      $('#lang-en').classList.toggle('on', lang === 'en');
+      $('#lang-es').classList.toggle('on', lang === 'es');
+      renderSidebar();
+      const main = $('#main');
+      if (activeSection === 'overview') {
+        main.innerHTML = renderOverview();
+      } else {
+        main.innerHTML = renderSection(activeSection);
+      }
+    }
+
+    render();
+  </script>
+</body>
+</html>

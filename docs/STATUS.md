@@ -270,3 +270,23 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   entered as a plain day (a job date, an invoice due date, time off) displayed
   one day EARLIER than it should. A due date of the 15th printed as the 14th on
   customer invoices. Affected the whole app, not just printing.
+- 2026-07-29 — Demo Mode added: a "Try Demo Mode" button on the first-install
+  login, and on the user-list login, signs in as the seeded owner (Otto, id
+  owner-1) with PIN 1234 for all 19 seeded users. Persistent "DEMO MODE" banner
+  at the top of the app. "Exit demo" clears IDB entirely and returns to first-
+  install. Demo Mode does not touch the live site or real data.
+- 2026-07-29 — Cloud-sync proof checks run against otto-kohl.vercel.app:
+  /api/data returns 200, anonymous Supabase REST returns 401, record counts on
+  live match 3/3/1/19/48. The live Backups screen "Cloud ✅" was verified by
+  the owner (requires logging in on the live site — exits first-install state
+  before any agent can verify).
+- 2026-07-29 — Cosmetic dark/chrome luxury facelift applied to index.html:
+  deeper charcoal dark mode tokens (--bg #080e1a, --card #131c2e), metallic
+  button gradients, chrome topbar gradient, demo-banner with purple diagonal
+  stripe. No data logic, accessibility (#45), or cloud-sync code touched.
+- 2026-07-29 — Seed-ID deduplication: customers and jobs now use fixed IDs
+  (c-garcia, j-faucet, etc.) instead of uid() so cloud upserts merge correctly
+  instead of creating duplicate seed records across devices.
+- 2026-07-29 — Self-contained bilingual (EN/ES) feature-presentation page
+  added as features.html. Printable via browser Print dialog, dark/chrome
+  styling matching CRM, no invented features — lists only what is in README.md.

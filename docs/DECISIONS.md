@@ -116,3 +116,23 @@ isn't lost.
 - The previous product — a Dream Cooling (HVAC) CRM — was kept as
   `legacy/dream-cooling-crm.html`, explicitly for rollback reference only,
   rather than deleted, when the business pivoted to OTTO Plumbing.
+
+- 2026-07-29 — Demo Mode uses an `otto_demo` localStorage flag plus a full IDB
+  wipe-and-reseed on entry. The seeded owner's `gpsAcknowledged` is set to
+  `true` in `blankDB()` so fleet-GPS onboarding never blocks the demo owner
+  (GPS is a field-worker-only concern). PIN `1234` for all 19 users is set at
+  runtime via `setUserPin()` (salt+hash), not stored in source. The "Exit demo"
+  button calls `indexedDB.deleteDatabase('otto-crm')` to fully purge the demo
+  database.
+
+- 2026-07-29 — Seed records in `blankDB()` (customers, jobs, calls) use fixed
+  deterministic IDs instead of `uid()`. This prevents duplicate seed rows
+  appearing in the cloud when two devices each call `blankDB()` on first
+  launch: Supabase's `merge-duplicates` upsert now collapses them into one.
+  User-created records and other generated IDs still use `uid()`.
+
+- 2026-07-29 — Cloud polling 404s on localhost is left as benign noise: fetch
+  `/api/data` 404 naturally resolves to false without crashing the app, but
+  pollutes the DevTools console with one network error per 20-second cycle.
+  This is acceptable for local development; production Vercel serves the real
+  endpoint.

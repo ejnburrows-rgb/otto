@@ -52,22 +52,22 @@
     }
 
     [data-theme="dark"] {
-      --bg: #0b1220;
-      --bg2: #0f172a;
-      --card: #161f30;
-      --card-hover: #1c2740;
-      --card-elevated: #202c44;
-      --line: #2b3852;
-      --text: #eef2f8;
-      --text2: #a9b4c7;
-      --text3: #74829a;
+      --bg: #080e1a;
+      --bg2: #0c1322;
+      --card: #131c2e;
+      --card-hover: #192640;
+      --card-elevated: #1a2744;
+      --line: rgba(255,255,255,.07);
+      --text: #f0f4ff;
+      --text2: #8899bb;
+      --text3: #4a5a75;
       --blue: #1e3a8a;
       --blue2: #7bd0ff;
       --accent: #2f6bff;
       --accent-hover: #4d80ff;
-      --green: #22c55e;
+      --green: #10b981;
       --amber: #f59e0b;
-      --red: #f87171;
+      --red: #ef4444;
       --shadow-sm: 0 1px 2px rgba(0,0,0,0.35);
       --shadow: 0 6px 16px rgba(0,0,0,0.45);
       --shadow2: 0 16px 40px rgba(0,0,0,0.55);
@@ -101,13 +101,42 @@
 
     /* ===== TOP BAR ===== */
     .topbar {
-      position: sticky; top: 0; z-index: 40;
-      background: var(--blue);
+      position: sticky; top: 36px; z-index: 40;
+      background: linear-gradient(90deg, #0a1930 0%, #071225 60%, #0d2240 100%);
       color: #fff;
       display: flex; align-items: center; gap: 12px;
       padding: 12px 20px; padding-top: max(12px, env(safe-area-inset-top));
       box-shadow: var(--shadow-sm);
-      border-bottom: 1px solid rgba(255,255,255,0.06);
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    .demo-banner {
+      background: repeating-linear-gradient(
+        135deg,
+        #6d28d9 0px, #6d28d9 20px,
+        #4c1d95 20px, #4c1d95 40px
+      );
+      color: #fff;
+      text-align: center;
+      padding: 10px 16px;
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .demo-banner a {
+      color: #fbbf24;
+      text-decoration: underline;
+      cursor: pointer;
+      font-size: 12px;
+      opacity: 0.9;
     }
     .topbar .brand {
       font-family: 'Newsreader', serif; display: flex; align-items: center; gap: 8px;
@@ -156,7 +185,7 @@
     @media (min-width: 600px) { .tiles { grid-template-columns: repeat(3, 1fr); } }
     .tile {
       background: var(--card); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid var(--line); border-radius: var(--radius);
-      padding: 24px 16px; cursor: pointer; text-align: center; box-shadow: var(--shadow-sm);
+      padding: 20px 16px; cursor: pointer; text-align: center; box-shadow: var(--shadow-sm);
       display: flex; flex-direction: column; align-items: center; gap: 14px; min-height: 140px;
       justify-content: center; transition: all 0.2s ease;
     }
@@ -236,6 +265,25 @@
     
     .btn.ghost { background: var(--card); color: var(--text); border: 1px solid var(--line); box-shadow: var(--shadow-sm); }
     .btn.ghost:hover { background: var(--card-hover); border-color: var(--accent); color: var(--text); box-shadow: var(--shadow); }
+
+    /* Chrome button override for dark mode */
+    [data-theme="dark"] .btn {
+      background: linear-gradient(180deg, #1e3ad1 0%, #0050c0 100%);
+      color: #fff;
+      border-bottom: 1px solid rgba(255,255,255,.12);
+    }
+    [data-theme="dark"] .btn:hover {
+      background: linear-gradient(180deg, #2458e0 0%, #0066ec 100%);
+    }
+    [data-theme="dark"] .btn.ghost {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+    [data-theme="dark"] .btn.ghost:hover {
+      background: rgba(255,255,255,.05);
+      border-color: rgba(255,255,255,.18);
+    }
     
     .iconbtn { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
     .btn.sm { min-height: 44px; padding: 0 16px; font-size: 14px; border-radius: var(--radius-sm); }
@@ -714,6 +762,7 @@
       startJob: 'Start Job', acknowledge: 'Acknowledge', cantComplete: 'Can\'t complete', addNoteToContinue: 'Add a note to continue', submitAndClose: 'Submit & Close Job', incompleteChecklist: 'Complete all items or add a note before closing', openJobReminder: 'You have an open job — complete check-out', timeOff: 'Request Time Off', ptoReason: 'Reason', ptoDates: 'Dates', isOT: 'OT / Overtime Job', ackOT: 'Acknowledge OT',
       connectEmail: 'Connect Email', preview: 'Preview', download: 'Download', analyzeAI: 'Analyze with AI', aiAnalysisComplete: 'AI Analysis Complete', foundFixtures: 'Found', fixturesL: 'fixtures', pipesL: 'LF pipe', fittingsL: 'fittings', assignTo: 'Assign to', existingJob: 'Existing job', createNewProject: 'Create new project folder', aiTakeoffTitle: 'AI Floor Plan Takeoff', noInboxMessages: 'No new messages in inbox.', inboxRefresh: 'Refresh Inbox',
       floatingChat: 'Chat with OTTO', chatTitle: 'OTTO Assistant', typing: 'OTTO is thinking…', copyMsg: 'Copy', copied: 'Copied!', close: 'Close', openAiChat: 'Open AI Chat', sendMessage: 'Send',
+      demoToggle: 'DEMO MODE · Sample data · not real records', exitDemo: 'Exit demo', enterDemo: 'Try Demo Mode', demoSide: 'Sandbox — 19 sample users', demoSide2: 'All data resets when you close demo',
     },
     es: {
       home: 'Inicio', customers: 'Clientes', jobs: 'Trabajos', calls: 'Llamadas', more: 'Más',
@@ -797,6 +846,7 @@
       startJob: 'Comenzar Trabajo', acknowledge: 'Reconocer', cantComplete: 'No se pudo', addNoteToContinue: 'Añade una nota para continuar', submitAndClose: 'Enviar y Cerrar', incompleteChecklist: 'Complete todo o añada una nota antes de cerrar', openJobReminder: 'Tienes un trabajo abierto — completa la salida', timeOff: 'Solicitar Tiempo Libre', ptoReason: 'Motivo', ptoDates: 'Fechas', isOT: 'Trabajo OT', ackOT: 'Reconocer OT',
       connectEmail: 'Conectar Correo', preview: 'Vista previa', download: 'Descargar', analyzeAI: 'Analizar con IA', aiAnalysisComplete: 'Análisis IA Completo', foundFixtures: 'Encontrado', fixturesL: 'accesorios', pipesL: 'pies de tubo', fittingsL: 'conexiones', assignTo: 'Asignar a', existingJob: 'Trabajo existente', createNewProject: 'Crear nueva carpeta de proyecto', aiTakeoffTitle: 'Estimado de Planos IA', noInboxMessages: 'No hay mensajes nuevos.', inboxRefresh: 'Actualizar Bandeja',
       floatingChat: 'Chatear con OTTO', chatTitle: 'Asistente OTTO', typing: 'OTTO está pensando…', copyMsg: 'Copiar', copied: '¡Copiado!', close: 'Cerrar', openAiChat: 'Abrir chat IA', sendMessage: 'Enviar',
+      demoToggle: 'MODO DEMO · Datos de muestra · no son registros reales', exitDemo: 'Salir', enterDemo: 'Probar Modo Demo', demoSide: 'Entorno aislado — 19 usuarios de muestra', demoSide2: 'Los datos se reinician al cerrar demo',
     }
   };
   const t = (k) => (T[lang] && T[lang][k]) || T.en[k] || k;
@@ -830,7 +880,7 @@
     // Seed exact team per business spec: 2 owners + 1 ops manager + 1 logging/IT + 15 field workers.
     // Non-tech/ADHD friendly: realistic names, clear roles. Use 'office' internally for managers (full non-field access).
     d.users = [
-      { id: 'owner-1', name: 'Otto', role: 'owner', lang: 'en', created: nowISO() },
+      { id: 'owner-1', name: 'Otto', role: 'owner', lang: 'en', gpsAcknowledged: true, created: nowISO() },
       { id: 'owner-2', name: 'El Príncipe', role: 'owner', lang: 'es', created: nowISO() },
       { id: 'ops-1', name: 'Sarays', role: 'office', lang: 'en', created: nowISO() },
       { id: 'it-1', name: 'Taylor Kim - Logs/IT', role: 'office', lang: 'en', created: nowISO() },
@@ -909,17 +959,17 @@
     
     // Minimal realistic demo data (plumbing focused, non-clutter for ADHD/non-tech). Assigned across fields.
     d.customers = [
-      { id: uid(), name: 'Garcia Residence', phone: '(305) 555-1234', address: '123 Oak St, Miami, FL', created: nowISO() },
-      { id: uid(), name: 'Patel Family', phone: '(786) 555-5678', address: '456 Palm Ave, Hialeah, FL', created: nowISO() },
-      { id: uid(), name: 'Rivera Plumbing Co (repeat)', phone: '(954) 555-9012', address: '789 Beach Blvd, Miami Beach', created: nowISO() }
+      { id: 'c-garcia', name: 'Garcia Residence', phone: '(305) 555-1234', address: '123 Oak St, Miami, FL', created: nowISO() },
+      { id: 'c-patel', name: 'Patel Family', phone: '(786) 555-5678', address: '456 Palm Ave, Hialeah, FL', created: nowISO() },
+      { id: 'c-rivera', name: 'Rivera Plumbing Co (repeat)', phone: '(954) 555-9012', address: '789 Beach Blvd, Miami Beach', created: nowISO() }
     ];
     d.jobs = [
-      { id: uid(), title: 'Kitchen faucet leak', customerId: d.customers[0].id, assignedTo: 'field-1', status: 'scheduled', scheduledDate: todayISO(), description: 'Dripping under sink', created: nowISO() },
-      { id: uid(), title: 'Water heater install', customerId: d.customers[1].id, assignedTo: 'field-3', status: 'inProgress', scheduledDate: todayISO(), description: 'Replace 50gal unit', created: nowISO() },
-      { id: uid(), title: 'Sewer line inspection', customerId: d.customers[2].id, assignedTo: 'field-5', status: 'scheduled', scheduledDate: todayISO(), description: 'Camera check after backup', created: nowISO() }
+      { id: 'j-faucet', title: 'Kitchen faucet leak', customerId: 'c-garcia', assignedTo: 'field-1', status: 'scheduled', scheduledDate: todayISO(), description: 'Dripping under sink', created: nowISO() },
+      { id: 'j-heater', title: 'Water heater install', customerId: 'c-patel', assignedTo: 'field-3', status: 'inProgress', scheduledDate: todayISO(), description: 'Replace 50gal unit', created: nowISO() },
+      { id: 'j-sewer', title: 'Sewer line inspection', customerId: 'c-rivera', assignedTo: 'field-5', status: 'scheduled', scheduledDate: todayISO(), description: 'Camera check after backup', created: nowISO() }
     ];
     d.calls = [
-      { id: uid(), callerName: 'Mrs. Garcia', callerPhone: '(305) 555-1234', summary: 'Faucet leaking in kitchen', customerId: d.customers[0].id, created: nowISO() }
+      { id: 'call-garcia', callerName: 'Mrs. Garcia', callerPhone: '(305) 555-1234', summary: 'Faucet leaking in kitchen', customerId: 'c-garcia', created: nowISO() }
     ];
     return d;
   }
@@ -1359,6 +1409,8 @@
           <div style="text-align:center;margin-bottom:24px;">
             <img src="./logo.jpg" alt="OTTO Plumbing" style="width:180px;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.25);" />
           </div>
+          <button class="btn ghost block" onclick="window.__enterDemoMode()" style="margin-bottom:16px;border:2px dashed var(--accent);padding:14px 16px;"><i class="fas fa-flask"></i> ${esc(t('enterDemo'))}</button>
+          <p class="muted" style="margin-bottom:12px;font-size:12px;">${esc(t('demoSide'))} · ${esc(t('demoSide2'))}</p>
           <h2 style="margin-top:0">${esc(t('setUpOwner'))}</h2>
           <p class="muted">${esc(t('chooseOwnerCode'))}</p>
           <div class="field">
@@ -1374,6 +1426,8 @@
             <img src="./logo.jpg" alt="OTTO Plumbing" style="width:180px;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,0.25);" />
           </div>
           <p style="margin-top:0;">${esc(t('pickUser'))}</p>
+          <button class="btn ghost block" onclick="window.__enterDemoMode()" style="margin-bottom:12px;border:2px dashed var(--accent);padding:12px 16px;"><i class="fas fa-flask"></i> ${esc(t('enterDemo'))}</button>
+          <p class="muted" style="margin-bottom:10px;font-size:11px;">${esc(t('demoSide'))} · ${esc(t('demoSide2'))}</p>
           <div class="card-login">
             ${(() => {
               /* One row on the sign-in list, used for every role. An account
@@ -1437,6 +1491,22 @@
       el.textContent = (nowHidden ? (es ? 'Mostrar' : 'Show') : (es ? 'Ocultar' : 'Hide')) + ' ' + n + ' ' + (es ? 'puestos sin asignar' : 'unassigned');
     };
     window.__noCode = () => toast(t('askOwnerForCode'), 'error');
+    window.__enterDemoMode = async () => {
+      localStorage.setItem('otto_demo', '1');
+      try { await idbDel('kv','db'); localStorage.removeItem('otto_db_backup'); } catch(e){}
+      db = blankDB();
+      for (const u of db.users) { await setUserPin(u,'1234'); }
+      await idbPut('kv','db',JSON.stringify(db));
+      session = get('users','owner-1');
+      if (session) startApp();
+    };
+    window.__exitDemo = async () => {
+      localStorage.removeItem('otto_demo');
+      localStorage.removeItem('otto_session');
+      localStorage.removeItem('otto_db_backup');
+      try { indexedDB.deleteDatabase('otto-crm'); } catch(e){}
+      db = null; session = null; signOut();
+    };
     window.__bootstrap = async () => {
       const el = document.getElementById('boot-pin');
       const code = (el && el.value || '').trim();
@@ -4232,6 +4302,16 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
   
     $('#login').classList.add('hidden'); $('#login').innerHTML = '';
     $('#app').classList.remove('hidden');
+    if (localStorage.getItem('otto_demo')) {
+      const existing = document.getElementById('demo-banner');
+      if (!existing) {
+        const banner = document.createElement('div');
+        banner.id = 'demo-banner';
+        banner.className = 'demo-banner';
+        banner.innerHTML = `${esc(t('demoToggle'))} · <a onclick="window.__exitDemo()">${esc(t('exitDemo'))}</a>`;
+        document.body.prepend(banner);
+      }
+    }
     setLang(lang);
     ensureFloatingAI();  // premium floating AI chat (glass + animations)
     // First-login consent for field workers (Spanish-first work-app permission).
@@ -4275,7 +4355,18 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
   }
   async function boot() {
     document.documentElement.setAttribute('data-theme', localStorage.getItem('otto_theme') || 'dark');
-    await load();
+    if (localStorage.getItem('otto_demo')) {
+      await openDB();
+      try { await idbDel('kv','db'); localStorage.removeItem('otto_db_backup'); } catch(e){}
+      db = blankDB();
+      for (const u of db.users) {
+        try { await setUserPin(u,'1234'); } catch(e) { console.warn('setUserPin failed', u && u.id, e.message); }
+      }
+      try { if (_idb) await idbPut('kv','db',JSON.stringify(db)); else console.warn('idbPut skipped: _idb=null, will save via save() later'); } catch(e) { console.warn('idbPut failed in boot demo', e.message); }
+      session = get('users','owner-1');
+    } else {
+      await load();
+    }
     
     /* Keep names and roles consistent for the fixed set of 19 people.
        This used to reset everyone's PIN to a hardcoded value on EVERY startup,
@@ -4325,8 +4416,10 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     await migratePlainPins();
     try { _cloudAvailable = await cloudPull(); } catch (e) { }
     startCloudPolling();
-    const sid = localStorage.getItem('otto_session');
-    if (sid) { session = get('users', sid); }
+    if (!localStorage.getItem('otto_demo')) {
+      const sid = localStorage.getItem('otto_session');
+      if (sid) { session = get('users', sid); }
+    }
     if (session) startApp(); else showLogin();
     if ('serviceWorker' in navigator) { try { navigator.serviceWorker.register('./sw.js'); } catch (e) { } }
   }
