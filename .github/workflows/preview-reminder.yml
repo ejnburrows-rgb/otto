@@ -1,0 +1,31 @@
+name: Preview reminder
+
+on:
+  pull_request:
+    types: [opened, reopened]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## Versión de prueba — CRM de OTTO Plumbing
+
+El enlace de prueba aparecerá arriba en el comentario del bot de Vercel. Ábralo en su teléfono para revisar.
+
+**Esta es una versión de prueba.** Sirve para revisar el CRM. No use datos de clientes reales aquí. Los datos de prueba no se sincronizan con otros dispositivos hasta que se active la nube.
+
+Prueba guiada: guarde el CRM en la pantalla de inicio, inicie sesión con un PIN de prueba, cree un cliente de prueba y un trabajo de prueba.
+
+¿Tiene comentarios? Mándelos por WhatsApp (nota de voz, mensaje o captura) o abra un issue usando el template "Feedback del cliente" en la pestaña Issues de este repositorio.
+`
+            })
