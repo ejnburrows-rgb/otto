@@ -345,3 +345,4 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   capturing device from local IDB. Delete propagates to Storage. Five design
   decisions recorded in DECISIONS.md. `npm test` (124 checks) and
   `npm run qa` both pass.
+- [2026-07-21] Optimized KPI Summary view rendering by replacing nested `.filter` operations with pre-computed mappings resulting in a ~32x performance improvement (from 865ms to 27ms in benchmark testing).

@@ -4532,14 +4532,42 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     if (kpiMode === 'summary') {
       const workers = db.users.filter(u => u.role === 'field');
       html += `<div class="tiles" style="grid-template-columns:1fr; gap:12px;">`;
+
+      // Optimization: pre-group data by workerId to avoid O(N*M) lookups
+      const eventsByWorker = {};
+      for (const e of db.job_events) {
+        if (!eventsByWorker[e.workerId]) eventsByWorker[e.workerId] = [];
+        eventsByWorker[e.workerId].push(e);
+      }
+
+      const jobsByWorker = {};
+      for (const j of db.jobs) {
+        if (!jobsByWorker[j.assignedTo]) jobsByWorker[j.assignedTo] = [];
+        jobsByWorker[j.assignedTo].push(j);
+      }
+
+      const escalationsByWorker = {};
+      for (const e of db.ai_escalations) {
+        escalationsByWorker[e.workerId] = (escalationsByWorker[e.workerId] || 0) + 1;
+      }
+
+      const ptoByWorker = {};
+      for (const p of db.time_off) {
+        if (!ptoByWorker[p.workerId]) ptoByWorker[p.workerId] = [];
+        ptoByWorker[p.workerId].push(p);
+      }
+
+      const today = todayISO();
+
       workers.forEach(w => {
-        const checkins = db.job_events.filter(e => e.workerId === w.id && e.type === 'check_in');
-        const jobsDone = db.jobs.filter(j => j.assignedTo === w.id && j.status === 'completed').length;
-        const escalations = db.ai_escalations.filter(e => e.workerId === w.id).length;
+        const checkins = (eventsByWorker[w.id] || []).filter(e => e.type === 'check_in');
+        const jobsDone = (jobsByWorker[w.id] || []).filter(j => j.status === 'completed').length;
+        const escalations = escalationsByWorker[w.id] || 0;
         const locations = new Set(checkins.map(e => e.jobId)).size;
         
-        const approvedPTO = db.time_off.find(p => p.workerId === w.id && p.status === 'approved' && p.endDate >= todayISO());
-        const pendingCount = db.time_off.filter(p => p.workerId === w.id && p.status === 'pending').length;
+        const wPTO = ptoByWorker[w.id] || [];
+        const approvedPTO = wPTO.find(p => p.status === 'approved' && p.endDate >= today);
+        const pendingCount = wPTO.filter(p => p.status === 'pending').length;
         let ptoStr = t('noPtoPending');
         if (approvedPTO) ptoStr = `${t('approvedThrough')} ${fmtDate(approvedPTO.endDate)}`;
         else if (pendingCount) ptoStr = `[${pendingCount}] ${t('pendingCount')}`;
