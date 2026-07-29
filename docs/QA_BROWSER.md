@@ -8,7 +8,7 @@
 - [x] Dark theme default
 - [x] Service Worker registers — registered
 - [x] Login screen shows
-- [x] Owner login PIN 0721
+- [x] Owner login
 - [x] Owner home renders — OTTO
 Jul 19, 2026
 Jobs today

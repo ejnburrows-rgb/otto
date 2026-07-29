@@ -54,13 +54,13 @@ function check(name, actual, expected) {
 
 console.log('\nstoring a code');
 {
-  const user = { id: 'u1', name: 'Otto', pin: '0721' };
-  await pin.setUserPin(user, '0721');
+  const user = { id: 'u1', name: 'Otto', pin: '1379' };
+  await pin.setUserPin(user, '1379');
   check('the readable PIN is removed', user.pin, undefined);
   check('a fingerprint is stored', typeof user.pinHash === 'string' && user.pinHash.length === 64, true);
   check('a salt is stored', typeof user.pinSalt === 'string' && user.pinSalt.length === 32, true);
   check('the PIN cannot be read back out of the record',
-    JSON.stringify(user).includes('0721'), false);
+    JSON.stringify(user).includes('1379'), false);
 }
 
 console.log('\nchecking a code');
@@ -84,10 +84,10 @@ console.log('\ntwo people, same PIN');
 console.log('\nexisting users created before this change');
 {
   // An old record still carrying a readable PIN must keep working, then convert.
-  const old = { id: 'old', pin: '0715' };
-  check('old readable PIN still signs in before conversion', await pin.verifyPin(old, '0715'), true);
-  await pin.setUserPin(old, '0715');
-  check('after conversion the same PIN still signs in', await pin.verifyPin(old, '0715'), true);
+  const old = { id: 'old', pin: '2468' };
+  check('old readable PIN still signs in before conversion', await pin.verifyPin(old, '2468'), true);
+  await pin.setUserPin(old, '2468');
+  check('after conversion the same PIN still signs in', await pin.verifyPin(old, '2468'), true);
   check('and the readable copy is gone', old.pin, undefined);
 }
 
