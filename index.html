@@ -842,6 +842,7 @@
   const SYNCED_COLLECTIONS = [...COLLECTIONS, 'companyProfile'];
   let db = null;
   let session = null; // current user
+  let isFreshInstall = false;
 
   function blankDB() {
     const d = { meta: { created: nowISO(), version: 1 } };
@@ -927,6 +928,14 @@
     };
     
     // Minimal realistic demo data (plumbing focused, non-clutter for ADHD/non-tech). Assigned across fields.
+    d.customers = [];
+    d.jobs = [];
+    d.calls = [];
+    return d;
+  }
+
+  function seedDemoRecords(d) {
+    if (d.customers.length > 0) return; // already seeded
     d.customers = [
       { id: uid(), name: 'Garcia Residence', phone: '(305) 555-1234', address: '123 Oak St, Miami, FL', created: nowISO() },
       { id: uid(), name: 'Patel Family', phone: '(786) 555-5678', address: '456 Palm Ave, Hialeah, FL', created: nowISO() },
@@ -940,6 +949,10 @@
     d.calls = [
       { id: uid(), callerName: 'Mrs. Garcia', callerPhone: '(305) 555-1234', summary: 'Faucet leaking in kitchen', customerId: d.customers[0].id, created: nowISO() }
     ];
+
+    d.meta = d.meta || {};
+    d.meta.demoSeeded = true;
+
     return d;
   }
 
@@ -1024,6 +1037,7 @@
         db.companyProfile = blankDB().companyProfile;
       }
     } else {
+      isFreshInstall = true;
       db = blankDB();
       await idbPut('kv', 'db', JSON.stringify(db));
     }
@@ -1255,6 +1269,11 @@
   function cloudPush() {
     clearTimeout(_cloudTimer);
     _cloudTimer = setTimeout(async () => {
+      // Do not allow demo databases to push data to the cloud.
+      if (db.meta && db.meta.demoSeeded) {
+        console.warn("cloud push aborted: demo database cannot be synced to production");
+        return;
+      }
       try {
         const promises = [];
         for (const col of SYNCED_COLLECTIONS) {
@@ -5052,8 +5071,14 @@ Return ONLY valid JSON: { "fixtures": [], "pipes": [], "fittings": [], "notes": 
   window.__clearFailedPins = (id) => clearFailedPins(id);
   window.__pinLockRemaining = (id) => pinLockRemainingMs(id);
   window.__mergeCollections = (a, b) => mergeCollections(a, b);
-  
-  boot().then(() => { setTimeout(seedMockKPIs, 500); render(); });
+  boot().then(() => { 
+    if (isFreshInstall && !_cloudAvailable) {
+      seedDemoRecords(db);
+      seedMockKPIs();
+      save();
+    }
+    render(); 
+  });
   </script>
 </body>
 </html>
