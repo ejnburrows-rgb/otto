@@ -10,7 +10,7 @@ bilingual EN/ES parity, and a real browser screenshot in the PR** (serve with
 ---
 
 ## P0 — OWNER MANUAL STEPS (you, not an agent)
-Add to Vercel env + local `.env`: `FIREBASE_PROJECT_ID`, `FIREBASE_API_KEY`, `ANTHROPIC_API_KEY`,
+Add to Vercel env + local `.env`: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY`,
 `NVIDIA_API_KEY` (optional `NVIDIA_MODEL`), `INBOUND_WEBHOOK_TOKEN`, and QuickBooks keys. If you want Jules
 in the background, grant its GitHub app push access (until then it can only draft + report).
 
@@ -46,7 +46,7 @@ ES. Branch fix/nav-casing. Screenshot the menu.
 ## 5 — Landing: real booking/contact form
 ```
 landing.html "Book a Plumber" only links to tel:. Add a working booking/contact form (name, phone,
-problem) that submits to a real endpoint (email webhook / Firebase / form service) with a success state,
+problem) that submits to a real endpoint (email webhook / form service) with a success state,
 in both EN and ES. Branch feat/landing-booking. Screenshot a successful submission.
 ```
 
@@ -65,10 +65,11 @@ correctly with the EN/ES toggle. Branch chore/i18n-parity. Screenshot the same s
 
 ## 8 — Backend go-live (needs P0 secrets)
 ```
-Verify Firebase sync (Firestore/Storage) works across devices, then verify the AI (api/claude.js,
+Verify Supabase cloud sync (api/data.js) and photo storage (api/photos.js) work across devices, then
+verify the AI (api/claude.js,
 api/nvidia.js), inbound email (api/inbound-email.js) and QuickBooks (api/quickbooks.js) integrations
 against real keys so Ask OTTO, inbox import, and invoicing actually work. One branch per integration
-(feat/firebase-sync-live, feat/integrations-live). Screenshot each working end-to-end.
+(feat/supabase-sync-live, feat/integrations-live). Screenshot each working end-to-end.
 ```
 
 ---

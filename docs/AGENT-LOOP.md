@@ -1,7 +1,7 @@
 # AGENT-LOOP.md — OTTO Plumbing CRM · Autonomous Finish Loop
 
 **Owner:** EJN · **Repo:** https://github.com/ejnburrows-rgb/otto · **Branch of truth:** `main`
-**Stack:** single-file PWA (`index.html` ~333KB) + `landing.html` + `guide.html` + `api/**` · IndexedDB/localStorage + optional Firebase · Vercel
+**Stack:** single-file PWA (`index.html` ~333KB) + `landing.html` + `guide.html` + `api/**` · IndexedDB/localStorage + optional Supabase cloud sync · Vercel
 **Verify bar:** `npm test && npm run qa` (plus a real browser screenshot)
 
 Self-driving loop: read top to bottom, do the next unchecked task, prove it with tests **and a screenshot**,
@@ -17,7 +17,9 @@ open/merge a PR, flip the checkbox, append a status-log line, pick the next unbl
 
 ## OWNER-ONLY PREREQUISITES (accounts/secrets — agents cannot do these)
 Add these to Vercel env (and a local `.env` for testing) so the backend/AI/email/accounting tasks verify:
-- **Firebase:** `FIREBASE_PROJECT_ID`, `FIREBASE_API_KEY` (Firestore/Storage sync)
+- **Supabase:** `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (database via `api/data.js` and photo
+  storage via `api/photos.js`). The service-role key is read server-side only and must never appear
+  in `index.html` or any other browser-served file.
 - **AI:** `ANTHROPIC_API_KEY`, `NVIDIA_API_KEY`, optional `NVIDIA_MODEL`
 - **Inbound email:** `INBOUND_WEBHOOK_TOKEN` (SendGrid/Mailgun/Postmark webhook + `.eml` import)
 - **QuickBooks:** the QuickBooks integration keys per `api/quickbooks.js`
@@ -71,7 +73,7 @@ README.md is the source of truth for current behavior; `SPEC.md` is the older de
 ### LANDING PAGE
 - [ ] **T5 · Real booking/contact form.** `landing.html` "Book a Plumber" only links to `tel:`. Add a
       working booking/contact form that captures name/phone/problem and submits somewhere real (email
-      webhook / Formspree-style endpoint / Firebase) with a success state. Branch `feat/landing-booking`.
+      webhook / Formspree-style endpoint) with a success state. Branch `feat/landing-booking`.
       Screenshot a successful submission.
 - [ ] **T6 · Replace placeholder content.** Swap the dummy phone **(305) 555-1234** everywhere for the
       real number, replace filler service copy with real services, and fix the low-contrast (too faint)
@@ -81,8 +83,9 @@ README.md is the source of truth for current behavior; `SPEC.md` is the older de
 - [ ] **T7 · Bilingual parity audit.** Sweep `index.html` + `landing.html` for any EN-only or ES-only
       strings; make every user-facing string switch correctly with the EN/ES toggle. Branch
       `chore/i18n-parity`. Screenshot the same screens in EN and ES.
-- [ ] **T8 · Firebase sync live** (needs prereq) — verify local state syncs to Firestore/Storage and back
-      across devices. Branch `feat/firebase-sync-live`. Screenshot state surviving a second device.
+- [ ] **T8 · Supabase cloud sync live** (needs prereq) — verify local state syncs to the Supabase
+      database and photo storage and back across devices. Branch `feat/supabase-sync-live`.
+      Screenshot state surviving a second device.
 - [ ] **T9 · AI + email + QuickBooks live** (needs prereqs) — verify `api/claude.js`, `api/nvidia.js`,
       `api/inbound-email.js`, `api/quickbooks.js` against real keys; make "Ask OTTO", inbox import, and
       invoicing actually work. Branch `feat/integrations-live`. Screenshot each working.
