@@ -2,7 +2,19 @@
 // Env: TWILIO_SID, TWILIO_AUTH, TWILIO_FROM, SENDGRID_API_KEY (or SMTP_* later).
 // POST { channel: 'sms'|'email', to, subject?, body, trigger?, customerId?, jobId? }
 
+import { hasServerAuth, denyUnauthenticated } from './_lib/serverAuth.js';
+
+// Fail-closed gate first: no real server-side sign-in exists yet, so every
+// request is refused before it can reach Twilio/SendGrid, and no destination
+// or message content is ever echoed back. See api/_lib/serverAuth.js.
 export default async function handler(req, res) {
+  if (!hasServerAuth(req)) { denyUnauthenticated(res); return; }
+  return notifyHandler(req, res);
+}
+
+// The real send logic, kept separate so it stays fully covered by tests even
+// while the gate above refuses every live request.
+export async function notifyHandler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'method_not_allowed' });
   }

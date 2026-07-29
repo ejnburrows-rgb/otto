@@ -1,6 +1,12 @@
 // QuickBooks Online OAuth + sync stub for OTTO Plumbing CRM.
 // Set QB_CLIENT_ID and QB_CLIENT_SECRET in Vercel env when ready to connect.
 // Client calls GET /api/quickbooks?action=status or POST with { action: 'sync', kind, records }.
+//
+// The sync action moves real invoice/customer data to QuickBooks, so it is
+// fail-closed until real server-side sign-in exists (see api/_lib/serverAuth.js).
+// status/auth_url only report non-sensitive configuration state and stay open.
+
+import { hasServerAuth, denyUnauthenticated } from './_lib/serverAuth.js';
 
 const QB_AUTH = 'https://appcenter.intuit.com/connect/oauth2';
 const QB_TOKEN = 'https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer';
@@ -41,13 +47,21 @@ export default async function handler(req, res) {
   }
 
   if (action === 'sync') {
-    if (!configured || !process.env.QB_REFRESH_TOKEN) {
-      return res.status(503).json({ error: 'not_connected', message: 'Connect QuickBooks in Settings first.' });
-    }
-    // Full two-way sync ships in a later pass; acknowledge payload for now.
-    const count = Array.isArray(body.records) ? body.records.length : 0;
-    return res.status(200).json({ ok: true, synced: count, kind: body.kind || 'invoices', note: 'Sync stub — wire Intuit API when credentials are live.' });
+    if (!hasServerAuth(req)) { denyUnauthenticated(res); return; }
+    const { status, body: out } = runSync(configured, body);
+    return res.status(status).json(out);
   }
 
   return res.status(400).json({ error: 'unknown_action' });
+}
+
+// The real sync logic, kept separate so it stays fully covered by tests even
+// while the gate above refuses every live request.
+export function runSync(configured, body) {
+  if (!configured || !process.env.QB_REFRESH_TOKEN) {
+    return { status: 503, body: { error: 'not_connected', message: 'Connect QuickBooks in Settings first.' } };
+  }
+  // Full two-way sync ships in a later pass; acknowledge payload for now.
+  const count = Array.isArray(body.records) ? body.records.length : 0;
+  return { status: 200, body: { ok: true, synced: count, kind: body.kind || 'invoices', note: 'Sync stub — wire Intuit API when credentials are live.' } };
 }
