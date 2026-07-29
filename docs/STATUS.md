@@ -329,3 +329,10 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   §1; recorded owner report that Vercel Supabase env vars and Team PINs were
   set (proof still required for #28); moved Windows heartbeat scripts to
   `legacy/heartbeat/` and scrubbed published PIN values from them.
+- 2026-07-29 — Finished the PIN scrub started above. `scripts/qa-browser.mjs`
+  was still typing both live sign-in codes into the login keypad as digit
+  arrays; it now reads them from `QA_OWNER_PIN` / `QA_FIELD_PIN` at run time and
+  refuses to run without them, so a code change no longer breaks the script and
+  no code sits in a tracked file. Also removed the codes from the tick-list
+  labels in `docs/QA_CHECKLIST.md` and `docs/QA_BROWSER.md`. `npm test`
+  (123 checks) and `npm run qa` both pass.
