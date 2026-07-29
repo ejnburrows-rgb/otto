@@ -123,6 +123,22 @@ before closing issue #28:
 4. `GET /api/data` on the live host returns 200 with collections (not 503
    `no_server_key`)
 
+**Proof run 2026-07-29 — three of the four pass, one fails.** Checks 3 and 4
+pass: an anonymous REST read returns `401 UNAUTHORIZED_MISSING_API_KEY`, and
+`GET /api/data` returns `200` with all 43 collections. Check 1 needs a signed-in
+session on the live site, so it is still owner-only. **Check 2 fails.** The live
+`jobs` table holds **13 rows where 3 are expected** — customers 3, invoices 1,
+users 19 and audit_log 48 are all still correct.
+
+The cause is not lost or corrupted data; it is the app's own start-up seeding.
+`blankDB()` creates three demo jobs with freshly generated ids on any device with
+no local data, `seedMockKPIs()` adds two more, and the merge has no way to tell
+them from real records, so they upload as new rows. The dates line up exactly:
+3 real jobs (2026-07-17), +5 on 2026-07-28, +5 on 2026-07-29. Customers escaped
+only by luck — nothing edits them after boot, so their seeded copies are never
+pushed. **Issue #28 stays open until this is fixed.** No rows have been deleted;
+that needs the owner's sign-off. Also filed as the top item in PR #66/#67.
+
 | Setting | Value |
 |---|---|
 | `SUPABASE_URL` | `https://huaehartegjbihyygqgb.supabase.co` |
@@ -218,7 +234,14 @@ Before a real person can safely use this with real customers:
 3. ~~Change published demo PINs in the Team screen.~~ **Owner reports done
    2026-07-28** — keep rotating if any leak is suspected.
 4. Photo files that leave the capturing phone (#30).
-5. A rehearsed backup restore — proof that recovery works, not just that backups exist.
+5. ~~A rehearsed backup restore — proof that recovery works, not just that
+   backups exist.~~ **Done 2026-07-29** — a snapshot taken on one device was
+   exported and restored into a clean, separate browser profile. All 14
+   non-empty collections came back with identical counts and a marker record
+   added before the snapshot survived the round trip. See the session log.
+   Still true: snapshots live in the same IndexedDB as the data, so the
+   *offsite* copy is the exported JSON file and somebody has to keep it
+   somewhere safe.
 6. Accounts connected for any feature the business actually needs day one:
    Twilio/SendGrid for customer notifications, QuickBooks for accounting.
 7. A written answer for the crew on what GPS and photo data is collected and kept —
@@ -356,3 +379,43 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   are 22 + 22 + 32 + 15 + 16 + 19 + 16 + 23 = **165 checks, 0 failed**. The
   "0 failed" part was correct throughout; only the totals were wrong. Worth
   making the per-script summary lines consistent so this cannot recur.
+- 2026-07-29 — Ran the four cloud-sync proofs for #28. Anonymous reads are
+  refused (401) and `/api/data` returns 200 with all 43 collections, so the
+  Vercel settings really are live. The count check failed: 13 jobs where 3 are
+  expected. Traced it to the app's own start-up seeding creating five demo jobs
+  with new ids on every fresh device and syncing them up as real records — the
+  creation dates match device-by-device. #28 left open; nothing deleted, since
+  removing live rows is the owner's call. Details in §3.1b.
+- 2026-07-29 — Finished #45 with a real tool instead of hand-computed figures.
+  An axe-core scan (WCAG 2.0/2.1 A + AA) across 8 screens × 2 languages found
+  **168 failing elements** on the pre-audit build and **110 still failing on
+  current `main`** — the 2026-07-21 pass had corrected the light palette, but
+  the app opens in dark mode and the dark values were untouched, so white button
+  text sat at 2.15–2.77:1. Added separate `--*-fill` variables for solid buttons,
+  lifted dark `--text3`, the language toggle, the sign-in secondary text, the
+  dark blue pill and the active nav label, and gave the icon-only back button a
+  translated `aria-label`. The scan now reports **0**. Print styles were already
+  shipped on 2026-07-21 and were re-checked here: under print media the whole app
+  interface is hidden and only the document prints, black on white.
+- 2026-07-29 — Standardised the eight test scripts on one summary line,
+  `N passed, N failed`. `test-notify.mjs` and `test-quickbooks.mjs` each had
+  their own wording, which is what produced the miscounted totals recorded
+  above. A single grep across the suite now sums to 165 with no special cases.
+  Nothing greps these lines automatically, so no other file needed changing.
+- 2026-07-29 — Corrected the `SPEC.md` header, which still advertised "Firebase
+  Firestore/Storage" as the stack five weeks after that project was deleted, and
+  the stale `FIREBASE_*` entries in the same file's env-var note.
+- 2026-07-29 — Rehearsed a backup restore end to end (§4 item 5). Added a marker
+  customer, took a snapshot (checksum verified, built-in restore test passed),
+  exported the JSON, then restored it into a completely separate clean browser
+  profile. All 14 non-empty collections came back with identical counts and the
+  marker record survived. Recovery is now demonstrated, not assumed.
+- 2026-07-29 — Audited the stale agent branches for deletion. Twelve of the
+  fourteen `main-<numbers>` / `jules-<numbers>` branches carry only content that
+  is already in `main` or was explicitly abandoned, and are safe to delete. Two
+  are **not** safe and were kept: `main-8209447042964602781` holds
+  `docs/LEGACY_INVENTORY.md` and `main-13118038372817789804` holds the A11Y
+  evidence screenshots, neither of which exists in `main`. The deletions
+  themselves could not be performed from this environment — the git relay
+  refuses delete refspecs with HTTP 403 and no available API tool deletes a
+  branch — so the verified list is handed to the owner.
