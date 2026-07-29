@@ -2,11 +2,37 @@ import { chromium } from 'playwright';
 import fs from 'fs';
 
 const BASE = process.env.QA_URL || 'http://localhost:8000';
+
+// Sign-in codes are never stored in this repository. Supply them at run time:
+//   QA_OWNER_PIN=xxxx QA_FIELD_PIN=xxxx node scripts/qa-browser.mjs
+// Without them the login steps are skipped and reported as such, so this file
+// keeps working after the owner changes a PIN.
+const OWNER_PIN = process.env.QA_OWNER_PIN || '';
+const FIELD_PIN = process.env.QA_FIELD_PIN || '';
+
 const results = [];
 
 function log(name, ok, detail = '') {
   results.push({ name, ok, detail });
   console.log(`${ok ? 'PASS' : 'FAIL'}: ${name}${detail ? ' — ' + detail : ''}`);
+}
+
+if (!OWNER_PIN || !FIELD_PIN) {
+  console.error(
+    'Sign-in codes not supplied, so there is nothing this script can check —\n' +
+    'every screen it tests sits behind the login. Re-run it as:\n\n' +
+    '  QA_OWNER_PIN=<owner code> QA_FIELD_PIN=<field code> node scripts/qa-browser.mjs\n\n' +
+    'Do not put the codes in this file or any other file in the repository.'
+  );
+  process.exit(1);
+}
+
+// Types a sign-in code into the on-screen keypad, one digit at a time.
+async function typePin(page, code) {
+  for (const d of String(code).split('')) {
+    await page.locator('.pinpad button').filter({ hasText: new RegExp(`^${d}$`) }).first().click();
+    await page.waitForTimeout(150);
+  }
 }
 
 const browser = await chromium.launch({ headless: true });
@@ -42,12 +68,9 @@ try {
     if (await ownerRow.count()) await ownerRow.click();
     else await page.locator('.list-item').first().click();
     await page.waitForTimeout(400);
-    for (const d of ['0', '7', '2', '1']) {
-      await page.locator('.pinpad button').filter({ hasText: new RegExp(`^${d}$`) }).first().click();
-      await page.waitForTimeout(150);
-    }
+    await typePin(page, OWNER_PIN);
     await page.waitForSelector('#app:not(.hidden), #boss-desk:not(.hidden)', { timeout: 12000 });
-    log('Owner login PIN 0721', await page.locator('#app').isVisible() || await page.locator('#boss-desk').isVisible());
+    log('Owner login', await page.locator('#app').isVisible() || await page.locator('#boss-desk').isVisible());
   }
 
   await page.waitForTimeout(800);
@@ -105,12 +128,9 @@ try {
   if (await fieldRow.count()) await fieldRow.click();
   else await page.locator('.list-item').nth(2).click();
   await page.waitForTimeout(400);
-  for (const d of ['0', '7', '1', '5']) {
-    await page.locator('.pinpad button').filter({ hasText: new RegExp(`^${d}$`) }).first().click();
-    await page.waitForTimeout(150);
-  }
+  await typePin(page, FIELD_PIN);
   await page.waitForSelector('#app:not(.hidden)', { timeout: 12000 });
-  log('Field worker login PIN 0715', await page.locator('#app').isVisible());
+  log('Field worker login', await page.locator('#app').isVisible());
   await page.waitForTimeout(500);
   const fieldMain = await page.locator('#main').innerText();
   log('Field worker home renders', fieldMain.length > 5);
