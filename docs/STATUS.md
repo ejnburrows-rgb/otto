@@ -223,6 +223,58 @@ It was replaced with a workflow that runs the automated checks instead. Also
 confirmed while doing this: no second public copy of the app was ever published,
 so the old Firebase key was not exposed there as well.
 
+### 3.8 CONTAINED 2026-07-29 — sensitive server routes now fail closed; real server-side sign-in still missing
+
+**The problem.** `api/data.js` (reads/writes every Supabase collection using
+the service-role key), `api/photos.js` (signed photo links, uploads,
+deletes), `api/claude.js` and `api/nvidia.js` (AI proxies that spend paid
+API credit), `api/notify.js` (sends real customer texts/emails), and the
+`sync` action of `api/quickbooks.js` all ran with zero server-side check of
+who was calling. Anyone who could reach the URL — not just the app — could
+read or change real customer data, pull a signed photo link, spend AI
+credit, or trigger a customer notification. This is a direct continuation of
+the Firebase lesson in §3.1: a key that only lives on the server is safe
+from being *copied out of the page*, but it does nothing if the route that
+holds it has no idea who is asking.
+
+**The fix is containment, not a cure.** A new shared gate,
+`api/_lib/serverAuth.js`, is imported by all six routes and checked before
+any of them touch Supabase, Anthropic, NVIDIA, Twilio, SendGrid, or
+QuickBooks. `hasServerAuth()` returns `false` unconditionally today, so
+every request to these routes — authenticated-looking or not — gets back
+`403 { error: 'server_auth_not_configured' }` and nothing else: no customer
+data, no signed URL, no provider reply, no message preview. This is
+deliberately *not* a login system (AGENTS.md forbids hand-building one) —
+it is a closed valve that stays closed until a real one exists. The
+QuickBooks `status`/`auth_url` actions are unaffected; they only report
+whether env vars are set, not customer data.
+
+**Client behavior is unchanged, on purpose.** Every caller of these routes
+already treated a non-`ok` response (previously mostly `503 no_server_key`)
+as "feature unavailable — fall back honestly," never as a crash or a reason
+to erase local data: `cloudPull()` keeps the device's copy when `/api/data`
+doesn't return `ok`, `callClaude`/`callNvidia` return `null` and show a
+translated "unavailable" message, and photo uploads stay queued locally and
+retry instead of silently vanishing. A `403` degrades through the exact same
+paths a `503` already did, so nothing about the offline-first app changed
+except that it can no longer be told cloud sync, AI, or notifications
+"worked" when they didn't reach a real server check.
+
+**Regression tests** (`scripts/test-server-auth.mjs`, wired into `npm test`)
+prove all six routes refuse an unauthenticated request — even with every
+provider key configured — before any upstream call happens, and that the
+response never contains customer data, a signed URL, a provider reply, or a
+notification preview.
+
+**What is still required, not yet built:** a real server-side identity and
+session system with authorization by role (who is signed in, checked on the
+server, not just in the browser — see §3.2). Until that ships and each
+route's `hasServerAuth()` check is replaced with a real one, cloud sync,
+photo sync, in-app AI, customer notifications, and QuickBooks sync all stay
+switched off in the deployed app. This is the same "still true" limitation
+called out in §3.2, now enforced at every server route instead of only at
+sign-in.
+
 ## 4. MISSING FOR LAUNCH
 
 Before a real person can safely use this with real customers:
@@ -246,6 +298,12 @@ Before a real person can safely use this with real customers:
    Twilio/SendGrid for customer notifications, QuickBooks for accounting.
 7. A written answer for the crew on what GPS and photo data is collected and kept —
    the in-app consent screen exists, but no retention policy is written down.
+8. **A real server-side identity/session system with authorization by
+   role.** Until it exists, `api/data.js`, `api/photos.js`, `api/claude.js`,
+   `api/nvidia.js`, `api/notify.js`, and the QuickBooks `sync` action stay
+   fail-closed (§3.8) — the app runs offline-only in practice. This is the
+   single blocking item for cloud sync, photo sync, in-app AI, customer
+   notifications, and QuickBooks sync to work at all.
 
 ---
 
@@ -419,3 +477,23 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   themselves could not be performed from this environment — the git relay
   refuses delete refspecs with HTTP 403 and no available API tool deletes a
   branch — so the verified list is handed to the owner.
+- 2026-07-29 — Emergency containment (§3.8): `api/data.js`, `api/photos.js`,
+  `api/claude.js`, `api/nvidia.js`, `api/notify.js`, and the QuickBooks
+  `sync` action had no server-side check of who was calling, despite holding
+  the Supabase service-role key and paid AI/SMS/email credentials. Added a
+  shared fail-closed gate (`api/_lib/serverAuth.js`, not a hand-built login
+  system) that every one of those routes now checks before touching any
+  upstream service; an unauthenticated request gets `403
+  server_auth_not_configured` and nothing else. No Supabase data was read,
+  written, or deleted to make this change. Client code already treated a
+  non-`ok` response as "unavailable, fall back to local" for every one of
+  these routes, so no client changes were needed and local/offline data is
+  never erased. Added `scripts/test-server-auth.mjs` (41 checks) proving all
+  six routes refuse unauthenticated requests even when fully configured,
+  before any upstream call, with no sensitive data in the response; updated
+  `test-notify.mjs`, `test-nvidia.mjs`, `test-photos.mjs`, and
+  `test-quickbooks.mjs` to exercise the underlying provider logic directly
+  (still fully covered) since the gate now makes it unreachable through a
+  live request. `npm test` totals 211 checks, 0 failed. Remaining requirement
+  recorded as §4 item 8: a real server-side identity/session system with
+  authorization by role.

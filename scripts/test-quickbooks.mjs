@@ -1,6 +1,6 @@
 // Tests for the QuickBooks sync stub api endpoint
 
-import handler from '../api/quickbooks.js';
+import handler, { runSync } from '../api/quickbooks.js';
 
 let passed = 0, failed = 0;
 function check(name, actual, expected) {
@@ -83,18 +83,32 @@ async function runTests() {
     check('POST status returns 200', res.statusCode, 200);
     check('POST status returns configured: true', res.jsonData.configured, true);
 
-    // Test 6: POST sync without refresh token
+    // Test 6: POST sync is refused before it can reach QuickBooks — no real
+    // server-side sign-in exists yet, so the gate denies every sync call
+    // regardless of configuration or refresh token.
     ({ req, res } = createMocks('POST', {}, { action: 'sync', records: [{ id: 1 }] }));
     await handler(req, res);
-    check('POST sync without token returns 503', res.statusCode, 503);
-    check('POST sync without token gives not_connected error', res.jsonData.error, 'not_connected');
+    check('POST sync without auth returns 403', res.statusCode, 403);
+    check('POST sync without auth gives server_auth_not_configured error', res.jsonData.error, 'server_auth_not_configured');
+    check('POST sync without auth reveals no records', res.jsonData.synced, undefined);
 
-    // Test 7: POST sync with refresh token
     process.env.QB_REFRESH_TOKEN = 'token123';
     ({ req, res } = createMocks('POST', {}, { action: 'sync', records: [{ id: 1 }, { id: 2 }] }));
     await handler(req, res);
-    check('POST sync with token returns 200', res.statusCode, 200);
-    check('POST sync returns correct synced count', res.jsonData.synced, 2);
+    check('POST sync with token is still refused (no server auth)', res.statusCode, 403);
+    check('POST sync with token still gives server_auth_not_configured error', res.jsonData.error, 'server_auth_not_configured');
+
+    // Test 7: the real sync logic (runSync) stays covered directly, since the
+    // handler's gate makes it unreachable through a live request today.
+    delete process.env.QB_REFRESH_TOKEN;
+    let result = runSync(true, { records: [{ id: 1 }] });
+    check('runSync without token returns 503', result.status, 503);
+    check('runSync without token gives not_connected error', result.body.error, 'not_connected');
+
+    process.env.QB_REFRESH_TOKEN = 'token123';
+    result = runSync(true, { records: [{ id: 1 }, { id: 2 }] });
+    check('runSync with token returns 200', result.status, 200);
+    check('runSync returns correct synced count', result.body.synced, 2);
 
     // Test 8: PUT method (invalid)
     ({ req, res } = createMocks('PUT'));

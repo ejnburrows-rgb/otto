@@ -9,7 +9,18 @@
 // If no key is configured it returns 503 so the client can fall back to a
 // personal key entered in Settings, or to local (no-AI) behavior.
 
+import { hasServerAuth, denyUnauthenticated } from './_lib/serverAuth.js';
+
+// Fail-closed gate first: no real server-side sign-in exists yet, so every
+// request is refused before it can reach Anthropic. See api/_lib/serverAuth.js.
 export default async function handler(req, res) {
+  if (!hasServerAuth(req)) { denyUnauthenticated(res); return; }
+  return claudeHandler(req, res);
+}
+
+// The real proxy logic, kept separate so it stays fully covered by tests even
+// while the gate above refuses every live request.
+export async function claudeHandler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'method_not_allowed' });
     return;
