@@ -356,3 +356,18 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   are 22 + 22 + 32 + 15 + 16 + 19 + 16 + 23 = **165 checks, 0 failed**. The
   "0 failed" part was correct throughout; only the totals were wrong. Worth
   making the per-script summary lines consistent so this cannot recur.
+- 2026-07-29 — Supabase activation kit (#28). Cross-checked
+  `supabase/migrations/0001_init_schema.sql` against every collection the app
+  reads and writes: all three lists agree exactly (42 in `index.html` plus
+  `companyProfile`, 43 in `api/data.js`, 43 tables in the migration) — **no
+  table is missing**. Added `scripts/verify-supabase.mjs`, which refuses to pass
+  unless an anonymous request is refused (treating both 200 and 404 as
+  failures), `/api/data` is not 503, and the counts match 3/3/1/19/48. Added
+  `docs/ACTIVATE-CLOUD.md`. Running the check produced two findings: the cloud
+  is **already live** (`/api/data` returns 200, not 503, and anonymous reads get
+  401 — so two of #28's four proofs are now independently verified rather than
+  owner-reported), and **the jobs table holds 8 rows where 3 are expected**. The
+  five extras were created 2026-07-28 and are duplicates of the three real jobs
+  plus the two KPI demo jobs — start-up seeding is reaching the live database
+  with fresh ids each time, so the cloud stores them as new records. Left
+  untouched: deleting live data needs owner sign-off. See ACTIVATE-CLOUD.md §6.
