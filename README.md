@@ -1,9 +1,11 @@
 # OTTO Plumbing CRM
 
-> **Status:** Crew-ready demo · Live: https://otto-kohl.vercel.app · Landing Page: https://otto-kohl.vercel.app/landing.html · Guide: `/guide.html`
+> **Status:** Production rollout in progress — the backend database is live, loaded, and verified locked to the public; the final connection step is two settings in Vercel (see `docs/STATUS.md` §3.1b). Until then the app runs fully on each device.
+> **Goal:** a production system the crew uses daily for real customer, job, and payroll data.
+> Live: https://otto-kohl.vercel.app · Landing Page: https://otto-kohl.vercel.app/landing.html · Guide: `/guide.html`
 > QA: static checks + full browser click-through. Run `node scripts/qa-check.mjs` and `node scripts/qa-browser.mjs` (or use `scripts/local-server.js`) to see current pass/fail counts — they vary with network access and seed data, so no fixed score is claimed here.
 
-The operating system for **Auto Plumbing / O.T.T.O. Plumbing** — a bilingual
+The operating system for **OTTO Plumbing Inc.** — a bilingual
 (English / Spanish), mobile-first, minimal CRM built for a 15-person plumbing
 crew and a hands-on owner. Not a generic CRM: it is shaped around how a
 plumbing company actually runs a day.
@@ -117,9 +119,9 @@ re-keying into spreadsheets.
   makes it searchable. You can re-link it or save it as a job note in one tap.
   For **fully automatic capture**, point your email provider's inbound webhook
   (SendGrid Inbound Parse, Mailgun, Postmark, …) at `/api/inbound-email` and set
-  `FIREBASE_PROJECT_ID` + `FIREBASE_API_KEY` in Vercel — forwarded mail then
-  appears in the Inbox on its own (it writes into the same Firestore the app
-  syncs from; see Cloud sync below).
+  `INBOUND_WEBHOOK_TOKEN` in Vercel — forwarded mail then appears in the Inbox
+  on its own (the webhook rejects any request without that token; see Cloud sync
+  below).
 - **Documents.** Uploading or scanning a file in a job saves the original, OCRs
   it (checks/invoices/receipts) or estimates it (drawings/PDFs), and creates a
   searchable record in that job's folder.
@@ -166,10 +168,17 @@ A field-service layer that keeps workers accountable without adding friction.
 > app implements the in-app equivalents and the data model + hooks to wire them
 > up. Automatic email capture already has a webhook (`api/inbound-email.js`).
 
-## Cloud sync (optional)
-**Settings → Cloud Sync** accepts a Firebase project ID + web API key to share
-data across devices via Firestore. Without it, everything still works fully on
-the device.
+## Cloud sync
+Data is shared across devices through the project's own **Supabase** backend via
+`api/data.js` (the secret key stays on the server, never in the browser). To
+switch it on, set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in Vercel →
+Settings → Environment Variables and redeploy — `docs/STATUS.md` §3.1b has the
+exact values and the verification steps. Without these settings the app still
+works fully on each device; nothing syncs between devices.
+
+> The previous Firebase-based sync was retired on 2026-07-21 (that project was
+> deleted after a data exposure — see `docs/STATUS.md` §3.1). Do not reintroduce
+> Firebase project IDs, API keys, or Firestore settings anywhere in this app.
 
 ## Run / deploy
 ```bash
@@ -193,7 +202,8 @@ everything else is JSON, backed up to localStorage and exportable to JSON/CSV.
 - `index.html` — the entire application.
 - `api/claude.js` — Vercel serverless proxy to the Anthropic API (keeps the key server-side).
 - `api/nvidia.js` — Vercel serverless proxy to the NVIDIA API for the drawing estimator (key server-side).
-- `api/inbound-email.js` — optional inbound-email webhook for automatic Inbox capture (writes to Firestore).
+- `api/data.js` — server-side access to the Supabase backend (keeps the key server-side).
+- `api/inbound-email.js` — optional inbound-email webhook for automatic Inbox capture (requires `INBOUND_WEBHOOK_TOKEN`).
 - `manifest.json`, `sw.js` — PWA install + offline shell.
 - `legacy/dream-cooling-crm.html` — the previous Dream Cooling (HVAC) app this
   branch replaced, kept for reference.

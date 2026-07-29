@@ -40,5 +40,15 @@ check('trims leading and trailing whitespace', stripHtml('  <p> Padded </p>  '),
 // Need to verify what `Line 1<br>\nLine 2` becomes since the replacement `/ <[^>]+>/g` turns `<br>` into ` `
 check('preserves newlines while converting tags', stripHtml('Line 1<br>\nLine 2'), 'Line 1 \nLine 2');
 
+console.log('testing safeParse for prototype pollution');
+const safeParseSrc = extractFunction('safeParse');
+const safeParseFactory = new Function(`${safeParseSrc}\nreturn safeParse;`);
+const safeParseFunc = safeParseFactory();
+
+const polluted = safeParseFunc('__proto__=polluted&constructor=polluted');
+check('does not pollute object prototype', {}.polluted, undefined);
+check('does not set __proto__ property', polluted.__proto__, undefined);
+check('does not set constructor property', polluted.constructor, undefined);
+
 console.log(`\n${passed} passed, ${failed} failed\n`);
 process.exit(failed ? 1 : 0);

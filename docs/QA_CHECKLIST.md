@@ -7,8 +7,8 @@
 - [x] Website opens
 - [x] Dark screen on first open
 - [x] Pick your name and enter PIN
-- [x] Owner login (PIN 0721)
-- [x] Field worker login (PIN 0715)
+- [x] Owner login
+- [x] Field worker login
 - [x] Owner home screen
 - [x] Customers list
 - [x] Photo → new customer button present
@@ -51,6 +51,10 @@ verify manually against the real production URL instead.
 
 ```
 cd otto
-node scripts/qa-browser.mjs
+QA_OWNER_PIN=<owner code> QA_FIELD_PIN=<field code> node scripts/qa-browser.mjs
 node scripts/qa-check.mjs
 ```
+
+The browser test needs two real sign-in codes to get past the login screen. Type
+them on the command line as shown. **Never write them into a file in this
+project** — that is how they leaked before.
