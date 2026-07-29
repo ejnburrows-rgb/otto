@@ -1445,7 +1445,7 @@
   function modal(html) {
     closeModal();
     const ov = document.createElement('div'); ov.className = 'overlay'; ov.id = 'overlay';
-    ov.innerHTML = `<div class="sheet" onclick="event.stopPropagation()"><button class="sheet-close" onclick="closeModal()"><i class="fas fa-xmark"></i></button>${html}</div>`;
+    ov.innerHTML = `<div class="sheet" onclick="event.stopPropagation()"><button class="sheet-close" aria-label="${t('close')}" onclick="closeModal()"><i class="fas fa-xmark"></i></button>${html}</div>`;
     ov.onclick = closeModal; document.body.appendChild(ov);
   }
   function closeModal() { const o = $('#overlay'); if (o) o.remove(); }
@@ -1537,9 +1537,9 @@
             <div class="pindots">${[0, 1, 2, 3].map(i => `<span class="${i < pin.length ? 'f' : ''}"></span>`).join('')}</div>
             <div class="pinpad">
               ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => `<button onclick="window.__pin('${n}')">${n}</button>`).join('')}
-              <button onclick="window.__back2()"><i class="fas fa-arrow-left"></i></button>
+              <button aria-label="${t('back')}" onclick="window.__back2()"><i class="fas fa-arrow-left"></i></button>
               <button onclick="window.__pin('0')">0</button>
-              <button onclick="window.__pinDel()"><i class="fas fa-delete-left"></i></button>
+              <button aria-label="${t('delete')}" onclick="window.__pinDel()"><i class="fas fa-delete-left"></i></button>
             </div>
           </div>`;
       }
@@ -1609,7 +1609,7 @@
       let m = '';
       const drawM = () => { lg.innerHTML = `<div class="logo"><i class="fas fa-shield-halved"></i></div><h1>${esc(u.name)}</h1><p>${esc(t('mfaOwner'))}</p>
         <div class="card-login"><div class="pindots">${[0,1,2,3].map(i=>`<span class="${i<m.length?'f':''}"></span>`).join('')}</div>
-        <div class="pinpad">${[1,2,3,4,5,6,7,8,9].map(n=>`<button onclick="window.__mfa('${n}')">${n}</button>`).join('')}<button onclick="window.__back2()"><i class="fas fa-arrow-left"></i></button><button onclick="window.__mfa('0')">0</button><button onclick="window.__mfaDel()"><i class="fas fa-delete-left"></i></button></div></div>`; };
+        <div class="pinpad">${[1,2,3,4,5,6,7,8,9].map(n=>`<button onclick="window.__mfa('${n}')">${n}</button>`).join('')}<button aria-label="${t('back')}" onclick="window.__back2()"><i class="fas fa-arrow-left"></i></button><button onclick="window.__mfa('0')">0</button><button aria-label="${t('delete')}" onclick="window.__mfaDel()"><i class="fas fa-delete-left"></i></button></div></div>`; };
       window.__mfaDel = () => { m = m.slice(0, -1); drawM(); };
       window.__mfa = async (n) => {
         const locked = pinLockRemainingMs(u.id + '_mfa');
@@ -1760,7 +1760,7 @@
       
       let html = `<div style="display:flex; justify-content:space-between; align-items:flex-start;">
           <div><div class="greet">${greet}, <b>${esc(session.name)}</b></div><div class="muted">${fmtDate(todayISO())}</div></div>
-          <button class="iconbtn" style="position:relative; color:var(--text); background:var(--card); border:1px solid var(--line); box-shadow:var(--shadow)" onclick="nav('settings')">
+          <button class="iconbtn" style="position:relative; color:var(--text); background:var(--card); border:1px solid var(--line); box-shadow:var(--shadow)" aria-label="${t('alerts')}" onclick="nav('settings')">
             <i class="fas fa-bell"></i>${unreadPTO ? '<div class="notif-dot"></div>' : ''}
           </button>
         </div>`;
@@ -2785,7 +2785,7 @@
         <div style="display:flex;gap:10px;align-items:center">
           <div class="avatar" style="background:${colorFor(w.name || '?')}">${initials(w.name || '?')}</div>
           <div style="flex:1"><div style="font-weight:700">${esc(w.name || 'Worker')}</div><div class="muted">${timeAgo(m.ts)}</div></div>
-          ${m.jobId ? `<button class="btn ghost sm" onclick="nav('job','${m.jobId}')"><i class="fas fa-wrench"></i></button>` : ''}
+          ${m.jobId ? `<button class="btn ghost sm" aria-label="${t('job')}" onclick="nav('job','${m.jobId}')"><i class="fas fa-wrench"></i></button>` : ''}
         </div>
         <div style="margin:10px 0 8px">${esc(m.text)}</div>
         ${m.ownerReply ? `<div class="muted" style="margin-bottom:8px"><b>${t('replyToWorker')}:</b> ${esc(m.ownerReply)}</div>` : ''}
@@ -3612,7 +3612,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
       <div style="padding:10px 12px;border-top:1px solid var(--line);background:var(--bg)">
         <div style="display:flex;gap:8px">
           <input id="float-chat-in" style="flex:1;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--card);font-size:15px" placeholder="${t('askPlaceholder')}" onkeydown="if(event.key==='Enter')sendFloatingMessage()">
-          <button onclick="sendFloatingMessage()" class="btn" style="padding:0 18px;border-radius:12px"><i class="fas fa-paper-plane"></i></button>
+          <button onclick="sendFloatingMessage()" aria-label="${t('sendMessage')}" class="btn" style="padding:0 18px;border-radius:12px"><i class="fas fa-paper-plane"></i></button>
         </div>
       </div>
     `;
@@ -4165,7 +4165,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
       ${ai.overview ? kv(t('overview'), esc(ai.overview)) : ''}${ai.goal ? kv(t('goal'), esc(ai.goal)) : ''}${ai.phase ? kv(t('phase'), esc(ai.phase)) : ''}${ai.rules ? kv(t('rules'), esc(ai.rules)) : ''}${ai.faq ? kv(t('faq'), esc(ai.faq)) : ''}
       ${!(ai.overview || ai.goal || ai.phase || ai.rules || ai.faq) ? `<div class="muted">${lang === 'es' ? 'Agrega el contexto del trabajo para que la IA responda como el dueño.' : 'Add this job\'s context so the AI answers like the owner.'}</div>` : ''}</div>`;
     h += `<div class="chat-log" id="paichat" style="margin-top:10px;min-height:80px">${convo.length ? convo.map(c => `<div class="bubble ${c.role === 'user' ? 'me' : 'bot'}">${esc(c.text)}${c.escalated ? ` <span class="src"><i class="fas fa-arrow-up"></i> ${t('escalateToOwner')}</span>` : ''}</div>`).join('') : `<div class="bubble bot">${esc(t('askProject'))}</div>`}</div>`;
-    h += `<div class="field" style="margin-top:10px"><div class="with-voice"><input id="pai-in" placeholder="${t('askProject')}" onkeydown="if(event.key==='Enter')askProjectAI('${jobId}')">${voiceBtn('pai-in')}<button class="btn" style="flex:0 0 auto" onclick="askProjectAI('${jobId}')"><i class="fas fa-paper-plane"></i></button></div></div>`;
+    h += `<div class="field" style="margin-top:10px"><div class="with-voice"><input id="pai-in" placeholder="${t('askProject')}" onkeydown="if(event.key==='Enter')askProjectAI('${jobId}')">${voiceBtn('pai-in')}<button class="btn" style="flex:0 0 auto" aria-label="${t('sendMessage')}" onclick="askProjectAI('${jobId}')"><i class="fas fa-paper-plane"></i></button></div></div>`;
     h += `<div class="btnrow" style="margin-top:8px"><button class="btn ghost sm" onclick="escalateProjectAI('${jobId}', ($('#pai-in')&&$('#pai-in').value)||'(question)','manual')"><i class="fas fa-arrow-up-from-bracket"></i> ${t('escalateToOwner')}</button></div>`;
     if (esc3.length) h += `<div class="section-title">${t('escalations')}</div><div class="card">${esc3.map(e => `<div class="list-item"><div class="avatar" style="background:${e.status === 'resolved' ? 'var(--green)' : 'var(--red)'}"><i class="fas fa-arrow-up"></i></div><div class="li-main"><div class="li-title">${esc(e.question || '')}</div><div class="li-sub">${timeAgo(e.ts)}</div></div></div>`).join('')}</div>`;
     return h;
@@ -4870,7 +4870,7 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
         <div style="font-weight:bold">${esc(att.name)}</div>
         <div>
           <button class="btn small" style="background:var(--accent); border:none;" onclick="analyzePdfAI('${e.id}', ${attIdx})"><i class="fas fa-robot"></i> ${t('analyzeAI')}</button>
-          <button class="btn ghost small" style="color:white; margin-left:8px; border:none;" onclick="this.closest('.modal-overlay').remove()"><i class="fas fa-xmark"></i></button>
+          <button class="btn ghost small" style="color:white; margin-left:8px; border:none;" aria-label="${t('close')}" onclick="this.closest('.modal-overlay').remove()"><i class="fas fa-xmark"></i></button>
         </div>
       </div>
       <div id="pdf-viewer" style="flex:1; overflow:auto; background:var(--bg2); display:flex; flex-direction:column; align-items:center; padding:20px; gap:20px;"></div>
