@@ -1,26 +1,26 @@
 # STATUS — OTTO Plumbing CRM
 
-Last updated: 2026-07-21, after a full sweep of the codebase and the live site.
-Honest snapshot, not a plan. See [DECISIONS.md](DECISIONS.md) for why things were
-built this way, and [../AGENTS.md](../AGENTS.md) for the rules everyone here follows.
+Last updated: 2026-07-28 (docs cleanup pass). Honest snapshot, not a plan. See
+[DECISIONS.md](DECISIONS.md) for why things were built this way, and
+[../AGENTS.md](../AGENTS.md) for the rules everyone here follows.
 
 Branch: `main`. Live app: **https://otto-kohl.vercel.app** (verified working).
 
 > **Note on an earlier version of this file.** A previous sweep was performed
 > against an out-of-date copy of the project and reported several things that were
 > already fixed, and claimed the app had no working deployment. That was wrong.
-> Everything below was re-verified against `origin/main` and the live site on
-> 2026-07-21.
+> Core facts below were re-verified against `origin/main` on 2026-07-21; the
+> 2026-07-28 pass only corrected contradictions and recorded owner actions.
 
 ---
 
 ## 1. DONE — verified working end to end
 
 - **Live deployment.** `https://otto-kohl.vercel.app` serves the real app
-  (310,710 bytes, title "OTTO Plumbing CRM"). `manifest.json` and `sw.js` both
-  return 200, so the app genuinely installs to a phone and works offline. The
-  serverless functions respond (`/api/notify` returns 405 to a GET, which is the
-  correct answer for a POST-only endpoint).
+  (title "OTTO Plumbing CRM"). `manifest.json` and `sw.js` both return 200, so
+  the app genuinely installs to a phone and works offline. The serverless
+  functions respond (`/api/notify` returns 405 to a GET, which is the correct
+  answer for a POST-only endpoint).
 - **Core CRM.** Customers, jobs, calls, notes, estimates, invoices, payments,
   checks, follow-ups, workflows, knowledge base, reports — all present and wired;
   the static check finds no dead buttons and no missing click handlers.
@@ -32,12 +32,19 @@ Branch: `main`. Live app: **https://otto-kohl.vercel.app** (verified working).
 - **Inbound email webhook is now secured.** It requires `INBOUND_WEBHOOK_TOKEN`
   and returns 401 (unauthorized) without it — this closes the prompt-injection
   path into "Ask OTTO" that an earlier sweep flagged.
-- **Automated tests.** 57 checks run with `npm test`: the cloud sync merge rules,
-  the same rules as embedded in `index.html` (so the two copies cannot drift),
-  and the sign-in code handling. A further 9 drive the real app in a real browser
-  (`node scripts/test-signin-browser.mjs`). They run on every push via GitHub.
+- **Automated tests.** `npm test` runs the suite in `package.json` (merge rules,
+  in-page merge parity, PIN handling, inbound-email, notify, quickbooks, nvidia).
+  Session log 2026-07-21 recorded the suite growing to **~101 checks** after API
+  tests were added; older "57 checks" lines in this file referred to an earlier
+  subset and are retired. A further browser script
+  (`node scripts/test-signin-browser.mjs`) drives the real app. CI runs
+  `npm test` and `node scripts/qa-check.mjs` on every push via GitHub
+  (`.github/workflows/ci.yml`). **Re-run `npm test` locally and paste the count
+  if you need an exact number after the next code change.**
 - **CSV export** for every record type, including QuickBooks-format invoices.
 - **Documentation standard** — `AGENTS.md` plus this file and `DECISIONS.md`.
+- **Tool-agnostic agent rules** — `AGENTS.md` no longer names Claude-only skills
+  (merged 2026-07-28). Any coding tool may work here under the same rules.
 
 ## 2. HALF-DONE — started, not finished
 
@@ -46,9 +53,12 @@ Branch: `main`. Live app: **https://otto-kohl.vercel.app** (verified working).
   overwritten, so two people editing different customers no longer erase each
   other. Deleting hides a record rather than destroying it. The app now checks
   for other people's changes every 20 seconds while it is open instead of only at
-  startup. 22 automated tests cover the merge rules. What is *not* proven is 19
+  startup. Automated tests cover the merge rules. What is *not* proven is 19
   real phones on real Miami cell service — expect a week of actual crew use
   before trusting it.
+- **Photo files still do not leave the phone that took them** (open issue #30).
+  Photo *records* can sync; the image *bytes* stay in device IndexedDB via
+  `storeFile` / `getFileURL`. Build work remaining.
 - **Backups.** Local snapshots with a checksum (a fingerprint that detects
   corruption) and a restore log exist. True offsite, write-once backup does not —
   and no restore has actually been rehearsed, so "we can recover" is unproven.
@@ -87,7 +97,7 @@ always will be. It is dead now, but the pattern is what mattered — a credentia
 committed to a repo cannot be un-published, only revoked. See
 [DECISIONS.md](DECISIONS.md) for why the replacement keeps its key server-side.
 
-### 3.1b Supabase database is live and verified — one step remains
+### 3.1b Supabase database is live — cloud switch is owner-configured
 
 Confirmed on 2026-07-21 in project `huaehartegjbihyygqgb` (display name
 "otto-live"):
@@ -102,17 +112,23 @@ Confirmed on 2026-07-21 in project `huaehartegjbihyygqgb` (display name
   comparison, the same request against Firebase returned `200` with customer
   data.
 
-**Still to do:** the two settings below are not yet set in Vercel, so the live
-site cannot reach the new database (`/api/data` returns 503) and cloud sync is
-switched off. The app still works — it runs from each device, as designed.
+**Owner action (2026-07-28):** owner reports the two Vercel environment variables
+are now set and the project redeployed. **Independent proof still required**
+before closing issue #28:
+
+1. Backups screen shows Cloud ✅
+2. Counts still match 3 / 3 / 1 / 19 / 48
+3. Anonymous curl against `/rest/v1/customers?select=id` returns 401 or
+   permission error — not 200, not 404
+4. `GET /api/data` on the live host returns 200 with collections (not 503
+   `no_server_key`)
 
 | Setting | Value |
 |---|---|
 | `SUPABASE_URL` | `https://huaehartegjbihyygqgb.supabase.co` |
 | `SUPABASE_SERVICE_ROLE_KEY` | the secret "service_role" key from Supabase → Settings → API |
 
-Set both in Vercel → Settings → Environment Variables, then redeploy. The secret
-key belongs only in Vercel and a local `.env` file — never in the code.
+The secret key belongs only in Vercel and a local `.env` file — never in the code.
 
 ### 3.2 Sign-in — hardened 2026-07-21, but still browser-only
 
@@ -136,15 +152,17 @@ somebody able to edit the page in their own browser can still get past the
 sign-in screen. This removed the obvious weaknesses; it did not make the app
 bank-grade. Real enforcement needs sign-in to happen on a server.
 
-### 3.3 The published PINs still need changing — OWNER ACTION
+### 3.3 Published PINs — owner changes codes; scrub remaining docs
 
-The values were removed from the documentation on 2026-07-21, and the startup
-code that kept resetting them was removed the same day. But they remain in the
-project's git history permanently, so **the codes themselves must be changed in
-the app**: Team screen, pick a person, type a new PIN, save.
+The demo PIN values were removed from `DEPLOYMENT_CHECKLIST.md` on 2026-07-21,
+and the startup reset was removed the same day. They remain in git history
+permanently, so **the codes themselves must be changed in the app** (Team
+screen).
 
-Until that is done, anyone who reads the old history can sign in. This is now a
-two-minute job and nothing else blocks it.
+**Owner reports (2026-07-28)** the Team-screen PIN change is done. A 2026-07-28
+docs pass also found the old values still printed in the archived Windows
+heartbeat scripts (moved under `legacy/heartbeat/` and scrubbed). Do not put
+real PINs in any file again.
 
 ### 3.4 FIXED 2026-07-21 — `package.json` scripts
 
@@ -195,12 +213,15 @@ Before a real person can safely use this with real customers:
 
 1. ~~Close the open database and stop shipping the key.~~ **Done 2026-07-21** —
    Firebase deleted, key removed from the code, data moved to Supabase (3.1).
-2. Real per-person sign-in credentials, not shared 4-digit PINs (3.2, 3.3).
-3. Sync that cannot silently erase a colleague's work (2).
-4. A rehearsed backup restore — proof that recovery works, not just that backups exist.
-5. Accounts connected for any feature the business actually needs day one:
+2. ~~Set Supabase env vars in Vercel.~~ **Owner reports done 2026-07-28** — still
+   needs the four proof checks in §3.1b before calling cloud sync closed.
+3. ~~Change published demo PINs in the Team screen.~~ **Owner reports done
+   2026-07-28** — keep rotating if any leak is suspected.
+4. Photo files that leave the capturing phone (#30).
+5. A rehearsed backup restore — proof that recovery works, not just that backups exist.
+6. Accounts connected for any feature the business actually needs day one:
    Twilio/SendGrid for customer notifications, QuickBooks for accounting.
-6. A written answer for the crew on what GPS and photo data is collected and kept —
+7. A written answer for the crew on what GPS and photo data is collected and kept —
    the in-app consent screen exists, but no retention policy is written down.
 
 ---
@@ -291,4 +312,47 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   the Team header) instead of the same bare "Team" label showing two
   different numbers. `npm test` (57 checks) and `node scripts/qa-check.mjs`
   both pass.
+- 2026-07-22 — Made the KPIs screen show real demo numbers instead of all 0s
+  (Wave 6). `seedMockKPIs()` now adds a small, clearly demo-only slice of
+  activity across a handful of the named field workers -- check-ins on
+  their already-assigned jobs, two completed jobs earlier this week (not
+  "today", so the dashboard's Jobs-today tile isn't skewed), and two AI
+  escalations -- guarded by a one-time `db.meta.kpiDemoSeeded` flag instead
+  of the old per-collection-length check, since this runs on every boot.
+  For the Aggregate/Charts view, added an explicit bilingual placeholder
+  ("Charts appear here once connected.") instead of silently blank canvases
+  when `window.Chart` isn't loaded -- chose this over adding a Chart.js CDN
+  script since the app is offline-first with a service worker and the chart
+  data was already `Math.random()` mock. `npm test` (57 checks) and
+  `node scripts/qa-check.mjs` both pass.
+- 2026-07-28 — Docs cleanup: retired the "57 vs ~101 checks" contradiction in
+  §1; recorded owner report that Vercel Supabase env vars and Team PINs were
+  set (proof still required for #28); moved Windows heartbeat scripts to
+  `legacy/heartbeat/` and scrubbed published PIN values from them.
+- 2026-07-29 — Finished the PIN scrub started above. `scripts/qa-browser.mjs`
+  was still typing both live sign-in codes into the login keypad as digit
+  arrays; it now reads them from `QA_OWNER_PIN` / `QA_FIELD_PIN` at run time and
+  refuses to run without them, so a code change no longer breaks the script and
+  no code sits in a tracked file. Also removed the codes from the tick-list
+  labels in `docs/QA_CHECKLIST.md` and `docs/QA_BROWSER.md`. `npm test`
+  (123 checks) and `npm run qa` both pass.
+- 2026-07-22 — Fixed prototype pollution vulnerability in `safeParse` inside `api/inbound-email.js` and added tests to `scripts/test-inbound-email.mjs`.
+- 2026-07-28 — Built photo file sync (#30): photos now upload to Supabase Storage
+  via a queued background process (`photo_upload_queue` in IndexedDB, retries every
+  30 s and on reconnect) and are fetched lazily when a job is opened on another
+  device via `api/photos.js`. The `job-photos` bucket is private; anonymous access
+  is denied. Offline display is preserved — photos appear instantly on the
+  capturing device from local IDB. Delete propagates to Storage. Five design
+  decisions recorded in DECISIONS.md. `npm test` (124 checks) and
+  `npm run qa` both pass.
+- [2026-07-21] Optimized KPI Summary view rendering by replacing nested `.filter` operations with pre-computed mappings resulting in a ~32x performance improvement (from 865ms to 27ms in benchmark testing).
 - 2026-07-22 — Added missing test for SMS JSON parsing exception in scripts/test-notify.mjs, covering the error path in api/notify.js.
+- 2026-07-29 — Backlog merge pass: #62, #53, #60, #49, #54, #51 brought up to
+  date with `main`, conflicts resolved by hand, and merged in that order.
+  **Correction to the check counts quoted during that pass:** they were
+  understated. `scripts/test-notify.mjs` ends with `Tests complete. Passed: N`
+  while every other script ends with `N passed`, so a summary grep silently
+  dropped it and mislabelled the quickbooks total as notify's. The true totals
+  are 22 + 22 + 32 + 15 + 16 + 19 + 16 + 23 = **165 checks, 0 failed**. The
+  "0 failed" part was correct throughout; only the totals were wrong. Worth
+  making the per-script summary lines consistent so this cannot recur.

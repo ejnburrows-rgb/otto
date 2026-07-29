@@ -633,7 +633,7 @@
   let lang = localStorage.getItem('otto_lang') || 'en';
   const T = {
     en: {
-      home: 'Home', customers: 'Customers', jobs: 'Jobs', calls: 'Calls', more: 'More',
+      home: 'Home', customers: 'Customers', jobs: 'Jobs', calls: 'Calls', more: 'More', urgent: 'Urgent', kpis: 'KPIs',
       newCall: 'New Call', newJob: 'New Job', myJobs: 'My Jobs', addPhoto: 'Add Photo',
       voiceNote: 'Voice Note', scanCheck: 'Scan Check', ask: 'Ask OTTO', estimates: 'Estimates',
       invoices: 'Invoices', payments: 'Payments', checks: 'Checks', followups: 'Follow-ups',
@@ -703,7 +703,7 @@
       ptoApproved: 'PTO Approved', ptoDenied: 'PTO Denied', conflictWarning: 'has a job scheduled on', approveAnyway: 'Approve anyway?',
       hoursWorked: 'Hours Worked', jobsDone: 'Jobs Done', viewFullProfile: 'View Full Profile', daysWorked: 'Days Worked', locationLog: 'Location Log',
       jobTimeline: 'Job Timeline', ptoHistory: 'PTO History', loginHistory: 'Login History', teamSummary: 'Team Summary', aggregateView: 'Aggregate View',
-      totalTeamHours: 'Total Team Hours', jobsCompletedVsAssigned: 'Jobs Completed vs Assigned', escalationRate: 'Escalation Rate', overtimeHours: 'Overtime Hours',
+      totalTeamHours: 'Total Team Hours', jobsCompletedVsAssigned: 'Jobs Completed vs Assigned', escalationRate: 'Escalation Rate', overtimeHours: 'Overtime Hours', chartsUnavailable: 'Charts appear here once connected.',
       urgentHub: 'Urgent Issues', urgentQuestion: 'Urgent question for owner', sendUrgent: 'Send to owner', urgentSent: 'Sent to owner', noUrgent: 'No urgent issues',
       photoNewCustomer: 'Photo → New Customer', scanningCustomer: 'Reading account photo…', customerCreated: 'Customer created from photo',
       connectQuickBooks: 'Connect QuickBooks', quickBooksSection: 'QuickBooks', notificationsSection: 'Customer Notifications', smsReady: 'SMS ready', emailReady: 'Email ready', notConfigured: 'Not configured yet',
@@ -716,7 +716,7 @@
       floatingChat: 'Chat with OTTO', chatTitle: 'OTTO Assistant', typing: 'OTTO is thinking…', copyMsg: 'Copy', copied: 'Copied!', close: 'Close', openAiChat: 'Open AI Chat', sendMessage: 'Send',
     },
     es: {
-      home: 'Inicio', customers: 'Clientes', jobs: 'Trabajos', calls: 'Llamadas', more: 'Más',
+      home: 'Inicio', customers: 'Clientes', jobs: 'Trabajos', calls: 'Llamadas', more: 'Más', urgent: 'Urgentes', kpis: 'KPIs',
       newCall: 'Nueva Llamada', newJob: 'Nuevo Trabajo', myJobs: 'Mis Trabajos', addPhoto: 'Agregar Foto',
       voiceNote: 'Nota de Voz', scanCheck: 'Escanear Cheque', ask: 'Pregunta a OTTO', estimates: 'Presupuestos',
       invoices: 'Facturas', payments: 'Pagos', checks: 'Cheques', followups: 'Seguimientos',
@@ -786,7 +786,7 @@
       ptoApproved: 'Permiso Aprobado', ptoDenied: 'Permiso Denegado', conflictWarning: 'tiene un trabajo el', approveAnyway: '¿Aprobar de todas formas?',
       hoursWorked: 'Horas Trabajadas', jobsDone: 'Trabajos Hechos', viewFullProfile: 'Ver Perfil Completo', daysWorked: 'Días Trabajados', locationLog: 'Registro de Ubicaciones',
       jobTimeline: 'Línea de Tiempo', ptoHistory: 'Historial de Permisos', loginHistory: 'Historial de Conexiones', teamSummary: 'Resumen del Equipo', aggregateView: 'Vista General',
-      totalTeamHours: 'Horas Totales del Equipo', jobsCompletedVsAssigned: 'Trabajos Completados vs Asignados', escalationRate: 'Tasa de Escalaciones', overtimeHours: 'Horas Extras',
+      totalTeamHours: 'Horas Totales del Equipo', jobsCompletedVsAssigned: 'Trabajos Completados vs Asignados', escalationRate: 'Tasa de Escalaciones', overtimeHours: 'Horas Extras', chartsUnavailable: 'Las gráficas aparecen aquí al conectarse.',
       urgentHub: 'Asuntos Urgentes', urgentQuestion: 'Pregunta urgente al dueño', sendUrgent: 'Enviar al dueño', urgentSent: 'Enviado al dueño', noUrgent: 'Sin asuntos urgentes',
       photoNewCustomer: 'Foto → Nuevo Cliente', scanningCustomer: 'Leyendo foto de cuenta…', customerCreated: 'Cliente creado desde foto',
       connectQuickBooks: 'Conectar QuickBooks', quickBooksSection: 'QuickBooks', notificationsSection: 'Notificaciones al Cliente', smsReady: 'SMS listo', emailReady: 'Correo listo', notConfigured: 'Sin configurar aún',
@@ -940,6 +940,7 @@
         if (!d.objectStoreNames.contains('estimate_records')) d.createObjectStore('estimate_records', { keyPath: 'id' });
         if (!d.objectStoreNames.contains('verification_logs')) d.createObjectStore('verification_logs', { keyPath: 'id' });
         if (!d.objectStoreNames.contains('pricing_exceptions')) d.createObjectStore('pricing_exceptions', { keyPath: 'id' });
+        if (!d.objectStoreNames.contains('photo_upload_queue')) d.createObjectStore('photo_upload_queue');
       };
       r.onsuccess = () => { _idb = r.result; res(_idb); };
       r.onerror = () => rej(r.error);
@@ -1010,8 +1011,96 @@
   }
 
   /* file blobs (photos, documents, CAD) stored separately */
-  async function storeFile(blob) { const id = 'f_' + uid(); await idbPut('files', id, blob); return id; }
-  async function getFileURL(id) { const b = await idbGet('files', id); return b ? URL.createObjectURL(b) : null; }
+  async function storeFile(blob, mime) { const id = 'f_' + uid(); await idbPut('files', id, blob); await enqueuePhotoUpload(id, mime || 'image/jpeg'); return id; }
+  async function getFileURL(id) {
+    // Fast path: blob is already on this device (just taken, or previously cached).
+    const b = await idbGet('files', id);
+    if (b) return URL.createObjectURL(b);
+    // Slow path: fetch from cloud and cache locally so the next open is instant.
+    // Only runs on a second device that does not have the local copy.
+    try {
+      const r = await fetch('/api/photos?fileId=' + encodeURIComponent(id));
+      if (!r.ok) return null;
+      const { url } = await r.json();
+      if (!url) return null;
+      const imgRes = await fetch(url);
+      if (!imgRes.ok) return null;
+      const blob = await imgRes.blob();
+      await idbPut('files', id, blob);
+      return URL.createObjectURL(blob);
+    } catch (_) {
+      return null; // offline or server not configured — show nothing rather than crash
+    }
+  }
+
+  /* ============================ photo upload queue ============================ */
+  /* Each entry: { fileId, mime, retries, added }. The blob stays in 'files'
+     until the upload succeeds. The queue persists in IndexedDB, so it survives
+     the app being closed mid-upload. */
+
+  async function enqueuePhotoUpload(fileId, mime) {
+    await idbPut('photo_upload_queue', fileId, { fileId, mime: mime || 'image/jpeg', retries: 0, added: Date.now() });
+  }
+
+  async function _drainPhotoQueue() {
+    let entries;
+    try { entries = await idbGetAll('photo_upload_queue'); } catch (e) { return; }
+    for (const entry of entries) {
+      const { fileId, mime } = entry;
+      const blob = await idbGet('files', fileId);
+      if (!blob) { await idbDel('photo_upload_queue', fileId); continue; }
+      try {
+        const b64 = await blobToBase64(blob);
+        const r = await fetch('/api/photos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fileId, mime, data: b64 }),
+        });
+        if (r.ok) {
+          await idbDel('photo_upload_queue', fileId);
+        } else {
+          await _bumpPhotoRetry(fileId, entry);
+        }
+      } catch (_) {
+        await _bumpPhotoRetry(fileId, entry);
+      }
+    }
+  }
+
+  async function _bumpPhotoRetry(fileId, entry) {
+    // Give up after 20 attempts (~10 min). Leave the blob so it is still
+    // visible locally; remove from queue to stop retrying.
+    if (entry.retries >= 20) {
+      await idbDel('photo_upload_queue', fileId);
+    } else {
+      await idbPut('photo_upload_queue', fileId, { ...entry, retries: entry.retries + 1 });
+    }
+  }
+
+  function blobToBase64(blob) {
+    return new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result);
+      r.onerror = rej;
+      r.readAsDataURL(blob);
+    });
+  }
+
+  /* Start the background queue drain: retry every 30 seconds and on reconnect.
+     The plumber is never blocked — photos appear instantly from local IDB. */
+  function startPhotoQueueDrainer() {
+    _drainPhotoQueue();
+    setInterval(_drainPhotoQueue, 30000);
+    window.addEventListener('online', _drainPhotoQueue);
+  }
+
+  function deletePhotoFile(fileId) {
+    if (!fileId) return;
+    idbDel('files', fileId).catch(() => {});
+    idbDel('photo_upload_queue', fileId).catch(() => {});
+    fetch('/api/photos?fileId=' + encodeURIComponent(fileId), { method: 'DELETE' })
+      .catch(() => {}); // fire-and-forget; soft-delete of the record is the primary delete
+  }
 
   /* ============================ sign-in codes ============================ */
   /* PINs are not stored as readable numbers. Each user gets a random "salt" (an
@@ -1842,7 +1931,7 @@
     $('#main').innerHTML = html;
     // lazy-load photo blobs
     const grid = $('#jobphotos');
-    if (grid) photos.forEach(async p => { const url = await getFileURL(p.fileId); if (url) { const im = document.createElement('img'); im.src = url; im.onclick = () => modal(`<h2>${t('photos')}</h2><img src="${url}" style="width:100%;border-radius:12px;margin-top:10px"><div class="muted" style="margin-top:8px">${esc(p.caption || '')} · ${fmtDate(p.created)}</div><button class="btn red block" style="margin-top:12px" onclick="confirmDel(()=>{remove('photos','${p.id}');closeModal();render()})"><i class='fas fa-trash'></i> ${t('delete')}</button>`); grid.appendChild(im); } });
+    if (grid) photos.forEach(async p => { const url = await getFileURL(p.fileId); if (url) { const im = document.createElement('img'); im.src = url; im.onclick = () => modal(`<h2>${t('photos')}</h2><img src="${url}" style="width:100%;border-radius:12px;margin-top:10px"><div class="muted" style="margin-top:8px">${esc(p.caption || '')} · ${fmtDate(p.created)}</div><button class="btn red block" style="margin-top:12px" onclick="confirmDel(()=>{deletePhotoFile(${JSON.stringify(p.fileId)});remove('photos','${p.id}');closeModal();render()})"><i class='fas fa-trash'></i> ${t('delete')}</button>`); grid.appendChild(im); } });
   }
 
   function noteHTML(n) {
@@ -4336,6 +4425,7 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     await migratePlainPins();
     try { _cloudAvailable = await cloudPull(); } catch (e) { }
     startCloudPolling();
+    startPhotoQueueDrainer();
     const sid = localStorage.getItem('otto_session');
     if (sid) { session = get('users', sid); }
     if (session) startApp(); else showLogin();
@@ -4372,13 +4462,44 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
   let kpiMode = 'summary'; // 'summary' or 'aggregate'
 
   function seedMockKPIs() {
-    if (!db.time_off.length) {
-      const fieldWorkers = db.users.filter(u => u.role === 'field');
-      if (fieldWorkers.length > 0) {
-        add('time_off', { workerId: fieldWorkers[0].id, startDate: todayISO(), endDate: todayISO(), reason: 'Sick day', status: 'pending' });
-        add('login_history', { userId: fieldWorkers[0].id, ts: nowISO() });
+    // Runs on every boot, so guard once with a flag rather than re-checking
+    // individual collection lengths -- avoids ever re-seeding duplicates.
+    if (db.meta && db.meta.kpiDemoSeeded) return;
+    const fieldWorkers = db.users.filter(u => u.role === 'field');
+    if (!fieldWorkers.length) return;
+
+    add('time_off', { workerId: fieldWorkers[0].id, startDate: todayISO(), endDate: todayISO(), reason: 'Sick day', status: 'pending' });
+    add('login_history', { userId: fieldWorkers[0].id, ts: nowISO() });
+
+    // Demo-only slice of KPI activity so the analytics screens show real
+    // numbers instead of all 0s. Spread across a handful of the seeded field
+    // workers; never touches real cloud data paths.
+    const daysAgoISO = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return d.toISOString(); };
+    const [w1, w3, w5] = [fieldWorkers[0], fieldWorkers[2] || fieldWorkers[0], fieldWorkers[4] || fieldWorkers[0]];
+
+    // Check-ins today on the 3 jobs the main seed already assigned to
+    // field-1/field-3/field-5, so their "Hours Worked" / "Locations" are non-zero.
+    db.jobs.forEach(j => {
+      if (['field-1', 'field-3', 'field-5'].includes(j.assignedTo)) {
+        add('job_events', { type: 'check_in', jobId: j.id, workerId: j.assignedTo, userId: j.assignedTo, ts: nowISO() });
       }
-    }
+    });
+
+    // A couple of completed jobs from earlier this week (not "today", so they
+    // don't inflate the dashboard's "Jobs today" tile) so "Jobs Done" is
+    // non-zero, plus a matching check-in each for more hours history.
+    const c1 = add('jobs', { title: 'Garbage disposal replacement', customerId: db.customers[0] && db.customers[0].id, assignedTo: w1.id, status: 'completed', scheduledDate: daysAgoISO(2).slice(0, 10), description: 'Demo completed job.' });
+    const c2 = add('jobs', { title: 'Toilet flange repair', customerId: db.customers[1] && db.customers[1].id, assignedTo: w3.id, status: 'completed', scheduledDate: daysAgoISO(4).slice(0, 10), description: 'Demo completed job.' });
+    add('job_events', { type: 'check_in', jobId: c1.id, workerId: w1.id, userId: w1.id, ts: daysAgoISO(2) });
+    add('job_events', { type: 'check_in', jobId: c2.id, workerId: w3.id, userId: w3.id, ts: daysAgoISO(4) });
+
+    // A couple of AI escalations so "Escalations" is non-zero.
+    add('ai_escalations', { jobId: c1.id, workerId: w1.id, question: 'Customer wants a quote for a garbage disposal upgrade.', reason: 'pricing', status: 'open', ts: nowISO() });
+    add('ai_escalations', { jobId: c2.id, workerId: w5.id, question: 'Unsure if the flange needs full replacement or a shim fix.', reason: 'diagnosis', status: 'open', ts: nowISO() });
+
+    db.meta = db.meta || {};
+    db.meta.kpiDemoSeeded = true;
+    save();
   }
 
   function viewKpis() {
@@ -4411,14 +4532,42 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     if (kpiMode === 'summary') {
       const workers = db.users.filter(u => u.role === 'field');
       html += `<div class="tiles" style="grid-template-columns:1fr; gap:12px;">`;
+
+      // Optimization: pre-group data by workerId to avoid O(N*M) lookups
+      const eventsByWorker = {};
+      for (const e of db.job_events) {
+        if (!eventsByWorker[e.workerId]) eventsByWorker[e.workerId] = [];
+        eventsByWorker[e.workerId].push(e);
+      }
+
+      const jobsByWorker = {};
+      for (const j of db.jobs) {
+        if (!jobsByWorker[j.assignedTo]) jobsByWorker[j.assignedTo] = [];
+        jobsByWorker[j.assignedTo].push(j);
+      }
+
+      const escalationsByWorker = {};
+      for (const e of db.ai_escalations) {
+        escalationsByWorker[e.workerId] = (escalationsByWorker[e.workerId] || 0) + 1;
+      }
+
+      const ptoByWorker = {};
+      for (const p of db.time_off) {
+        if (!ptoByWorker[p.workerId]) ptoByWorker[p.workerId] = [];
+        ptoByWorker[p.workerId].push(p);
+      }
+
+      const today = todayISO();
+
       workers.forEach(w => {
-        const checkins = db.job_events.filter(e => e.workerId === w.id && e.type === 'check_in');
-        const jobsDone = db.jobs.filter(j => j.assignedTo === w.id && j.status === 'completed').length;
-        const escalations = db.ai_escalations.filter(e => e.workerId === w.id).length;
+        const checkins = (eventsByWorker[w.id] || []).filter(e => e.type === 'check_in');
+        const jobsDone = (jobsByWorker[w.id] || []).filter(j => j.status === 'completed').length;
+        const escalations = escalationsByWorker[w.id] || 0;
         const locations = new Set(checkins.map(e => e.jobId)).size;
         
-        const approvedPTO = db.time_off.find(p => p.workerId === w.id && p.status === 'approved' && p.endDate >= todayISO());
-        const pendingCount = db.time_off.filter(p => p.workerId === w.id && p.status === 'pending').length;
+        const wPTO = ptoByWorker[w.id] || [];
+        const approvedPTO = wPTO.find(p => p.status === 'approved' && p.endDate >= today);
+        const pendingCount = wPTO.filter(p => p.status === 'pending').length;
         let ptoStr = t('noPtoPending');
         if (approvedPTO) ptoStr = `${t('approvedThrough')} ${fmtDate(approvedPTO.endDate)}`;
         else if (pendingCount) ptoStr = `[${pendingCount}] ${t('pendingCount')}`;
@@ -4453,7 +4602,7 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
         </div>`;
       });
       html += `</div>`;
-    } else {
+    } else if (window.Chart) {
       // Aggregate view (Charts)
       html += `<div style="display:flex; flex-direction:column; gap:20px; padding-bottom:30px;">
         <div class="card" style="padding:12px;"><div class="section-title" style="margin-top:0">${t('totalTeamHours')}</div><canvas id="chart1" height="200"></canvas></div>
@@ -4462,6 +4611,11 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
         <div class="card" style="padding:12px;"><div class="section-title" style="margin-top:0">${t('overtimeHours')}</div><canvas id="chart4" height="200"></canvas></div>
       </div>`;
       setTimeout(renderCharts, 100);
+    } else {
+      // Chart.js isn't bundled (this is an offline-first PWA; a CDN script
+      // would break offline use) -- show an explicit placeholder instead of
+      // silently blank canvases.
+      html += `<div class="card" style="padding:30px;text-align:center"><i class="fas fa-chart-line" style="font-size:28px;color:var(--text2);margin-bottom:10px;display:block"></i><div class="muted">${t('chartsUnavailable')}</div></div>`;
     }
     $('#main').innerHTML = html;
   }
@@ -4866,7 +5020,7 @@ Return ONLY valid JSON: { "fixtures": [], "pipes": [], "fittings": [], "notes": 
     uploadProjectDoc, openProjectDoc, approveProjectDoc, backupNow, restoreTest,
     viewKpis, viewWorkerProfile, approvePTO, denyPTO, renderCharts, seedMockKPIs,
     saveGoogleClient, connectGmail, fetchNewEmails, viewInbox, previewPDF, analyzePdfAI, selectJobForTakeoff, assignTakeoff,
-    photoScanCreateCustomer, viewUrgentHub, openUrgentForm, submitUrgentMessage, replyUrgent, resolveUrgent,
+    photoScanCreateCustomer, viewUrgentHub, openUrgentForm, submitUrgentMessage, replyUrgent, resolveUrgent, deletePhotoFile,
     connectQuickBooks, saveNotifyPrefs, refreshIntegrationStatus });
 
   /* Hooks used only by the automated tests in scripts/. They expose existing
