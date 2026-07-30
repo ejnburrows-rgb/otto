@@ -6,7 +6,7 @@
 // fail-closed until real server-side sign-in exists (see api/_lib/serverAuth.js).
 // status/auth_url only report non-sensitive configuration state and stay open.
 
-import { hasServerAuth, denyUnauthenticated } from './_lib/serverAuth.js';
+import { requireAuth } from './_lib/serverAuth.js';
 
 const QB_AUTH = 'https://appcenter.intuit.com/connect/oauth2';
 const QB_TOKEN = 'https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer';
@@ -47,7 +47,10 @@ export default async function handler(req, res) {
   }
 
   if (action === 'sync') {
-    if (!hasServerAuth(req)) { denyUnauthenticated(res); return; }
+    // Sync moves real invoice/customer data to QuickBooks — owner only, and
+    // only after the server has verified who is asking. See api/_lib/serverAuth.js.
+    const auth = await requireAuth(req, res, ['owner']);
+    if (!auth) return;
     const { status, body: out } = runSync(configured, body);
     return res.status(status).json(out);
   }

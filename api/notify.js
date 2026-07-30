@@ -2,13 +2,14 @@
 // Env: TWILIO_SID, TWILIO_AUTH, TWILIO_FROM, SENDGRID_API_KEY (or SMTP_* later).
 // POST { channel: 'sms'|'email', to, subject?, body, trigger?, customerId?, jobId? }
 
-import { hasServerAuth, denyUnauthenticated } from './_lib/serverAuth.js';
+import { requireAuth } from './_lib/serverAuth.js';
 
-// Fail-closed gate first: no real server-side sign-in exists yet, so every
-// request is refused before it can reach Twilio/SendGrid, and no destination
-// or message content is ever echoed back. See api/_lib/serverAuth.js.
+// Identity + role gate first: only owner/office may trigger customer-facing
+// texts and emails. No destination or message content is ever echoed back on
+// a refusal. See api/_lib/serverAuth.js.
 export default async function handler(req, res) {
-  if (!hasServerAuth(req)) { denyUnauthenticated(res); return; }
+  const auth = await requireAuth(req, res, ['owner', 'office']);
+  if (!auth) return;
   return notifyHandler(req, res);
 }
 
@@ -39,7 +40,7 @@ export async function notifyHandler(req, res) {
     try {
       const auth = Buffer.from(`${process.env.TWILIO_SID}:${process.env.TWILIO_AUTH}`).toString('base64');
       const params = new URLSearchParams({ To: body.to, From: process.env.TWILIO_FROM, Body: body.body || '' });
-      const r = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${process.env.TWILIO_SID}/Messages.json`, {
+      const r = await fetch(`{{https://api.twilio.com/2010-04-01/Accounts/${process.env.TWILIO_SID}}}/Messages.json`, {
         method: 'POST',
         headers: { Authorization: `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
         body: params.toString(),
