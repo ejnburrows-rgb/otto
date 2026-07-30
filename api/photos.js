@@ -17,15 +17,15 @@
 //                                  → { ok: true, path: '<storage path>' }
 //   DELETE /api/photos?fileId=<id>  → { ok: true }
 
-import { hasServerAuth, denyUnauthenticated } from './_lib/serverAuth.js';
+import { requireAuth } from './_lib/serverAuth.js';
 
 const BUCKET = 'job-photos';
 
-// Fail-closed gate first: no real server-side sign-in exists yet, so every
-// request is refused before it can reach Supabase Storage. See
-// api/_lib/serverAuth.js.
+// Identity + role gate first: any signed-in crew member may read and upload;
+// only owner/office may delete. See api/_lib/serverAuth.js.
 export default async function handler(req, res) {
-  if (!hasServerAuth(req)) { denyUnauthenticated(res); return; }
+  const auth = await requireAuth(req, res, req.method === 'DELETE' ? ['owner', 'office'] : undefined);
+  if (!auth) return;
   return photosHandler(req, res);
 }
 
