@@ -10,15 +10,17 @@
 // (let the owner type the estimate by hand). The default model can be overridden
 // with the NVIDIA_MODEL environment variable.
 
-import { hasServerAuth, denyUnauthenticated } from './_lib/serverAuth.js';
+import { requireAuth } from './_lib/serverAuth.js';
 
 const NVIDIA_URL = process.env.NVIDIA_URL || 'https://integrate.api.nvidia.com/v1/chat/completions';
 const DEFAULT_MODEL = 'meta/llama-3.3-70b-instruct';
 
-// Fail-closed gate first: no real server-side sign-in exists yet, so every
-// request is refused before it can reach NVIDIA. See api/_lib/serverAuth.js.
+// Identity gate first: any signed-in crew member may use the takeoff
+// assistant, spending company AI credit only after the server knows who they
+// are. See api/_lib/serverAuth.js.
 export default async function handler(req, res) {
-  if (!hasServerAuth(req)) { denyUnauthenticated(res); return; }
+  const auth = await requireAuth(req, res);
+  if (!auth) return;
   return nvidiaHandler(req, res);
 }
 

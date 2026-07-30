@@ -9,12 +9,13 @@
 // If no key is configured it returns 503 so the client can fall back to a
 // personal key entered in Settings, or to local (no-AI) behavior.
 
-import { hasServerAuth, denyUnauthenticated } from './_lib/serverAuth.js';
+import { requireAuth } from './_lib/serverAuth.js';
 
-// Fail-closed gate first: no real server-side sign-in exists yet, so every
-// request is refused before it can reach Anthropic. See api/_lib/serverAuth.js.
+// Identity gate first: any signed-in crew member may use the assistant,
+// spending company AI credit only after the server knows who they are.
 export default async function handler(req, res) {
-  if (!hasServerAuth(req)) { denyUnauthenticated(res); return; }
+  const auth = await requireAuth(req, res);
+  if (!auth) return;
   return claudeHandler(req, res);
 }
 
