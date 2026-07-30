@@ -84,8 +84,8 @@ async function runTests() {
     calledUpstream = false;
     const res = createRes();
     await handler(req, res);
-    check(`${name} returns 403`, res.statusCode, 403);
-    check(`${name} returns server_auth_not_configured`, res.body && res.body.error, 'server_auth_not_configured');
+    check(`${name} returns 401`, res.statusCode, 401);
+    check(`${name} returns unauthenticated`, res.body && res.body.error, 'unauthenticated');
     check(`${name} reveals no customer/provider data`, JSON.stringify(res.body).toLowerCase().includes('secret'), false);
     check(`${name} never calls the upstream provider`, calledUpstream, false);
   }
