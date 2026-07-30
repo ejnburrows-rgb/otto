@@ -497,3 +497,25 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   live request. `npm test` totals 211 checks, 0 failed. Remaining requirement
   recorded as §4 item 8: a real server-side identity/session system with
   authorization by role.
+- 2026-07-29 — Fixed the demo-data contamination fault at its source (#28's
+  failing count check). Root cause: `blankDB()` created 3 customers, 3 jobs and
+  a call with fresh random ids *before* the cloud pull, and `seedMockKPIs()`
+  added 2 more jobs — so a fresh device invented starter records and uploaded
+  them as real work, five jobs per device (3 → 8 → 13 over two days). Two
+  independent guards now prevent it: demo content only exists in explicit demo
+  mode (`?demo=1`, remembered per device) and is seeded *after* the cloud pull,
+  and every demo record is stamped `demo: true` and filtered out by
+  `cloudPush()`, so even a hand-enabled demo device cannot contaminate a real
+  workspace. A production device now starts empty and shows "Nothing here yet."
+  Verified in a real browser: production profile creates 0 customers / 0 jobs
+  and stays empty across a reload, the 19-person staff roster still loads, and
+  demo mode still produces its 3 customers / 5 jobs with every record stamped.
+  Added `scripts/test-demo-seed.mjs` (37 checks) covering production default,
+  demo opt-in and opt-out, refusal to seed over real or cloud-pulled data,
+  reload idempotency, demo rows never leaving the device, five successive fresh
+  devices leaving the cloud count unchanged, and the boot ordering itself.
+  `npm test` totals 248 checks, 0 failed; `npm run qa` passes. **No cloud
+  records were read, written or deleted.** The ten existing extra rows are left
+  in place — identification criteria and the required pre-deletion steps are in
+  `docs/DUPLICATE-DATA-CLEANUP-REPORT.md`, which contains no delete commands and
+  leaves the decision to the owner.

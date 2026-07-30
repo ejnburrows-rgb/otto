@@ -926,21 +926,59 @@
       modified: nowISO()
     };
     
-    // Minimal realistic demo data (plumbing focused, non-clutter for ADHD/non-tech). Assigned across fields.
+    return d;
+  }
+
+  /* ---------- demo data — never on a production device ----------
+
+     This used to live inside blankDB(), which meant every fresh device
+     invented three customers, three jobs and a call with brand-new random ids
+     and then uploaded them as real records. The cloud had no way to tell them
+     from genuine work, so the live jobs table grew by five rows per device
+     (3 -> 8 -> 13 over two days in July 2026).
+
+     Two independent guards now stop that:
+       1. It only runs in explicit demo mode — see isDemoMode().
+       2. Every record it creates is stamped `demo: true`, and cloudPush()
+          refuses to upload those, so even a device that is switched into demo
+          mode by hand cannot contaminate a real company workspace. */
+  function isDemoMode() {
+    try {
+      const q = new URLSearchParams(location.search);
+      if (q.get('demo') === '1') { localStorage.setItem('otto_demo_mode', '1'); return true; }
+      if (q.get('demo') === '0') { localStorage.removeItem('otto_demo_mode'); return false; }
+      return localStorage.getItem('otto_demo_mode') === '1';
+    } catch (e) { return false; }
+  }
+
+  /* True when this device has any real content of its own — used so demo data
+     is never dropped on top of a database that already means something. */
+  function hasAnyBusinessData(d) {
+    return ['customers', 'jobs', 'calls', 'invoices', 'estimates', 'payments']
+      .some(c => Array.isArray(d[c]) && d[c].some(r => r && r.demo !== true));
+  }
+
+  function applyDemoSeed(d) {
+    if (hasAnyBusinessData(d)) return false;
+    // Already seeded on a previous run — reseeding would hand the same demo
+    // rows brand-new ids on every reload, which is the shape of the fault this
+    // whole change exists to remove.
+    if (['customers', 'jobs', 'calls'].some(c => (d[c] || []).some(r => r && r.demo === true))) return false;
+    const stamp = { demo: true, created: nowISO() };
     d.customers = [
-      { id: uid(), name: 'Garcia Residence', phone: '(305) 555-1234', address: '123 Oak St, Miami, FL', created: nowISO() },
-      { id: uid(), name: 'Patel Family', phone: '(786) 555-5678', address: '456 Palm Ave, Hialeah, FL', created: nowISO() },
-      { id: uid(), name: 'Rivera Plumbing Co (repeat)', phone: '(954) 555-9012', address: '789 Beach Blvd, Miami Beach', created: nowISO() }
+      { id: uid(), name: 'Garcia Residence', phone: '(305) 555-1234', address: '123 Oak St, Miami, FL', ...stamp },
+      { id: uid(), name: 'Patel Family', phone: '(786) 555-5678', address: '456 Palm Ave, Hialeah, FL', ...stamp },
+      { id: uid(), name: 'Rivera Plumbing Co (repeat)', phone: '(954) 555-9012', address: '789 Beach Blvd, Miami Beach', ...stamp }
     ];
     d.jobs = [
-      { id: uid(), title: 'Kitchen faucet leak', customerId: d.customers[0].id, assignedTo: 'field-1', status: 'scheduled', scheduledDate: todayISO(), description: 'Dripping under sink', created: nowISO() },
-      { id: uid(), title: 'Water heater install', customerId: d.customers[1].id, assignedTo: 'field-3', status: 'inProgress', scheduledDate: todayISO(), description: 'Replace 50gal unit', created: nowISO() },
-      { id: uid(), title: 'Sewer line inspection', customerId: d.customers[2].id, assignedTo: 'field-5', status: 'scheduled', scheduledDate: todayISO(), description: 'Camera check after backup', created: nowISO() }
+      { id: uid(), title: 'Kitchen faucet leak', customerId: d.customers[0].id, assignedTo: 'field-1', status: 'scheduled', scheduledDate: todayISO(), description: 'Dripping under sink', ...stamp },
+      { id: uid(), title: 'Water heater install', customerId: d.customers[1].id, assignedTo: 'field-3', status: 'inProgress', scheduledDate: todayISO(), description: 'Replace 50gal unit', ...stamp },
+      { id: uid(), title: 'Sewer line inspection', customerId: d.customers[2].id, assignedTo: 'field-5', status: 'scheduled', scheduledDate: todayISO(), description: 'Camera check after backup', ...stamp }
     ];
     d.calls = [
-      { id: uid(), callerName: 'Mrs. Garcia', callerPhone: '(305) 555-1234', summary: 'Faucet leaking in kitchen', customerId: d.customers[0].id, created: nowISO() }
+      { id: uid(), callerName: 'Mrs. Garcia', callerPhone: '(305) 555-1234', summary: 'Faucet leaking in kitchen', customerId: d.customers[0].id, ...stamp }
     ];
-    return d;
+    return true;
   }
 
   /* ============================ IndexedDB storage ============================ */
@@ -1252,13 +1290,23 @@
     return [...(db[col] || []), ...((db._deleted && db._deleted[col]) || [])];
   }
 
+  /* What is allowed to leave this device. Demo records stay local, always —
+     this is the second guard against seeded data reaching a real company
+     database, and it holds even if someone turns demo mode on by hand or an
+     old device still carries demo rows created before this fix. */
+  function _syncableRecords(col) {
+    const all = _allRecords(col);
+    if (!Array.isArray(all)) return all;
+    return all.filter(r => r && r.demo !== true);
+  }
+
   function cloudPush() {
     clearTimeout(_cloudTimer);
     _cloudTimer = setTimeout(async () => {
       try {
         const promises = [];
         for (const col of SYNCED_COLLECTIONS) {
-          const value = _allRecords(col);
+          const value = _syncableRecords(col);
           const currentStr = JSON.stringify(value);
           if (currentStr === _lastCloudState[col]) continue;   // nothing changed
           _lastCloudState[col] = currentStr;
@@ -1314,7 +1362,7 @@
       if (!db.companyProfile) { db.companyProfile = defaults.companyProfile; }
       await idbPut('kv', 'db', JSON.stringify(db));
 
-      for (const col of SYNCED_COLLECTIONS) _lastCloudState[col] = JSON.stringify(_allRecords(col));
+      for (const col of SYNCED_COLLECTIONS) _lastCloudState[col] = JSON.stringify(_syncableRecords(col));
       return true;
     } catch (e) { console.warn('cloud pull failed', e); }
     return false;
@@ -1358,10 +1406,15 @@
 
   /* ============================ generic record helpers ============================ */
   function get(col, id) { return (db[col] || []).find(x => x.id === id); }
+  /* Set only while the demo seeder is running, so everything it creates is
+     stamped and can be kept off the cloud without listing each call site. */
+  let _seedingDemo = false;
+
   function add(col, obj) {
     obj.id = obj.id || uid(); obj.created = obj.created || nowISO();
     obj.updated = obj.updated || obj.created;
     obj.createdBy = session ? session.id : null;
+    if (_seedingDemo) obj.demo = true;
     db[col].unshift(obj); save(); return obj;
   }
   function update(col, id, patch) { const o = get(col, id); if (o) { Object.assign(o, patch, { updated: nowISO() }); save(); } return o; }
@@ -4443,6 +4496,14 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     backfillUpdatedStamps();
     await migratePlainPins();
     try { _cloudAvailable = await cloudPull(); } catch (e) { }
+
+    /* Demo content is seeded HERE, after the cloud pull, and only in demo mode.
+       Order matters: seeding first is what let a fresh device invent starter
+       records and push them into the live company database. A production
+       device now stays empty until the cloud (or the owner) puts real work in
+       it, which is the honest state to show. */
+    if (isDemoMode() && applyDemoSeed(db)) save();
+
     startCloudPolling();
     startPhotoQueueDrainer();
     const sid = localStorage.getItem('otto_session');
@@ -4481,12 +4542,18 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
   let kpiMode = 'summary'; // 'summary' or 'aggregate'
 
   function seedMockKPIs() {
+    // Demo analytics only. On a production device this must never run: it used
+    // to add two more jobs plus check-ins on every fresh install, which then
+    // synced up as real work.
+    if (!isDemoMode()) return;
     // Runs on every boot, so guard once with a flag rather than re-checking
     // individual collection lengths -- avoids ever re-seeding duplicates.
     if (db.meta && db.meta.kpiDemoSeeded) return;
     const fieldWorkers = db.users.filter(u => u.role === 'field');
     if (!fieldWorkers.length) return;
 
+    _seedingDemo = true;
+    try {
     add('time_off', { workerId: fieldWorkers[0].id, startDate: todayISO(), endDate: todayISO(), reason: 'Sick day', status: 'pending' });
     add('login_history', { userId: fieldWorkers[0].id, ts: nowISO() });
 
@@ -4515,6 +4582,8 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     // A couple of AI escalations so "Escalations" is non-zero.
     add('ai_escalations', { jobId: c1.id, workerId: w1.id, question: 'Customer wants a quote for a garbage disposal upgrade.', reason: 'pricing', status: 'open', ts: nowISO() });
     add('ai_escalations', { jobId: c2.id, workerId: w5.id, question: 'Unsure if the flange needs full replacement or a shim fix.', reason: 'diagnosis', status: 'open', ts: nowISO() });
+
+    } finally { _seedingDemo = false; }
 
     db.meta = db.meta || {};
     db.meta.kpiDemoSeeded = true;
