@@ -83,20 +83,52 @@ async function runTests() {
     check('POST status returns 200', res.statusCode, 200);
     check('POST status returns configured: true', res.jsonData.configured, true);
 
-    // Test 6: POST sync is refused before it can reach QuickBooks — no real
-    // server-side sign-in exists yet, so the gate denies every sync call
-    // regardless of configuration or refresh token.
-    ({ req, res } = createMocks('POST', {}, { action: 'sync', records: [{ id: 1 }] }));
-    await handler(req, res);
-    check('POST sync without auth returns 403', res.statusCode, 403);
-    check('POST sync without auth gives server_auth_not_configured error', res.jsonData.error, 'server_auth_not_configured');
-    check('POST sync without auth reveals no records', res.jsonData.synced, undefined);
+    // Test 6: POST sync goes through the server-side identity + role gate
+    // (api/_lib/serverAuth.js). No token -> 401 unauthenticated; a verified
+    // non-owner -> 403 forbidden_role; a verified owner reaches the sync
+    // logic. Supabase Auth and the user_roles table are mocked here.
+    process.env.SUPABASE_URL = 'https://test.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'sk-test';
+    const originalFetch = global.fetch;
+    global.fetch = async (url, opts = {}) => {
+      const u = String(url);
+      if (u.includes('/auth/v1/user')) {
+        const token = ((opts.headers && opts.headers.Authorization) || '').replace(/^Bearer\s+/i, '');
+        if (token === 'good-owner') return { ok: true, status: 200, json: async () => ({ id: 'u-owner' }) };
+        if (token === 'good-office') return { ok: true, status: 200, json: async () => ({ id: 'u-office' }) };
+        return { ok: false, status: 401, json: async () => ({}) };
+      }
+      if (u.includes('/rest/v1/user_roles')) {
+        const role = u.includes('u-owner') ? [{ role: 'owner' }] : (u.includes('u-office') ? [{ role: 'office' }] : []);
+        return { ok: true, status: 200, json: async () => role };
+      }
+      return { ok: true, status: 200, json: async () => ({}), text: async () => '{}' };
+    };
+    try {
+      ({ req, res } = createMocks('POST', {}, { action: 'sync', records: [{ id: 1 }] }));
+      await handler(req, res);
+      check('POST sync without a token returns 401', res.statusCode, 401);
+      check('POST sync without a token gives unauthenticated error', res.jsonData.error, 'unauthenticated');
+      check('POST sync without a token reveals no records', res.jsonData.synced, undefined);
 
-    process.env.QB_REFRESH_TOKEN = 'token123';
-    ({ req, res } = createMocks('POST', {}, { action: 'sync', records: [{ id: 1 }, { id: 2 }] }));
-    await handler(req, res);
-    check('POST sync with token is still refused (no server auth)', res.statusCode, 403);
-    check('POST sync with token still gives server_auth_not_configured error', res.jsonData.error, 'server_auth_not_configured');
+      process.env.QB_REFRESH_TOKEN = 'token123';
+      ({ req, res } = createMocks('POST', {}, { action: 'sync', records: [{ id: 1 }, { id: 2 }] }));
+      await handler(req, res);
+      check('POST sync with refresh token but no sign-in still refused', res.statusCode, 401);
+      check('POST sync still gives unauthenticated error', res.jsonData.error, 'unauthenticated');
+
+      ({ req, res } = createMocks('POST', {}, { action: 'sync', records: [{ id: 1 }] }, { authorization: 'Bearer good-office' }));
+      await handler(req, res);
+      check('POST sync as office returns 403', res.statusCode, 403);
+      check('POST sync as office gives forbidden_role error', res.jsonData.error, 'forbidden_role');
+
+      ({ req, res } = createMocks('POST', {}, { action: 'sync', records: [{ id: 1 }, { id: 2 }] }, { authorization: 'Bearer good-owner' }));
+      await handler(req, res);
+      check('POST sync as owner reaches sync logic', res.statusCode, 200);
+      check('POST sync as owner returns synced count', res.jsonData.synced, 2);
+    } finally {
+      global.fetch = originalFetch;
+    }
 
     // Test 7: the real sync logic (runSync) stays covered directly, since the
     // handler's gate makes it unreachable through a live request today.
