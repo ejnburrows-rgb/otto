@@ -20,7 +20,7 @@ self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
-  // Never cache API calls (Anthropic, Firebase, QuickBooks, etc.)
+  // Never cache API calls (our /api routes, Anthropic, Google, QuickBooks, etc.)
   if (url.hostname.includes('anthropic.com') ||
       url.hostname.includes('googleapis.com') ||
       url.hostname.includes('intuit.com')) return;

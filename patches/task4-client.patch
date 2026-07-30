@@ -1,0 +1,22 @@
+diff --git a/index.html b/index.html
+index 7e53124..10e866a 100644
+--- a/index.html
++++ b/index.html
+@@ -932,13 +932,13 @@
+     // Seed company profile for proposal generation
+     d.companyProfile = {
+       id: 'company-otto-001',
+-      name: 'Otto Plumbing',
++      name: 'OTTO Plumbing Inc.',
+       logo: null, // Stored as file reference
+       license: '',
+-      phone: '(800) OTTO-PLB',
+-      email: 'info@ottoplumbing.com',
++      phone: '(786) 344-2837',
++      email: '',
+       address: '',
+-      website: 'www.ottoplumbing.com',
++      website: '',
+       defaultTerms: 'Payment due upon completion unless otherwise specified.',
+       defaultExclusions: 'Gas piping excluded unless explicitly enabled. Permit fees not included unless listed.',
+       proposalTemplate: 'default',
