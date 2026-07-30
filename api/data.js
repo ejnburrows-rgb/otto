@@ -19,7 +19,15 @@
 //   GET  /api/data                  -> returns every collection as one object
 //   POST /api/data { collection, records } -> saves records for one collection
 
-import { hasServerAuth, denyUnauthenticated } from './_lib/serverAuth.js';
+import { requireAuth } from './_lib/serverAuth.js';
+
+// Collections a field worker may write from the field — their own job
+// activity. Money, payroll, contracts, rate cards, and team records stay
+// owner/office only.
+const FIELD_WRITABLE = new Set(['jobs', 'photos', 'job_events', 'job_checklists',
+  'checklist_submissions', 'locations', 'notes', 'ai_conversations', 'ai_escalations',
+  'consent_records', 'employee_messages', 'login_history', 'alerts', 'daily_summaries',
+  'pto_requests', 'time_off']);
 
 const COLLECTIONS = ['customers', 'jobs', 'calls', 'notes', 'photos', 'documents', 'estimates',
   'invoices', 'payments', 'checks', 'followups', 'workflows', 'sops', 'users', 'locations', 'folders',
@@ -30,16 +38,18 @@ const COLLECTIONS = ['customers', 'jobs', 'calls', 'notes', 'photos', 'documents
   'rate_cards', 'estimate_projects', 'estimate_records', 'verification_logs', 'pricing_exceptions',
   'companyProfile'];
 
-// Fail-closed gate first: no real server-side sign-in exists yet, so every
-// request is refused before it can reach Supabase. See api/_lib/serverAuth.js.
+// Identity + role gate first: the caller must be a verified Supabase Auth user
+// with a role row before any request reaches Supabase. See api/_lib/serverAuth.js.
 export default async function handler(req, res) {
-  if (!hasServerAuth(req)) { denyUnauthenticated(res); return; }
-  return dataHandler(req, res);
+  const auth = await requireAuth(req, res);
+  if (!auth) return;
+  return dataHandler(req, res, auth);
 }
 
-// The real proxy logic, kept separate so it stays fully covered by tests even
-// while the gate above refuses every live request.
-export async function dataHandler(req, res) {
+// The real proxy logic, kept separate so it stays fully covered by tests.
+// `auth` is the verified caller; tests that exercise the proxy directly may
+// omit it (no role narrowing applied then).
+export async function dataHandler(req, res, auth) {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) {
@@ -62,7 +72,14 @@ export async function dataHandler(req, res) {
       return;
     }
     if (req.method === 'POST') {
-      const { status, body } = await saveOneCollection(url, headers, await parseBody(req));
+      const parsed = await parseBody(req);
+      // Field workers write only their own job-activity collections — never
+      // money, payroll, contracts, or team records.
+      if (auth && auth.role === 'field' && !FIELD_WRITABLE.has(parsed.collection)) {
+        res.status(403).json({ error: 'forbidden_role', message: 'Your account does not have permission for this. No data was read or changed.' });
+        return;
+      }
+      const { status, body } = await saveOneCollection(url, headers, parsed);
       res.status(status).json(body);
       return;
     }
