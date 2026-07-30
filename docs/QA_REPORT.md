@@ -1,10 +1,10 @@
 # OTTO QA Report
 
-**Run:** 2026-07-29T19:29:21.233Z
+**Run:** 2026-07-30T10:28:47.008Z
 **Overall:** PASS (with notes below)
 
 ## Button wiring
-- Functions in app: 385
+- Functions in app: 389
 - Buttons checked: 119
 - Broken buttons: NONE
 - New features not on window export list: NONE (browser still OK)
@@ -17,7 +17,7 @@
 
 ## Live checks
 - prod: OK 200
-- local: OK 200
+- local: FAIL connect ECONNREFUSED 127.0.0.1:8000
 - guide: OK 200
 - manifest: OK 200
 - sw: OK 200
@@ -25,13 +25,13 @@
 - Production has photo customer: true
 - Production dark default: true
 - QuickBooks API responds: 200
-- Notify API responds: 503
+- Notify API responds: 403
 
 ## JSON
 ```json
 {
-  "ts": "2026-07-29T19:29:21.233Z",
-  "functions": 385,
+  "ts": "2026-07-30T10:28:47.008Z",
+  "functions": 389,
   "onclickCalls": 119,
   "missingHandlers": [],
   "notOnWindowExport": [],
@@ -45,8 +45,9 @@
       "ok": true
     },
     "local": {
-      "status": 200,
-      "ok": true
+      "status": 0,
+      "ok": false,
+      "error": "connect ECONNREFUSED 127.0.0.1:8000"
     },
     "guide": {
       "status": 200,
@@ -65,7 +66,7 @@
   "prodHasPhoto": true,
   "prodDarkDefault": true,
   "apiQuickbooks": 200,
-  "apiNotify": 503,
+  "apiNotify": 403,
   "pass": true
 }
 ```
