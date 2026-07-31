@@ -601,3 +601,21 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   owner to check repository Actions settings and the account spending limit,
   since the repo is private and Actions minutes are billable. Local `npm test`
   (275 checks) and `npm run qa` remain the only real evidence.
+- 2026-07-31 — Traced three areas for a handoff and recorded them in
+  `docs/HANDOFF-PHOTOS-OCR.md`. **Correction to an earlier claim in this file
+  and in the handoff guide:** AI is not uniformly switched off. `callNvidia()`
+  is server-only, so PDF takeoff really is dead until the §3.8 gate opens, but
+  `callClaude()` has a second path — a personal Anthropic key in
+  `localStorage.otto_ai_key`, entered in Settings, calling `api.anthropic.com`
+  directly from the browser. So photo OCR (`ocrCheck`, `ocrDocument`,
+  `ocrCustomerAccount` via `aiVision`) can work today on a device with a key.
+  That key is per-device and is NOT in `db.meta`, so it does not sync to
+  Supabase. Also confirmed: a photo cannot reach another person today, blocked
+  in two independent places — the photo *record* syncs through `/api/data`
+  (403) and the image *bytes* through `/api/photos` (403). No role change is
+  needed for owner or office manager to see photos once sync works; both
+  already have `jobs`, which is where photos render. Worst silent failure
+  found: `_drainPhotoQueue()` retries a failed upload 20 times over ~10 minutes
+  then deletes the queue entry with no message at all, while the photo keeps
+  displaying locally — so a crew member believes a photo is filed when nothing
+  left the device. Nothing was changed in the app for this pass; findings only.
