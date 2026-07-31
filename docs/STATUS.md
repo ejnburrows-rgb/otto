@@ -37,10 +37,12 @@ Branch: `main`. Live app: **https://otto-kohl.vercel.app** (verified working).
   Session log 2026-07-21 recorded the suite growing to **~101 checks** after API
   tests were added; older "57 checks" lines in this file referred to an earlier
   subset and are retired. A further browser script
-  (`node scripts/test-signin-browser.mjs`) drives the real app. CI runs
-  `npm test` and `node scripts/qa-check.mjs` on every push via GitHub
-  (`.github/workflows/ci.yml`). **Re-run `npm test` locally and paste the count
-  if you need an exact number after the next code change.**
+  (`node scripts/test-signin-browser.mjs`) drives the real app. As of
+  2026-07-31 the suite is **275 checks, 0 failed**, and `npm run qa` passes.
+  **Re-run `npm test` locally and paste the count if you need an exact number
+  after the next code change** — and you do need to, because the automated
+  safety net is local only. See §3.9: GitHub Actions has never actually run
+  here, so `.github/workflows/ci.yml` is not checking anything today.
 - **CSV export** for every record type, including QuickBooks-format invoices.
 - **Documentation standard** — `AGENTS.md` plus this file and `DECISIONS.md`.
 - **Tool-agnostic agent rules** — `AGENTS.md` no longer names Claude-only skills
@@ -274,6 +276,45 @@ photo sync, in-app AI, customer notifications, and QuickBooks sync all stay
 switched off in the deployed app. This is the same "still true" limitation
 called out in §3.2, now enforced at every server route instead of only at
 sign-in.
+
+### 3.9 GitHub Actions has never run — the tests are local-only
+
+Found 2026-07-31 while checking CI on a pull request. §1 previously claimed CI
+runs `npm test` and `qa-check` on every push. **It does not, and as far as the
+run history shows, it never has.**
+
+The facts, from the Actions API:
+
+- The real workflow, `.github/workflows/ci.yml` (id `317206276`, "Checks"), has
+  **exactly one run in its entire history** — a manual `workflow_dispatch` on
+  2026-07-21 — and that run ended `startup_failure`. It has never once been
+  triggered by a push or a pull request.
+- Every red cross on the commit list comes from a **different, phantom
+  workflow**: id `314100393`, name empty, path `BuildFailed`, `state: deleted`.
+  It has no file in the repository — `.github/workflows/` on `main` contains
+  only `ci.yml` — yet GitHub still spawns a run for it on every push and every
+  pull request, and every one of those runs ends `startup_failure`.
+- All 30 most recent runs across the repository, on every branch including
+  `main`, are that phantom workflow failing at startup. Zero jobs execute.
+
+`startup_failure` with no jobs at all means the run dies before any step, so
+this is not a failing test — nothing is being tested. This is the §3.7 lesson
+repeating itself: a permanently red cross that everyone learns to ignore.
+
+**This is an owner action, not a code fix.** Nothing in the repository can
+repair it, because `ci.yml` itself is valid and is not what is failing. Two
+places to look, both in GitHub's web interface:
+
+1. **Settings → Actions → General** — confirm Actions is allowed for this
+   repository.
+2. **Billing → Spending limit** (account level) — this is a *private* repo, so
+   Actions minutes are billable beyond the free monthly allowance. A hit
+   spending limit or a missing payment method blocks runs at startup exactly
+   like this.
+
+Until it starts working, treat `npm test` and `npm run qa` **run locally** as
+the only real evidence, and paste the counts into the session log as this file
+already instructs.
 
 ## 4. MISSING FOR LAUNCH
 
@@ -519,3 +560,44 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   in place — identification criteria and the required pre-deletion steps are in
   `docs/DUPLICATE-DATA-CLEANUP-REPORT.md`, which contains no delete commands and
   leaves the decision to the owner.
+- 2026-07-31 — Readiness check plus client-demo preparation. Verified rather
+  than rebuilt: working tree clean, `main` and the working branch identical, and
+  the live site byte-for-byte identical to the repo (sha256 of `index.html`,
+  `sw.js`, `manifest.json`, `landing.html`, `guide.html` all match), so the
+  deployment really is current. `npm test` 275 checks 0 failed, `npm run qa`
+  passes. Supabase `otto-live` is ACTIVE_HEALTHY and its security advisors show
+  only INFO "RLS enabled, no policy" — the deny-all state we want. Re-confirmed
+  §3.8 is still in force: `/api/data` on the live host returns
+  `403 server_auth_not_configured`, so cloud sync, photo sync, AI, notifications
+  and QuickBooks sync remain switched off. **No e-commerce exists in this
+  product** and none was added; the nearest working equivalent is the
+  estimate → invoice → payment billing chain. Three small changes, all confined
+  to demo mode or naming: (1) `applyDemoSeed()` now also seeds one estimate, two
+  invoices (one paid, one part-paid) and two payments, so the billing chain can
+  actually be shown — every row carries the same `demo: true` stamp and is
+  stripped by `_syncableRecords()` exactly like the existing rows; (2) `?demo=0`
+  now clears the demo records it left behind instead of only unsetting the flag,
+  via `purgeDemoRecords()`, which touches only `demo: true` rows so a device
+  holding real work loses nothing — previously the fictional customers stayed on
+  screen after the demo ended, which looks like real data appearing from
+  nowhere; (3) owner-2 renamed `El Príncipe` → `Julio` and ops-1 `Sarays` →
+  `Saray` at owner's instruction, including the `fixUser()` backfill and the
+  per-person theme checks. `scripts/test-demo-seed.mjs` grew from 37 to 64
+  checks covering the new billing rows, the purge, and the boot ordering.
+  Verified in a real browser: demo device shows 3 customers / 5 jobs / 2
+  invoices / 1 estimate / 2 payments with 0 unstamped rows and Outstanding
+  $1,950.00; a production device stays at 0 across the board; `?demo=0` takes a
+  demoed device from 5 jobs to 0. Owner-facing instructions — demo flow, what
+  not to click, turning the demo off, and QuickBooks/email/AI/AutoCAD setup with
+  honest ALREADY WORKING vs FUTURE INTEGRATION splits — are in
+  `docs/ONSITE-HANDOFF.md`. No cloud records were read, written or deleted.
+- 2026-07-31 — Checked CI while opening PR #79 and found §3.9: GitHub Actions
+  has never run on this repository. `ci.yml` has one run in its whole history
+  (a manual dispatch on 2026-07-21) which ended `startup_failure`; every red
+  cross since comes from a phantom workflow (`state: deleted`, path
+  `BuildFailed`, no file on `main`) that GitHub still fires on every push and
+  PR and which also dies at startup with zero jobs. Corrected the §1 claim that
+  CI runs on every push — it does not. No code change fixes this; it needs the
+  owner to check repository Actions settings and the account spending limit,
+  since the repo is private and Actions minutes are billable. Local `npm test`
+  (275 checks) and `npm run qa` remain the only real evidence.
