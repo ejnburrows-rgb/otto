@@ -93,7 +93,7 @@
     html { background: var(--bg); }
     /* ===== 8K EXECUTIVE DESK BACKGROUND THEMES & CRYSTAL GLASS HUD ===== */
     body.theme-otto {
-      background: url('https://stitch-assets.storage.googleapis.com/A direct, perfectly centered 8K ultra-realistic first-person perspective (POV) from an executive desk looking straight ahead at a serene luxury beach. The view is completely unobstructed—NO windows, NO glass rails, NO dividers, NO hands, NO chairs. The sleek, dark-wood desk surface is in the immediate foreground. Crystal-clear professional lighting, premium cinematic atmosphere, extreme detail, 8K resolution. This is the background for the OTTO Plumbing executive desk.') no-repeat center center fixed;
+      background: linear-gradient(180deg, #08203f 0%, #0a1929 55%, #0b1220 100%);
       background-size: cover;
       --accent: #0066FF;
       --accent-hover: #005CE6;
@@ -101,7 +101,7 @@
       --glass-border: rgba(56, 189, 248, 0.35);
     }
     body.theme-julio, body.theme-principe {
-      background: url('https://stitch-assets.storage.googleapis.com/A direct, perfectly centered 8K ultra-realistic first-person perspective (POV) from an executive desk looking straight ahead at a serene mountain landscape (Viñales Valley style). In the far distance, on the highest central mountain peak, a single red rose glows intensely inside a glass bell jar (cloche), acting as a bright red beacon. The landscape is lush and green. NO windows, NO glass rails, NO dividers, NO hands, NO chairs. A sleek, dark-wood desk surface is in the immediate foreground. Symmetrical composition, professional and minimalistic "boss-level" aesthetic. High-end cinematic lighting. Reference the composition and style of {{DATA:IMAGE:IMAGE_47}}.') no-repeat center center fixed;
+      background: linear-gradient(180deg, #06301f 0%, #06231a 55%, #0b1220 100%);
       background-size: cover;
       --accent: #16a34a;
       --accent-hover: #15803d;
@@ -109,7 +109,7 @@
       --glass-border: rgba(74, 222, 128, 0.35);
     }
     body.theme-saray {
-      background: url('https://stitch-assets.storage.googleapis.com/A direct, perfectly centered first-person perspective (POV) from a high-end penthouse executive desk looking straight ahead. The viewpoint is looking through a massive, unobstructed floor-to-ceiling glass wall at the Miami skyline at dusk. NO window rails, NO dividers, NO frames. The skyline is dominated by tall, recognizable skyscrapers with glowing windows. The entire scene is bathed in a beautiful pink and magenta twilight glow. The sleek, dark-wood desk surface is in the immediate foreground. High-end, photorealistic, minimalistic, professional lighting, symmetrical composition. Luxurious and immersive.') no-repeat center center fixed;
+      background: linear-gradient(180deg, #3b0d29 0%, #26102a 55%, #0b1220 100%);
       background-size: cover;
       --accent: #f472b6;
       --accent-hover: #db2777;
@@ -153,6 +153,10 @@
       50% { transform: translateY(-10px) rotate(2deg); }
     }
 
+    /* Persona cameo styling. The <img> elements were removed because the only
+       sources ever committed were image-generation prompt text, not files, so
+       every one 404'd in production. Re-add the images here once real artwork
+       ships in the repo. */
     .rose-beacon-el {
       position: fixed;
       top: 68px;
@@ -686,14 +690,12 @@
 
 <body>
   <!-- Executive Beacon Assets & Cameos -->
-  <img src="https://stitch-assets.storage.googleapis.com/A single red rose inside a glass bell jar (cloche), glowing with a shiny, bright red light. High-end, photorealistic, professional lighting, centered composition. The rose is vibrant and detailed, with soft light emanating from within the glass jar. Transparent or dark background. Cinematic aesthetic, tribute to The Little Prince. No hands, no people, no characters. High resolution." class="rose-beacon-el" alt="Rose Beacon" title="Rose Beacon (El Príncipe)" onclick="toast('El Príncipe Rose Beacon glowing brightly', 'info')" />
-  <img src="https://stitch-assets.storage.googleapis.com/A high-end, realistic 3D character render of The Little Prince, exactly as seen in {{DATA:IMAGE:IMAGE_2}}. He is standing, looking forward with a gentle expression, wearing his classic green suit and long flowing yellow scarf. The character must have cinematic, atmospheric lighting with soft rim highlights and realistic fabric textures. CRITICAL: The character must be on a solid, pure transparent background (no background elements, no city, no floor). 8K resolution, photorealistic 3D render." class="prince-cameo-el" alt="Little Prince Cameo" title="The Little Prince (Saray)" onclick="toast('The Little Prince watching over Miami', 'info')" />
 
   <div id="login" class="login hidden"></div>
   <div id="app" class="hidden">
     <header class="topbar">
       <div class="brand">
-        <img src="https://stitch-assets.storage.googleapis.com/{{DATA:IMAGE:IMAGE_15}} logo, but make it ultra-realistic and crystal-like. Use glass-morphism effects, refractive light, and a high-end translucent finish. Professional, premium, sleek.. Design context: - Primary color: #0f172a Font: inter Mode: dark Roundness: rounded-md . The logo should be visually consistent with these brand tokens." alt="OTTO Plumbing Crystal Logo" class="crystal-logo" onerror="this.src='./logo.jpg'" />
+        <img src="./logo.jpg" alt="OTTO Plumbing" class="crystal-logo" />
       </div>
       <div class="spacer"></div>
       <div class="langtoggle">
@@ -701,7 +703,7 @@
         <button id="lang-es" onclick="setLang('es')">ES</button>
       </div>
       <button class="iconbtn" onclick="openPlumbBotModal()" title="PlumbBot AI Assistant" style="padding:2px;display:flex;align-items:center;justify-content:center;">
-        <img src="https://stitch-assets.storage.googleapis.com/Update the PlumbBot character from {{DATA:IMAGE:IMAGE_15}}. The friendly white and light-blue robot should now be holding a bright, professional red plumbing pipe wrench in its hand. Maintain the same minimalistic, professional vector style, clean lines, and dark navy background. The robot's friendly expression and the &quot;PLUMBAI&quot; text at the bottom should remain unchanged. The red wrench should provide a bold, functional accent." alt="PlumbBot AI" style="width:32px;height:32px;border-radius:50%;object-fit:contain;transition:transform 0.2s;" onmouseover="this.style.transform='scale(1.18)'" onmouseout="this.style.transform='scale(1)'" onerror="this.outerHTML='<i class=&quot;fas fa-robot&quot;></i>'" />
+        <i class="fas fa-robot" style="font-size:22px;color:var(--accent);transition:transform 0.2s" onmouseover="this.style.transform='scale(1.18)'" onmouseout="this.style.transform='scale(1)'"></i>
       </button>
       <button class="iconbtn" onclick="nav('settings')" title="Settings"><i class="fas fa-gear"></i></button>
     </header>
@@ -716,7 +718,7 @@
     <div class="card" style="width:100%;max-width:520px;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,0.6);display:flex;flex-direction:column;overflow:hidden;">
       <div style="padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;">
         <div style="display:flex;align-items:center;gap:12px;">
-          <img src="https://stitch-assets.storage.googleapis.com/Update the PlumbBot character from {{DATA:IMAGE:IMAGE_15}}. The friendly white and light-blue robot should now be holding a bright, professional red plumbing pipe wrench in its hand. Maintain the same minimalistic, professional vector style, clean lines, and dark navy background. The robot's friendly expression and the &quot;PLUMBAI&quot; text at the bottom should remain unchanged. The red wrench should provide a bold, functional accent." style="width:38px;height:38px;border-radius:50%;object-fit:contain;" />
+          <i class="fas fa-robot" style="font-size:26px;color:var(--accent)"></i>
           <div>
             <h3 style="font-size:16px;font-weight:700;color:var(--text);margin:0;">PlumbBot AI Assistant</h3>
             <p style="font-size:12px;color:var(--green);font-weight:600;margin:0;"><i class="fas fa-circle" style="font-size:8px;"></i> Online · Boss-Level Intelligence</p>
@@ -849,7 +851,8 @@
       createEstimate: 'Create estimate from this', aiNotReady: 'AI is not set up yet — the file was saved. You can type the estimate.',
       couldntRead: "Couldn't read much from this file — you can still type the estimate below.",
       showInLang: 'Show in this language', drawingHint: 'Upload a drawing or PDF and I will read it and draft a materials list.',
-      emails: 'Inbox', payroll: 'Payroll', addEmail: 'Add email', importEmail: 'Import email file',
+      emails: 'Inbox', inbox: 'Inbox', payroll: 'Payroll', addEmail: 'Add email', importEmail: 'Import email file',
+      all: 'All', escalations: 'Escalations', approvalHistory: 'Approval history',
       from: 'From', subject: 'Subject', message: 'Message', attachments: 'Attachments', matchedTo: 'Matched to',
       matchCustomer: 'Customer / job', summarize: 'Summarize', aiSummary: 'AI summary', noMatch: 'Not matched yet',
       makeNote: 'Save as job note', importPayroll: 'Import payroll file', importExcelHint: 'Excel (.xlsx) or CSV — each row becomes a payroll record.',
@@ -932,7 +935,8 @@
       createEstimate: 'Crear presupuesto con esto', aiNotReady: 'La IA aún no está configurada — el archivo se guardó. Puedes escribir el estimado.',
       couldntRead: 'No se pudo leer mucho de este archivo — puedes escribir el estimado abajo.',
       showInLang: 'Mostrar en este idioma', drawingHint: 'Sube un plano o PDF y lo leeré para hacer una lista de materiales.',
-      emails: 'Bandeja', payroll: 'Nómina', addEmail: 'Agregar correo', importEmail: 'Importar archivo de correo',
+      emails: 'Bandeja', inbox: 'Bandeja', payroll: 'Nómina', addEmail: 'Agregar correo', importEmail: 'Importar archivo de correo',
+      all: 'Todos', approvalHistory: 'Historial de aprobaciones',
       from: 'De', subject: 'Asunto', message: 'Mensaje', attachments: 'Adjuntos', matchedTo: 'Vinculado a',
       matchCustomer: 'Cliente / trabajo', summarize: 'Resumir', aiSummary: 'Resumen de IA', noMatch: 'Sin vincular aún',
       makeNote: 'Guardar como nota del trabajo', importPayroll: 'Importar archivo de nómina', importExcelHint: 'Excel (.xlsx) o CSV — cada fila se vuelve un registro de nómina.',
@@ -1813,8 +1817,13 @@
       }
       pin += n; draw();
       if (pin.length === 4) {
-              if (selUser.role === 'owner') { askMfa(selUser); return; }
-          finishLogin(selUser);
+        const typed = pin;
+        pin = ''; // clear immediately so a slow check cannot be typed past
+        if (await verifyPin(selUser, typed)) {
+          clearFailedPins(selUser.id);
+          // Second factor for owner/admin if an extra code is configured.
+          if ((selUser.role === 'owner') && hasPin(selUser, 'mfaPin')) { askMfa(selUser); return; }
+          finishLogin(selUser, typed);
         } else {
           recordFailedPin(selUser.id);
           const waitMs = pinLockRemainingMs(selUser.id);
@@ -1840,67 +1849,6 @@
       initDraggableHUD();
     }
 
-    function openPlumbBotModal() {
-      const el = document.getElementById('plumbbot-modal');
-      if (el) el.classList.remove('hidden');
-    }
-    function closePlumbBotModal() {
-      const el = document.getElementById('plumbbot-modal');
-      if (el) el.classList.add('hidden');
-    }
-    function sendPlumbBotMsg() {
-      const inp = document.getElementById('plumbbot-input');
-      const hist = document.getElementById('plumbbot-chat-history');
-      if (!inp || !hist) return;
-      const txt = inp.value.trim();
-      if (!txt) return;
-      inp.value = '';
-
-      const userMsg = document.createElement('div');
-      userMsg.style.cssText = 'align-self:flex-end;max-width:88%;background:var(--accent);color:#fff;border-radius:14px 14px 2px 14px;padding:12px 16px;font-size:14px;box-shadow:var(--shadow-sm);';
-      userMsg.textContent = txt;
-      hist.appendChild(userMsg);
-      hist.scrollTop = hist.scrollHeight;
-
-      setTimeout(() => {
-        let reply = `PlumbBot AI here! I analyzed "${txt}". All systems operational. Margins and dispatch are synchronized for maximum efficiency, Boss!`;
-        const lower = txt.toLowerCase();
-        if (lower.includes('margin') || lower.includes('estimate') || lower.includes('price')) {
-          reply = `For estimates, I recommend applying our +5% or +10% Quick Margin buttons to maintain optimal profit margins across jobs!`;
-        } else if (lower.includes('job') || lower.includes('crew') || lower.includes('schedule') || lower.includes('dispatch')) {
-          reply = `Field crew status: All active jobs are mapped and tracked in real-time. No delays reported today!`;
-        }
-        const botMsg = document.createElement('div');
-        botMsg.style.cssText = 'align-self:flex-start;max-width:88%;background:var(--card-elevated);border:1px solid var(--line);border-radius:14px 14px 14px 2px;padding:12px 16px;font-size:14px;color:var(--text);box-shadow:var(--shadow-sm);';
-        botMsg.textContent = reply;
-        hist.appendChild(botMsg);
-        hist.scrollTop = hist.scrollHeight;
-      }, 500);
-    }
-
-    function initDraggableHUD() {
-      if (typeof interact === 'undefined') return;
-      interact('.card, .tile').draggable({
-        inertia: true,
-        modifiers: [
-          interact.modifiers.restrictRect({
-            restriction: 'parent',
-            endOnly: true
-          })
-        ],
-        autoScroll: true,
-        listeners: {
-          move(event) {
-            const target = event.target;
-            const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
-            const y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
-            target.style.transform = `translate(${x}px, ${y}px)`;
-            target.setAttribute('data-x', x);
-            target.setAttribute('data-y', y);
-          }
-        }
-      });
-    }
     async function askMfa(u) {
       lg.innerHTML = `<div class="logo"><i class="fas fa-shield-halved"></i></div><h1>${esc(u.name)}</h1><p>Sending SMS code...</p>`;
       try {
@@ -1950,6 +1898,70 @@
     const p = document.getElementById('ai-chat-popup'); if (p) p.remove();
     showLogin(); 
     document.body.className = '';
+  }
+
+  /* ---- PlumbBot assistant + draggable dashboard (top level: the inline
+     onclick handlers and the window export below both need these). ---- */
+  function openPlumbBotModal() {
+    const el = document.getElementById('plumbbot-modal');
+    if (el) el.classList.remove('hidden');
+  }
+  function closePlumbBotModal() {
+    const el = document.getElementById('plumbbot-modal');
+    if (el) el.classList.add('hidden');
+  }
+  function sendPlumbBotMsg() {
+    const inp = document.getElementById('plumbbot-input');
+    const hist = document.getElementById('plumbbot-chat-history');
+    if (!inp || !hist) return;
+    const txt = inp.value.trim();
+    if (!txt) return;
+    inp.value = '';
+
+    const userMsg = document.createElement('div');
+    userMsg.style.cssText = 'align-self:flex-end;max-width:88%;background:var(--accent);color:#fff;border-radius:14px 14px 2px 14px;padding:12px 16px;font-size:14px;box-shadow:var(--shadow-sm);';
+    userMsg.textContent = txt;
+    hist.appendChild(userMsg);
+    hist.scrollTop = hist.scrollHeight;
+
+    setTimeout(() => {
+      let reply = `PlumbBot AI here! I analyzed "${txt}". All systems operational. Margins and dispatch are synchronized for maximum efficiency, Boss!`;
+      const lower = txt.toLowerCase();
+      if (lower.includes('margin') || lower.includes('estimate') || lower.includes('price')) {
+        reply = `For estimates, I recommend applying our +5% or +10% Quick Margin buttons to maintain optimal profit margins across jobs!`;
+      } else if (lower.includes('job') || lower.includes('crew') || lower.includes('schedule') || lower.includes('dispatch')) {
+        reply = `Field crew status: All active jobs are mapped and tracked in real-time. No delays reported today!`;
+      }
+      const botMsg = document.createElement('div');
+      botMsg.style.cssText = 'align-self:flex-start;max-width:88%;background:var(--card-elevated);border:1px solid var(--line);border-radius:14px 14px 14px 2px;padding:12px 16px;font-size:14px;color:var(--text);box-shadow:var(--shadow-sm);';
+      botMsg.textContent = reply;
+      hist.appendChild(botMsg);
+      hist.scrollTop = hist.scrollHeight;
+    }, 500);
+  }
+
+  function initDraggableHUD() {
+    if (typeof interact === 'undefined') return;
+    interact('.card, .tile').draggable({
+      inertia: true,
+      modifiers: [
+        interact.modifiers.restrictRect({
+          restriction: 'parent',
+          endOnly: true
+        })
+      ],
+      autoScroll: true,
+      listeners: {
+        move(event) {
+          const target = event.target;
+          const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
+          const y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
+          target.style.transform = `translate(${x}px, ${y}px)`;
+          target.setAttribute('data-x', x);
+          target.setAttribute('data-y', y);
+        }
+      }
+    });
   }
 
   /* ============================ ROUTER ============================ */
