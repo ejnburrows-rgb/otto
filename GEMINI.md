@@ -50,3 +50,9 @@ production.
 `index.html` is the entire app — one file, no build step. `api/` holds the
 serverless functions. `scripts/test-*.mjs` is the suite. Live:
 https://otto-kohl.vercel.app · client demo: append `?demo=1`.
+
+## If you were handed a paste-in brief instead
+
+`docs/PASTE-ME.md` is the same content in one self-contained block, for sessions
+where this file was never loaded — a different account, a web IDE, or a tool that
+reads none of these filenames. Either route gets you the same rules.
