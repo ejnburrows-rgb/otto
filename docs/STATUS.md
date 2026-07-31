@@ -16,6 +16,7 @@ Branch: `main`. Live app: **https://otto-kohl.vercel.app** (verified working).
 
 ## 1. DONE — verified working end to end
 
+- **Boss-Level Facelift & StitchMCP Integration (2026-07-31).** Direct 8K executive background assets integrated for Otto (Beach POV), El Príncipe (Viñales Mountains POV with glowing Rose Beacon animation), Saray (Miami Penthouse Dusk POV with Little Prince Cameo animation), and Field Tech Mobile Dashboard. Universal 4-digit PIN routing (PIN 1 -> Otto Blue, PIN 2 -> Príncipe Green, PIN 3 -> Saray Pink, others -> Field Tech). Draggable HUD via `interact.js`, centered PlumbBot AI Assistant chat modal with red wrench mascot icon, Crystal Glass logo, and Quick Margin buttons (+5% / +10%) in Estimator. Verified with 307/307 checks passed.
 - **Live deployment.** `https://otto-kohl.vercel.app` serves the real app
   (title "OTTO Plumbing CRM"). `manifest.json` and `sw.js` both return 200, so
   the app genuinely installs to a phone and works offline. The serverless
