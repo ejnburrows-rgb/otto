@@ -1,11 +1,11 @@
 # OTTO QA Report
 
-**Run:** 2026-07-31T15:28:28.561Z
+**Run:** 2026-07-31T18:23:04.020Z
 **Overall:** PASS (with notes below)
 
 ## Button wiring
-- Functions in app: 391
-- Buttons checked: 119
+- Functions in app: 396
+- Buttons checked: 120
 - Broken buttons: NONE
 - New features not on window export list: NONE (browser still OK)
 
@@ -30,9 +30,9 @@
 ## JSON
 ```json
 {
-  "ts": "2026-07-31T15:28:28.561Z",
-  "functions": 391,
-  "onclickCalls": 119,
+  "ts": "2026-07-31T18:23:04.020Z",
+  "functions": 396,
+  "onclickCalls": 120,
   "missingHandlers": [],
   "notOnWindowExport": [],
   "missingSpanishKeys": [],
