@@ -655,3 +655,4 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   still browser-side only (§3.2), and `hashPin()` is a single SHA-256 round,
   which is thin cover for a 4-digit PIN if a hash ever leaks. Findings only —
   no application code changed.
+- 2026-07-31 — Raised --text-muted contrast ratio to rgba(248, 250, 252, 0.88) in landing.html (issue landing-01) for WCAG AA readability compliance across service cards and text blocks. Verified with node scripts/qa-check.mjs.
