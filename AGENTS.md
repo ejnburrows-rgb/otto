@@ -3,9 +3,67 @@
 You are EJN's development team. EJN is the owner and the client, not the
 project manager — work out what needs doing and do it. Never wait to be asked.
 
-If this repo has a `docs/STATUS.md`, read it before starting anything. It is
-the honest current state; a chat message is not a substitute and may be stale
-the moment `main` moves.
+---
+
+## START HERE — read these two, in this order, before anything else
+
+1. **`docs/AGENT-HANDOFF.md`** — how to work in this repo, what is already
+   finished, the outstanding tasks with line numbers, and the definition of
+   done. It exists so EJN never has to brief you. He will not point you at it;
+   you are being pointed at it here.
+2. **`docs/STATUS.md`** — the honest current state. A chat message is not a
+   substitute and may be stale the moment `main` moves. §3.8 and §3.10 are
+   required reading before you touch anything under `api/`.
+
+**Do not ask EJN what to work on until you have read both.** He loses context
+between sessions — that is what these files are for. If something is missing
+from them, add it rather than asking him to remember it.
+
+### The five that have actually been broken here
+
+Not hypothetical. Each one shipped to production in this repo:
+
+1. **A syntax error blanked the whole app.** Nothing ran; the live site served a
+   white screen. `node --check` the script body **and load the page**.
+2. **The security gate was replaced with hand-rolled JWT auth** whose secret fell
+   back to a placeholder committed to the repo, alongside a sign-in route that
+   handed owner sessions to anyone. `api/_lib/serverAuth.js` returns `false` on
+   purpose. **Never make it return true.** Never hand-build authentication.
+3. **Image-generation prompt text was pasted into `src=`.** Six images 404'd and
+   none of the redesign was visible. Never reference a remote asset host —
+   commit the real file, use a relative path, and confirm it loads.
+4. **A credential was committed** — three times now (§3.1, §3.3, §3.10). Once
+   pushed it cannot be un-published, only revoked.
+5. **Force-pushing destroyed a session's work** (§3.5). Never force-push.
+
+**Every one of those would have been caught by opening the app in a browser
+once.** That is the bar: not "the tests pass", not "the diff looks right" —
+the real app, in a real browser, screenshotted.
+
+### Still outstanding — check before proposing new work
+
+Owner-only (do not attempt these yourself, remind him instead):
+
+- **Rotate `SUPABASE_SERVICE_ROLE_KEY`** and review Supabase access logs for
+  2026-07-31 — it was briefly used as a token-signing secret (§3.10).
+- **GitHub Actions has never once run** (§3.9). Repo Settings → Actions, and the
+  account spending limit. Until fixed, local `npm test` is the only real check.
+- Delete the retired Windows heartbeat scheduled task.
+- **13 job rows in Supabase where 3 are expected** — 10 demo rows from the old
+  seeding fault. Deleting live rows is his call: `docs/DUPLICATE-DATA-CLEANUP-REPORT.md`.
+- PRs #77 and #78 are open and undecided. Issues #28 and #70 are open; #70's
+  containment shipped but its architecture gate has not.
+
+Engineering, in priority order — detail in `docs/AGENT-HANDOFF.md` §3:
+
+- Photo uploads fail **silently** after ~10 minutes while still displaying
+  locally, so a crew member believes a photo is filed when nothing left the phone.
+- OCR shows one identical message for every failure mode.
+- Photos never reach another person — blocked in two independent places.
+- **Server-side sign-in (Supabase Auth, already chosen by EJN)** blocks cloud
+  sync, photo sync, AI, notifications and QuickBooks. `auth.users` is still empty.
+
+---
 
 ---
 
