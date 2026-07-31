@@ -519,3 +519,34 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   in place — identification criteria and the required pre-deletion steps are in
   `docs/DUPLICATE-DATA-CLEANUP-REPORT.md`, which contains no delete commands and
   leaves the decision to the owner.
+- 2026-07-31 — Readiness check plus client-demo preparation. Verified rather
+  than rebuilt: working tree clean, `main` and the working branch identical, and
+  the live site byte-for-byte identical to the repo (sha256 of `index.html`,
+  `sw.js`, `manifest.json`, `landing.html`, `guide.html` all match), so the
+  deployment really is current. `npm test` 275 checks 0 failed, `npm run qa`
+  passes. Supabase `otto-live` is ACTIVE_HEALTHY and its security advisors show
+  only INFO "RLS enabled, no policy" — the deny-all state we want. Re-confirmed
+  §3.8 is still in force: `/api/data` on the live host returns
+  `403 server_auth_not_configured`, so cloud sync, photo sync, AI, notifications
+  and QuickBooks sync remain switched off. **No e-commerce exists in this
+  product** and none was added; the nearest working equivalent is the
+  estimate → invoice → payment billing chain. Three small changes, all confined
+  to demo mode or naming: (1) `applyDemoSeed()` now also seeds one estimate, two
+  invoices (one paid, one part-paid) and two payments, so the billing chain can
+  actually be shown — every row carries the same `demo: true` stamp and is
+  stripped by `_syncableRecords()` exactly like the existing rows; (2) `?demo=0`
+  now clears the demo records it left behind instead of only unsetting the flag,
+  via `purgeDemoRecords()`, which touches only `demo: true` rows so a device
+  holding real work loses nothing — previously the fictional customers stayed on
+  screen after the demo ended, which looks like real data appearing from
+  nowhere; (3) owner-2 renamed `El Príncipe` → `Julio` and ops-1 `Sarays` →
+  `Saray` at owner's instruction, including the `fixUser()` backfill and the
+  per-person theme checks. `scripts/test-demo-seed.mjs` grew from 37 to 64
+  checks covering the new billing rows, the purge, and the boot ordering.
+  Verified in a real browser: demo device shows 3 customers / 5 jobs / 2
+  invoices / 1 estimate / 2 payments with 0 unstamped rows and Outstanding
+  $1,950.00; a production device stays at 0 across the board; `?demo=0` takes a
+  demoed device from 5 jobs to 0. Owner-facing instructions — demo flow, what
+  not to click, turning the demo off, and QuickBooks/email/AI/AutoCAD setup with
+  honest ALREADY WORKING vs FUTURE INTEGRATION splits — are in
+  `docs/ONSITE-HANDOFF.md`. No cloud records were read, written or deleted.

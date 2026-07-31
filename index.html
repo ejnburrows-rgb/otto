@@ -92,7 +92,7 @@
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html { background: var(--bg); }
     /* Per-user theme classes intentionally inert: solid dark surface replaces photo backgrounds. */
-    .theme-otto, .theme-principe, .theme-sarays { background: var(--bg); }
+    .theme-otto, .theme-julio, .theme-saray { background: var(--bg); }
     body { height: 100%; }
 
     body {
@@ -850,8 +850,8 @@
     // Non-tech/ADHD friendly: realistic names, clear roles. Use 'office' internally for managers (full non-field access).
     d.users = [
       { id: 'owner-1', name: 'Otto', role: 'owner', lang: 'en', created: nowISO() },
-      { id: 'owner-2', name: 'El Príncipe', role: 'owner', lang: 'es', created: nowISO() },
-      { id: 'ops-1', name: 'Sarays', role: 'office', lang: 'en', created: nowISO() },
+      { id: 'owner-2', name: 'Julio', role: 'owner', lang: 'es', created: nowISO() },
+      { id: 'ops-1', name: 'Saray', role: 'office', lang: 'en', created: nowISO() },
       { id: 'it-1', name: 'Taylor Kim - Logs/IT', role: 'office', lang: 'en', created: nowISO() },
       { id: 'field-1', name: 'Field Tech 1', role: 'field', hourlyRate: 22, lang: 'en', created: nowISO() },
       { id: 'field-2', name: 'Field Tech 2', role: 'field', hourlyRate: 23, lang: 'es', created: nowISO() },
@@ -942,11 +942,17 @@
        2. Every record it creates is stamped `demo: true`, and cloudPush()
           refuses to upload those, so even a device that is switched into demo
           mode by hand cannot contaminate a real company workspace. */
+  /* Set when this load carried ?demo=0, so boot() knows to clear the demo rows
+     that an earlier demo left in this browser. Without this the flag turns off
+     but the fictional customers stay on screen, which looks exactly like real
+     data going missing/appearing when the device goes back to normal use. */
+  let _demoJustDisabled = false;
+
   function isDemoMode() {
     try {
       const q = new URLSearchParams(location.search);
       if (q.get('demo') === '1') { localStorage.setItem('otto_demo_mode', '1'); return true; }
-      if (q.get('demo') === '0') { localStorage.removeItem('otto_demo_mode'); return false; }
+      if (q.get('demo') === '0') { localStorage.removeItem('otto_demo_mode'); _demoJustDisabled = true; return false; }
       return localStorage.getItem('otto_demo_mode') === '1';
     } catch (e) { return false; }
   }
@@ -978,7 +984,40 @@
     d.calls = [
       { id: uid(), callerName: 'Mrs. Garcia', callerPhone: '(305) 555-1234', summary: 'Faucet leaking in kitchen', customerId: d.customers[0].id, ...stamp }
     ];
+    /* The money side of the same three jobs, so a demo can follow one customer
+       all the way through: call -> job -> estimate -> invoice -> payment. These
+       are fictional amounts on fictional customers and carry the same `demo`
+       stamp, so cloudPush() strips them exactly like the rows above. */
+    const dueInDays = (n) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
+    d.estimates = [
+      { id: uid(), title: 'Sewer line repair — 20ft section', customerId: d.customers[2].id, jobId: d.jobs[2].id, amount: 4800, status: 'sent', date: todayISO(), description: 'Replace collapsed section found on camera inspection.', ...stamp }
+    ];
+    d.invoices = [
+      { id: uid(), number: 'INV-1001', title: 'Kitchen faucet leak', customerId: d.customers[0].id, jobId: d.jobs[0].id, amount: 285, paid: 285, date: todayISO(), dueDate: dueInDays(14), ...stamp },
+      { id: uid(), number: 'INV-1002', title: 'Water heater install', customerId: d.customers[1].id, jobId: d.jobs[1].id, amount: 2450, paid: 500, date: todayISO(), dueDate: dueInDays(21), ...stamp }
+    ];
+    d.payments = [
+      { id: uid(), amount: 285, method: 'Card', invoiceId: d.invoices[0].id, customerId: d.customers[0].id, jobId: d.jobs[0].id, date: todayISO(), ...stamp },
+      { id: uid(), amount: 500, method: 'Check', invoiceId: d.invoices[1].id, customerId: d.customers[1].id, jobId: d.jobs[1].id, date: todayISO(), ...stamp }
+    ];
     return true;
+  }
+
+  /* The reverse of applyDemoSeed: removes every record this device seeded for a
+     demo, so ?demo=0 hands the device back for real work genuinely empty rather
+     than still showing fictional customers. Safe by construction — only rows
+     stamped `demo: true` are touched, and those are exactly the rows
+     cloudPush() has always refused to upload, so nothing real can be lost. */
+  function purgeDemoRecords(d) {
+    let removed = 0;
+    for (const c of COLLECTIONS) {
+      if (!Array.isArray(d[c])) continue;
+      const kept = d[c].filter(r => !(r && r.demo === true));
+      removed += d[c].length - kept.length;
+      d[c] = kept;
+    }
+    if (d.meta) delete d.meta.kpiDemoSeeded;
+    return removed;
   }
 
   /* ============================ IndexedDB storage ============================ */
@@ -1543,9 +1582,9 @@
                  in the Team screen. */
               const signInRow = (u) => {
                 const ready = hasPin(u);
-                const isSarays = u.name && u.name.includes('Sarays');
-                const titleStyle = isSarays ? ' style="color:#EC4899;font-weight:bold;"' : '';
-                const avatarBg = isSarays ? '#EC4899' : colorFor(u.name);
+                const isSaray = u.name && u.name.includes('Saray');
+                const titleStyle = isSaray ? ' style="color:#EC4899;font-weight:bold;"' : '';
+                const avatarBg = isSaray ? '#EC4899' : colorFor(u.name);
                 const displayName = u.name ? esc(u.name) : `<span style="color:var(--text3);font-style:italic;">${lang === 'es' ? 'Vacante' : 'Vacant'}</span>`;
                 const roleText = u.id === 'it-1' ? (lang === 'es' ? 'Soporte / TI' : 'Logging / IT') : t(u.role);
                 const sub = ready ? roleText : `${roleText} · ${t('notSetUp')}`;
@@ -1570,9 +1609,9 @@
           </div>
           <div class="langtoggle"><button class="${lang === 'en' ? 'on' : ''}" onclick="setLang('en')">EN</button><button class="${lang === 'es' ? 'on' : ''}" onclick="setLang('es')">ES</button></div>`;
       } else {
-        const isSarays = selUser.name && selUser.name.includes('Sarays');
-        const nameStyle = isSarays ? ' style="color:#EC4899;font-weight:bold;"' : '';
-        const avatarBg = isSarays ? 'background:#EC4899;' : `background:${colorFor(selUser.name)};`;
+        const isSaray = selUser.name && selUser.name.includes('Saray');
+        const nameStyle = isSaray ? ' style="color:#EC4899;font-weight:bold;"' : '';
+        const avatarBg = isSaray ? 'background:#EC4899;' : `background:${colorFor(selUser.name)};`;
         const displayName = selUser.name ? esc(selUser.name) : (lang === 'es' ? 'Vacante' : 'Vacant');
         lg.innerHTML = `
           <div class="logo" style="${avatarBg}">${initials(selUser.name)}</div>
@@ -1646,8 +1685,8 @@
       // picking a theme from a secret was a poor idea anyway.
       const who = u.name || '';
       if (who.includes('Otto')) document.body.className = 'theme-otto';
-      else if (who.includes('Principe') || who.includes('Príncipe')) document.body.className = 'theme-principe';
-      else if (who.includes('Sarays')) document.body.className = 'theme-sarays';
+      else if (who.includes('Julio')) document.body.className = 'theme-julio';
+      else if (who.includes('Saray')) document.body.className = 'theme-saray';
       else document.body.className = '';
     }
     function askMfa(u) {
@@ -4454,8 +4493,8 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
       }
     };
     fixUser('owner-1', 'Otto');
-    fixUser('owner-2', 'El Príncipe');
-    fixUser('ops-1', 'Sarays');
+    fixUser('owner-2', 'Julio');
+    fixUser('ops-1', 'Saray');
     fixUser('it-1', 'Taylor Kim - Logs/IT');
     // Field workers keep whatever name blankDB() seeded or the owner later set
     // in Team — do not reset it to blank on every boot (that was the same
@@ -4503,6 +4542,9 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
        device now stays empty until the cloud (or the owner) puts real work in
        it, which is the honest state to show. */
     if (isDemoMode() && applyDemoSeed(db)) save();
+    /* ?demo=0 hands the device back to normal use, so take the demo rows with
+       it. isDemoMode() sets the flag above, hence the check after it. */
+    else if (_demoJustDisabled && purgeDemoRecords(db)) save();
 
     startCloudPolling();
     startPhotoQueueDrainer();

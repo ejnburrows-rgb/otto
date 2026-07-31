@@ -81,6 +81,55 @@ console.log('\nisDemoMode — production is the default');
   check('?demo=0 turns it back off', isDemoMode(), false);
   check('and clears the stored flag', store._all.otto_demo_mode, undefined);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+console.log('\nturning the demo off — the device goes back to normal, empty');
+{
+  // ?demo=0 must also raise the flag boot() uses to clear the leftover rows.
+  // Without it the demo customers stay on screen after the demo is over.
+  const store = fakeStorage({ otto_demo_mode: '1' });
+  const api = new Function('location', 'localStorage',
+    `let _demoJustDisabled = false;\n${extractFunction('isDemoMode')}\n` +
+    `return { isDemoMode, flag: () => _demoJustDisabled };`)({ search: '?demo=0' }, store);
+  api.isDemoMode();
+  check('?demo=0 marks the device for cleanup', api.flag(), true);
+
+  const stay = new Function('location', 'localStorage',
+    `let _demoJustDisabled = false;\n${extractFunction('isDemoMode')}\n` +
+    `return { isDemoMode, flag: () => _demoJustDisabled };`)({ search: '' }, fakeStorage());
+  stay.isDemoMode();
+  check('an ordinary visit does not trigger cleanup', stay.flag(), false);
+}
+{
+  const COLS = ['customers', 'jobs', 'calls', 'invoices', 'estimates', 'payments'];
+  const purge = new Function(
+    `const COLLECTIONS = ${JSON.stringify(COLS)};\n${extractFunction('purgeDemoRecords')}\nreturn purgeDemoRecords;`)();
+
+  const seeded = emptyDb();
+  seeded.meta = { kpiDemoSeeded: true };
+  Object.assign(seeded, {
+    customers: [{ id: 'c1', demo: true }, { id: 'c2', name: 'Real Customer' }],
+    jobs: [{ id: 'j1', demo: true }, { id: 'j2', demo: true }],
+    invoices: [{ id: 'i1', demo: true }],
+    payments: [{ id: 'p1', demo: true }],
+    estimates: [{ id: 'e1', demo: true }],
+  });
+  const removed = purge(seeded);
+  check('every demo row is removed', removed, 6);
+  check('a real customer is never touched', seeded.customers.map(c => c.id), ['c2']);
+  check('demo jobs are gone', seeded.jobs.length, 0);
+  check('demo invoices are gone', seeded.invoices.length, 0);
+  check('demo payments are gone', seeded.payments.length, 0);
+  check('demo estimates are gone', seeded.estimates.length, 0);
+  check('the KPI seed flag is cleared so a later demo works', seeded.meta.kpiDemoSeeded, undefined);
+
+  // A device that never ran a demo must come through completely untouched.
+  const real = emptyDb();
+  real.customers = [{ id: 'c9', name: 'Real Customer' }];
+  real.jobs = [{ id: 'j9', title: 'Real job' }];
+  check('a production device loses nothing', purge(real), 0);
+  check('and keeps its records', [real.customers.length, real.jobs.length], [1, 1]);
+}
 {
   // A device with no URL/query support at all must fail safe, not throw.
   const { isDemoMode } = build(['isDemoMode'])(null, null);
@@ -170,6 +219,33 @@ console.log('\n_syncableRecords — demo rows never leave the device');
   check('a fully seeded demo device uploads zero jobs', syncable('jobs').length, 0);
   check('a fully seeded demo device uploads zero customers', syncable('customers').length, 0);
   check('a fully seeded demo device uploads zero calls', syncable('calls').length, 0);
+  // The billing rows exist so a demo can show estimate -> invoice -> payment.
+  // They must obey exactly the same containment rule as everything above.
+  check('a fully seeded demo device uploads zero estimates', syncable('estimates').length, 0);
+  check('a fully seeded demo device uploads zero invoices', syncable('invoices').length, 0);
+  check('a fully seeded demo device uploads zero payments', syncable('payments').length, 0);
+}
+{
+  // The billing demo data itself: present, stamped, and internally consistent,
+  // so the invoice screen shows a real paid/partial split rather than zeros.
+  const seeded = emptyDb();
+  seedApi().applyDemoSeed(seeded);
+  check('seeds one demo estimate', seeded.estimates.length, 1);
+  check('seeds two demo invoices', seeded.invoices.length, 2);
+  check('seeds two demo payments', seeded.payments.length, 2);
+  check('every seeded estimate is stamped demo', seeded.estimates.every(r => r.demo === true), true);
+  check('every seeded invoice is stamped demo', seeded.invoices.every(r => r.demo === true), true);
+  check('every seeded payment is stamped demo', seeded.payments.every(r => r.demo === true), true);
+  const paidInv = seeded.invoices.find(i => i.number === 'INV-1001');
+  const partInv = seeded.invoices.find(i => i.number === 'INV-1002');
+  check('INV-1001 is fully paid', paidInv.amount - paidInv.paid, 0);
+  check('INV-1002 still carries a balance', partInv.amount - partInv.paid, 1950);
+  check('each payment points at a seeded invoice',
+    seeded.payments.every(p => seeded.invoices.some(i => i.id === p.invoiceId)), true);
+  check('each payment amount matches what the invoice records as paid',
+    seeded.payments.every(p => seeded.invoices.find(i => i.id === p.invoiceId).paid >= p.amount), true);
+  check('billing rows attach to seeded customers',
+    [...seeded.invoices, ...seeded.estimates].every(r => seeded.customers.some(c => c.id === r.customerId)), true);
 }
 {
   // Repeated fresh devices: each seeds locally, none contributes to the cloud,
@@ -207,6 +283,22 @@ console.log('\nsource guarantees — the production boot path');
   const pull = html.indexOf('_cloudAvailable = await cloudPull()');
   const seed = html.indexOf('if (isDemoMode() && applyDemoSeed(db)) save();');
   check('boot pulls the cloud before considering demo data', pull > 0 && seed > pull, true);
+
+  // The cleanup has to hang off the same decision, or ?demo=0 leaves the rows.
+  const purgeCall = html.indexOf('_demoJustDisabled && purgeDemoRecords(db)');
+  check('boot clears demo rows when the demo is switched off', purgeCall > seed, true);
+}
+{
+  // End to end: seed a demo, then purge it, and the device is empty again —
+  // which is the state the owner needs before real customer work starts.
+  const d = emptyDb();
+  seedApi().applyDemoSeed(d);
+  const COLS = ['customers', 'jobs', 'calls', 'invoices', 'estimates', 'payments'];
+  const purge = new Function(
+    `const COLLECTIONS = ${JSON.stringify(COLS)};\n${extractFunction('purgeDemoRecords')}\nreturn purgeDemoRecords;`)();
+  purge(d);
+  check('a demoed device is completely empty afterwards',
+    COLS.map(c => d[c].length), [0, 0, 0, 0, 0, 0]);
 }
 
 console.log(`\n${passed} passed, ${failed} failed\n`);
