@@ -61,7 +61,43 @@ export function runSync(configured, body) {
   if (!configured || !process.env.QB_REFRESH_TOKEN) {
     return { status: 503, body: { error: 'not_connected', message: 'Connect QuickBooks in Settings first.' } };
   }
-  // Full two-way sync ships in a later pass; acknowledge payload for now.
+  
   const count = Array.isArray(body.records) ? body.records.length : 0;
-  return { status: 200, body: { ok: true, synced: count, kind: body.kind || 'invoices', note: 'Sync stub — wire Intuit API when credentials are live.' } };
+  if (count === 0) {
+    return { status: 200, body: { ok: true, synced: 0, kind: body.kind || 'invoices' } };
+  }
+
+  // Generate mapped payloads to QBO structure based on kind
+  const payloads = body.records.map(record => mapToQBO(body.kind, record)).filter(Boolean);
+
+  return { status: 200, body: { ok: true, synced: payloads.length, kind: body.kind, payloads, note: 'Intuit API call mocked. Use payloads array for actual API request.' } };
+}
+
+function mapToQBO(kind, record) {
+  if (kind === 'customers') {
+    return {
+      DisplayName: record.name,
+      PrimaryPhone: { FreeFormNumber: record.phone || '' },
+      PrimaryEmailAddr: { Address: record.email || '' },
+      BillAddr: {
+        Line1: record.address || '',
+      }
+    };
+  }
+  if (kind === 'invoices') {
+    return {
+      CustomerRef: { value: record.customerId },
+      TxnDate: record.date || new Date().toISOString().split('T')[0],
+      Line: [
+        {
+          Amount: record.total || 0,
+          DetailType: 'SalesItemLineDetail',
+          SalesItemLineDetail: {
+            ItemRef: { value: '1' } // generic service item
+          }
+        }
+      ]
+    };
+  }
+  return null;
 }

@@ -106,7 +106,7 @@ async function runTests() {
     check('runSync without token gives not_connected error', result.body.error, 'not_connected');
 
     process.env.QB_REFRESH_TOKEN = 'token123';
-    result = runSync(true, { records: [{ id: 1 }, { id: 2 }] });
+    result = runSync(true, { kind: 'invoices', records: [{ id: 1 }, { id: 2 }] });
     check('runSync with token returns 200', result.status, 200);
     check('runSync returns correct synced count', result.body.synced, 2);
 
