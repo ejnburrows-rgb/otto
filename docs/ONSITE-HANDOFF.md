@@ -247,9 +247,27 @@ at the server (section 6).
 own jobs and customers), reading photographed checks and receipts, drafting job
 summaries, and reading drawings (section 10).
 
-**Recommended provider:** Anthropic, which the app already targets — the code
-calls `claude-sonnet-4-6`. A second provider, NVIDIA, is wired for the drawing
-work. Two accounts, two keys: `ANTHROPIC_API_KEY` and `NVIDIA_API_KEY`.
+**The two providers, and which one you need.** The app is wired for both:
+
+- **NVIDIA** (`NVIDIA_API_KEY`) — this is the one that reads your PDF drawings
+  and drafts the estimate. If PDF takeoff is what you care about, this is the
+  account to open. Sign up at `build.nvidia.com`, which gives free starter
+  credits, and generate a key beginning `nvapi-`.
+- **Anthropic** (`ANTHROPIC_API_KEY`) — powers "Ask OTTO", reading photographed
+  checks and receipts, and job summaries. Separate account, separate key.
+
+You do not need both to start. **NVIDIA alone covers the PDF workflow.**
+
+**Where the key goes:** to the developer, to be set in Vercel under
+Settings → Environment Variables. Never in a text message, never in the code,
+never in a file that gets committed. Then the project must be redeployed for the
+new value to take effect.
+
+**Important, so you are not surprised:** setting the key is necessary but **not
+sufficient**. `/api/nvidia` currently refuses every request at the gate
+described in section 6, before it ever looks at the key. Until that gate opens,
+a correctly installed key changes nothing. Do not buy credits expecting the
+feature to switch on.
 
 **Cost control, and take this seriously:** AI is billed per use, and a loop or a
 mistake can spend real money quickly. Before switching it on:
@@ -264,43 +282,39 @@ month. The risk is not the normal case, it is the runaway case — hence the cap
 
 ---
 
-## 10. AutoCAD and drawings — what it takes
+## 10. Reading PDF drawings — what it takes
 
-This one is further along than you may think, so be precise with the client
-about what is real.
+**You work from PDFs, not AutoCAD files.** That is the good news: PDF is the
+best-supported format in the app, and nothing here needs AutoCAD, a DWG
+converter, or any extra software. Ignore any earlier note about DWG and DXF —
+it does not apply to you.
 
-**ALREADY WORKING (no AI, no account needed):** you can upload a drawing or PDF
-to a job and store it. The app has a priced rate card built in — fixtures at
-$1,500 each, copper Type L at $2,000 per run, CPVC at $1,300, and so on — which
-you can edit.
+**ALREADY WORKING (no AI, no account needed):** you can upload a PDF to a job
+and store it, and it stays with that job. The app also has a priced rate card
+built in — fixtures at $1,500 each, copper Type L at $2,000 per run, CPVC at
+$1,300, and so on — which you can edit to your real prices. Editing that rate
+card is worth doing whether or not the AI ever gets switched on, because it is
+what every estimate is priced against.
 
-**ALREADY BUILT, waiting on the AI gate:** upload a drawing, the app pulls the
-text and layer names out of it, sends that to the AI, and gets back a draft
-materials list priced against your rate card. That is the "Read & estimate"
-button.
+**ALREADY BUILT, waiting on the AI gate:** the "Read & estimate" button. It
+pulls the text out of the PDF, sends it to the AI, and gets back a draft
+materials list priced against your rate card. The PDF reading half is real and
+works today; the AI half is switched off (section 6).
 
-**The honest limitation, and it matters:** how well a file is read depends
-entirely on its format.
+**How well PDFs read:** the app extracts the *text layer* of the PDF — the
+labels, the notes, the title block, the dimensions. This works well for PDFs
+exported from drawing software, which is what you will normally be sent.
 
-| Format | How well it reads |
-|---|---|
-| **PDF** | Well — text is pulled out properly. Best format to ask for. |
-| **DXF** | Well — text *and* layer names are read properly. |
-| **DWG**, DWF, DGN | Poorly. These are compressed binary files. The app scrapes whatever readable text it can find, which is unreliable. |
+The one case that reads poorly is a **scanned or photographed** PDF — a paper
+drawing put through a scanner. Those have no text layer, just a picture, so
+there is nothing to pull out. If you get one of those, the fix is to ask for the
+original PDF rather than a scan of a printout.
 
-**DWG is AutoCAD's normal format**, so this is the gap. Two ways to close it:
-
-1. **Free, and what I would do:** ask whoever sends drawings to export DXF or
-   PDF as well. Every version of AutoCAD does this in two clicks. No cost, no
-   new software, works immediately once the AI is on.
-2. **Paid:** a conversion service (the Open Design Alliance's libraries, or an
-   API like CloudConvert) to turn DWG into DXF automatically. Adds cost and
-   development time. Only worth it if the client refuses option 1.
-
-**Also true:** the app reads *text and labels* on a drawing — it does not
-measure geometry or count symbols visually. It will read "4 × WC" and price four
-toilets. It will not look at an unlabelled floor plan and work out pipe runs.
-Estimates it produces are a **draft for you to check**, not a final number.
+**The limitation to be honest about with the client:** the app reads *text and
+labels*, it does not measure geometry or count symbols visually. It will read
+"4 × WC" and price four toilets. It will not look at an unlabelled floor plan
+and work out pipe runs. What comes back is a **draft for you to check**, not a
+final number — and that is the right way to describe it to a client anyway.
 
 ---
 
@@ -312,7 +326,7 @@ Estimates it produces are a **draft for you to check**, not a final number.
 | Supabase `otto-live` | The company database | **Yes** | Free tier |
 | Supabase `Cartilla de Gretel` | A different, unrelated project | Not for Otto | Free tier — check whether it is yours |
 | GitHub (private repo) | Stores the code | **Yes** | Free tier |
-| GitHub Actions | Runs tests on each change | Yes, keep | Free allowance, well under it |
+| GitHub Actions | **Not actually running** — see STATUS §3.9 | Needs fixing | $0 (nothing runs) |
 | Anthropic / NVIDIA | Keys may exist but routes are off | Not yet | **$0 today** — nothing can call them |
 | Twilio / SendGrid | Not connected | Not yet | $0 |
 | Windows "heartbeat" task | Retired in July | **No** | $0, but delete the scheduled task on the PC if it still exists |
@@ -330,10 +344,17 @@ them hold files that exist nowhere else, so do not bulk-delete them.
 ## 12. Recommended order
 
 1. **Server-side sign-in.** Nothing else switches on until this exists, and it
-   is also what makes the app safe for 19 people.
-2. **QuickBooks.** Clearest, most immediate business value, and the export
-   already works so the client sees progress on day one.
-3. **AI + drawings.** Highest "wow" for a demo, but put the spend cap on first.
+   is also what makes the app safe for 19 people. Everything below is blocked
+   behind it, so there is no way to reorder around it.
+2. **NVIDIA key + PDF takeoff.** Your stated priority, and the moment the gate
+   above opens it is a single environment variable away. Set the spend cap
+   first.
+3. **QuickBooks.** The CSV export already works, so the client sees progress on
+   day one without any account at all.
 
 Email sending can be slotted in beside any of them — it is independent and
 cheap.
+
+**One more, separate from the integrations:** get GitHub Actions running again
+(STATUS §3.9). It is not a feature, but right now no test runs automatically
+anywhere, which is how a bad change reaches the live site unnoticed.
