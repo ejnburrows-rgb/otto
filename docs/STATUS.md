@@ -659,3 +659,28 @@ time and git reports a conflict here, the correct fix is to keep both lines.
 - 2026-07-31 — Raised --text-muted contrast ratio to rgba(248, 250, 252, 0.88) in landing.html (issue landing-01) for WCAG AA readability compliance across service cards and text blocks. Verified with node scripts/qa-check.mjs.
 - 2026-07-31 — Centralized business phone number into a single BUSINESS_PHONE constant in landing.html (issue landing-02) that populates all links/labels at runtime. Verified with node scripts/qa-check.mjs.
 - 2026-07-31 — Added accessible booking/contact form to landing.html (issue landing-03). Features minimal name, phone, and message inputs with explicit accessible labels, inline error messages, and aria-invalid/aria-describedby attributes. Form POSTs to /api/notify and gracefully degrades to a direct call button with user inputs preserved if backend is unavailable. Buttons ("Book Now", "Book a Plumber") point smoothly to #contact. Verified with node scripts/qa-check.mjs and npm test (all 307 checks pass).
+- 2026-07-31 — Final production sweep of the CRM (`index.html`). Found and fixed
+  a blocker introduced by the executive facelift commit: the sign-in keypad's
+  PIN check had lost four lines (`const typed`, the `pin` reset and the
+  `await verifyPin(...)` test), which left an unmatched `}`. That is a fatal
+  JavaScript syntax error, so the whole app — deployed included — booted to a
+  blank page. Restored the original verification (including the wrong-attempt
+  lockout and the owner MFA condition, both of which the same edit had dropped)
+  and passed the typed code through to `finishLogin` so persona theming still
+  works. Second boot-stopper: `openPlumbBotModal`, `closePlumbBotModal`,
+  `sendPlumbBotMsg` and `initDraggableHUD` were defined inside `showLogin()`
+  but referenced from top-level `onclick` handlers and the `Object.assign(window, …)`
+  export, so the export threw `openPlumbBotModal is not defined` at load; moved
+  them to top level. Third: the six "8K asset" images were image-generation
+  prompt text pasted where a URL belongs (including unreplaced
+  `{{DATA:IMAGE:IMAGE_15}}` placeholders) — all six returned 404, which is why
+  no facelift was visible. Pointed the brand mark at the repo's own `logo.jpg`,
+  used the existing `fa-robot` icon for PlumbBot, dropped the two cameo images
+  that have no artwork in the repo, and gave the three persona themes solid
+  gradient backdrops so each still reads distinctly. Also added four missing
+  string-table keys (`inbox`, `all`, `escalations`, `approvalHistory`) that were
+  rendering as raw lowercase keys — the bottom nav read "inbox" in both
+  languages. Verified: `npm test` 332 passed / 0 failed, `npm run qa` pass:true,
+  and a headless run of the real app signs in and renders all 26 screens at
+  390px, 768px and 1280px with 0 JavaScript errors, 0 broken images and no
+  horizontal overflow.
