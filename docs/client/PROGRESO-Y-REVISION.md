@@ -24,9 +24,14 @@ leyendo el código.
 | Datos sin conexión | Guardados en el dispositivo; la cuadrilla trabaja sin señal |
 | Impresión | Facturas y presupuestos salen como documento, no como pantalla |
 | Exportación | CSV de todos los registros, incluido el formato de QuickBooks |
-| Copia de seguridad y restauración | **Ensayada con éxito**: se exportó una copia y se restauró en un dispositivo limpio; todas las colecciones coincidieron |
+| Copia de seguridad y restauración de registros | **Ensayada con éxito**: se exportó una copia y se restauró en un dispositivo limpio; todas las colecciones coincidieron. **No incluye fotografías** — véase la nota debajo de esta tabla |
 | Accesibilidad | Contraste y nombres de controles conformes a WCAG 2.1 AA, verificado con herramienta automática |
-| Sincronización de fotos | Las fotos suben a un depósito privado; el acceso anónimo está denegado |
+
+**Sobre la copia de seguridad:** el archivo exportado contiene los registros
+(clientes, trabajos, facturas, etc.) pero **no las imágenes**. Las fotos se
+guardan aparte, dentro del dispositivo, y el proceso de exportación actual
+no las copia. Si el propietario necesita conservar fotografías, hoy la única
+forma es no borrar ni reemplazar el dispositivo que las tomó.
 
 ## 2. Qué está a medias, dicho con claridad
 
@@ -35,9 +40,26 @@ leyendo el código.
   propietario contrate los servicios.
 - **QuickBooks.** La exportación en un sentido funciona. **La sincronización en
   dos direcciones no existe.**
-- **Sincronización en la nube.** Funciona técnicamente, pero todavía no se ha
-  probado con 19 teléfonos reales en servicio celular real. Se recomienda una
-  semana de uso real antes de confiar plenamente en ella.
+
+## 2b. Lo que está deshabilitado por completo hoy mismo
+
+Como medida de seguridad (apartado 3), toda ruta del servidor que toque datos
+reales está cerrada hasta que exista una identidad real en servidor. Esto
+significa que, **ahora mismo, ninguna de estas tres funciones trabaja en
+absoluto**, aunque el código de cada una está terminado:
+
+- **Sincronización en la nube entre dispositivos.** `/api/data` rechaza toda
+  solicitud. El sistema opera hoy solo con los datos guardados en cada
+  teléfono, sin compartirlos entre dispositivos. La semana de prueba con la
+  cuadrilla en servicio celular real no puede empezar hasta que esto se
+  reactive.
+- **Subida de fotos a la nube.** Las fotos se guardan en el teléfono que las
+  tomó y no salen de él.
+- **Asistente de IA.** El código y las claves están listos, pero toda
+  solicitud recibe el mismo rechazo.
+
+Esto es deliberado y no un error — es la contención descrita en el apartado
+3 — y se revierte en cuanto exista una identidad real en servidor.
 
 ## 3. Limitación que el propietario debe conocer
 
@@ -94,9 +116,12 @@ automáticas, 0 fallidas; revisión general superada.
 Sujetos a la aprobación del propietario.
 
 1. Resolver las decisiones del apartado 4.
-2. Semana de uso real con la cuadrilla para probar la sincronización en campo.
-3. Conectar las cuentas de terceros que el negocio necesite el primer día.
-4. Evaluar la identidad en servidor.
+2. Evaluar e implementar la identidad real en servidor — **paso previo
+   obligatorio**, porque sin ella la nube, las fotos y el asistente de IA
+   siguen inactivos y la prueba de campo del punto 3 no puede empezar.
+3. Semana de uso real con la cuadrilla para probar la sincronización en campo,
+   una vez reactivada.
+4. Conectar las cuentas de terceros que el negocio necesite el primer día.
 
 - **Orden de prioridad acordado:** `[PENDIENTE DE CONFIRMACIÓN]`
 - **Fecha de la próxima revisión:** `[PENDIENTE DE CONFIRMACIÓN]`

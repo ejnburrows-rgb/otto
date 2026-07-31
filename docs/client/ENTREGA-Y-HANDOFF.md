@@ -23,11 +23,17 @@
 **Los datos del negocio son de OTTO Plumbing Inc.** — clientes, trabajos,
 fotos, ubicaciones, horas y nómina.
 
-El propietario puede exportarlos **sin depender del equipo de desarrollo**:
-Ajustes → «Respaldar todo (JSON)». Ese archivo se puede volver a cargar con
-«Restaurar respaldo». **Esta ruta fue ensayada de principio a fin:** se exportó
-desde un dispositivo y se restauró en un navegador limpio, y todas las
-colecciones regresaron con las mismas cantidades.
+El propietario puede exportar los **registros** (clientes, trabajos, importes
+y demás campos de texto) **sin depender del equipo de desarrollo**: Ajustes →
+«Respaldar todo (JSON)». Ese archivo se puede volver a cargar con «Restaurar
+respaldo». **Esta ruta fue ensayada de principio a fin para los registros:**
+se exportó desde un dispositivo y se restauró en un navegador limpio, y todas
+las colecciones regresaron con las mismas cantidades.
+
+**Esto no incluye las fotografías.** Las imágenes se guardan aparte, dentro
+del propio dispositivo, y el archivo de exportación no las contiene. Hoy no
+existe una forma de respaldar o transferir las fotos fuera del teléfono que
+las tomó — véase la limitación 5 más abajo.
 
 ## 3. Accesos y credenciales a transferir
 
@@ -69,10 +75,16 @@ equivocada.
 2. **Las notificaciones por SMS y correo no envían nada** porque no hay cuentas
    conectadas.
 3. **QuickBooks solo exporta**; no hay sincronización en dos direcciones.
-4. **Las copias de seguridad viven en el mismo dispositivo que los datos.** La
-   copia externa es el archivo que el propietario descarga y guarda.
-5. **La sincronización en la nube no se ha probado con la cuadrilla completa**
-   en servicio celular real.
+4. **Las copias de seguridad de registros viven en el mismo dispositivo que los
+   datos, y no incluyen fotografías.** La copia externa es el archivo que el
+   propietario descarga y guarda; las fotos no están en ese archivo.
+5. **La sincronización en la nube, la subida de fotos y el asistente de IA
+   están completamente inactivos hoy, no solo sin probar.** La misma
+   contención de seguridad del punto 1 cierra las tres rutas del servidor por
+   defecto. El sistema funciona hoy únicamente con los datos guardados en
+   cada dispositivo, sin compartirlos entre teléfonos. Nada de esto puede
+   probarse con la cuadrilla en campo hasta que exista una identidad real en
+   servidor.
 6. **Quedan diez registros de demostración** en la base de datos en vivo. La
    causa está corregida y no se repetirá; su eliminación espera la decisión del
    propietario y **no se ha borrado nada**.

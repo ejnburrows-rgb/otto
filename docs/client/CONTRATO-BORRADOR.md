@@ -70,9 +70,14 @@ hasta que exista un sistema de identidad real.
 
 - Los datos viven primero en el dispositivo, para que la cuadrilla pueda
   trabajar sin señal.
-- La sincronización a la nube (Supabase) es opcional y la activa el
-  propietario. La clave secreta de esa base de datos vive únicamente en la
-  configuración del alojamiento, nunca en el código.
+- La sincronización a la nube (Supabase) existe en el código y la base de
+  datos está configurada. **Hoy no está en uso:** todas las rutas del
+  servidor que tocan datos reales están cerradas por defecto (véase el
+  apartado 3) hasta que exista una identidad real en servidor, así que
+  `/api/data` rechaza toda solicitud, autenticada o no, con
+  `server_auth_not_configured`. **En la práctica, el sistema funciona hoy
+  solo con almacenamiento local en cada dispositivo — no hay sincronización
+  entre teléfonos.**
 - Una solicitud anónima a la base de datos es rechazada; esto está verificado.
 - **Región de alojamiento de los datos y requisitos de residencia:**
   `[PENDIENTE DE CONFIRMACIÓN]`
@@ -84,6 +89,12 @@ hasta que exista un sistema de identidad real.
 - **Las copias locales viven en el mismo dispositivo que los datos.** La única
   copia realmente externa es el archivo de exportación que el propietario
   descarga.
+- **Esa exportación no incluye las fotografías.** El archivo contiene los
+  registros (clientes, trabajos, importes, etc.); las imágenes se guardan
+  aparte, dentro del propio dispositivo, y la exportación actual no las
+  copia. Si el dispositivo se pierde o se restablece sin haber subido antes
+  las fotos a la nube, **esas imágenes no son recuperables** con el proceso
+  de respaldo actual.
 - **Responsable de guardar la exportación periódica fuera del dispositivo:**
   `[PENDIENTE DE CONFIRMACIÓN]`
 - **Frecuencia acordada de exportación:** `[PENDIENTE DE CONFIRMACIÓN]`
@@ -94,8 +105,11 @@ hasta que exista un sistema de identidad real.
 
 - **GPS:** se registra únicamente durante el trabajo, entre la entrada y la
   salida de un trabajo asignado. No hay seguimiento fuera del horario laboral.
-- **Fotos:** se toman en el trabajo, se guardan en el dispositivo y se suben a
-  un depósito privado; el acceso anónimo está denegado.
+- **Fotos:** se toman en el trabajo y se guardan en el dispositivo. El código
+  para subirlas a un depósito privado en la nube existe, pero **hoy no sube
+  nada** — la misma ruta cerrada del apartado 4 rechaza la subida. Las fotos
+  quedan únicamente en el teléfono que las tomó hasta que exista una
+  identidad real en servidor.
 - **Nómina:** las horas se calculan a partir de las entradas y salidas
   registradas. Los cálculos son una ayuda administrativa y **no sustituyen la
   revisión de un contador.**
@@ -112,7 +126,16 @@ hasta que exista un sistema de identidad real.
 | Notificaciones por SMS (Twilio) | Código listo; **sin cuenta conectada**, no envía nada |
 | Notificaciones por correo (SendGrid) | Código listo; **sin cuenta conectada**, no envía nada |
 | QuickBooks | Exportación CSV en un sentido funciona; **la sincronización en dos direcciones no existe** |
-| Asistente de IA | Funciona con claves guardadas en el servidor |
+| Asistente de IA | Código completo con claves guardadas en el servidor, pero **deshabilitado hoy**: la misma ruta cerrada del apartado 3 rechaza toda solicitud hasta que exista una identidad real en servidor |
+
+**Nota que afecta a toda esta tabla y al apartado 4:** la medida de
+contención descrita en el apartado 3 (rutas del servidor cerradas por
+defecto) significa que, en este momento, **ninguna función que dependa del
+servidor funciona**: ni la sincronización en la nube, ni la subida de fotos,
+ni el asistente de IA. El sistema opera hoy exclusivamente con los datos
+guardados en cada dispositivo. Esto es deliberado — es la contención de
+seguridad del apartado 3, no un error — y se revierte en cuanto exista una
+identidad real en servidor.
 
 - **Quién contrata y paga cada servicio de terceros:** `[PENDIENTE DE CONFIRMACIÓN]`
 - **Costos recurrentes esperados:** `[PENDIENTE DE CONFIRMACIÓN]`
