@@ -754,12 +754,16 @@
   const todayISO = () => new Date().toISOString().slice(0, 10);
   const nowISO = () => new Date().toISOString();
   
-  // Wrapper for all /api/ fetch calls to attach the JWT session token
+  /* Single place every /api/ call goes through, so when real server-side
+     sign-in ships there is exactly one function to add the credential to.
+     It attaches nothing today: the server gate refuses every request by
+     design (api/_lib/serverAuth.js), and the session token it briefly sent
+     came from a sign-in route that handed out owner sessions to anyone.
+     Any stale token from that period is cleared here rather than left to
+     sit in the browser. */
+  try { localStorage.removeItem('otto_jwt'); } catch (e) { }
   async function serverFetch(url, options = {}) {
-    const token = localStorage.getItem('otto_jwt');
-    const headers = { ...options.headers };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    return fetch(url, { ...options, headers });
+    return fetch(url, options);
   }
   // Auto-estimating: number to words converter for proposal totals
   function numberToWords(n) {
@@ -1849,46 +1853,34 @@
       initDraggableHUD();
     }
 
-    async function askMfa(u) {
-      lg.innerHTML = `<div class="logo"><i class="fas fa-shield-halved"></i></div><h1>${esc(u.name)}</h1><p>Sending SMS code...</p>`;
-      try {
-        const phone = u.phone || '+10000000000'; // Default for testing if not set
-        const r = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'request_mfa', phone }) });
-        const res = await r.json();
-        if (!res.ok) throw new Error(res.error || 'mfa_failed');
-        let mfaToken = res.mfaToken;
-        let m = '';
-        const drawM = () => { lg.innerHTML = `<div class="logo"><i class="fas fa-shield-halved"></i></div><h1>${esc(u.name)}</h1><p>Enter 6-digit SMS code sent to ${esc(phone)}</p>
-          <div class="card-login"><div class="pindots">${[0,1,2,3,4,5].map(i=>`<span class="${i<m.length?'f':''}"></span>`).join('')}</div>
-          <div class="pinpad">${[1,2,3,4,5,6,7,8,9].map(n=>`<button onclick="window.__mfa('${n}')">${n}</button>`).join('')}<button onclick="window.__back2()"><i class="fas fa-arrow-left"></i></button><button onclick="window.__mfa('0')">0</button><button onclick="window.__mfaDel()"><i class="fas fa-delete-left"></i></button></div></div>`; };
-        
-        window.__mfaDel = () => { m = m.slice(0, -1); drawM(); };
-        window.__mfa = async (n) => {
-          m += n; drawM();
-          if (m.length === 6) {
-            const typed = m; m = '';
-            lg.innerHTML = `<div class="logo"><i class="fas fa-shield-halved"></i></div><h1>${esc(u.name)}</h1><p>Verifying...</p>`;
-            try {
-              const vr = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'verify_mfa', mfaToken, code: typed, userId: u.id, role: u.role }) });
-              const vres = await vr.json();
-              if (vres.ok && vres.sessionToken) {
-                localStorage.setItem('otto_jwt', vres.sessionToken);
-                finishLogin(u);
-              } else {
-                toast(t('wrongPin'), 'error');
-                setTimeout(drawM, 400);
-              }
-            } catch (e) {
-              toast('Verification failed', 'error');
-              setTimeout(drawM, 400);
-            }
+    /* Owner second code. Checked on this device against the salted hash the
+       Team screen stores, with the same wrong-attempt lockout as the main PIN.
+       This deliberately does NOT call a server: the SMS version that briefly
+       replaced it returned the code inside the token it handed the caller and
+       trusted userId/role from the request body, which was a complete sign-in
+       bypass. See api/_lib/serverAuth.js. */
+    function askMfa(u) {
+      let m = '';
+      const drawM = () => { lg.innerHTML = `<div class="logo"><i class="fas fa-shield-halved"></i></div><h1>${esc(u.name)}</h1><p>${esc(t('mfaOwner'))}</p>
+        <div class="card-login"><div class="pindots">${[0,1,2,3].map(i=>`<span class="${i<m.length?'f':''}"></span>`).join('')}</div>
+        <div class="pinpad">${[1,2,3,4,5,6,7,8,9].map(n=>`<button onclick="window.__mfa('${n}')">${n}</button>`).join('')}<button onclick="window.__back2()"><i class="fas fa-arrow-left"></i></button><button onclick="window.__mfa('0')">0</button><button onclick="window.__mfaDel()"><i class="fas fa-delete-left"></i></button></div></div>`; };
+      window.__mfaDel = () => { m = m.slice(0, -1); drawM(); };
+      window.__mfa = async (n) => {
+        const locked = pinLockRemainingMs(u.id + '_mfa');
+        if (locked > 0) { toast(t('tooManyTries').replace('{s}', Math.ceil(locked / 1000)), 'error'); m = ''; drawM(); return; }
+        m += n; drawM();
+        if (m.length === 4) {
+          const typed = m; m = '';
+          if (await verifyPin(u, typed, 'mfaPin')) { clearFailedPins(u.id + '_mfa'); finishLogin(u, typed); }
+          else {
+            recordFailedPin(u.id + '_mfa');
+            const waitMs = pinLockRemainingMs(u.id + '_mfa');
+            toast(waitMs > 0 ? t('tooManyTries').replace('{s}', Math.ceil(waitMs / 1000)) : t('wrongPin'), 'error');
+            setTimeout(drawM, 400);
           }
-        };
-        drawM();
-      } catch (e) {
-        toast('Failed to send SMS. Ensure server is online.', 'error');
-        setTimeout(window.__back2, 2000);
-      }
+        }
+      };
+      drawM();
     }
     draw();
   }

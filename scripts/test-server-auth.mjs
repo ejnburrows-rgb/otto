@@ -98,6 +98,50 @@ async function runTests() {
     check('GET /api/quickbooks?action=status is not gated', res.statusCode, 200);
   }
 
+  /* ── 2026-07-31 incident: the gate was replaced with hand-rolled JWT
+     verification whose secret fell back to a literal string published in this
+     repository, alongside an api/login.js that minted an owner session for
+     anyone who asked. These checks exist so that cannot return quietly. ── */
+  {
+    const { readFileSync, readdirSync } = await import('node:fs');
+    const apiDir = new URL('../api/', import.meta.url);
+
+    // A token forged with the old fallback secret must be refused. Built by
+    // hand so the test needs no JWT library and cannot be fooled by one.
+    const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
+    const forged = `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ userId: 'owner-1', role: 'owner', exp: 9999999999 })}.forged`;
+    for (const header of [`Bearer ${forged}`, 'Bearer ', forged, 'Basic abc']) {
+      const res = createRes();
+      await dataHandler(noopReq({ method: 'GET', headers: { authorization: header } }), res);
+      check(`a request bearing "${header.slice(0, 18)}…" is still refused`, res.statusCode, 403);
+    }
+
+    // The literal must not exist anywhere under api/, in any form.
+    const offenders = [];
+    const walk = (dir) => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const child = new URL(entry.name + (entry.isDirectory() ? '/' : ''), dir);
+        if (entry.isDirectory()) walk(child);
+        else if (entry.name.endsWith('.js')) {
+          const src = readFileSync(child, 'utf8');
+          if (src.includes('fallback_secret_for_dev')) offenders.push(entry.name);
+        }
+      }
+    };
+    walk(apiDir);
+    check('no api/ file contains the published fallback secret', offenders, []);
+
+    // The sign-in route that issued owner sessions to anyone is gone.
+    const apiFiles = readdirSync(apiDir).filter((f) => f.endsWith('.js'));
+    check('api/login.js no longer exists', apiFiles.includes('login.js'), false);
+
+    // hasServerAuth must be unconditional until a real provider check replaces
+    // it. If you are legitimately wiring one up, update this test deliberately.
+    const gate = readFileSync(new URL('_lib/serverAuth.js', apiDir), 'utf8');
+    check('the gate does not sign or verify its own tokens', /jsonwebtoken|jwt\.(sign|verify)/.test(gate), false);
+    check('the gate fails closed', /return false;/.test(gate), true);
+  }
+
   console.log(`\n${passed} passed, ${failed} failed\n`);
   global.fetch = originalFetch;
   process.env = { ...originalEnv };
