@@ -21,13 +21,27 @@
 // with the real check (e.g. verifying a session token issued by that
 // system) — nothing else about the route needs to change.
 
-export function hasServerAuth(_req) {
-  return false; // no real server-side identity/session system exists yet
+import jwt from 'jsonwebtoken';
+
+export function hasServerAuth(req) {
+  const auth = req.headers.authorization;
+  if (!auth || !auth.startsWith('Bearer ')) return false;
+  const token = auth.substring(7);
+  
+  const secret = process.env.SUPABASE_JWT_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || 'fallback_secret_for_dev';
+  try {
+    const decoded = jwt.verify(token, secret);
+    // Attach decoded token to req so endpoints can read user info if needed
+    req.user = decoded;
+    return true;
+  } catch (e) {
+    return false;
+  }
 }
 
 export function denyUnauthenticated(res) {
   res.status(403).json({
     error: 'server_auth_not_configured',
-    message: 'This server route is disabled until real server-side sign-in is built. No data was read or changed.',
+    message: 'This server route requires a valid session token. No data was read or changed.',
   });
 }

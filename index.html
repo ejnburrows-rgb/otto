@@ -609,6 +609,13 @@
   const todayISO = () => new Date().toISOString().slice(0, 10);
   const nowISO = () => new Date().toISOString();
   
+  // Wrapper for all /api/ fetch calls to attach the JWT session token
+  async function serverFetch(url, options = {}) {
+    const token = localStorage.getItem('otto_jwt');
+    const headers = { ...options.headers };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    return fetch(url, { ...options, headers });
+  }
   // Auto-estimating: number to words converter for proposal totals
   function numberToWords(n) {
     if (n === 0) return 'Zero Dollars';
@@ -1115,7 +1122,7 @@
     // Slow path: fetch from cloud and cache locally so the next open is instant.
     // Only runs on a second device that does not have the local copy.
     try {
-      const r = await fetch('/api/photos?fileId=' + encodeURIComponent(id));
+      const r = await serverFetch('/api/photos?fileId=' + encodeURIComponent(id));
       if (!r.ok) return null;
       const { url } = await r.json();
       if (!url) return null;
@@ -1147,7 +1154,7 @@
       if (!blob) { await idbDel('photo_upload_queue', fileId); continue; }
       try {
         const b64 = await blobToBase64(blob);
-        const r = await fetch('/api/photos', {
+        const r = await serverFetch('/api/photos', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ fileId, mime, data: b64 }),
@@ -1194,7 +1201,7 @@
     if (!fileId) return;
     idbDel('files', fileId).catch(() => {});
     idbDel('photo_upload_queue', fileId).catch(() => {});
-    fetch('/api/photos?fileId=' + encodeURIComponent(fileId), { method: 'DELETE' })
+    serverFetch('/api/photos?fileId=' + encodeURIComponent(fileId), { method: 'DELETE' })
       .catch(() => {}); // fire-and-forget; soft-delete of the record is the primary delete
   }
 
@@ -1349,7 +1356,7 @@
           const currentStr = JSON.stringify(value);
           if (currentStr === _lastCloudState[col]) continue;   // nothing changed
           _lastCloudState[col] = currentStr;
-          promises.push(fetch('/api/data', {
+          promises.push(serverFetch('/api/data', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ collection: col, records: value })
@@ -1361,7 +1368,7 @@
   }
   async function cloudPull() {
     try {
-      const r = await fetch('/api/data');
+      const r = await serverFetch('/api/data');
       if (!r.ok) return false;           // 503 means cloud sync is not set up yet
       const d = await r.json();
       if (!d || typeof d !== 'object') return false;
@@ -1663,12 +1670,7 @@
       }
       pin += n; draw();
       if (pin.length === 4) {
-        const typed = pin;
-        pin = ''; // clear immediately so a slow check cannot be typed past
-        if (await verifyPin(selUser, typed)) {
-          clearFailedPins(selUser.id);
-          // Second factor for owner/admin if an extra code is configured.
-          if ((selUser.role === 'owner') && hasPin(selUser, 'mfaPin')) { askMfa(selUser); return; }
+              if (selUser.role === 'owner') { askMfa(selUser); return; }
           finishLogin(selUser);
         } else {
           recordFailedPin(selUser.id);
@@ -1693,29 +1695,47 @@
       else if (who.includes('Saray')) document.body.className = 'theme-saray';
       else document.body.className = '';
     }
-    function askMfa(u) {
-      let m = '';
-      const drawM = () => { lg.innerHTML = `<div class="logo"><i class="fas fa-shield-halved"></i></div><h1>${esc(u.name)}</h1><p>${esc(t('mfaOwner'))}</p>
-        <div class="card-login"><div class="pindots">${[0,1,2,3].map(i=>`<span class="${i<m.length?'f':''}"></span>`).join('')}</div>
-        <div class="pinpad">${[1,2,3,4,5,6,7,8,9].map(n=>`<button onclick="window.__mfa('${n}')">${n}</button>`).join('')}<button onclick="window.__back2()"><i class="fas fa-arrow-left"></i></button><button onclick="window.__mfa('0')">0</button><button onclick="window.__mfaDel()"><i class="fas fa-delete-left"></i></button></div></div>`; };
-      window.__mfaDel = () => { m = m.slice(0, -1); drawM(); };
-      window.__mfa = async (n) => {
-        const locked = pinLockRemainingMs(u.id + '_mfa');
-        if (locked > 0) { toast(t('tooManyTries').replace('{s}', Math.ceil(locked / 1000)), 'error'); m = ''; drawM(); return; }
-        m += n; drawM();
-        if (m.length === 4) {
-          const typed = m; m = '';
-          if (await verifyPin(u, typed, 'mfaPin')) { clearFailedPins(u.id + '_mfa'); finishLogin(u); }
-          else {
-            recordFailedPin(u.id + '_mfa');
-            const waitMs = pinLockRemainingMs(u.id + '_mfa');
-            toast(waitMs > 0 ? t('tooManyTries').replace('{s}', Math.ceil(waitMs / 1000)) : t('wrongPin'), 'error');
-            setTimeout(drawM, 400);
+    async function askMfa(u) {
+      lg.innerHTML = `<div class="logo"><i class="fas fa-shield-halved"></i></div><h1>${esc(u.name)}</h1><p>Sending SMS code...</p>`;
+      try {
+        const phone = u.phone || '+10000000000'; // Default for testing if not set
+        const r = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'request_mfa', phone }) });
+        const res = await r.json();
+        if (!res.ok) throw new Error(res.error || 'mfa_failed');
+        let mfaToken = res.mfaToken;
+        let m = '';
+        const drawM = () => { lg.innerHTML = `<div class="logo"><i class="fas fa-shield-halved"></i></div><h1>${esc(u.name)}</h1><p>Enter 6-digit SMS code sent to ${esc(phone)}</p>
+          <div class="card-login"><div class="pindots">${[0,1,2,3,4,5].map(i=>`<span class="${i<m.length?'f':''}"></span>`).join('')}</div>
+          <div class="pinpad">${[1,2,3,4,5,6,7,8,9].map(n=>`<button onclick="window.__mfa('${n}')">${n}</button>`).join('')}<button onclick="window.__back2()"><i class="fas fa-arrow-left"></i></button><button onclick="window.__mfa('0')">0</button><button onclick="window.__mfaDel()"><i class="fas fa-delete-left"></i></button></div></div>`; };
+        
+        window.__mfaDel = () => { m = m.slice(0, -1); drawM(); };
+        window.__mfa = async (n) => {
+          m += n; drawM();
+          if (m.length === 6) {
+            const typed = m; m = '';
+            lg.innerHTML = `<div class="logo"><i class="fas fa-shield-halved"></i></div><h1>${esc(u.name)}</h1><p>Verifying...</p>`;
+            try {
+              const vr = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'verify_mfa', mfaToken, code: typed, userId: u.id, role: u.role }) });
+              const vres = await vr.json();
+              if (vres.ok && vres.sessionToken) {
+                localStorage.setItem('otto_jwt', vres.sessionToken);
+                finishLogin(u);
+              } else {
+                toast(t('wrongPin'), 'error');
+                setTimeout(drawM, 400);
+              }
+            } catch (e) {
+              toast('Verification failed', 'error');
+              setTimeout(drawM, 400);
+            }
           }
-        }
-      };
-      drawM();
-    };
+        };
+        drawM();
+      } catch (e) {
+        toast('Failed to send SMS. Ensure server is online.', 'error');
+        setTimeout(window.__back2, 2000);
+      }
+    }
     draw();
   }
   function signOut() { 
@@ -2843,17 +2863,17 @@
   async function refreshIntegrationStatus() {
     const qbEl = $('#qb-status'); const nEl = $('#notify-status');
     try {
-      const qb = await fetch('/api/quickbooks?action=status').then(r => r.json()).catch(() => null);
+      const qb = await serverFetch('/api/quickbooks?action=status').then(r => r.json()).catch(() => null);
       if (qbEl) qbEl.textContent = qb?.configured ? (qb.connected ? 'QuickBooks: connected' : 'QuickBooks: credentials on server — connect OAuth when ready') : t('notConfigured');
     } catch (e) { if (qbEl) qbEl.textContent = t('notConfigured'); }
     try {
-      const test = await fetch('/api/notify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ channel: 'sms', to: '+10000000000', body: 'test' }) }).then(r => r.json()).catch(() => null);
+      const test = await serverFetch('/api/notify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ channel: 'sms', to: '+10000000000', body: 'test' }) }).then(r => r.json()).catch(() => null);
       if (nEl) nEl.textContent = test?.error === 'sms_not_configured' ? 'SMS/Email: ' + t('notConfigured') + ' (stubs ready)' : 'SMS/Email: ' + t('smsReady');
     } catch (e) { if (nEl) nEl.textContent = t('notConfigured'); }
   }
   async function connectQuickBooks() {
     try {
-      const d = await fetch('/api/quickbooks?action=auth_url').then(r => r.json());
+      const d = await serverFetch('/api/quickbooks?action=auth_url').then(r => r.json());
       if (d.authUrl) { window.open(d.authUrl, '_blank'); toast(lang === 'es' ? 'Abre QuickBooks para conectar' : 'Complete QuickBooks connect in the new tab', 'success'); }
       else toast(d.message || t('notConfigured'), 'error');
     } catch (e) { toast(t('notConfigured'), 'error'); }
@@ -2909,7 +2929,7 @@
       const e = get('ai_escalations', id); if (e) { e.ownerReply = reply; e.status = 'answered'; save(); }
     } else {
       const m = get('employee_messages', id); if (m) { m.ownerReply = reply; save(); }
-      try { fetch('/api/notify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ channel: 'sms', to: '', body: reply }) }); } catch (e) { }
+      try { serverFetch('/api/notify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ channel: 'sms', to: '', body: reply }) }); } catch (e) { }
     }
     toast(t('saved'), 'success'); render();
   }
@@ -3097,7 +3117,7 @@
   async function callClaude(body) {
     // 1) Server-side proxy — preferred. 503 = no server key configured.
     try {
-      const r = await fetch('/api/claude', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const r = await serverFetch('/api/claude', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       if (r.ok) { const d = await r.json(); if (d && d.content) return d; }
     } catch (e) { /* no function / offline — fall through */ }
     // 2) Personal key entered in Settings (direct browser call).
@@ -3170,7 +3190,7 @@
     const body = { messages, max_tokens: opts.max_tokens || 1600, temperature: opts.temperature == null ? 0.2 : opts.temperature };
     if (opts.model) body.model = opts.model;
     try {
-      const r = await fetch('/api/nvidia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const r = await serverFetch('/api/nvidia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       if (r.ok) { const d = await r.json(); const m = d && d.choices && d.choices[0] && d.choices[0].message; if (m && m.content) return m.content; }
     } catch (e) { /* offline / no function — fall through */ }
     return null;
@@ -5159,7 +5179,7 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
 Return ONLY valid JSON: { "fixtures": [], "pipes": [], "fittings": [], "notes": "" }`;
       let text = null;
       try {
-        const proxy = await fetch('/api/nvidia', {
+        const proxy = await serverFetch('/api/nvidia', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
