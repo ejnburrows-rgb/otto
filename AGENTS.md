@@ -15,6 +15,10 @@ project manager — work out what needs doing and do it. Never wait to be asked.
    substitute and may be stale the moment `main` moves. §3.8 and §3.10 are
    required reading before you touch anything under `api/`.
 
+If you were handed a paste-in brief rather than this file, `docs/PASTE-ME.md`
+is the same content in one self-contained block — either route gets you the same
+rules.
+
 **Do not ask EJN what to work on until you have read both.** He loses context
 between sessions — that is what these files are for. If something is missing
 from them, add it rather than asking him to remember it.
