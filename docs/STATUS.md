@@ -37,10 +37,12 @@ Branch: `main`. Live app: **https://otto-kohl.vercel.app** (verified working).
   Session log 2026-07-21 recorded the suite growing to **~101 checks** after API
   tests were added; older "57 checks" lines in this file referred to an earlier
   subset and are retired. A further browser script
-  (`node scripts/test-signin-browser.mjs`) drives the real app. CI runs
-  `npm test` and `node scripts/qa-check.mjs` on every push via GitHub
-  (`.github/workflows/ci.yml`). **Re-run `npm test` locally and paste the count
-  if you need an exact number after the next code change.**
+  (`node scripts/test-signin-browser.mjs`) drives the real app. As of
+  2026-07-31 the suite is **275 checks, 0 failed**, and `npm run qa` passes.
+  **Re-run `npm test` locally and paste the count if you need an exact number
+  after the next code change** — and you do need to, because the automated
+  safety net is local only. See §3.9: GitHub Actions has never actually run
+  here, so `.github/workflows/ci.yml` is not checking anything today.
 - **CSV export** for every record type, including QuickBooks-format invoices.
 - **Documentation standard** — `AGENTS.md` plus this file and `DECISIONS.md`.
 - **Tool-agnostic agent rules** — `AGENTS.md` no longer names Claude-only skills
@@ -274,6 +276,45 @@ photo sync, in-app AI, customer notifications, and QuickBooks sync all stay
 switched off in the deployed app. This is the same "still true" limitation
 called out in §3.2, now enforced at every server route instead of only at
 sign-in.
+
+### 3.9 GitHub Actions has never run — the tests are local-only
+
+Found 2026-07-31 while checking CI on a pull request. §1 previously claimed CI
+runs `npm test` and `qa-check` on every push. **It does not, and as far as the
+run history shows, it never has.**
+
+The facts, from the Actions API:
+
+- The real workflow, `.github/workflows/ci.yml` (id `317206276`, "Checks"), has
+  **exactly one run in its entire history** — a manual `workflow_dispatch` on
+  2026-07-21 — and that run ended `startup_failure`. It has never once been
+  triggered by a push or a pull request.
+- Every red cross on the commit list comes from a **different, phantom
+  workflow**: id `314100393`, name empty, path `BuildFailed`, `state: deleted`.
+  It has no file in the repository — `.github/workflows/` on `main` contains
+  only `ci.yml` — yet GitHub still spawns a run for it on every push and every
+  pull request, and every one of those runs ends `startup_failure`.
+- All 30 most recent runs across the repository, on every branch including
+  `main`, are that phantom workflow failing at startup. Zero jobs execute.
+
+`startup_failure` with no jobs at all means the run dies before any step, so
+this is not a failing test — nothing is being tested. This is the §3.7 lesson
+repeating itself: a permanently red cross that everyone learns to ignore.
+
+**This is an owner action, not a code fix.** Nothing in the repository can
+repair it, because `ci.yml` itself is valid and is not what is failing. Two
+places to look, both in GitHub's web interface:
+
+1. **Settings → Actions → General** — confirm Actions is allowed for this
+   repository.
+2. **Billing → Spending limit** (account level) — this is a *private* repo, so
+   Actions minutes are billable beyond the free monthly allowance. A hit
+   spending limit or a missing payment method blocks runs at startup exactly
+   like this.
+
+Until it starts working, treat `npm test` and `npm run qa` **run locally** as
+the only real evidence, and paste the counts into the session log as this file
+already instructs.
 
 ## 4. MISSING FOR LAUNCH
 
@@ -550,3 +591,13 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   not to click, turning the demo off, and QuickBooks/email/AI/AutoCAD setup with
   honest ALREADY WORKING vs FUTURE INTEGRATION splits — are in
   `docs/ONSITE-HANDOFF.md`. No cloud records were read, written or deleted.
+- 2026-07-31 — Checked CI while opening PR #79 and found §3.9: GitHub Actions
+  has never run on this repository. `ci.yml` has one run in its whole history
+  (a manual dispatch on 2026-07-21) which ended `startup_failure`; every red
+  cross since comes from a phantom workflow (`state: deleted`, path
+  `BuildFailed`, no file on `main`) that GitHub still fires on every push and
+  PR and which also dies at startup with zero jobs. Corrected the §1 claim that
+  CI runs on every push — it does not. No code change fixes this; it needs the
+  owner to check repository Actions settings and the account spending limit,
+  since the repo is private and Actions minutes are billable. Local `npm test`
+  (275 checks) and `npm run qa` remain the only real evidence.
