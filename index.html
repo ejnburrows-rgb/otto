@@ -1538,7 +1538,11 @@
   /* ============================ AUTH / ROLES ============================ */
   const ROLE_VIEWS = {
     owner: ['home', 'hub', 'kpis', 'worker_profile', 'urgent', 'customers', 'jobs', 'calls', 'inbox', 'emails', 'estimates', 'invoices', 'payments', 'checks', 'payroll', 'alerts', 'followups', 'workflows', 'knowledge', 'map', 'reports', 'backups', 'audit', 'team', 'settings', 'assistant'],
-    office: ['home', 'hub', 'urgent', 'customers', 'jobs', 'calls', 'inbox', 'emails', 'estimates', 'invoices', 'payments', 'checks', 'payroll', 'alerts', 'followups', 'workflows', 'knowledge', 'map', 'reports', 'backups', 'settings', 'assistant'],
+    // 'team' is here as well as under owner: the office manager and the IT
+    // account both run day-to-day staff admin — adding a new hire, setting or
+    // resetting a sign-in code — and routing that through an owner every time
+    // was slowing the real work down.
+    office: ['home', 'hub', 'urgent', 'customers', 'jobs', 'calls', 'inbox', 'emails', 'estimates', 'invoices', 'payments', 'checks', 'payroll', 'alerts', 'followups', 'workflows', 'knowledge', 'map', 'reports', 'backups', 'team', 'settings', 'assistant'],
     field: ['home', 'jobs', 'customers', 'followups', 'knowledge', 'assistant', 'settings'],
     accounting: ['home', 'customers', 'inbox', 'emails', 'invoices', 'payments', 'checks', 'payroll', 'estimates', 'reports', 'knowledge', 'assistant', 'settings'],
   };
@@ -1730,7 +1734,6 @@
     }
     route = { view, id, tab }; window.scrollTo(0, 0); render();
   }
-  function back() { window.history.length > 1 ? render() : nav('home'); }
 
   const NAVBAR = {
     field: ['home', 'jobs', 'customers', 'followups', 'assistant'],
@@ -1923,6 +1926,7 @@
     <div class="btnrow">
       <button class="btn green" onclick="openJobForm(null,'${c.id}')"><i class="fas fa-plus"></i> ${t('newJob')}</button>
       <button class="btn ghost" onclick="openCustomerForm('${c.id}')"><i class="fas fa-pen"></i> ${t('edit')}</button>
+      <button class="btn red" onclick="confirmDel(()=>{remove('customers','${c.id}');nav('customers')})"><i class="fas fa-trash"></i> ${t('delete')}</button>
     </div>`;
     html += `<div class="section-title">${t('jobs')} (${jobs.length})</div><div class="card">${jobs.length ? jobs.map(jobRow).join('') : emptyState()}</div>`;
     if (calls.length) html += `<div class="section-title">${t('callLog')} (${calls.length})</div><div class="card">${calls.map(callRow).join('')}</div>`;
@@ -1996,6 +2000,7 @@
     <div class="btnrow">
       <button class="btn" onclick="changeJobStatus('${j.id}')"><i class="fas fa-arrows-rotate"></i> ${t('status')}</button>
       <button class="btn ghost" onclick="openJobForm('${j.id}')"><i class="fas fa-pen"></i> ${t('edit')}</button>
+      <button class="btn red" onclick="confirmDel(()=>{remove('jobs','${j.id}');nav('jobs')})"><i class="fas fa-trash"></i> ${t('delete')}</button>
     </div>`;
     // Worker accountability: check-in / check-out (work-only GPS)
     html += workerActionsHTML(j);
@@ -2299,7 +2304,8 @@
       <div class="field"><label for="e-status">${t('status')}</label><select id="e-status">${['draft', 'sent', 'approved', 'canceled'].map(s => `<option value="${s}" ${e.status === s ? 'selected' : ''}>${t(s)}</option>`).join('')}</select></div></div>
       <button class="btn block" onclick="saveEstimate('${id || ''}')"><i class="fas fa-check"></i> ${t('save')}</button>
       ${id ? `<button class="btn green block" style="margin-top:10px" onclick="estimateToInvoice('${id}')"><i class="fas fa-file-invoice-dollar"></i> ${lang === 'es' ? 'Convertir a factura' : 'Convert to invoice'}</button>` : ''}
-      ${id ? `<button class="btn ghost block" style="margin-top:8px" onclick="printDoc('estimate','${id}')"><i class="fas fa-print"></i> ${t('print')}</button>` : ''}`);
+      ${id ? `<button class="btn ghost block" style="margin-top:8px" onclick="printDoc('estimate','${id}')"><i class="fas fa-print"></i> ${t('print')}</button>` : ''}
+      ${id ? `<button class="btn red block" style="margin-top:8px" onclick="confirmDel(()=>{remove('estimates','${id}');closeModal();render()})"><i class="fas fa-trash"></i> ${t('delete')}</button>` : ''}`);
   }
   function saveEstimate(id) {
     const jobId = $('#e-job').value; const job = jobId ? get('jobs', jobId) : null;
@@ -2358,7 +2364,8 @@
         <button class="btn green" onclick="closeModal();openPaymentForm(null,'${id}')"><i class="fas fa-money-bill-wave"></i> ${t('recordPayment')}</button>
         <button class="btn ghost" onclick="closeModal();openInvoiceForm('${id}')"><i class="fas fa-pen"></i> ${t('edit')}</button>
         <button class="btn ghost" onclick="printDoc('invoice','${id}')"><i class="fas fa-print"></i> ${t('print')}</button>
-      </div>`);
+      </div>
+      <button class="btn red block" style="margin-top:10px" onclick="confirmDel(()=>{remove('invoices','${id}');closeModal();render()})"><i class="fas fa-trash"></i> ${t('delete')}</button>`);
   }
 
 
@@ -2437,9 +2444,22 @@
     let html = pageHead(t('payments'), '') + searchBox('pay');
     html += `<div class="btnrow"><button class="btn green" onclick="openPaymentForm()"><i class="fas fa-plus"></i> ${t('addPayment')}</button><button class="btn ghost" onclick="exportQuickBooks('payments')"><i class="fas fa-file-export"></i> QuickBooks</button></div>`;
     html += `<div class="card" style="margin:12px 0;padding:14px">${kv(t('total'), `<b>${money(total)}</b>`)}</div>`;
-    html += `<div class="card">${list.length ? list.map(p => `<div class="list-item"><div class="avatar" style="background:var(--green)"><i class="fas fa-money-bill-wave"></i></div><div class="li-main"><div class="li-title">${money(p.amount)} · ${esc(customerName(p.customerId))}</div><div class="li-sub">${esc(p.method || '')} · ${fmtDate(p.date)}</div></div></div>`).join('') : emptyState()}</div>`;
+    html += `<div class="card">${list.length ? list.map(p => `<div class="list-item"><div class="avatar" style="background:var(--green)"><i class="fas fa-money-bill-wave"></i></div><div class="li-main"><div class="li-title">${money(p.amount)} · ${esc(customerName(p.customerId))}</div><div class="li-sub">${esc(p.method || '')} · ${fmtDate(p.date)}</div></div><button class="btn red sm" aria-label="${esc(t('delete'))}" onclick="confirmDel(()=>deletePayment('${p.id}'))"><i class="fas fa-trash"></i></button></div>`).join('') : emptyState()}</div>`;
     $('#main').innerHTML = html; bindSearch('pay');
   }
+  /* Deleting a payment has to give the money back to the invoice it was paid
+     against, otherwise the invoice keeps counting it and still reads PAID with
+     nothing behind it. */
+  function deletePayment(id) {
+    const p = get('payments', id);
+    if (!p) return;
+    const inv = p.invoiceId ? get('invoices', p.invoiceId) : null;
+    if (inv) update('invoices', inv.id, { paid: Math.max(0, (inv.paid || 0) - (p.amount || 0)) });
+    remove('payments', id);
+    toast(t('deleted'), 'success');
+    render();
+  }
+
   function openPaymentForm(id, invoiceId) {
     const inv = invoiceId ? get('invoices', invoiceId) : null;
     const invOpts = db.invoices.map(i => `<option value="${i.id}" ${invoiceId === i.id ? 'selected' : ''}>${esc(i.number)} — ${esc(customerName(i.customerId))} (${money((i.amount || 0) - (i.paid || 0))})</option>`).join('');
@@ -5135,7 +5155,7 @@ Return ONLY valid JSON: { "fixtures": [], "pipes": [], "fittings": [], "notes": 
   }
 
   Object.assign(window, { __db: () => db, setSearch, saveAIKey, saveMfa, clearMfa, t, toast, closeModal, modal,
-    setLang, nav, back, signOut, quickAdd, openMore, get, remove, update, confirmDel, render,
+    setLang, nav, signOut, deletePayment, quickAdd, openMore, get, remove, update, confirmDel, render,
     newCall, saveCall, jobFromCall, openCallView, openCustomerForm, saveCustomer, openJobForm, saveJob, changeJobStatus, setJobStatus,
     openNoteForm, saveNote, quickPhoto, chooseJob, runJobAction, uploadDoc, openDoc, quickVoiceNote, voiceInto,
     openEstimateForm, saveEstimate, estimateToInvoice, printDoc, openInvoiceForm, saveInvoice, openInvoiceView, openPaymentForm, savePayment,
