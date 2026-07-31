@@ -837,13 +837,114 @@
         text-align: center;
       }
 
-      .why {
-        padding: 80px 5%;
-      }
+    html {
+      scroll-behavior: smooth;
+    }
 
-      .pillars {
-        grid-template-columns: 1fr;
-      }
+    /* ─── BOOKING / CONTACT SECTION ─── */
+    .booking-section {
+      padding: 100px 5%;
+      background: var(--navy-dark);
+      position: relative;
+    }
+
+    .booking-container {
+      max-width: 640px;
+      margin: 0 auto;
+      background: rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      padding: 40px;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .booking-form {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #ffffff;
+    }
+
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 15px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--teal);
+      box-shadow: 0 0 0 3px rgba(12, 145, 178, 0.25);
+    }
+
+    .form-group input[aria-invalid="true"],
+    .form-group textarea[aria-invalid="true"] {
+      border-color: #ef4444;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+    }
+
+    .form-error-msg {
+      font-size: 13px;
+      color: #f87171;
+      min-height: 18px;
+      font-weight: 500;
+    }
+
+    .booking-fallback-banner {
+      background: rgba(12, 145, 178, 0.15);
+      border: 1px solid rgba(12, 145, 178, 0.4);
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 10px;
+      text-align: center;
+      color: #ffffff;
+    }
+
+    .booking-fallback-banner p {
+      font-size: 15px;
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+
+    .btn-call-fallback {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: linear-gradient(135deg, var(--teal), #0C7AA9);
+      color: #ffffff;
+      text-decoration: none;
+      padding: 12px 24px;
+      border-radius: 9999px;
+      font-weight: 700;
+      font-size: 15px;
+      box-shadow: 0 4px 16px rgba(12, 145, 178, 0.4);
+      transition: transform 0.2s;
+    }
+
+    .btn-call-fallback:hover {
+      transform: translateY(-2px);
     }
   </style>
 </head>
@@ -867,7 +968,7 @@
         <button class="active">EN</button>
         <button>ES</button>
       </button>
-      <a href="tel:+17863442837" class="cta-book">
+      <a href="#contact" class="cta-book">
         <i class="fas fa-calendar-plus"></i>
         Book Now
       </a>
@@ -916,7 +1017,7 @@
     <a class="nav-cta" href="tel:+17863442837">
       <i class="fas fa-phone"></i> (786) 344-2837
     </a>
-    <a class="nav-cta-book" href="tel:+17863442837">Book a Plumber</a>
+    <a class="nav-cta-book" href="#contact">Book a Plumber</a>
   </nav>
 
   <!-- ─── HERO ─── -->
@@ -1018,6 +1119,67 @@
     </div>
   </section>
 
+  <!-- ─── CONTACT / BOOKING FORM ─── -->
+  <section id="contact" class="booking-section reveal">
+    <div class="section-label" style="text-align:center;">Fast Dispatch</div>
+    <h2 class="section-title" style="text-align:center;">Book a Plumber</h2>
+    <p class="section-sub" style="text-align:center;">Fill out the request form below or call us directly. We respond promptly.</p>
+    
+    <div class="booking-container">
+      <form id="booking-form" class="booking-form" novalidate>
+        <div class="form-group">
+          <label for="booking-name">Full Name <span style="color:#f87171;">*</span></label>
+          <input 
+            type="text" 
+            id="booking-name" 
+            name="name" 
+            required 
+            autocomplete="name" 
+            placeholder="e.g. Jane Doe"
+            aria-required="true"
+            aria-describedby="name-error"
+          />
+          <div id="name-error" class="form-error-msg" role="alert" aria-live="polite"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="booking-phone">Phone Number <span style="color:#f87171;">*</span></label>
+          <input 
+            type="tel" 
+            id="booking-phone" 
+            name="phone" 
+            required 
+            autocomplete="tel" 
+            placeholder="e.g. (786) 555-0199"
+            aria-required="true"
+            aria-describedby="phone-error"
+          />
+          <div id="phone-error" class="form-error-msg" role="alert" aria-live="polite"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="booking-message">What do you need help with? <span style="color:#f87171;">*</span></label>
+          <textarea 
+            id="booking-message" 
+            name="message" 
+            rows="3" 
+            required 
+            placeholder="Describe your plumbing issue (e.g. leaking water heater, clogged drain)..."
+            aria-required="true"
+            aria-describedby="message-error"
+          ></textarea>
+          <div id="message-error" class="form-error-msg" role="alert" aria-live="polite"></div>
+        </div>
+
+        <button type="submit" id="booking-submit-btn" class="btn-primary" style="width:100%; justify-content:center; cursor:pointer;">
+          <i class="fas fa-paper-plane"></i> Submit Booking Request
+        </button>
+
+        <div id="booking-status" role="region" aria-live="polite"></div>
+      </form>
+    </div>
+  </section>
+
   <!-- ─── CTA STRIP ─── -->
   <div class="cta-strip">
     <h2>Got a Plumbing Problem?</h2>
@@ -1074,6 +1236,99 @@
         this.classList.add('active');
       });
     });
+    // Booking Form Submission & Validation
+    const bookingForm = document.getElementById('booking-form');
+    if (bookingForm) {
+      bookingForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const nameInput = document.getElementById('booking-name');
+        const phoneInput = document.getElementById('booking-phone');
+        const msgInput = document.getElementById('booking-message');
+        
+        const nameErr = document.getElementById('name-error');
+        const phoneErr = document.getElementById('phone-error');
+        const msgErr = document.getElementById('message-error');
+        const statusDiv = document.getElementById('booking-status');
+        
+        // Clear previous error states
+        [nameInput, phoneInput, msgInput].forEach(el => el.setAttribute('aria-invalid', 'false'));
+        nameErr.textContent = '';
+        phoneErr.textContent = '';
+        msgErr.textContent = '';
+        statusDiv.innerHTML = '';
+        
+        let isValid = true;
+        
+        // Name validation
+        if (!nameInput.value.trim()) {
+          nameInput.setAttribute('aria-invalid', 'true');
+          nameErr.textContent = 'Please enter your full name.';
+          isValid = false;
+        }
+        
+        // Phone validation (at least 7 digits)
+        const digits = phoneInput.value.replace(/\D/g, '');
+        if (!phoneInput.value.trim() || digits.length < 7) {
+          phoneInput.setAttribute('aria-invalid', 'true');
+          phoneErr.textContent = 'Please enter a valid phone number with at least 7 digits.';
+          isValid = false;
+        }
+        
+        // Message validation
+        if (!msgInput.value.trim()) {
+          msgInput.setAttribute('aria-invalid', 'true');
+          msgErr.textContent = 'Please describe what you need help with.';
+          isValid = false;
+        }
+        
+        if (!isValid) return;
+        
+        const submitBtn = document.getElementById('booking-submit-btn');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+        
+        const payload = {
+          channel: 'sms',
+          to: phoneInput.value.trim(),
+          body: `New Lead from ${nameInput.value.trim()} (${phoneInput.value.trim()}): ${msgInput.value.trim()}`
+        };
+        
+        try {
+          const res = await fetch('/api/notify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          
+          if (res.ok) {
+            statusDiv.innerHTML = `
+              <div class="booking-fallback-banner" style="background: rgba(34, 197, 94, 0.15); border-color: rgba(34, 197, 94, 0.4);">
+                <p style="color: #4ade80; font-weight:700;"><i class="fas fa-check-circle"></i> Request Received!</p>
+                <p>Thank you ${nameInput.value.trim()}! We received your request and will call you back shortly.</p>
+              </div>
+            `;
+            bookingForm.reset();
+          } else {
+            throw new Error('Backend not configured or error returned');
+          }
+        } catch (err) {
+          // Graceful Degradation Fallback: preserve user input, provide call-now option
+          statusDiv.innerHTML = `
+            <div class="booking-fallback-banner">
+              <p><strong><i class="fas fa-info-circle"></i> Direct Call Preferred</strong></p>
+              <p>Thanks ${nameInput.value.trim()}! To confirm your appointment immediately, please call us directly:</p>
+              <a href="tel:+17863442837" class="btn-call-fallback">
+                <i class="fas fa-phone-volume"></i> Call (786) 344-2837 Now
+              </a>
+            </div>
+          `;
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Booking Request';
+        }
+      });
+    }
   </script>
 </body>
 </html>

@@ -655,3 +655,4 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   still browser-side only (§3.2), and `hashPin()` is a single SHA-256 round,
   which is thin cover for a 4-digit PIN if a hash ever leaks. Findings only —
   no application code changed.
+- 2026-07-31 — Added accessible booking/contact form to landing.html (issue landing-03). Features minimal name, phone, and message inputs with explicit accessible labels, inline error messages, and aria-invalid/aria-describedby attributes. Form POSTs to /api/notify and gracefully degrades to a direct call button with user inputs preserved if backend is unavailable. Buttons ("Book Now", "Book a Plumber") point smoothly to #contact. Verified with node scripts/qa-check.mjs and npm test (all 307 checks pass).
