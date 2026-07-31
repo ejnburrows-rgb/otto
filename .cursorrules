@@ -1,0 +1,7 @@
+# .cursorrules — Cursor AI Rules for OTTO Plumbing CRM
+
+- **Architecture**: Single-file PWA architecture (`index.html`) using Vanilla HTML, CSS, JavaScript, and IndexedDB.
+- **Language**: English and Spanish dual-dictionary support required for all UI elements.
+- **Mobile UX**: Prioritize touch interface usability (min 48px targets, responsive layout under 768px).
+- **Code Integrity**: Retain existing state structures, IndexedDB stores, and API endpoints (`api/claude.js`, `api/nvidia.js`).
+- **QA Standards**: Run `node scripts/qa-check.mjs` before concluding code changes.

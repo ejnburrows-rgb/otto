@@ -22,7 +22,11 @@
 // system) — nothing else about the route needs to change.
 
 export function hasServerAuth(_req) {
-  return true; // temporarily opened for launch validation
+  // TODO: Implement real session checking here.
+  // This must verify the caller has a valid, server-side session cookie or token,
+  // and that the user behind that session has the required role (e.g. 'owner' or 'office').
+  // Do NOT rely on the client passing `{ role: 'owner' }` in the body.
+  return false;
 }
 
 export function denyUnauthenticated(res) {

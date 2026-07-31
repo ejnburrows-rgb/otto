@@ -877,6 +877,9 @@
       { id: uid(), title: 'Sewer camera inspection', title_es: 'Inspección con cámara de drenaje', category: 'Diagnostic',
         body: 'Locate cleanout. Insert camera, record footage. Note distance to any blockage or break. Save video/photos to the job folder. Recommend hydro-jet or repair as needed and create an estimate.',
         body_es: 'Ubique el registro. Inserte la cámara, grabe. Anote la distancia a obstrucciones o roturas. Guarde video/fotos en la carpeta del trabajo. Recomiende hydro-jet o reparación y cree un presupuesto.', created: nowISO() },
+      { id: uid(), title: 'Data Retention Policy (GPS & Photos)', title_es: 'Política de retención de datos (GPS y Fotos)', category: 'Policy',
+        body: 'GPS check-ins and job photos are retained indefinitely as part of the official job record. These are kept for liability protection, customer dispute resolution, and payroll verification. Only Owner and Office roles have access to view historical GPS and photo data across all jobs.',
+        body_es: 'Los registros de GPS y las fotos de los trabajos se conservan indefinidamente como parte del registro oficial del trabajo. Se guardan para protección de responsabilidad, resolución de disputas de clientes y verificación de nómina. Solo los roles de Dueño y Oficina tienen acceso para ver el historial de GPS y fotos de todos los trabajos.', created: nowISO() },
     ];
     d.workflows = [
       { id: uid(), name: 'New Service Call', name_es: 'Nueva Llamada de Servicio', trigger: 'call',

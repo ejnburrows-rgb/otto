@@ -1,0 +1,5 @@
+# .windsurfrules — Windsurf Cascade Rules for OTTO Plumbing CRM
+
+- **Mode**: Non-technical friendly, explain code changes in plain language without unnecessary technical jargon.
+- **Rules**: Preserve single-file zero-build setup in `index.html`. Support EN/ES toggles.
+- **Verification**: Run `node scripts/qa-check.mjs` to ensure zero syntax or static check regressions.

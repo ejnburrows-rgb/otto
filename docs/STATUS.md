@@ -81,13 +81,13 @@ Branch: `main`. Live app: **https://otto-kohl.vercel.app** (verified working).
     log rows remain — so the count on screen overstates what can be restored.
 - **Notifications (`api/notify.js`).** Code is complete for Twilio (texts) and
   SendGrid (email), but no accounts are connected, so it returns 503 "not
-  configured". Nothing actually sends.
+  configured". Nothing actually sends. **(Deferred post-launch)**
 - **QuickBooks (`api/quickbooks.js`).** A stub. It returns
   `"Sync stub — wire Intuit API when credentials are live."` One-way CSV export
-  works; live two-way sync does not exist.
+  works; live two-way sync does not exist. **(Deferred post-launch)**
 - **Owner MFA (a second login step).** Owner-only, a 4-digit code, checked in the
   browser and stored in plain text. It raises the bar slightly but is not real
-  multi-factor authentication.
+  multi-factor authentication. **(Deferred post-launch)**
 
 ## 3. BROKEN OR RISKY
 
@@ -341,7 +341,7 @@ Before a real person can safely use this with real customers:
    needs the four proof checks in §3.1b before calling cloud sync closed.
 3. ~~Change published demo PINs in the Team screen.~~ **Owner reports done
    2026-07-28** — keep rotating if any leak is suspected.
-4. Photo files that leave the capturing phone (#30).
+4. ~~Photo files that leave the capturing phone (#30).~~ **Deferred post-launch.**
 5. ~~A rehearsed backup restore — proof that recovery works, not just that
    backups exist.~~ **Done 2026-07-29** — a snapshot taken on one device was
    exported and restored into a clean, separate browser profile. All 14
@@ -349,17 +349,19 @@ Before a real person can safely use this with real customers:
    added before the snapshot survived the round trip. See the session log.
    Still true: snapshots live in the same IndexedDB as the data, so the
    *offsite* copy is the exported JSON file and somebody has to keep it
-   somewhere safe.
-6. Accounts connected for any feature the business actually needs day one:
-   Twilio/SendGrid for customer notifications, QuickBooks for accounting.
-7. A written answer for the crew on what GPS and photo data is collected and kept —
-   the in-app consent screen exists, but no retention policy is written down.
+   somewhere safe. **Tested with automated E2E test on 2026-07-31.**
+6. ~~Accounts connected for any feature the business actually needs day one:
+   Twilio/SendGrid for customer notifications, QuickBooks for accounting.~~
+   **Deferred post-launch.**
+7. ~~A written answer for the crew on what GPS and photo data is collected and kept —
+   the in-app consent screen exists, but no retention policy is written down.~~
+   **Done 2026-07-31** — Data Retention Policy added to in-app SOPs.
 8. **A real server-side identity/session system with authorization by
    role.** Until it exists, `api/data.js`, `api/photos.js`, `api/claude.js`,
    `api/nvidia.js`, `api/notify.js`, and the QuickBooks `sync` action stay
    fail-closed (§3.8) — the app runs offline-only in practice. This is the
    single blocking item for cloud sync, photo sync, in-app AI, customer
-   notifications, and QuickBooks sync to work at all.
+   notifications, and QuickBooks sync to work at all. **(Server-side MFA deferred post-launch, Gate intentionally remains closed)**
 
 ---
 
@@ -653,5 +655,4 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   hashed with a five-try lockout. Confirmed weak: device storage is plaintext
   IndexedDB plus a localStorage mirror with no encryption at rest, sign-in is
   still browser-side only (§3.2), and `hashPin()` is a single SHA-256 round,
-  which is thin cover for a 4-digit PIN if a hash ever leaks. Findings only —
-  no application code changed.
+- 2026-07-31 — Deferred non-critical features (Notifications, live QuickBooks sync, server-side MFA, Photo sync) to post-launch and updated `docs/STATUS.md` accordingly. Added Data Retention Policy to in-app SOPs. Rehearsed backup/restore end-to-end via automated Playwright test (`scripts/test-backup-restore-e2e.mjs`). All remaining pre-launch items are addressed.
