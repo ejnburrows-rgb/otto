@@ -11,8 +11,5 @@
   },
   "devDependencies": {
     "playwright": "^1.61.1"
-  },
-  "dependencies": {
-    "jsonwebtoken": "^9.0.3"
   }
 }

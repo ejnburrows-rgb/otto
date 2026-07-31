@@ -332,6 +332,58 @@ Until it starts working, treat `npm test` and `npm run qa` **run locally** as
 the only real evidence, and paste the counts into the session log as this file
 already instructs.
 
+### 3.10 INCIDENT 2026-07-31 — live authentication bypass, found and closed
+
+**What happened.** A facelift commit (`cee5f5f`) and a companion commit
+(`320cd12`) removed the §3.8 fail-closed gate and replaced it with hand-rolled
+JWT verification, adding a public `api/login.js`. Both reached `main` and were
+deployed.
+
+**Why it was critical.** Two independent, remotely exploitable bypasses:
+
+1. `POST /api/login {action:'request_mfa'}` returned the SMS code *inside* the
+   token it handed back. A JWT payload is base64, not encrypted, so any caller
+   could read the code out of the token they had just been given — no SMS
+   needed, and with Twilio unconfigured the code was only logged while the token
+   was still returned. `verify_mfa` then took `userId` and `role` **straight from
+   the request body**, so anyone could mint a 7-day `role: 'owner'` session with
+   no PIN and no credential of any kind.
+2. The signing secret fell back to a hardcoded development placeholder committed
+   to this repository, so tokens could be forged directly without touching
+   `/api/login` at all.
+
+Either token satisfied `hasServerAuth()` and unlocked all six protected routes,
+including `api/data.js` and its Supabase **service-role** key — full read and
+write of every collection.
+
+**Established by reading the code. The exploit was deliberately NOT run against
+production**, because that would have meant accessing real customer data.
+
+**Fix.** `hasServerAuth()` restored to unconditional `false`; `api/login.js`
+deleted; the client's owner second-code check restored to the local
+`verifyPin(u, typed, 'mfaPin')` against the salted hash, with its lockout;
+`serverFetch()` reduced to a plain pass-through that also clears any stale
+`otto_jwt` left in a browser; `jsonwebtoken` dropped. §3.8 is in force again.
+
+**Regression tests** (`scripts/test-server-auth.mjs`, now 49 checks) assert that a
+forged token is refused, that no file under `api/` contains the placeholder
+secret, that `api/login.js` does not exist, and that the gate neither signs nor
+verifies its own tokens.
+
+**Owner actions, still outstanding:**
+
+1. **Rotate `SUPABASE_SERVICE_ROLE_KEY`** in Supabase and Vercel. It had been
+   configured as a JWT signing secret, which is not what it is for.
+2. **Review Supabase logs** for the exposure window — commits landed
+   2026-07-31, PR #82 merged 21:26 UTC — for any `/rest/v1` access that was not
+   yours. The live database holds 3 customers, 13 jobs and 1 invoice, so the
+   blast radius is small, but exposure cannot be ruled out.
+
+**Lesson.** This is the third time a credential has been committed to this
+repository (§3.1, §3.3, now this). It is also exactly what AGENTS.md forbids:
+"Never hand-build authentication." The supported path — the provider's own
+sign-in — is recorded as §4 item 8 and remains the correct next step.
+
 ## 4. MISSING FOR LAUNCH
 
 Before a real person can safely use this with real customers:
@@ -684,3 +736,18 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   and a headless run of the real app signs in and renders all 26 screens at
   390px, 768px and 1280px with 0 JavaScript errors, 0 broken images and no
   horizontal overflow.
+- 2026-07-31 — Closed a live authentication bypass introduced by the facelift
+  commits earlier the same day; full detail in §3.10. `api/login.js` issued
+  owner sessions to any caller (it returned the SMS code inside the token it
+  handed back, and trusted `userId`/`role` from the request body), and the
+  replacement gate's signing secret fell back to a placeholder committed to this
+  repo, so tokens could also be forged directly. Either route reached the
+  Supabase service-role key. Restored `hasServerAuth()` to unconditional
+  `false`, deleted `api/login.js`, put the owner second code back on the local
+  salted-hash check with its lockout, reduced `serverFetch()` to a pass-through
+  that clears any stale `otto_jwt`, and dropped `jsonwebtoken`. Added forged-token
+  and banned-literal regression tests. Verified in a browser: app boots, PIN
+  sign-in works, the owner second-code screen appears and accepts the right code,
+  zero `/api/login` requests, no page errors. `npm test` 340 checks, 0 failed;
+  `npm run qa` passes. Owner still needs to rotate the Supabase service-role key
+  and review access logs for the exposure window.
