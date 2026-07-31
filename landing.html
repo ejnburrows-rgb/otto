@@ -867,7 +867,7 @@
         <button class="active">EN</button>
         <button>ES</button>
       </button>
-      <a href="tel:+17863442837" class="cta-book">
+      <a href="tel:" class="cta-book">
         <i class="fas fa-calendar-plus"></i>
         Book Now
       </a>
@@ -913,10 +913,10 @@
       <img src="{{DATA:IMAGE:IMAGE_61}}" alt="OTTO Plumbing Inc. logo" onerror="this.style.display='none'">
       <span>OTTO Plumbing Inc.</span>
     </div>
-    <a class="nav-cta" href="tel:+17863442837">
-      <i class="fas fa-phone"></i> (786) 344-2837
+    <a class="nav-cta phone-display" href="tel:">
+      <i class="fas fa-phone"></i>
     </a>
-    <a class="nav-cta-book" href="tel:+17863442837">Book a Plumber</a>
+    <a class="nav-cta-book" href="tel:">Book a Plumber</a>
   </nav>
 
   <!-- ─── HERO ─── -->
@@ -932,7 +932,7 @@
     <p>Fast, professional plumbing for residential and commercial properties. Available 7 days a week across Miami-Dade and Broward.</p>
 
     <div class="hero-actions">
-      <a class="btn-primary" href="tel:+17863442837">
+      <a class="btn-primary" href="tel:">
         <i class="fas fa-phone-volume"></i> Call Now
       </a>
       <a class="btn-ghost" href="#services">
@@ -944,7 +944,7 @@
       <div class="icon"><i class="fas fa-phone"></i></div>
       <div class="text">
         <div class="label">Call or Text Anytime</div>
-        <a href="tel:+17863442837">(786) 344-2837</a>
+        <a href="tel:" class="phone-display"></a>
         <div class="avail">Mon – Sat &nbsp;·&nbsp; 7 AM – 7 PM</div>
       </div>
     </div>
@@ -1022,9 +1022,8 @@
   <div class="cta-strip">
     <h2>Got a Plumbing Problem?</h2>
     <p>Call us now and we'll get someone to you fast.</p>
-    <a href="tel:+17863442837">
+    <a href="tel:" class="phone-display">
       <i class="fas fa-phone-volume"></i>
-      (786) 344-2837
     </a>
   </div>
 
@@ -1032,10 +1031,33 @@
   <footer>
     <img src="{{DATA:IMAGE:IMAGE_61}}" alt="OTTO Plumbing Inc. logo" onerror="this.style.display='none'">
     <span>© 2026 OTTO Plumbing Inc. — South Florida &nbsp;|&nbsp; Licensed &amp; Insured</span>
-    <a href="tel:+17863442837"><i class="fas fa-phone"></i> (786) 344-2837</a>
+    <a href="tel:" class="phone-display"><i class="fas fa-phone"></i></a>
   </footer>
 
   <script>
+    // OWNER: put the real business phone here — it updates every button on the page.
+    const BUSINESS_PHONE = {
+      display: '(786) 344-2837',
+      dial: '+17863442837'
+    };
+
+    function populateBusinessPhone() {
+      document.querySelectorAll('a[href^="tel:"]').forEach(link => {
+        link.href = `tel:${BUSINESS_PHONE.dial}`;
+        if (link.classList.contains('phone-display')) {
+          const icon = link.querySelector('i');
+          if (icon) {
+            link.innerHTML = '';
+            link.appendChild(icon);
+            link.appendChild(document.createTextNode(` ${BUSINESS_PHONE.display}`));
+          } else {
+            link.textContent = BUSINESS_PHONE.display;
+          }
+        }
+      });
+    }
+    populateBusinessPhone();
+
     // Scroll reveal
     const obs = new IntersectionObserver((entries) => {
       entries.forEach(e => {

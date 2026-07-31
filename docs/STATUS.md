@@ -656,3 +656,4 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   which is thin cover for a 4-digit PIN if a hash ever leaks. Findings only —
   no application code changed.
 - 2026-07-31 — Raised --text-muted contrast ratio to rgba(248, 250, 252, 0.88) in landing.html (issue landing-01) for WCAG AA readability compliance across service cards and text blocks. Verified with node scripts/qa-check.mjs.
+- 2026-07-31 — Centralized business phone number into a single BUSINESS_PHONE constant in landing.html (issue landing-02) that populates all links/labels at runtime. Verified with node scripts/qa-check.mjs.
