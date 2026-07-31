@@ -1,0 +1,71 @@
+#!/bin/sh
+# Blocks committing a credential.
+#
+# WHY THIS EXISTS: three credentials have been committed to this repository.
+# The Firebase key (docs/STATUS.md 3.1) sat in index.html and let anyone read
+# every customer record. The demo sign-in codes (3.3) were printed in the docs.
+# On 2026-07-31 a token-signing secret was committed as a "development
+# fallback", which let anyone forge an owner session (3.10).
+#
+# A credential that reaches GitHub cannot be un-published, only revoked. That is
+# why this blocks at commit time rather than at push time.
+#
+# GitHub's own push protection needs a paid plan on a private repository, so
+# this hook is the protection actually available here.
+#
+# Genuine false positive? Bypass once with:  git commit --no-verify
+
+staged=$(git diff --cached --name-only --diff-filter=ACM)
+[ -z "$staged" ] && exit 0
+
+found=0
+report() {
+  if [ "$found" -eq 0 ]; then
+    echo "" >&2
+    echo "BLOCKED: this commit looks like it contains a credential." >&2
+    echo "" >&2
+  fi
+  found=1
+  echo "  $1" >&2
+  echo "      $2" >&2
+}
+
+for file in $staged; do
+  # Never scan the hook itself, or the docs that describe the incidents.
+  case "$file" in
+    .githooks/*|docs/STATUS.md|docs/BACKUP-AND-SECURITY.md|docs/AGENT-HANDOFF.md) continue ;;
+    *.png|*.jpg|*.jpeg|*.gif|*.ico|*.woff|*.woff2|package-lock.json) continue ;;
+  esac
+  [ -f "$file" ] || continue
+
+  # Provider key formats. These are unambiguous — no legitimate reason to commit one.
+  hits=$(git show ":$file" 2>/dev/null | grep -nE \
+    "(sk-ant-[A-Za-z0-9_-]{20,}|nvapi-[A-Za-z0-9_-]{20,}|sk-[A-Za-z0-9]{32,}|AIza[A-Za-z0-9_-]{30,}|ghp_[A-Za-z0-9]{30,}|xox[baprs]-[A-Za-z0-9-]{20,})" \
+    | head -3)
+  [ -n "$hits" ] && report "$file — provider API key" "$hits"
+
+  # A JWT with three base64 segments. The Supabase service-role key is one.
+  hits=$(git show ":$file" 2>/dev/null | grep -nE "eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}" | head -3)
+  [ -n "$hits" ] && report "$file — looks like a JWT / service-role key" "$hits"
+
+  # The exact shape that caused 3.10: a secret with a hardcoded fallback.
+  hits=$(git show ":$file" 2>/dev/null | grep -nEi \
+    "(secret|token|password|apikey|api_key)[A-Za-z_]*[[:space:]]*=.*\|\|[[:space:]]*['\"][^'\"]{6,}['\"]" | head -3)
+  [ -n "$hits" ] && report "$file — hardcoded fallback secret (this is 3.10)" "$hits"
+
+  # A four-digit sign-in code assigned to a pin field (3.3).
+  hits=$(git show ":$file" 2>/dev/null | grep -nEi "(^|[^A-Za-z])(pin|mfaPin)[[:space:]]*[:=][[:space:]]*['\"]?[0-9]{4}['\"]?[,;[:space:]]" | head -3)
+  [ -n "$hits" ] && report "$file — a sign-in code in the source" "$hits"
+done
+
+if [ "$found" -ne 0 ]; then
+  echo "" >&2
+  echo "A credential that reaches GitHub cannot be un-published, only revoked." >&2
+  echo "This has happened three times here — see docs/STATUS.md 3.1, 3.3, 3.10." >&2
+  echo "" >&2
+  echo "Put it in .env (already gitignored) and in the Vercel dashboard instead." >&2
+  echo "If this is genuinely a false positive:  git commit --no-verify" >&2
+  echo "" >&2
+  exit 1
+fi
+exit 0
