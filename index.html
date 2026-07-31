@@ -1538,7 +1538,11 @@
   /* ============================ AUTH / ROLES ============================ */
   const ROLE_VIEWS = {
     owner: ['home', 'hub', 'kpis', 'worker_profile', 'urgent', 'customers', 'jobs', 'calls', 'inbox', 'emails', 'estimates', 'invoices', 'payments', 'checks', 'payroll', 'alerts', 'followups', 'workflows', 'knowledge', 'map', 'reports', 'backups', 'audit', 'team', 'settings', 'assistant'],
-    office: ['home', 'hub', 'urgent', 'customers', 'jobs', 'calls', 'inbox', 'emails', 'estimates', 'invoices', 'payments', 'checks', 'payroll', 'alerts', 'followups', 'workflows', 'knowledge', 'map', 'reports', 'backups', 'settings', 'assistant'],
+    // 'team' is here as well as under owner: the office manager and the IT
+    // account both run day-to-day staff admin — adding a new hire, setting or
+    // resetting a sign-in code — and routing that through an owner every time
+    // was slowing the real work down.
+    office: ['home', 'hub', 'urgent', 'customers', 'jobs', 'calls', 'inbox', 'emails', 'estimates', 'invoices', 'payments', 'checks', 'payroll', 'alerts', 'followups', 'workflows', 'knowledge', 'map', 'reports', 'backups', 'team', 'settings', 'assistant'],
     field: ['home', 'jobs', 'customers', 'followups', 'knowledge', 'assistant', 'settings'],
     accounting: ['home', 'customers', 'inbox', 'emails', 'invoices', 'payments', 'checks', 'payroll', 'estimates', 'reports', 'knowledge', 'assistant', 'settings'],
   };
@@ -1730,7 +1734,6 @@
     }
     route = { view, id, tab }; window.scrollTo(0, 0); render();
   }
-  function back() { window.history.length > 1 ? render() : nav('home'); }
 
   const NAVBAR = {
     field: ['home', 'jobs', 'customers', 'followups', 'assistant'],
@@ -5135,7 +5138,7 @@ Return ONLY valid JSON: { "fixtures": [], "pipes": [], "fittings": [], "notes": 
   }
 
   Object.assign(window, { __db: () => db, setSearch, saveAIKey, saveMfa, clearMfa, t, toast, closeModal, modal,
-    setLang, nav, back, signOut, quickAdd, openMore, get, remove, update, confirmDel, render,
+    setLang, nav, signOut, quickAdd, openMore, get, remove, update, confirmDel, render,
     newCall, saveCall, jobFromCall, openCallView, openCustomerForm, saveCustomer, openJobForm, saveJob, changeJobStatus, setJobStatus,
     openNoteForm, saveNote, quickPhoto, chooseJob, runJobAction, uploadDoc, openDoc, quickVoiceNote, voiceInto,
     openEstimateForm, saveEstimate, estimateToInvoice, printDoc, openInvoiceForm, saveInvoice, openInvoiceView, openPaymentForm, savePayment,
