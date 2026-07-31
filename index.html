@@ -2950,11 +2950,90 @@
 
   function toggleTheme() { const cur = document.documentElement.getAttribute('data-theme'); const n = cur === 'dark' ? 'light' : 'dark'; document.documentElement.setAttribute('data-theme', n); localStorage.setItem('otto_theme', n); render(); }
   async function cloudPullNow() { toast('…'); const ok = await cloudPull(); toast(ok ? t('saved') : t('readFailed'), ok ? 'success' : 'error'); if (ok) render(); }
-  function exportAll() { downloadFile('otto-backup-' + todayISO() + '.json', JSON.stringify(db, null, 2), 'application/json'); }
+  /* Every fileId the records point at — photos, documents, drawings, email
+     attachments. Collected by walking the records rather than listing the
+     collections that happen to carry files today, so a new one cannot be
+     forgotten and silently left out of the download. */
+  function referencedFileIds(d) {
+    const ids = new Set();
+    const walk = (v) => {
+      if (!v || typeof v !== 'object') return;
+      if (Array.isArray(v)) { v.forEach(walk); return; }
+      for (const k in v) {
+        if (k === 'fileId' && typeof v[k] === 'string' && v[k]) ids.add(v[k]);
+        else walk(v[k]);
+      }
+    };
+    walk(d);
+    return [...ids];
+  }
+
+  /* The download is the only copy that leaves the device, so it has to be a
+     WHOLE copy. It used to be JSON.stringify(db) alone, which meant the image
+     bytes were left behind and a restore produced photo records pointing at
+     files that did not exist. Images now travel with it, base64 encoded inside
+     the same file — bigger, but self-contained, and it needs no library, which
+     matters for an offline-first app. */
+  async function exportAll() {
+    const ids = referencedFileIds(db);
+    const files = {};
+    let missing = 0;
+    for (const id of ids) {
+      try {
+        const blob = await idbGet('files', id);
+        if (!blob) { missing++; continue; }
+        files[id] = typeof blob === 'string' ? { text: blob } : { data: await blobToBase64(blob), mime: blob.type || 'application/octet-stream' };
+      } catch (e) { missing++; }
+    }
+    const payload = JSON.stringify({ _otto: { version: 2, exported: nowISO(), fileCount: Object.keys(files).length, missingFiles: missing }, db, _files: files }, null, 2);
+    downloadFile('otto-backup-' + todayISO() + '.json', payload, 'application/json');
+    db.meta.lastExport = nowISO();
+    save();
+    audit('backup.export', 'backup', null, { files: Object.keys(files).length, missing });
+    toast(`${t('saved')} · ${Object.keys(files).length} ${t('photos')}`, 'success');
+    if (typeof render === 'function') render();
+  }
+
   function importAll() {
     const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.json';
-    inp.onchange = () => { const f = inp.files[0]; const fr = new FileReader(); fr.onload = () => { try { const d = JSON.parse(fr.result); COLLECTIONS.forEach(c => { if (!Array.isArray(d[c])) d[c] = []; }); db = d; save(); toast(t('saved'), 'success'); render(); } catch (e) { toast(t('readFailed'), 'error'); } }; fr.readAsText(f); };
+    inp.onchange = () => {
+      const f = inp.files[0]; if (!f) return;
+      const fr = new FileReader();
+      fr.onload = async () => {
+        try {
+          const parsed = JSON.parse(fr.result);
+          // Version 2 wraps the records and carries the files alongside; an
+          // older export is the bare records object. Both must still restore.
+          const d = parsed && parsed._otto ? parsed.db : parsed;
+          const files = (parsed && parsed._files) || {};
+          COLLECTIONS.forEach(c => { if (!Array.isArray(d[c])) d[c] = []; });
+          let restored = 0;
+          for (const id in files) {
+            const entry = files[id];
+            try {
+              if (entry.text != null) await idbPut('files', id, entry.text);
+              else if (entry.data) { await idbPut('files', id, dataURLToBlob(entry.data, entry.mime)); }
+              restored++;
+            } catch (e) { /* skip a single unreadable file rather than lose the whole restore */ }
+          }
+          db = d; save();
+          audit('backup.import', 'backup', null, { files: restored });
+          toast(`${t('saved')} · ${restored} ${t('photos')}`, 'success');
+          render();
+        } catch (e) { toast(t('readFailed'), 'error'); }
+      };
+      fr.readAsText(f);
+    };
     inp.click();
+  }
+
+  function dataURLToBlob(dataUrl, mime) {
+    const comma = dataUrl.indexOf(',');
+    const b64 = comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl;
+    const bin = atob(b64);
+    const arr = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return new Blob([arr], { type: mime || 'application/octet-stream' });
   }
 
   /* ============================ QuickBooks export ============================ */
@@ -4371,6 +4450,10 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
   }
 
   /* ---- backups: 3+ versioned copies, verify, scheduled restore tests ---- */
+  /* How many snapshots keep their data. Older rows stay in the log but their
+     blob is pruned, so this is also the number the Backups screen may honestly
+     call a copy — named once so the two cannot drift apart. */
+  const MAX_KEPT_SNAPSHOTS = 12;
   function checksum(str) { let h = 0; for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0; return (h >>> 0).toString(16); }
   async function backupNow(manual) {
     try {
@@ -4382,7 +4465,7 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
       rec.verified = typeof back === 'string' && checksum(back) === rec.checksum;
       db.backups.unshift(rec);
       // keep full history but cap the in-DB log; snapshots beyond the last 12 are pruned from blob store
-      const old = db.backups.slice(12);
+      const old = db.backups.slice(MAX_KEPT_SNAPSHOTS);
       await Promise.all(old.map(o => idbDel('files', o.id).catch(() => {})));
       save(); audit('backup.create', 'backup', id, { verified: rec.verified });
       if (!rec.verified) raiseAlert('backup-failed', 'backup', id, t('restoreFail'));
@@ -4415,9 +4498,31 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
   function viewBackups() {
     const list = db.backups;
     const last = list[0];
-    let html = pageHead(t('backups'), list.length + ' ' + t('copies'));
-    html += `<div class="btnrow"><button class="btn green" onclick="backupNow(true)"><i class="fas fa-database"></i> ${t('backupNow')}</button><button class="btn" onclick="restoreTest()"><i class="fas fa-rotate"></i> ${t('testRestore')}</button><button class="btn ghost" onclick="exportAll()"><i class="fas fa-download"></i> ${lang === 'es' ? 'Descargar' : 'Download'}</button></div>`;
-    html += `<div class="card" style="padding:14px;margin:10px 0">${kv(t('lastBackup'), last ? timeAgo(last.ts) : '—')}${kv(t('lastRestoreTest'), db.meta.lastRestoreTest ? timeAgo(db.meta.lastRestoreTest) : '—')}${kv(t('copies'), String(list.length))}${kv(lang === 'es' ? 'Nube' : 'Cloud', _cloudAvailable ? '✅' : '—')}</div>`;
+    /* Only the newest MAX_KEPT_SNAPSHOTS still have their data; older rows are
+       log entries whose blob was pruned. Showing list.length as "copies" told
+       the owner they had more to fall back on than they really did. */
+    const restorable = Math.min(list.length, MAX_KEPT_SNAPSHOTS);
+    const lastExport = db.meta.lastExport;
+    const exportAgeDays = lastExport ? (Date.now() - new Date(lastExport)) / 86400000 : Infinity;
+    const exportStale = exportAgeDays > 7;
+    let html = pageHead(t('backups'), restorable + ' ' + t('copies'));
+    html += `<div class="btnrow"><button class="btn green" onclick="backupNow(true)"><i class="fas fa-database"></i> ${t('backupNow')}</button><button class="btn" onclick="restoreTest()"><i class="fas fa-rotate"></i> ${t('testRestore')}</button><button class="btn ${exportStale ? 'amber' : 'ghost'}" onclick="exportAll()"><i class="fas fa-download"></i> ${lang === 'es' ? 'Descargar' : 'Download'}</button></div>`;
+    /* The download is the only copy that leaves this device, so its age is the
+       number that actually matters. Say so plainly rather than burying it. */
+    if (exportStale) {
+      html += `<div class="card" style="padding:14px;margin:10px 0;border-left:4px solid var(--amber)">
+        <b>${lang === 'es' ? 'Descarga una copia' : 'Download a copy'}</b>
+        <div class="muted" style="margin-top:6px;font-size:13px">${lang === 'es'
+          ? (lastExport ? 'La última descarga fue hace ' + timeAgo(lastExport) + '. Es la única copia fuera de este teléfono.' : 'Nunca has descargado una copia. Es la única copia fuera de este teléfono.')
+          : (lastExport ? 'Last download was ' + timeAgo(lastExport) + '. It is the only copy that exists off this phone.' : 'You have never downloaded a copy. It is the only copy that exists off this phone.')}</div>
+      </div>`;
+    }
+    html += `<div class="card" style="padding:14px;margin:10px 0">${kv(t('lastBackup'), last ? timeAgo(last.ts) : '—')}${kv(lang === 'es' ? 'Última descarga' : 'Last download', lastExport ? timeAgo(lastExport) : (lang === 'es' ? 'Nunca' : 'Never'))}${kv(t('lastRestoreTest'), db.meta.lastRestoreTest ? timeAgo(db.meta.lastRestoreTest) : '—')}${kv(t('copies'), String(restorable))}${kv(lang === 'es' ? 'Nube' : 'Cloud', _cloudAvailable ? '✅' : '—')}</div>`;
+    html += `<div class="card" style="padding:14px;margin:10px 0">
+      <div class="muted" style="font-size:13px;line-height:1.5">${lang === 'es'
+        ? '<b>Copias en este teléfono</b> guardan los registros solamente, sin fotos, y viven en este mismo aparato — si lo pierdes, se pierden con él.<br><b>Descargar</b> guarda todo, fotos incluidas, en un archivo que puedes poner a salvo.'
+        : '<b>Copies on this phone</b> hold the records only — no photos — and live on this same device, so a lost phone loses them with it.<br><b>Download</b> saves everything, photos included, as one file you can keep somewhere safe.'}</div>
+    </div>`;
     html += `<div class="section-title">${t('backupLog')}</div><div class="card">${list.length ? list.slice(0, 50).map(b => `<div class="list-item"><div class="avatar" style="background:${b.verified ? 'var(--green)' : 'var(--amber)'}"><i class="fas fa-database"></i></div><div class="li-main"><div class="li-title">${fmtDate(b.ts)}</div><div class="li-sub">${(b.size / 1024 | 0)} KB · ${esc(b.location)}${b.verified ? ' · ' + t('verified') : ''}${b.restorePass != null ? ' · ' + (b.restorePass ? t('restorePass') : t('restoreFail')) : ''}</div></div></div>`).join('') : emptyState()}</div>`;
     $('#main').innerHTML = html;
   }
@@ -4467,8 +4572,12 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     window.addEventListener('pagehide', () => logGps('app_close'));
 
     nav('home');
-    // Owner/office: refresh today's summary and run scheduled backups/restore tests.
-    if (session.role === 'owner' || session.role === 'office') { try { generateDailySummary(); } catch (e) { } maybeAutoBackup(); }
+    // The daily summary is a management view, so it stays owner/office.
+    if (session.role === 'owner' || session.role === 'office') { try { generateDailySummary(); } catch (e) { } }
+    /* Backups run for EVERY role. They used to be inside the owner/office check
+       above, which meant a fortnight where only crew opened the app produced no
+       snapshot at all — and crew devices are the ones carrying job photos. */
+    maybeAutoBackup();
   }
 
   function showGpsOnboarding() {

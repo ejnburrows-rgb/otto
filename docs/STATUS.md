@@ -61,9 +61,24 @@ Branch: `main`. Live app: **https://otto-kohl.vercel.app** (verified working).
 - **Photo files still do not leave the phone that took them** (open issue #30).
   Photo *records* can sync; the image *bytes* stay in device IndexedDB via
   `storeFile` / `getFileURL`. Build work remaining.
-- **Backups.** Local snapshots with a checksum (a fingerprint that detects
-  corruption) and a restore log exist. True offsite, write-once backup does not —
-  and no restore has actually been rehearsed, so "we can recover" is unproven.
+- **Backups — records only, and they never leave the device.** Local snapshots
+  with a checksum and a restore log exist, and a restore was rehearsed on
+  2026-07-29 (§4 item 5). Three limits were missed in earlier passes and are
+  material, so they are stated plainly here — full detail in
+  [BACKUP-AND-SECURITY.md](BACKUP-AND-SECURITY.md):
+  - **No images are backed up at all.** `backupNow()` stores
+    `JSON.stringify(db)`, and image bytes are separate blobs in the `files`
+    store that `db` only points at by `fileId`. A restored snapshot yields
+    photo records whose files do not exist. Since photo bytes also do not sync
+    (§2 above), a lost phone loses its job photos permanently.
+  - **The snapshot lives in the same IndexedDB as the live data**, so one lost
+    device loses the records and every snapshot of them together. It is a
+    version history, not a backup. The only offsite path is the manual
+    Download button, which also excludes images.
+  - **It only runs when an owner or office manager opens the app**
+    (`maybeAutoBackup()` is called from `startApp` for those two roles only),
+    at most once per 24h, keeping the last 12 restorable snapshots while older
+    log rows remain — so the count on screen overstates what can be restored.
 - **Notifications (`api/notify.js`).** Code is complete for Twilio (texts) and
   SendGrid (email), but no accounts are connected, so it returns 503 "not
   configured". Nothing actually sends.
@@ -601,3 +616,42 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   owner to check repository Actions settings and the account spending limit,
   since the repo is private and Actions minutes are billable. Local `npm test`
   (275 checks) and `npm run qa` remain the only real evidence.
+- 2026-07-31 — Traced three areas for a handoff and recorded them in
+  `docs/HANDOFF-PHOTOS-OCR.md`. **Correction to an earlier claim in this file
+  and in the handoff guide:** AI is not uniformly switched off. `callNvidia()`
+  is server-only, so PDF takeoff really is dead until the §3.8 gate opens, but
+  `callClaude()` has a second path — a personal Anthropic key in
+  `localStorage.otto_ai_key`, entered in Settings, calling `api.anthropic.com`
+  directly from the browser. So photo OCR (`ocrCheck`, `ocrDocument`,
+  `ocrCustomerAccount` via `aiVision`) can work today on a device with a key.
+  That key is per-device and is NOT in `db.meta`, so it does not sync to
+  Supabase. Also confirmed: a photo cannot reach another person today, blocked
+  in two independent places — the photo *record* syncs through `/api/data`
+  (403) and the image *bytes* through `/api/photos` (403). No role change is
+  needed for owner or office manager to see photos once sync works; both
+  already have `jobs`, which is where photos render. Worst silent failure
+  found: `_drainPhotoQueue()` retries a failed upload 20 times over ~10 minutes
+  then deletes the queue entry with no message at all, while the photo keeps
+  displaying locally — so a crew member believes a photo is filed when nothing
+  left the device. Nothing was changed in the app for this pass; findings only.
+- 2026-07-31 — Backup and security assessment at handover, written up in
+  `docs/BACKUP-AND-SECURITY.md` and used to correct the Backups entry in §2,
+  which understated three things. Verified by reading the code: `backupNow()`
+  captures `JSON.stringify(db)` only, so **no image bytes are backed up** —
+  photo blobs live in the separate `files` store and `db` holds only `fileId`
+  pointers, meaning a restore produces photo records with no files behind them.
+  Snapshots are written to the same IndexedDB as the live data, so a lost
+  device loses records and snapshots together; the only offsite path is the
+  manual Download button, which also excludes images. `maybeAutoBackup()` is
+  called from `startApp` for the owner and office roles only, so a period where
+  just field crew use the app produces no snapshot at all. `checksum()` is a
+  32-bit non-cryptographic hash, adequate for accidental corruption but not
+  tampering, and `restoreTest()` only asserts every collection is an array, so
+  it would pass on a structurally valid but empty database. On the security
+  side, confirmed good: Supabase RLS deny-all (anonymous read returns 401),
+  service-role key only in Vercel, all six routes fail closed, PINs salted and
+  hashed with a five-try lockout. Confirmed weak: device storage is plaintext
+  IndexedDB plus a localStorage mirror with no encryption at rest, sign-in is
+  still browser-side only (§3.2), and `hashPin()` is a single SHA-256 round,
+  which is thin cover for a 4-digit PIN if a hash ever leaks. Findings only —
+  no application code changed.
