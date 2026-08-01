@@ -18,10 +18,10 @@
     /* ===== TOKENS: Elegant Blue & Premium Spacing ===== */
     :root {
       /* Refined Color Palette */
-      --blue: #0A2540;        /* Deep, premium navy */
-      --blue2: #143A61;       /* Slightly lighter navy for gradients/hovers */
-      --accent: #0066FF;      /* Crisp, bright primary blue for buttons */
-      --accent-hover: #005CE6;
+      --blue: #073B4C;
+      --blue2: #0B5E73;
+      --accent: #008CA3;
+      --accent-hover: #00758A;
       --green: #047857;       /* Calm, legible emerald */
       --amber: #B45309;       /* Warm amber, not too bright */
       --red: #B91C1C;         /* Confident red */
@@ -54,12 +54,12 @@
       --text3: #94A3B8;       /* Very light slate for placeholders/icons */
       
       /* Geometry & Shadows */
-      --radius: 12px;         /* Elegant, not overly bubbly */
-      --radius-sm: 8px;
+      --radius: 16px;
+      --radius-sm: 10px;
       --shadow-sm: 0 1px 3px rgba(10, 37, 64, 0.04), 0 1px 2px rgba(10, 37, 64, 0.02);
       --shadow: 0 4px 12px rgba(10, 37, 64, 0.06), 0 2px 4px rgba(10, 37, 64, 0.03);
       --shadow2: 0 12px 32px rgba(10, 37, 64, 0.08), 0 4px 12px rgba(10, 37, 64, 0.04);
-      --tap: 52px;            /* Comfortable touch target, slightly tighter than 56px for elegance */
+      --tap: 56px;
     }
 
     [data-theme="dark"] {
@@ -74,8 +74,8 @@
       --text3: #94a3b8;   /* 6.43:1 on --card, 7.30:1 on --bg — was #74829a (4.24:1) */
       --blue: #1e3a8a;
       --blue2: #7bd0ff;
-      --accent: #2f6bff;
-      --accent-hover: #4d80ff;
+      --accent: #39C6D8;
+      --accent-hover: #70DDEA;
       --green: #22c55e;
       --amber: #f59e0b;
       --red: #f87171;
@@ -655,6 +655,67 @@
     .note-item:last-child { border-bottom: none; }
     .note-meta { font-size: 13px; color: var(--text3); margin-top: 8px; font-weight: 500; }
   
+    /* ===== FIELD-FIRST OTTO FACELIFT ===== */
+    body.theme-app {
+      background: linear-gradient(180deg, #062D3A 0, #0B1720 245px, var(--bg) 245px);
+      --glass-bg: var(--card);
+      --glass-border: var(--line);
+    }
+    .topbar {
+      min-height: 72px;
+      background: #062D3A;
+      border-bottom: 3px solid #18B7C8;
+      box-shadow: 0 8px 24px rgba(2, 24, 32, .22);
+    }
+    .topbar .brand { font-family: Inter, system-ui, sans-serif; font-size: 0; }
+    .crystal-logo { height: 46px; border-radius: 10px; filter: none; }
+    .topbar .iconbtn, .langtoggle { background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.16); }
+    .langtoggle button.on { color: #062D3A; }
+    .wrap { max-width: 920px; padding: 28px 20px 176px; }
+    .pagehead { margin-bottom: 20px; }
+    .pagehead h1, h1 { font-family: Inter, system-ui, sans-serif; font-weight: 800; letter-spacing: -.03em; }
+    .pagehead .sub, .greet { color: var(--text2); }
+    .section-title { margin-top: 30px; color: var(--accent); font-weight: 800; }
+    .card, .tile, .glass, .sheet, .login .card-login {
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      border-color: var(--line);
+      box-shadow: 0 2px 10px rgba(3, 36, 47, .08);
+    }
+    .card:hover, .tile:hover { transform: none; box-shadow: 0 4px 16px rgba(3, 36, 47, .12); }
+    .tiles { gap: 12px; margin-top: 16px; }
+    .tile { min-height: 132px; padding: 18px 14px; text-align: left; align-items: flex-start; gap: 10px; }
+    .tile .ic { width: 48px; height: 48px; border-radius: 14px; font-size: 20px; box-shadow: none; }
+    .tile .lbl { font-size: 16px; font-weight: 750; }
+    .tile .cnt { font-size: 14px; }
+    .list-item { padding: 17px 18px; gap: 14px; }
+    .list-item:active { background: var(--card-hover); }
+    .avatar { width: 48px; height: 48px; border-radius: 14px; box-shadow: none; }
+    .li-title { font-size: 16px; }
+    .li-sub { font-size: 14px; }
+    .btn { border-radius: 12px; font-weight: 750; letter-spacing: .01em; }
+    .btn, .tabs button.on { background: #007F91; }
+    .btn:hover { background: #006C7C; }
+    .btn.ghost { background: transparent; border-color: #8AB8C0; color: var(--text); }
+    .fab { background: #007F91; border: 3px solid var(--bg); box-shadow: 0 8px 22px rgba(0,127,145,.35); }
+    .bottomnav { background: var(--card); backdrop-filter: none; padding-top: 10px; border-top: 1px solid var(--line); }
+    .bottomnav button { min-height: 56px; font-weight: 650; }
+    .bottomnav button.on, [data-theme="dark"] .bottomnav button.on { color: var(--accent); }
+    .searchbar input { background: var(--card); border-radius: 12px; box-shadow: none; }
+    .tabs { padding: 2px 0 10px; scrollbar-width: thin; }
+    .tabs button { min-height: 44px; padding: 10px 16px; }
+    .login { background: linear-gradient(155deg, #062D3A 0%, #074758 54%, #0B1720 100%); gap: 18px; }
+    .login .card-login { border-radius: 20px; padding: 22px; }
+    .login .logo { width: 92px; height: 92px; border-radius: 20px; background: #fff; color: #007F91; }
+    .login h1 { font-size: 30px; }
+    .pinpad button { border: 1px solid var(--line); min-height: 62px; background: var(--card); }
+    @media (max-width: 480px) {
+      .wrap { padding: 20px 16px 176px; }
+      .topbar { min-height: 66px; padding-inline: 14px; }
+      .crystal-logo { height: 40px; }
+      .tile { min-height: 124px; }
+    }
+
     /* ---- Printing (invoices, estimates) ----
        On screen the print area is hidden. When printing, everything else is
        hidden instead and only this is shown, in plain black on white so it
@@ -1842,12 +1903,10 @@
       if (typeof audit === 'function') audit('auth.login', 'user', u.id);
       startApp();
       
-      const who = u ? (u.name || '') : '';
-      const pinStr = String(enteredPin || u?.pin || '');
-      if (who.includes('Otto') || u?.id === 'usr_otto' || pinStr === '1') document.body.className = 'theme-otto';
-      else if (who.includes('Julio') || who.includes('Príncipe') || u?.id === 'usr_julio' || pinStr === '2') document.body.className = 'theme-julio';
-      else if (who.includes('Saray') || u?.id === 'usr_saray' || pinStr === '3') document.body.className = 'theme-saray';
-      else document.body.className = 'theme-field';
+      // One OTTO workspace for every role. The role controls access, not the
+      // visual identity of the app; changing colours by person made the same
+      // work look inconsistent and harder to support in the field.
+      document.body.className = 'theme-app';
 
     }
 
