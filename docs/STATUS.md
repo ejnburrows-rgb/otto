@@ -797,3 +797,9 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   failed; `npm run qa` passes. Remaining UI verification that cannot be done from
   a sandbox — icons, fonts, themes, the PlumbBot modal, a real phone pass — is
   written up in `docs/UI-DEBUG-HANDOFF.md`.
+
+- 2026-08-01 — Refreshed the shared OTTO interface for field use: one navy and
+  teal visual system across roles, clearer screen hierarchy, larger touch areas,
+  and a phone-friendly two-column dashboard. Verified locally on desktop and a
+  390px-wide phone view; `npm test` passed 351 checks with 0 failures and the QA
+  review passed.
