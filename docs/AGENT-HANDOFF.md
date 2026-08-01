@@ -199,7 +199,7 @@ definition the first time it appears. For each task state plainly whether it **w
 **broken**, or is **blocked**, and attach real evidence.
 
 Never describe a blocked feature as working. Add one dated line to the session log at the
-bottom of `docs/STATUS.md`. Open a PR. **Do not merge it yourself.**
+bottom of `docs/STATUS.md`. Open a PR. **Once the required checks are green, merge it yourself.**
 
 ## §6. Map of the repo
 
