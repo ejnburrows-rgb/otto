@@ -72,6 +72,49 @@ the UI is fine. Do not repeat the mistake this document exists to record.
 
 ---
 
+## 2b. UPDATE 2026-08-01 — items 1 and 2 below are now answered, and one was a real fault
+
+The blocker in §2 was environmental, not permanent: the CDNs **can** be reached from a
+sandbox with `curl`, even where the browser itself cannot. Fetching the real files with
+`curl` and serving them to the browser from a local HTTPS stand-in (with Chromium's
+`--host-resolver-rules` pointing the real hostnames at it) tests the real app, with real
+icons — which is exactly what §4 below asks for. That is now a script anyone can run:
+
+```bash
+npm start                # in one terminal
+npm run qa:visual        # in another — needs a network connection
+```
+
+It refuses to run rather than report a misleading pass if it cannot fetch the assets.
+
+**Item 1 turned up a genuine defect, now fixed.** Online the icons and fonts were fine.
+Taken offline after one successful visit — a crew phone driving out of coverage — the app
+lost **every icon and both webfonts**. Two independent causes:
+
+1. `sw.js` skipped caching for any host matching `googleapis.com`, meant for the Gmail
+   API. `fonts.googleapis.com` matches it too, so the stylesheet declaring every
+   `@font-face` was never stored, while the font files it points at were — cached and
+   unusable.
+2. A cross-origin `<link>`/`<script>` without `crossorigin` is fetched in no-cors mode
+   and returns an **opaque** response whose status reads `0`, so the service worker's
+   `status === 200` test never matched and it stored nothing at all.
+
+Fixed by matching API hosts exactly, adding `crossorigin="anonymous"` to the four
+cacheable tags (all four hosts send `access-control-allow-origin: *`), and precaching the
+icon/font stylesheets **plus the `.woff2` files they reference** at install — parsed out
+of the stylesheet rather than hardcoded, because those URLs carry version hashes.
+
+**A warning for whoever tests this next.** When the `.woff2` is missing and every icon is
+a blank box, `getComputedStyle(el, '::before').fontFamily` still reads
+`"Font Awesome 6 Free"`. The name proves nothing. Measure a glyph against a deliberately
+absent font — equal widths mean the browser is drawing tofu. The first version of this
+check passed while the icons were broken.
+
+Still true, and still yours: **a real phone** (item 3), and human judgement on items 4
+and 5. Chart.js is not precached, so KPI charts do not draw offline — the app shows its
+"Charts appear here once connected." placeholder, which is honest, and this was left
+alone deliberately rather than adding 200KB to every install.
+
 ## 3. What you must verify, because it could not be verified from here
 
 This is the actual work. Do it on a real device, or in a browser with working
@@ -119,7 +162,7 @@ Add this to whatever you do, every time:
 
 ## 5. Definition of done
 
-1. `npm test` → **351 checks, 0 failed**. A partial run is not a pass.
+1. `npm test` → **359 checks, 0 failed**. A partial run is not a pass.
 2. `node scripts/qa-check.mjs` → `"pass": true`, `missingHandlers: []`.
 3. Real app, real browser, real connection: every screen you touched, zero
    JavaScript errors, zero blank icons, no sideways scroll, screenshots attached.

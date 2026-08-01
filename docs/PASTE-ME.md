@@ -43,7 +43,7 @@ stored on each device in IndexedDB so it works with no signal.
 ## Verified status, 2026-07-31
 
 - `main` = `92ec282`. The live site is **byte-identical** to it.
-- `npm test` → **340 checks, 0 failed**. `node scripts/qa-check.mjs` → `pass: true`.
+- `npm test` → **359 checks, 0 failed**. `node scripts/qa-check.mjs` → `pass: true`.
 - Production: app `200`, `/api/data` `403` (correct — see below), `/api/login` `404` (correct — deleted).
 - Supabase holds 3 customers, 13 jobs, 1 invoice, 19 staff, 0 photos, 0 auth users.
 
@@ -77,7 +77,7 @@ stored on each device in IndexedDB so it works with no signal.
 
 ## DONE means all three, every time — paste the real output
 
-1. `npm test` → 340 checks, 0 failed. **A run that stops early is not a pass** —
+1. `npm test` → 359 checks, 0 failed. **A run that stops early is not a pass** —
    sum the per-script totals. If it dies on a missing package, run `npm install`.
 2. `node scripts/qa-check.mjs` → `"pass": true`, `missingHandlers: []`.
 3. **The real app in a real browser.** `npm start` serves it on

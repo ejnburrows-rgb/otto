@@ -34,7 +34,7 @@ production.
 
 - Commit as `git commit --author="EJN <ejnburrows@gmail.com>"`.
 - **Done means all three, every time — paste the real output:**
-  1. `npm test` → 340 checks, 0 failed. A run that stops early is not a pass.
+  1. `npm test` → 359 checks, 0 failed. A run that stops early is not a pass.
   2. `node scripts/qa-check.mjs` → `"pass": true`, `missingHandlers: []`.
   3. **The real app in a real browser.** `npm start`, sign in, click through
      every screen you touched. Zero JavaScript errors, zero broken images, no

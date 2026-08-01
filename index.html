@@ -9,9 +9,13 @@
   <link rel="manifest" href="./manifest.json" />
   <link rel="icon" type="image/png" href="./icon-192.png" />
   <link rel="apple-touch-icon" href="./icon-192.png" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <!-- crossorigin is what makes these cacheable for offline use. Without it the
+       browser asks for them in no-cors mode and gets back an opaque response
+       whose status reads 0, so the service worker's `status === 200` test never
+       matches and nothing is stored. All four hosts send `access-control-allow-origin: *`. -->
+  <link rel="stylesheet" crossorigin="anonymous" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" crossorigin="anonymous" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://apis.google.com/js/api.js"></script>
   <style>
@@ -684,7 +688,7 @@
       #print-area .doc-foot { margin-top: 28pt; padding-top: 8pt; border-top: 1px solid #ccc; font-size: 9pt; text-align: center; color: #444 !important; }
     }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" crossorigin="anonymous"></script>
 </head>
 
 <body>
@@ -3413,6 +3417,7 @@
     if (loadPdfJs._p) return loadPdfJs._p;
     loadPdfJs._p = new Promise((resolve, reject) => {
       const s = document.createElement('script');
+      s.crossOrigin = 'anonymous';
       s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
       s.onload = () => { try { window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; } catch (e) {} resolve(window.pdfjsLib); };
       s.onerror = () => reject(new Error('pdfjs load failed'));
@@ -3839,6 +3844,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     if (loadXLSX._p) return loadXLSX._p;
     loadXLSX._p = new Promise((resolve, reject) => {
       const s = document.createElement('script');
+      s.crossOrigin = 'anonymous';
       s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
       s.onload = () => resolve(window.XLSX); s.onerror = () => reject(new Error('xlsx load failed'));
       document.head.appendChild(s);
