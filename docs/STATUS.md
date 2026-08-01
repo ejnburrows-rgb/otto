@@ -751,3 +751,27 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   zero `/api/login` requests, no page errors. `npm test` 340 checks, 0 failed;
   `npm run qa` passes. Owner still needs to rotate the Supabase service-role key
   and review access logs for the exposure window.
+- 2026-08-01 — Owner reported the interface as buggy and glitchy; it was.
+  `initDraggableHUD()` ran from `finishLogin()` for every user, role and screen
+  size and made every `.card`/`.tile` draggable — and a card is the container for
+  every list in the app. Measured at 390px with touch: one ordinary upward scroll
+  on the customer list carried the card 216px up the screen
+  (`transform: translate(-0.07px, -215.89px)`), over its own page header, leaving
+  the rest blank. A second duplicate binding existed in `startApp()`. Removed
+  both, dropped the now-unused interact.js CDN script, and took the function off
+  the `window` export list (leaving it would have thrown at load and blanked the
+  app — the PR #82 fault). Also raised `.wrap` bottom padding 120px → 168px: the
+  floating assistant button occupies up to 144px from the bottom and was sitting
+  on the Daily summary button. **The important part:** the automated sweep passed
+  the whole time — 25 screens × 3 widths, no JS errors, no overflow, no broken
+  images — because interact.js loads from a CDN the sandbox blocks, so the binding
+  never happened where the testing was done. It only misbehaved where the CDN
+  works, i.e. on the owner's phone. Proof of fix was taken with interact.js
+  force-injected so the binding *could* have occurred: nothing registers as
+  draggable and the same gesture leaves the card unmoved. Added
+  `scripts/test-ui-regressions.mjs` (11 checks) covering draggable bindings, every
+  `window` export resolving to a real definition, padding clearing the floating
+  button, and no `<img>` pointing at a remote host. `npm test` 351 checks, 0
+  failed; `npm run qa` passes. Remaining UI verification that cannot be done from
+  a sandbox — icons, fonts, themes, the PlumbBot modal, a real phone pass — is
+  written up in `docs/UI-DEBUG-HANDOFF.md`.
