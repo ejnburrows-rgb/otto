@@ -36,8 +36,7 @@ separate file, so a landing task can run in parallel with an app task.
    `node scripts/qa-check.mjs` both green, PLUS the task's own **Proof required**
    (a real Playwright browser screenshot of the fixed screen; the local server is
    `npm run dev` → http://localhost:8000).
-6. Open a PR into `main`. **Auto-merge policy:** if the verify bar is green,
-   squash-merge it yourself. If red, fix and re-verify; do not merge red.
+6. Open a PR into `main`. **Auto-merge policy:** wait for the required Vercel check to be green, then squash-merge it yourself. Do not wait for EJN to push or merge it. If the check is red, fix and re-verify; if it never runs or stays pending, report the blockage with its link. Never leave a PR silently waiting.
 7. Do the task's **Final step**: append one dated line to the "Session log" at
    the bottom of `docs/STATUS.md` (append only — on a conflict keep both lines).
 8. Loop back to step 1.
