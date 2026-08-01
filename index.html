@@ -11,7 +11,6 @@
   <link rel="apple-touch-icon" href="./icon-192.png" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/interactjs/dist/interact.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://apis.google.com/js/api.js"></script>
@@ -262,7 +261,7 @@
     .langtoggle button:not(.on):hover { color: #FFFFFF; }
 
     /* ===== LAYOUT & HEADINGS ===== */
-    .wrap { max-width: 800px; margin: 0 auto; padding: 24px 20px 120px; } /* Centered, narrower for readability (ADHD friendly) */
+    .wrap { max-width: 800px; margin: 0 auto; padding: 24px 20px 168px; } /* Centered, narrower for readability (ADHD friendly) */
     .pagehead { display: flex; align-items: center; gap: 16px; margin: 0 0 24px; }
     .pagehead h1 { font-family: 'Newsreader', serif; font-size: 32px; font-weight: 600; letter-spacing: -0.01em; color: var(--text); }
     .pagehead .sub { color: var(--text2); font-size: 15px; margin-top: 2px; }
@@ -645,7 +644,7 @@
     /* Better mobile/PWA */
     .btn, .iconbtn, .fab, .bottomnav button { min-height: 48px; }
     @media (max-width: 480px) {
-      .wrap { padding: 18px 14px 110px; }
+      .wrap { padding: 18px 14px 168px; }
       .tile { min-height: 120px; padding: 18px 12px; }
       .pagehead h1 { font-size: 23px; }
     }
@@ -1850,7 +1849,6 @@
       else if (who.includes('Saray') || u?.id === 'usr_saray' || pinStr === '3') document.body.className = 'theme-saray';
       else document.body.className = 'theme-field';
 
-      initDraggableHUD();
     }
 
     /* Owner second code. Checked on this device against the salted hash the
@@ -1932,29 +1930,14 @@
     }, 500);
   }
 
-  function initDraggableHUD() {
-    if (typeof interact === 'undefined') return;
-    interact('.card, .tile').draggable({
-      inertia: true,
-      modifiers: [
-        interact.modifiers.restrictRect({
-          restriction: 'parent',
-          endOnly: true
-        })
-      ],
-      autoScroll: true,
-      listeners: {
-        move(event) {
-          const target = event.target;
-          const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
-          const y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
-          target.style.transform = `translate(${x}px, ${y}px)`;
-          target.setAttribute('data-x', x);
-          target.setAttribute('data-y', y);
-        }
-      }
-    });
-  }
+  /* Dragging dashboard cards around was removed on 2026-07-31.
+     It made every card and tile draggable via the interact library, and a
+     card is the container for every list in this app, on every screen. So a normal
+     upward swipe to scroll the customer list picked the card up and
+     carried it 216px up the screen instead, leaving the page looking
+     empty. Proven in a real browser at 390px with touch enabled.
+     If a drag interaction is ever wanted again, scope it to one specific
+     element that is not a scroll container, and test it on a phone. */
 
   /* ============================ ROUTER ============================ */
   let route = { view: 'home', id: null, tab: null };
@@ -4772,31 +4755,7 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
 
   /* ============================ BOOT ============================ */
   async function startApp() {
-    if (window.innerWidth > 800 && session && session.role === 'owner') {
-      setTimeout(() => {
-        if (typeof interact !== 'undefined') {
-          interact('.card, .tile').draggable({
-            inertia: true,
-            modifiers: [ interact.modifiers.restrictRect({ restriction: 'body', endOnly: true }) ],
-            autoScroll: true,
-            listeners: {
-              move (event) {
-                const target = event.target;
-                const x = (parseFloat(target.getAttribute('data-x')) || 0) + event.dx;
-                const y = (parseFloat(target.getAttribute('data-y')) || 0) + event.dy;
-                target.style.transform = 'translate(' + x + 'px, ' + y + 'px)';
-                target.setAttribute('data-x', x);
-                target.setAttribute('data-y', y);
-                target.style.position = 'relative';
-                target.style.zIndex = 10;
-              },
-              start (event) { event.target.style.zIndex = 20; },
-              end (event) { event.target.style.zIndex = 10; }
-            }
-          });
-        }
-      }, 500);
-    } // END OF IF BLOCK!
+    // (the owner-only draggable dashboard was removed with initDraggableHUD above)
   
     $('#login').classList.add('hidden'); $('#login').innerHTML = '';
     $('#app').classList.remove('hidden');
@@ -5524,7 +5483,7 @@ Return ONLY valid JSON: { "fixtures": [], "pipes": [], "fittings": [], "notes": 
     saveGoogleClient, connectGmail, fetchNewEmails, viewInbox, previewPDF, analyzePdfAI, selectJobForTakeoff, assignTakeoff,
     photoScanCreateCustomer, viewUrgentHub, openUrgentForm, submitUrgentMessage, replyUrgent, resolveUrgent, deletePhotoFile,
     connectQuickBooks, saveNotifyPrefs, refreshIntegrationStatus,
-    openPlumbBotModal, closePlumbBotModal, sendPlumbBotMsg, initDraggableHUD, adjustEstimateMargin });
+    openPlumbBotModal, closePlumbBotModal, sendPlumbBotMsg, adjustEstimateMargin });
 
   /* Hooks used only by the automated tests in scripts/. They expose existing
      behaviour so tests can check it; they add no new ability. Deliberately kept
