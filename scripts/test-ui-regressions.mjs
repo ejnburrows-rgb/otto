@@ -93,5 +93,24 @@ console.log('\noffline-first — no image may depend on a remote host');
   check('no unreplaced asset placeholders', /\{\{DATA:IMAGE/.test(html), false);
 }
 
+console.log('\napproved Stitch dashboard structure must stay intact');
+{
+  check('dashboard uses the approved four-card summary',
+    ['jobsToday', 'newCustomers', 'pendingInvoices', 'openEstimates']
+      .every(key => html.includes(`t('${key}')`)), true);
+  check('dashboard includes the weekly schedule strip',
+    html.includes('class="hub-week"'), true);
+  check('dashboard includes recent job cards',
+    html.includes('class="hub-jobs"'), true);
+  check('dashboard uses the approved deep navy surface',
+    html.includes('--bg: #0B1326;'), true);
+  check('dashboard uses the approved electric blue action colour',
+    html.includes('--blue: #2F6BFF;'), true);
+  check('dashboard uses Hanken Grotesk headings',
+    html.includes("'Hanken Grotesk'"), true);
+  check('duplicate floating assistant does not cover dashboard cards',
+    /^\s*ensureFloatingAI\(\);/m.test(html), false);
+}
+
 console.log(`\n${passed} passed, ${failed} failed\n`);
 process.exit(failed ? 1 : 0);
