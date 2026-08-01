@@ -137,7 +137,7 @@ was built to close.
 > Report in plain language — the owner is not a programmer. For each of the three tasks say
 > plainly whether it works, is broken, or is blocked, and attach real evidence (test
 > output, screenshots). Do not describe a blocked feature as working. Update
-> `docs/STATUS.md` with a dated session-log line, open a PR, and do not merge it yourself.
+> `docs/STATUS.md` with a dated session-log line, open a PR, wait for the required Vercel check to be green, then merge it yourself. Do not wait for EJN to push or merge it. If that check fails, never runs, or stays pending, report the blockage with its link — never leave a PR silently waiting.
 
 ---
 
