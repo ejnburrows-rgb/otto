@@ -133,6 +133,8 @@ Then report in plain language with the proof attached.
 
 - **Never commit to `main`.** Branch, then open a pull request with a
   plain-language description.
+- **Close every pull request yourself.** Wait for the required Vercel check to be green, then merge it. Do not wait for EJN to push or merge it.
+- If a required check fails, never runs, or stays pending, report the blockage with the check link. Do not leave a pull request silently waiting.
 - Never force-push. Never rewrite shared history.
 - Sync to latest `main` before starting work.
 - Every commit authored `EJN <ejnburrows@gmail.com>`. Use
