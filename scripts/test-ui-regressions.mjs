@@ -110,6 +110,8 @@ console.log('\napproved Stitch dashboard structure must stay intact');
     html.includes("'Hanken Grotesk'"), true);
   check('duplicate floating assistant does not cover dashboard cards',
     /^\s*ensureFloatingAI\(\);/m.test(html), false);
+  check('phone job footer leaves room for the add button',
+    html.includes('.hub-job-foot { padding-right:62px; }'), true);
 }
 
 console.log(`\n${passed} passed, ${failed} failed\n`);
