@@ -64,7 +64,7 @@ stored on each device in IndexedDB so it works with no signal.
    "development fallback" secret. Three have reached this repo already. Once
    pushed it cannot be un-published, only revoked. A pre-commit hook now blocks
    the obvious shapes; do not bypass it with `--no-verify` to get a secret in.
-4. **Never commit to `main`.** Branch, open a pull request, let EJN merge.
+4. **Never commit to `main`.** Branch, open a pull request, wait for the required Vercel check to be green, then merge it yourself. Do not wait for EJN to push or merge it.
 5. **Never force-push.** It destroyed a session's work here once.
 6. **Never put a remote URL in an `<img src=>`.** Commit the real image file and
    use a relative path — the app must work offline. Six images once shipped with
@@ -202,7 +202,7 @@ of work in the project and touches sign-in.
 Plain language. For each thing you touched, say plainly whether it **works**, is
 **broken**, or is **blocked**, and attach the real evidence. Never describe a
 blocked feature as working. Add one dated line to the session log at the bottom
-of `docs/STATUS.md`. Open a pull request. **Do not merge it yourself.**
+of `docs/STATUS.md`. Open a pull request. **Once the required Vercel check is green, merge it yourself; do not wait for EJN to push or merge it.** If that check fails, never runs, or stays pending, report the blockage with its link — never leave a PR silently waiting.
 
 ## Where to read more
 
