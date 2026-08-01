@@ -797,3 +797,28 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   failed; `npm run qa` passes. Remaining UI verification that cannot be done from
   a sandbox — icons, fonts, themes, the PlumbBot modal, a real phone pass — is
   written up in `docs/UI-DEBUG-HANDOFF.md`.
+- 2026-08-01 — Facelift verification pass. Checked the six items on the session
+  brief against `main` before changing anything: five were already fixed by PRs
+  #82/#83/#89 (sign-in syntax error, interact.js and the draggable HUD, prompt
+  text in `src=`, remote image hosts, `window` exports), and the sixth — service
+  worker precaching — had nothing to add because no asset path changed. So no
+  app code was changed; inventing edits to correct code would have been the
+  risk. What was missing was proof, so this adds it. New
+  `scripts/qa-visual.mjs` (`npm run qa:visual`) signs in through the real
+  sign-in screen and drives seven screens at 1280px and at 390px with touch,
+  failing on any JavaScript error, any broken image, any sideways scroll, and on
+  a list card following the pointer during a swipe — the gesture that was
+  unusable on the owner's phone. It writes 16 screenshots to `evidence/`.
+  Result: 36 passed, 0 failed; icons, fonts, logo and theme colours all render.
+  Added three checks to `scripts/test-ui-regressions.mjs` (11 → 14): every
+  inline script parses (the syntax error that once blanked the app — no other
+  check would notice), every committed image exists on disk (a local path can
+  still point at a file nobody committed), and the parse check cannot pass by
+  finding nothing to parse. `npm test` 354 checks, 0 failed; `npm run qa`
+  passes. **Still not verified: a real phone** — this ran in a container, so the
+  390px pass is a touch-enabled browser, not a handset, and that distinction is
+  exactly how the draggable fault reached the owner. Also recorded, for an owner
+  decision: every icon and both fonts load from a CDN, so a phone that has never
+  once opened the app with a signal gets a working but iconless interface;
+  `sw.js` caches them after the first successful online visit. Detail in
+  `docs/PR-FACELIFT-FINISH.md`.

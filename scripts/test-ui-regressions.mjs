@@ -7,7 +7,7 @@
 //
 // Run with:  node scripts/test-ui-regressions.mjs
 
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 
@@ -91,6 +91,30 @@ console.log('\noffline-first — no image may depend on a remote host');
   check('no image-generation prompt text left in a src',
     imgSrcs.filter(s => s.length > 120), []);
   check('no unreplaced asset placeholders', /\{\{DATA:IMAGE/.test(html), false);
+
+  // A path can be perfectly local and still point at a file nobody committed —
+  // which renders as nothing and looks fine in the source. So check the disk.
+  // Only fixed paths can be checked: the rest are built at runtime from a blob
+  // in IndexedDB (`${url}`) or are inline base64 sent to the AI.
+  const onDisk = imgSrcs
+    .filter(s => !s.includes('${') && !s.startsWith('data:'))
+    .filter(s => !existsSync(new URL('../' + s.replace(/^\.\//, ''), import.meta.url)));
+  check('every committed image actually exists in the repo', onDisk, []);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+console.log('\nthe page must parse — a syntax error blanks the whole app');
+{
+  // This is fault #1 in AGENTS.md: an unmatched `}` in the sign-in keypad meant
+  // no JavaScript ran at all and the live site served a white screen. Nothing
+  // else in this suite would notice, because every other check reads the file as
+  // text. `new Function` parses the body without running it.
+  const blocks = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)];
+  check('the page has an inline script to check', blocks.length > 0, true);
+  const broken = blocks.map((b, i) => {
+    try { new Function(b[1]); return null; } catch (e) { return `block ${i + 1}: ${e.message}`; }
+  }).filter(Boolean);
+  check('every inline script parses', broken, []);
 }
 
 console.log(`\n${passed} passed, ${failed} failed\n`);
