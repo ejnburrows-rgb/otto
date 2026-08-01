@@ -812,5 +812,5 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   button. Removed the duplicate floating assistant that covered job details;
   its functions remain reachable from the header/More menu. Added English and
   Spanish dashboard guidance. Verified at 390×844 and 1280×900 with no page
-  errors, broken images, or horizontal overflow. `npm test` passed 358 checks
+  errors, broken images, or horizontal overflow. `npm test` passed 359 checks
   with 0 failures; the QA review passed.
