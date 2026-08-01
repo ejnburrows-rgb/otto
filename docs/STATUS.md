@@ -803,3 +803,14 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   and a phone-friendly two-column dashboard. Verified locally on desktop and a
   390px-wide phone view; `npm test` passed 351 checks with 0 failures and the QA
   review passed.
+
+- 2026-08-01 — Owner rejected that refresh because it changed only shared
+  styling and did not reproduce the approved Stitch dashboard. Rebuilt the
+  owner/office home screen from the actual Stitch source: four number cards,
+  five-day schedule, two recent-job cards, deep navy surfaces, electric-blue
+  actions, Hanken Grotesk headings, local OTTO artwork, and the single add
+  button. Removed the duplicate floating assistant that covered job details;
+  its functions remain reachable from the header/More menu. Added English and
+  Spanish dashboard guidance. Verified at 390×844 and 1280×900 with no page
+  errors, broken images, or horizontal overflow. `npm test` passed 358 checks
+  with 0 failures; the QA review passed.
