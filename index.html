@@ -212,7 +212,7 @@
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
       background: linear-gradient(180deg, var(--bg2) 0%, var(--bg) 320px);
       color: var(--text);
-      font-size: 16px;       /* Slightly refined base size */
+      font-size: 15px; letter-spacing: 0.01em;       /* Slightly refined base size */
       line-height: 1.5;
       overflow-x: hidden;
       -webkit-font-smoothing: antialiased;
@@ -319,7 +319,7 @@
     .card + .card { margin-top: 16px; }
     
     .list-item {
-      display: flex; align-items: center; gap: 16px; padding: 16px 20px; cursor: pointer; border-bottom: 1px solid var(--line);
+      display: flex; align-items: center; gap: 16px; padding: 20px 24px; gap: 20px; cursor: pointer; border-bottom: 1px solid var(--line);
       transition: background 0.15s ease;
     }
     .list-item:last-child { border-bottom: none; }
@@ -327,7 +327,7 @@
     .list-item:active { background: var(--bg); }
     
     .avatar { 
-      width: 44px; height: 44px; border-radius: var(--radius-sm); flex: 0 0 auto; 
+      width: 48px; height: 48px; font-size: 18px; border-radius: var(--radius-sm); flex: 0 0 auto; 
       display: flex; align-items: center; justify-content: center; font-weight: 600; color: #fff; font-size: 16px;
       box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
     }
@@ -343,7 +343,7 @@
     /* ===== BUTTONS ===== */
     .btn {
       display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-      min-height: var(--tap); padding: 0 24px; border-radius: var(--radius-sm); border: none; cursor: pointer;
+      min-height: var(--tap); padding: 0 28px; border-radius: var(--radius-sm); border: none; cursor: pointer;
       font-weight: 600; font-size: 15px; background: var(--accent-fill); color: #fff;
       box-shadow: 0 2px 4px rgba(47, 107, 255, 0.25); transition: all 0.2s ease;
     }
@@ -470,17 +470,17 @@
     }
     .searchbar input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(47, 107, 255, 0.18); }
 
-    .kv { display: flex; flex-direction: column; gap: 4px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+    .kv { display: flex; flex-direction: column; gap: 4px; padding: 18px 0; border-bottom: 1px solid var(--line); }
     @media (min-width: 480px) { .kv { flex-direction: row; align-items: center; gap: 16px; } }
     .kv:last-child { border-bottom: none; }
-    .kv .k { width: 140px; flex: 0 0 auto; color: var(--text2); font-size: 14px; font-weight: 500; }
-    .kv .v { flex: 1; font-weight: 500; word-break: break-word; font-size: 15px; }
+    .kv .k { width: 150px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; flex: 0 0 auto; color: var(--text2); font-size: 14px; font-weight: 500; }
+    .kv .v { flex: 1; font-weight: 500; word-break: break-word; font-size: 16px; }
 
     .photos-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
     .photos-grid img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--radius-sm); cursor: pointer; background: var(--bg); transition: transform 0.2s ease; }
     .photos-grid img:hover { transform: scale(1.02); box-shadow: var(--shadow); }
 
-    .tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 16px; scrollbar-width: none; }
+    .tabs { display: flex; gap: 8px; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 16px; scrollbar-width: none; }
     .tabs::-webkit-scrollbar { display: none; }
     .tabs button { 
       white-space: nowrap; border: 1px solid var(--line); background: var(--card); color: var(--text2); 
@@ -1829,7 +1829,7 @@
             <label for="boot-pin">${esc(first && first.name ? first.name : t('owner'))}</label>
             <input id="boot-pin" type="password" inputmode="numeric" maxlength="4" placeholder="••••">
           </div>
-          <button class="btn green block" onclick="window.__bootstrap()"><i class="fas fa-check"></i> ${esc(t('save'))}</button>`;
+          <button class="btn block" onclick="window.__bootstrap()"><i class="fas fa-check"></i> ${esc(t('save'))}</button>`;
         return;
       }
       if (!selUser) {
@@ -2211,7 +2211,7 @@
     const list = db.customers.filter(c => matches(c, q));
     let html = pageHead(t('customers'), db.customers.length + '') + searchBox('cust');
     if (session.role === 'owner' || session.role === 'office') {
-      html += `<div class="btnrow"><button class="btn green block" onclick="openCustomerForm()"><i class="fas fa-plus"></i> ${t('addCustomer')}</button>
+      html += `<div class="btnrow"><button class="btn block" onclick="openCustomerForm()"><i class="fas fa-plus"></i> ${t('addCustomer')}</button>
         <button class="btn block" onclick="photoScanCreateCustomer()"><i class="fas fa-camera"></i> ${t('photoNewCustomer')}</button></div>`;
     }
     html += `<div class="card">${list.length ? list.map(c => {
@@ -2239,7 +2239,7 @@
       ${owed > 0 ? kv(t('outstanding'), `<span class="pill amber">${money(owed)}</span>`) : ''}
     </div>
     <div class="btnrow">
-      <button class="btn green" onclick="openJobForm(null,'${c.id}')"><i class="fas fa-plus"></i> ${t('newJob')}</button>
+      <button class="btn" onclick="openJobForm(null,'${c.id}')"><i class="fas fa-plus"></i> ${t('newJob')}</button>
       <button class="btn ghost" onclick="openCustomerForm('${c.id}')"><i class="fas fa-pen"></i> ${t('edit')}</button>
       <button class="btn red" onclick="confirmDel(()=>{remove('customers','${c.id}');nav('customers')})"><i class="fas fa-trash"></i> ${t('delete')}</button>
     </div>`;
@@ -2326,9 +2326,9 @@
 
     if (tab === 'overview') {
       html += `<div class="btnrow">
-        <button class="btn green sm" onclick="quickPhoto('${j.id}','before')"><i class="fas fa-camera"></i> ${t('beforePhoto')}</button>
-        <button class="btn green sm" onclick="quickPhoto('${j.id}','after')"><i class="fas fa-camera"></i> ${t('afterPhoto')}</button>
-        <button class="btn amber sm" onclick="quickVoiceNote('${j.id}')"><i class="fas fa-microphone"></i> ${t('voiceNote')}</button>
+        <button class="btn sm" onclick="quickPhoto('${j.id}','before')"><i class="fas fa-camera"></i> ${t('beforePhoto')}</button>
+        <button class="btn sm" onclick="quickPhoto('${j.id}','after')"><i class="fas fa-camera"></i> ${t('afterPhoto')}</button>
+        <button class="btn ghost sm" onclick="quickVoiceNote('${j.id}')"><i class="fas fa-microphone"></i> ${t('voiceNote')}</button>
         <button class="btn sm" onclick="openNoteForm('${j.id}')"><i class="fas fa-pen"></i> ${t('addNote')}</button>
         <button class="btn ghost sm" onclick="openFollowForm(null,'${j.id}')"><i class="fas fa-bell"></i> ${t('followUp')}</button>
       </div>`;
@@ -2337,15 +2337,15 @@
       if (photos.length) html += `<div class="section-title">${t('photos')}</div><div class="photos-grid" id="jobphotos"></div>`;
       if (follows.length) html += `<div class="section-title">${t('followups')}</div><div class="card">${follows.map(followRow).join('')}</div>`;
     } else if (tab === 'photos') {
-      html += `<div class="btnrow"><button class="btn green block" onclick="quickPhoto('${j.id}')"><i class="fas fa-camera"></i> ${t('takePhoto')}</button></div>`;
+      html += `<div class="btnrow"><button class="btn block" onclick="quickPhoto('${j.id}')"><i class="fas fa-camera"></i> ${t('takePhoto')}</button></div>`;
       html += photos.length ? `<div class="photos-grid" id="jobphotos" style="margin-top:14px"></div>` : emptyState();
     } else if (tab === 'notes') {
-      html += `<div class="btnrow"><button class="btn amber sm" onclick="quickVoiceNote('${j.id}')"><i class="fas fa-microphone"></i> ${t('voiceNote')}</button><button class="btn sm" onclick="openNoteForm('${j.id}')"><i class="fas fa-pen"></i> ${t('addNote')}</button></div>`;
+      html += `<div class="btnrow"><button class="btn ghost sm" onclick="quickVoiceNote('${j.id}')"><i class="fas fa-microphone"></i> ${t('voiceNote')}</button><button class="btn sm" onclick="openNoteForm('${j.id}')"><i class="fas fa-pen"></i> ${t('addNote')}</button></div>`;
       html += `<div class="card" style="padding:14px;margin-top:12px">${notes.length ? notes.map(noteHTML).join('') : emptyState()}</div>`;
     } else if (tab === 'documents') {
       html += `<div class="btnrow">
         <button class="btn sm" onclick="uploadDoc('${j.id}','doc')"><i class="fas fa-file-arrow-up"></i> ${t('uploadDoc')}</button>
-        <button class="btn amber sm" onclick="uploadDoc('${j.id}','scan')"><i class="fas fa-expand"></i> ${t('scanDoc')}</button>
+        <button class="btn ghost sm" onclick="uploadDoc('${j.id}','scan')"><i class="fas fa-expand"></i> ${t('scanDoc')}</button>
         <button class="btn ghost sm" onclick="uploadDoc('${j.id}','cad')"><i class="fas fa-vector-square"></i> ${t('cadFile')}</button>
       </div>
       <div class="muted" style="margin-top:6px;font-size:13px"><i class="fas fa-wand-magic-sparkles"></i> ${t('drawingHint')}</div>`;
@@ -2354,7 +2354,7 @@
     } else if (tab === 'ai') {
       html += projectAIHTML(j.id);
     } else if (tab === 'money') {
-      html += `<div class="btnrow"><button class="btn sm" onclick="openEstimateForm(null,'${j.id}')"><i class="fas fa-plus"></i> ${t('estimates')}</button><button class="btn green sm" onclick="openInvoiceForm(null,'${j.id}')"><i class="fas fa-plus"></i> ${t('invoices')}</button></div>`;
+      html += `<div class="btnrow"><button class="btn sm" onclick="openEstimateForm(null,'${j.id}')"><i class="fas fa-plus"></i> ${t('estimates')}</button><button class="btn sm" onclick="openInvoiceForm(null,'${j.id}')"><i class="fas fa-plus"></i> ${t('invoices')}</button></div>`;
       html += `<div class="section-title">${t('estimates')}</div><div class="card">${ests.length ? ests.map(estRow).join('') : emptyState()}</div>`;
       html += `<div class="section-title">${t('invoices')}</div><div class="card">${invs.length ? invs.map(invRow).join('') : emptyState()}</div>`;
       if (checks.length) html += `<div class="section-title">${t('checks')}</div><div class="card">${checks.map(checkRow).join('')}</div>`;
@@ -2427,7 +2427,7 @@
     const q = _search['call'] || '';
     const list = db.calls.filter(c => matches(c, q));
     let html = pageHead(t('calls'), '') + searchBox('call');
-    html += `<div class="btnrow"><button class="btn green block" onclick="newCall()"><i class="fas fa-phone"></i> ${t('newCall')}</button></div>`;
+    html += `<div class="btnrow"><button class="btn block" onclick="newCall()"><i class="fas fa-phone"></i> ${t('newCall')}</button></div>`;
     html += `<div class="card" style="margin-top:12px">${list.length ? list.map(callRow).join('') : emptyState()}</div>`;
     $('#main').innerHTML = html; bindSearch('call');
   }
@@ -2440,7 +2440,7 @@
         ${kv(t('date'), fmtDate(c.created))}
         ${c.customerId ? kv(t('customer'), `<a onclick="closeModal();nav('customer','${c.customerId}')" style="cursor:pointer">${esc(customerName(c.customerId))}</a>`) : ''}
         ${c.jobId ? kv(t('job'), `<a onclick="closeModal();nav('job','${c.jobId}')" style="cursor:pointer">${esc(jobTitle(c.jobId))}</a>`) : ''}
-      </div>${!c.jobId ? `<button class="btn green block" style="margin-top:12px" onclick="jobFromCall('${id}')"><i class="fas fa-screwdriver-wrench"></i> ${t('createJob')}</button>` : ''}`);
+      </div>${!c.jobId ? `<button class="btn block" style="margin-top:12px" onclick="jobFromCall('${id}')"><i class="fas fa-screwdriver-wrench"></i> ${t('createJob')}</button>` : ''}`);
   }
 
   // New-call workflow: capture caller, match/create customer, optionally create job.
@@ -2451,7 +2451,7 @@
       <div class="field"><label for="call-phone">${t('callerPhone')}</label><input id="call-phone" type="tel"></div>
       <div class="field"><label for="call-summary">${t('whatNeed')}</label><div class="with-voice"><textarea id="call-summary" placeholder="${lang === 'es' ? 'Ej: Fuga bajo el lavabo, urgente' : 'e.g. Leak under sink, urgent'}"></textarea>${voiceBtn('call-summary')}</div></div>
       <label style="display:flex;gap:10px;align-items:center;margin:6px 0 14px"><input type="checkbox" id="call-makejob" checked style="width:22px;height:22px"> ${t('createJob')}</label>
-      <button class="btn green block" onclick="saveCall()"><i class="fas fa-check"></i> ${t('logCall')}</button>`);
+      <button class="btn block" onclick="saveCall()"><i class="fas fa-check"></i> ${t('logCall')}</button>`);
   }
   function saveCall() {
     const name = $('#call-name').value.trim(); if (!name) return toast(t('name') + '?', 'error');
@@ -2584,7 +2584,7 @@
       ${estCard}
       ${d.ocr ? `<div class="card" style="padding:12px;margin-bottom:10px"><div class="muted">OCR</div><pre style="white-space:pre-wrap;font-family:inherit">${esc(typeof d.ocr === 'string' ? d.ocr : JSON.stringify(d.ocr, null, 2))}</pre></div>` : ''}
       ${draw ? `<div class="btnrow">
-        ${e ? `<button class="btn green" onclick="closeModal();showDrawingReview('${id}')"><i class="fas fa-pen"></i> ${t('reviewEdit')}</button>
+        ${e ? `<button class="btn" onclick="closeModal();showDrawingReview('${id}')"><i class="fas fa-pen"></i> ${t('reviewEdit')}</button>
               <button class="btn" onclick="closeModal();estimateFromDrawing('${id}')"><i class="fas fa-file-invoice-dollar"></i> ${t('createEstimate')}</button>` : ''}
         <button class="btn ghost" onclick="closeModal();analyzeDrawing('${id}')"><i class="fas fa-rotate"></i> ${e ? t('readAgain') : t('readEstimate')}</button>
       </div>` : ''}
@@ -2600,7 +2600,7 @@
     modal(`<h2>${t('scanDoc')}</h2><div class="sheet-sub">${lang === 'es' ? 'Esto fue lo que leí:' : 'Here is what I read:'}</div>
       <div class="card" style="padding:12px;margin-bottom:12px">${Object.entries(p).filter(([k, v]) => v).map(([k, v]) => kv(k, esc(v))).join('')}</div>
       <div class="btnrow">
-        <button class="btn green" onclick="closeModal();openCheckForm({payer:'${esc(p.name || p.payer || '')}',amount:${Number(p.amount) || 0},checkNumber:'${esc(p.checkNumber || '')}',memo:'${esc(p.memo || '')}',date:'${esc(p.date || todayISO())}',jobId:'${jobId || ''}'})"><i class="fas fa-money-check-dollar"></i> ${t('addCheck')}</button>
+        <button class="btn" onclick="closeModal();openCheckForm({payer:'${esc(p.name || p.payer || '')}',amount:${Number(p.amount) || 0},checkNumber:'${esc(p.checkNumber || '')}',memo:'${esc(p.memo || '')}',date:'${esc(p.date || todayISO())}',jobId:'${jobId || ''}'})"><i class="fas fa-money-check-dollar"></i> ${t('addCheck')}</button>
         <button class="btn" onclick="closeModal();openInvoiceForm(null,'${jobId || ''}',{amount:${Number(p.amount) || 0}})"><i class="fas fa-file-invoice-dollar"></i> ${t('addInvoice')}</button>
       </div>`);
   }
@@ -2631,7 +2631,7 @@
         <button type="button" class="btn sm ghost" onclick="adjustEstimateMargin(0.10)">+10%</button>
       </div>
       <button class="btn block" onclick="saveEstimate('${id || ''}')"><i class="fas fa-check"></i> ${t('save')}</button>
-      ${id ? `<button class="btn green block" style="margin-top:10px" onclick="estimateToInvoice('${id}')"><i class="fas fa-file-invoice-dollar"></i> ${lang === 'es' ? 'Convertir a factura' : 'Convert to invoice'}</button>` : ''}
+      ${id ? `<button class="btn block" style="margin-top:10px" onclick="estimateToInvoice('${id}')"><i class="fas fa-file-invoice-dollar"></i> ${lang === 'es' ? 'Convertir a factura' : 'Convert to invoice'}</button>` : ''}
       ${id ? `<button class="btn ghost block" style="margin-top:8px" onclick="printDoc('estimate','${id}')"><i class="fas fa-print"></i> ${t('print')}</button>` : ''}
       ${id ? `<button class="btn red block" style="margin-top:8px" onclick="confirmDel(()=>{remove('estimates','${id}');closeModal();render()})"><i class="fas fa-trash"></i> ${t('delete')}</button>` : ''}`);
   }
@@ -2651,7 +2651,7 @@
     const list = db.invoices.filter(i => matches(i, q));
     const owed = list.reduce((s, i) => s + Math.max(0, (i.amount || 0) - (i.paid || 0)), 0);
     let html = pageHead(t('invoices'), '') + searchBox('inv');
-    html += `<div class="btnrow"><button class="btn green" onclick="openInvoiceForm()"><i class="fas fa-plus"></i> ${t('addInvoice')}</button><button class="btn ghost" onclick="exportQuickBooks('invoices')"><i class="fas fa-file-export"></i> QuickBooks</button></div>`;
+    html += `<div class="btnrow"><button class="btn" onclick="openInvoiceForm()"><i class="fas fa-plus"></i> ${t('addInvoice')}</button><button class="btn ghost" onclick="exportQuickBooks('invoices')"><i class="fas fa-file-export"></i> QuickBooks</button></div>`;
     html += `<div class="card" style="margin:12px 0;padding:14px">${kv(t('outstanding'), `<b>${money(owed)}</b>`)}</div>`;
     html += `<div class="card">${list.length ? list.map(invRow).join('') : emptyState()}</div>`;
     $('#main').innerHTML = html; bindSearch('inv');
@@ -2689,7 +2689,7 @@
       </div>
       ${pays.length ? `<div class="section-title">${t('payments')}</div><div class="card">${pays.map(payRow).join('')}</div>` : ''}
       <div class="btnrow">
-        <button class="btn green" onclick="closeModal();openPaymentForm(null,'${id}')"><i class="fas fa-money-bill-wave"></i> ${t('recordPayment')}</button>
+        <button class="btn" onclick="closeModal();openPaymentForm(null,'${id}')"><i class="fas fa-money-bill-wave"></i> ${t('recordPayment')}</button>
         <button class="btn ghost" onclick="closeModal();openInvoiceForm('${id}')"><i class="fas fa-pen"></i> ${t('edit')}</button>
         <button class="btn ghost" onclick="printDoc('invoice','${id}')"><i class="fas fa-print"></i> ${t('print')}</button>
       </div>
@@ -2770,7 +2770,7 @@
     const list = db.payments.filter(p => matches(p, q));
     const total = list.reduce((s, p) => s + (p.amount || 0), 0);
     let html = pageHead(t('payments'), '') + searchBox('pay');
-    html += `<div class="btnrow"><button class="btn green" onclick="openPaymentForm()"><i class="fas fa-plus"></i> ${t('addPayment')}</button><button class="btn ghost" onclick="exportQuickBooks('payments')"><i class="fas fa-file-export"></i> QuickBooks</button></div>`;
+    html += `<div class="btnrow"><button class="btn" onclick="openPaymentForm()"><i class="fas fa-plus"></i> ${t('addPayment')}</button><button class="btn ghost" onclick="exportQuickBooks('payments')"><i class="fas fa-file-export"></i> QuickBooks</button></div>`;
     html += `<div class="card" style="margin:12px 0;padding:14px">${kv(t('total'), `<b>${money(total)}</b>`)}</div>`;
     html += `<div class="card">${list.length ? list.map(p => `<div class="list-item"><div class="avatar" style="background:var(--green)"><i class="fas fa-money-bill-wave"></i></div><div class="li-main"><div class="li-title">${money(p.amount)} · ${esc(customerName(p.customerId))}</div><div class="li-sub">${esc(p.method || '')} · ${fmtDate(p.date)}</div></div><button class="btn red sm" aria-label="${esc(t('delete'))}" onclick="confirmDel(()=>deletePayment('${p.id}'))"><i class="fas fa-trash"></i></button></div>`).join('') : emptyState()}</div>`;
     $('#main').innerHTML = html; bindSearch('pay');
@@ -2795,7 +2795,7 @@
       <div class="field"><label for="p-inv">${t('linkInvoice')}</label><select id="p-inv"><option value="">—</option>${invOpts}</select></div>
       <div class="row2"><div class="field"><label for="p-amount">${t('amount')}</label><input id="p-amount" type="number" step="0.01" value="${inv ? ((inv.amount || 0) - (inv.paid || 0)) : ''}"></div>
       <div class="field"><label for="p-method">${lang === 'es' ? 'Método' : 'Method'}</label><select id="p-method"><option>Cash</option><option>Check</option><option>Card</option><option>Transfer</option><option>QuickBooks</option></select></div></div>
-      <button class="btn green block" onclick="savePayment()"><i class="fas fa-check"></i> ${t('save')}</button>`);
+      <button class="btn block" onclick="savePayment()"><i class="fas fa-check"></i> ${t('save')}</button>`);
   }
   function savePayment() {
     const amount = parseFloat($('#p-amount').value) || 0; if (!amount) return toast(t('amount') + '?', 'error');
@@ -2811,7 +2811,7 @@
     const q = _search['chk'] || '';
     const list = db.checks.filter(c => matches(c, q));
     let html = pageHead(t('checks'), '') + searchBox('chk');
-    html += `<div class="btnrow"><button class="btn amber" onclick="quickScanCheck()"><i class="fas fa-camera"></i> ${t('scanCheck')}</button><button class="btn ghost" onclick="openCheckForm({})"><i class="fas fa-plus"></i> ${t('addCheck')}</button></div>`;
+    html += `<div class="btnrow"><button class="btn ghost" onclick="quickScanCheck()"><i class="fas fa-camera"></i> ${t('scanCheck')}</button><button class="btn ghost" onclick="openCheckForm({})"><i class="fas fa-plus"></i> ${t('addCheck')}</button></div>`;
     html += `<div class="card" style="margin-top:12px">${list.length ? list.map(checkRow).join('') : emptyState()}</div>`;
     $('#main').innerHTML = html; bindSearch('chk');
   }
@@ -2878,7 +2878,7 @@
       ${f.jobId ? kv(t('job'), `<a onclick="closeModal();nav('job','${f.jobId}')" style="cursor:pointer">${esc(jobTitle(f.jobId))}</a>`) : ''}
       ${kv(t('dueDate'), fmtDate(f.dueDate))}${kv(t('assignedTo'), esc(userName(f.assignedTo)))}${kv(t('status'), statusPill(f.status === 'done' ? 'done' : 'pending'))}</div>
       <div class="btnrow">
-        <button class="btn green" onclick="update('followups','${id}',{status:'${f.status === 'done' ? 'pending' : 'done'}'});closeModal();render()"><i class="fas fa-check"></i> ${f.status === 'done' ? t('reopen') : t('complete')}</button>
+        <button class="btn" onclick="update('followups','${id}',{status:'${f.status === 'done' ? 'pending' : 'done'}'});closeModal();render()"><i class="fas fa-check"></i> ${f.status === 'done' ? t('reopen') : t('complete')}</button>
         <button class="btn ghost" onclick="closeModal();openFollowForm('${id}')"><i class="fas fa-pen"></i> ${t('edit')}</button>
       </div>`);
   }
@@ -3223,7 +3223,7 @@
         ${m.ownerReply ? `<div class="muted" style="margin-bottom:8px"><b>${t('replyToWorker')}:</b> ${esc(m.ownerReply)}</div>` : ''}
         <div class="btnrow" style="margin:0">
           <button class="btn sm" onclick="replyUrgent('${m.id}','${m.kind || 'msg'}')"><i class="fas fa-reply"></i> ${t('replyToWorker')}</button>
-          <button class="btn green sm" onclick="resolveUrgent('${m.id}','${m.kind || 'msg'}')"><i class="fas fa-check"></i> ${t('markHandled')}</button>
+          <button class="btn sm" onclick="resolveUrgent('${m.id}','${m.kind || 'msg'}')"><i class="fas fa-check"></i> ${t('markHandled')}</button>
           <button class="btn ghost sm" onclick="nav('worker_profile','${m.workerId}')">${t('workerProfile')}</button>
         </div>
       </div>`;
@@ -3409,7 +3409,7 @@
     const rec = new SR(); rec.lang = lang === 'es' ? 'es-ES' : 'en-US'; rec.interimResults = true;
     modal(`<h2><i class="fas fa-microphone"></i> ${t('voiceNote')}</h2><div class="sheet-sub">${t('speakNow')}</div>
       <div class="field"><textarea id="vn-text" style="min-height:120px" placeholder="${t('listen')}"></textarea></div>
-      <button class="btn green block" onclick="saveNote('${jobId}',true)"><i class="fas fa-check"></i> ${t('save')}</button>`);
+      <button class="btn block" onclick="saveNote('${jobId}',true)"><i class="fas fa-check"></i> ${t('save')}</button>`);
     const el = $('#vn-text'); el.classList.add('listening');
     rec.onresult = (e) => { let txt = ''; for (const r of e.results) txt += r[0].transcript; el.value = txt; };
     rec.onend = () => el.classList.remove('listening');
@@ -3653,7 +3653,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
       <div class="card" style="padding:14px;margin:10px 0"><b>${esc(q)}</b></div>
       <div class="field"><div class="with-voice"><textarea id="dq-ans" placeholder="${esc(q)}"></textarea>${voiceBtn('dq-ans')}</div></div>
       <div class="btnrow">
-        <button class="btn green" onclick="answerDrawingQ('${docId}')"><i class="fas fa-check"></i> ${t('answerIt')}</button>
+        <button class="btn" onclick="answerDrawingQ('${docId}')"><i class="fas fa-check"></i> ${t('answerIt')}</button>
         <button class="btn ghost" onclick="skipDrawingQ('${docId}')">${t('skip')}</button>
       </div>`);
   }
@@ -3676,7 +3676,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
       <button class="btn ghost sm" style="margin:4px 0 12px" onclick="addMaterialRow()"><i class="fas fa-plus"></i> ${t('addItem')}</button>
       ${qtys.length ? `<div class="card" style="padding:12px;margin-bottom:10px"><div class="muted">${t('quantities')}</div>${qtys.map(q => kv(esc(q.label || ''), esc(String(q.count || '')))).join('')}</div>` : ''}
       ${(e.assumptions && e.assumptions.length) ? `<div class="card" style="padding:12px;margin-bottom:10px"><div class="muted">${t('assumptions')}</div><ul style="margin:6px 0 0 16px;padding:0">${e.assumptions.map(a => `<li>${esc(a)}</li>`).join('')}</ul></div>` : ''}
-      <button class="btn green block" onclick="saveDrawingEstimate('${docId}')"><i class="fas fa-check"></i> ${t('confirm')}</button>
+      <button class="btn block" onclick="saveDrawingEstimate('${docId}')"><i class="fas fa-check"></i> ${t('confirm')}</button>
       <button class="btn ghost block" style="margin-top:10px" onclick="closeModal();estimateFromDrawing('${docId}')"><i class="fas fa-file-invoice-dollar"></i> ${t('createEstimate')}</button>`);
   }
   function matRowHTML(m) {
@@ -3736,7 +3736,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     const q = _search['eml'] || '';
     const list = db.emails.filter(e => matches(e, q)).sort((a, b) => new Date(b.date || b.created) - new Date(a.date || a.created));
     let html = pageHead(t('emails'), '') + searchBox('eml');
-    html += `<div class="btnrow"><button class="btn green" onclick="openEmailForm()"><i class="fas fa-plus"></i> ${t('addEmail')}</button><button class="btn ghost" onclick="importEml()"><i class="fas fa-file-import"></i> ${t('importEmail')}</button></div>`;
+    html += `<div class="btnrow"><button class="btn" onclick="openEmailForm()"><i class="fas fa-plus"></i> ${t('addEmail')}</button><button class="btn ghost" onclick="importEml()"><i class="fas fa-file-import"></i> ${t('importEmail')}</button></div>`;
     html += `<div class="muted" style="margin:8px 0;font-size:13px"><i class="fas fa-inbox"></i> ${t('emailsHint')}</div>`;
     html += `<div class="card">${list.length ? list.map(emailRow).join('') : emptyState()}</div>`;
     $('#main').innerHTML = html; bindSearch('eml');
@@ -3753,7 +3753,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
       <div class="field"><label for="em-from">${t('from')}</label><input id="em-from" placeholder="name@email.com"></div>
       <div class="field"><label for="em-subj">${t('subject')}</label><input id="em-subj"></div>
       <div class="field"><label for="em-body">${t('message')}</label><div class="with-voice"><textarea id="em-body" style="min-height:120px"></textarea>${voiceBtn('em-body')}</div></div>
-      <button class="btn green block" onclick="saveEmailForm()"><i class="fas fa-check"></i> ${t('save')}</button>`);
+      <button class="btn block" onclick="saveEmailForm()"><i class="fas fa-check"></i> ${t('save')}</button>`);
   }
   function saveEmailForm() {
     const from = ($('#em-from').value || '').trim(); const subject = ($('#em-subj').value || '').trim(); const body = ($('#em-body').value || '').trim();
@@ -3823,7 +3823,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     modal(`<h2>${t('matchCustomer')}</h2>
       <div class="field"><label for="em-cust">${t('customer')}</label><select id="em-cust"><option value="">—</option>${custOpts}</select></div>
       <div class="field"><label for="em-job">${t('job')}</label><select id="em-job"><option value="">—</option>${jobOpts}</select></div>
-      <button class="btn green block" onclick="saveEmailLink('${id}')"><i class="fas fa-check"></i> ${t('save')}</button>`);
+      <button class="btn block" onclick="saveEmailLink('${id}')"><i class="fas fa-check"></i> ${t('save')}</button>`);
   }
   function saveEmailLink(id) {
     const customerId = $('#em-cust').value; const jobId = $('#em-job').value; const job = jobId ? get('jobs', jobId) : null;
@@ -3891,7 +3891,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     const total = list.reduce((s, p) => s + (p.gross || 0), 0);
     const totalHours = list.reduce((s, p) => s + (p.hours || 0), 0);
     let html = pageHead(t('payroll'), '') + searchBox('pay2');
-    html += `<div class="btnrow"><button class="btn green block" onclick="importPayroll()"><i class="fas fa-file-import"></i> ${t('importPayroll')}</button></div>`;
+    html += `<div class="btnrow"><button class="btn block" onclick="importPayroll()"><i class="fas fa-file-import"></i> ${t('importPayroll')}</button></div>`;
     html += `<div class="muted" style="margin:8px 0;font-size:13px"><i class="fas fa-file-excel"></i> ${t('importExcelHint')}</div>`;
     if (list.length) html += `<div class="card" style="padding:14px;margin-bottom:10px">${kv('Total Hours', '<b>' + totalHours + '</b>')}${kv(t('totalGross'), '<b>' + money(total) + '</b>')}
       <div class="btnrow" style="margin-top:8px"><button class="btn ghost sm" onclick="exportCSV('payroll')"><i class="fas fa-file-export"></i> CSV</button><button class="btn ghost sm" onclick="summarizePayrollAll()"><i class="fas fa-robot"></i> ${t('summarize')}</button></div></div>`;
@@ -3982,7 +3982,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     modal(`<h2>${t('importPayroll')}</h2><div class="sheet-sub">${esc(fname)} · ${recs.length} ${t('rowsFound')}</div>
       <div class="card" style="padding:12px;margin:10px 0">${kv(t('totalGross'), '<b>' + money(total) + '</b>')}</div>
       <div class="card" style="max-height:240px;overflow:auto">${recs.slice(0, 12).map(p => `<div class="list-item"><div class="li-main"><div class="li-title">${esc(p.employee || '—')}</div><div class="li-sub">${p.hours || 0} ${t('hours')} · ${money(p.gross)}</div></div></div>`).join('')}${recs.length > 12 ? `<div class="muted" style="padding:8px">+${recs.length - 12}…</div>` : ''}</div>
-      <button class="btn green block" onclick="confirmPayrollImport()"><i class="fas fa-check"></i> ${t('importRows')}</button>`);
+      <button class="btn block" onclick="confirmPayrollImport()"><i class="fas fa-check"></i> ${t('importRows')}</button>`);
   }
   function confirmPayrollImport() {
     const pend = _pendingPayroll; _pendingPayroll = null; if (!pend) return;
@@ -4365,7 +4365,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
       if (isOT && !j.otAcknowledgedAt && session.role === 'field') {
         actionBtn = `<button class="btn red block" onclick="acknowledgeOT('${j.id}')"><i class="fas fa-triangle-exclamation"></i> ${t('ackOT')}</button>`;
       } else {
-        actionBtn = `<button class="btn green block" onclick="startCheckInFlow('${j.id}')"><i class="fas fa-right-to-bracket"></i> ${t('startJob')}</button>`;
+        actionBtn = `<button class="btn block" onclick="startCheckInFlow('${j.id}')"><i class="fas fa-right-to-bracket"></i> ${t('startJob')}</button>`;
       }
     }
     
@@ -4389,10 +4389,10 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     modal(`<h2>${t('startJob')}</h2>
       <p style="margin:14px 0">${lang === 'es' ? 'Por favor confirma que estás listo para empezar este trabajo.' : 'Please confirm you are ready to start this job.'}</p>
       <div class="btnrow" style="margin-bottom:16px;">
-        <button class="btn green block" onclick="doCheckIn('${jobId}')"><i class="fas fa-check"></i> ${t('acknowledge')}</button>
+        <button class="btn block" onclick="doCheckIn('${jobId}')"><i class="fas fa-check"></i> ${t('acknowledge')}</button>
       </div>
       <div style="text-align:center;">
-        <label class="btn amber sm" style="cursor:pointer; width:100%">
+        <label class="btn ghost sm" style="cursor:pointer; width:100%">
           <i class="fas fa-camera"></i> ${t('beforePhoto')}
           <input type="file" accept="image/*" capture="environment" class="hidden" onchange="handleFlowPhoto(event, '${jobId}', 'before', () => doCheckIn('${jobId}'))">
         </label>
@@ -4424,7 +4424,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     modal(`<h2>${t('submitAndClose')}</h2>
       <p style="margin:14px 0">${t('checklistDone')} ✅</p>
       <div style="margin-bottom:16px; text-align:center;">
-        <label class="btn amber sm" style="cursor:pointer; width:100%">
+        <label class="btn ghost sm" style="cursor:pointer; width:100%">
           <i class="fas fa-camera"></i> ${t('afterPhoto')}
           <input type="file" accept="image/*" capture="environment" class="hidden" onchange="handleFlowPhoto(event, '${jobId}', 'after', () => {})">
         </label>
@@ -4668,7 +4668,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     html += `<div class="card">${list.length ? list.map(a => `<div class="list-item" ${a.sourceType === 'job' && a.sourceId ? `onclick="nav('job','${a.sourceId}')"` : ''}>
       <div class="avatar" style="background:${sevColor[a.severity] || 'var(--gray)'}"><i class="fas fa-triangle-exclamation"></i></div>
       <div class="li-main"><div class="li-title">${esc(a.msg || alertLabel(a.type))}</div><div class="li-sub">${esc(alertLabel(a.type))} · ${esc(a.severity)} · ${timeAgo(a.ts)}</div></div>
-      <div class="li-right" onclick="event.stopPropagation()">${a.status === 'open' ? `<button class="btn green sm" onclick="resolveAlert('${a.id}')">${t('resolve')}</button>` : `<span class="pill green">${t('resolved')}</span>`}</div></div>`).join('') : emptyState(t('allClear'))}</div>`;
+      <div class="li-right" onclick="event.stopPropagation()">${a.status === 'open' ? `<button class="btn sm" onclick="resolveAlert('${a.id}')">${t('resolve')}</button>` : `<span class="pill green">${t('resolved')}</span>`}</div></div>`).join('') : emptyState(t('allClear'))}</div>`;
     $('#main').innerHTML = html;
   }
   function viewAudit() {
@@ -4688,7 +4688,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
       <div class="logo" style="margin:0 auto 14px"><i class="fas fa-shield-heart"></i></div>
       <h1 style="text-align:center">${t('consentTitle')}</h1>
       <div class="card" style="padding:16px;margin:16px 0;line-height:1.6">${esc(t('consentBody'))}</div>
-      <button class="btn green block" onclick="acceptConsent()"><i class="fas fa-check"></i> ${t('iAgree')}</button>
+      <button class="btn block" onclick="acceptConsent()"><i class="fas fa-check"></i> ${t('iAgree')}</button>
       <button class="btn ghost block" style="margin-top:10px" onclick="signOut()">${t('notNow')}</button></div>`;
   }
   function acceptConsent() { add('consent_records', { userId: session.id, accepted: true, version: 1, ts: nowISO(), lang }); audit('consent.accept', 'user', session.id); toast(t('saved'), 'success'); nav('home'); }
@@ -4791,7 +4791,7 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
       <div class="card" style="padding:12px">${kv(t('version'), String(cur.version))}${kv(t('status'), cur.status === 'approved' ? '✅ ' + t('approved2') : t('draft'))}</div>
       <div class="btnrow" style="margin-top:10px">
         ${url ? `<a class="btn ghost" href="${url}" download="${esc(cur.name)}"><i class="fas fa-download"></i> ${lang === 'es' ? 'Descargar' : 'Download'}</a>` : ''}
-        ${cur.status !== 'approved' ? `<button class="btn green" onclick="approveProjectDoc('${col}','${cur.id}')"><i class="fas fa-check"></i> ${t('approve')}</button>` : ''}
+        ${cur.status !== 'approved' ? `<button class="btn" onclick="approveProjectDoc('${col}','${cur.id}')"><i class="fas fa-check"></i> ${t('approve')}</button>` : ''}
       </div>
       <div class="section-title">${t('versionHistory')}</div>
       <div class="card">${versions.map(v => `<div class="list-item"><div class="li-main"><div class="li-title">${t('version')} ${v.version}</div><div class="li-sub">${fmtDate(v.created)}${v.status === 'approved' ? ' · ✅' : ''}</div></div></div>`).join('')}</div>
@@ -4861,7 +4861,7 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     const exportAgeDays = lastExport ? (Date.now() - new Date(lastExport)) / 86400000 : Infinity;
     const exportStale = exportAgeDays > 7;
     let html = pageHead(t('backups'), restorable + ' ' + t('copies'));
-    html += `<div class="btnrow"><button class="btn green" onclick="backupNow(true)"><i class="fas fa-database"></i> ${t('backupNow')}</button><button class="btn" onclick="restoreTest()"><i class="fas fa-rotate"></i> ${t('testRestore')}</button><button class="btn ${exportStale ? 'amber' : 'ghost'}" onclick="exportAll()"><i class="fas fa-download"></i> ${lang === 'es' ? 'Descargar' : 'Download'}</button></div>`;
+    html += `<div class="btnrow"><button class="btn" onclick="backupNow(true)"><i class="fas fa-database"></i> ${t('backupNow')}</button><button class="btn" onclick="restoreTest()"><i class="fas fa-rotate"></i> ${t('testRestore')}</button><button class="btn ${exportStale ? 'amber' : 'ghost'}" onclick="exportAll()"><i class="fas fa-download"></i> ${lang === 'es' ? 'Descargar' : 'Download'}</button></div>`;
     /* The download is the only copy that leaves this device, so its age is the
        number that actually matters. Say so plainly rather than burying it. */
     if (exportStale) {
@@ -4917,7 +4917,7 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
       <div style="padding:40px 20px;text-align:center;max-width:400px;margin:0 auto">
         <h2><i class="fas fa-location-dot" style="font-size:40px;color:var(--pri)"></i></h2>
         <p style="margin:20px 0;font-size:16px">${lang === 'es' ? msgEs : msgEn}</p>
-        <button class="btn green block" onclick="acceptGps()"><i class="fas fa-check"></i> ${lang === 'es' ? 'Permitir' : 'Allow'}</button>
+        <button class="btn block" onclick="acceptGps()"><i class="fas fa-check"></i> ${lang === 'es' ? 'Permitir' : 'Allow'}</button>
       </div>`;
   }
   
@@ -5105,7 +5105,7 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
           <div style="font-weight:700; margin-bottom:4px;">${esc(u.name)} ${t('ptoRequests')} ${fmtDate(p.startDate)} - ${fmtDate(p.endDate)}</div>
           ${warn}
           <div class="btnrow" style="margin-top:8px;">
-            <button class="btn green sm" onclick="approvePTO('${p.id}')">${t('approve')}</button>
+            <button class="btn sm" onclick="approvePTO('${p.id}')">${t('approve')}</button>
             <button class="btn red sm" onclick="denyPTO('${p.id}')">${t('deny')}</button>
           </div>
         </div>`;

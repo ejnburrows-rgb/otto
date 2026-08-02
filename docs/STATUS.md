@@ -814,3 +814,15 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   Spanish dashboard guidance. Verified at 390×844 and 1280×900 with no page
   errors, broken images, or horizontal overflow. `npm test` passed 359 checks
   with 0 failures; the QA review passed.
+
+- 2026-08-02 — Audited full CRM against specifications and PRs #95–97.
+  Generated complete 28-screen inventory across 4 roles (Owner, Office, Field,
+  Accounting), 2 languages (EN, ES), and 3 viewports (390px, 768px, 1280px).
+  Resolved design-direction decision by preserving the dark-navy & electric-blue
+  system established on `main` to match the Stitch executive dashboard.
+  Inspected draft PRs #91 and #92 and recommended closing both without merge
+  (superseded by PRs #95–97 and current demo architecture). Preserved all 28 screen
+  workflows, i18n keys, role views, and auth gates. Verified with `npm test` (359
+  checks, 0 failed), `node scripts/qa-check.mjs` (`pass: true`), and Playwright
+  browser tests (`node scripts/test-signin-browser.mjs`, 9 passed / 0 failed).
+
