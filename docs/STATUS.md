@@ -815,14 +815,16 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   errors, broken images, or horizontal overflow. `npm test` passed 359 checks
   with 0 failures; the QA review passed.
 
-- 2026-08-02 — Audited full CRM against specifications and PRs #95–97.
-  Generated complete 28-screen inventory across 4 roles (Owner, Office, Field,
-  Accounting), 2 languages (EN, ES), and 3 viewports (390px, 768px, 1280px).
-  Resolved design-direction decision by preserving the dark-navy & electric-blue
-  system established on `main` to match the Stitch executive dashboard.
-  Inspected draft PRs #91 and #92 and recommended closing both without merge
-  (superseded by PRs #95–97 and current demo architecture). Preserved all 28 screen
-  workflows, i18n keys, role views, and auth gates. Verified with `npm test` (359
-  checks, 0 failed), `node scripts/qa-check.mjs` (`pass: true`), and Playwright
-  browser tests (`node scripts/test-signin-browser.mjs`, 9 passed / 0 failed).
+- 2026-08-02 — Application-wide UI consistency and spacing polish on branch
+  `feat/otto-premium-ui-facelift`. Audited full CRM against specifications and
+  PRs #95–97. Changes apply uniformly across all screens via shared CSS (not
+  individual screen-by-screen rewrites): expanded list-item and kv padding,
+  avatar size increased to 48px, button hierarchy unified under accent-blue
+  (removed generic green/amber from primary actions), typography refined with
+  letter-spacing and uppercase micro-labels, tab component elevated with pill
+  states. Resolved design-direction decision by preserving the dark-navy &
+  electric-blue tokens. Inspected draft PRs #91 and #92 — both superseded by
+  PRs #95–97 and current demo architecture; recommended closing without merge.
+  Verified with `npm test` (359 checks, 0 failed), `node scripts/qa-check.mjs`
+  (`pass: true`), and Playwright browser tests (9 passed / 0 failed).
 
