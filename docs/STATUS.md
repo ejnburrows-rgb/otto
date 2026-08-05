@@ -838,3 +838,39 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   `npm run qa` `pass: true`. No cloud records were read, written or deleted, and
   nothing under `api/` was touched. Still outstanding and still owner-only: a
   pass on a real phone, the Supabase key rotation, and GitHub Actions (§3.9).
+
+- 2026-08-01 — Refreshed the shared OTTO interface for field use: one navy and
+  teal visual system across roles, clearer screen hierarchy, larger touch areas,
+  and a phone-friendly two-column dashboard. Verified locally on desktop and a
+  390px-wide phone view; `npm test` passed 351 checks with 0 failures and the QA
+  review passed.
+
+- 2026-08-01 — Owner rejected that refresh because it changed only shared
+  styling and did not reproduce the approved Stitch dashboard. Rebuilt the
+  owner/office home screen from the actual Stitch source: four number cards,
+  five-day schedule, two recent-job cards, deep navy surfaces, electric-blue
+  actions, Hanken Grotesk headings, local OTTO artwork, and the single add
+  button. Removed the duplicate floating assistant that covered job details;
+  its functions remain reachable from the header/More menu. Added English and
+  Spanish dashboard guidance. Verified at 390×844 and 1280×900 with no page
+  errors, broken images, or horizontal overflow. `npm test` passed 359 checks
+  with 0 failures; the QA review passed.
+
+- 2026-08-05 — Brought the offline icons-and-fonts fix up to date with `main`,
+  which had moved on to the approved dashboard design and the new repository
+  control system. Seven files conflicted and were resolved by hand rather than
+  by taking one side wholesale: the dashboard keeps `main`'s Hanken Grotesk /
+  JetBrains Mono font set **and** regains the `crossorigin` attribute that is
+  what makes those fonts storable for offline use — taking either side alone
+  would have silently dropped one of the two. `scripts/test-ui-regressions.mjs`
+  keeps both sets of checks (the eight offline ones and the eight guarding the
+  approved dashboard structure); the four tool entry files were reset to
+  `main`'s short-pointer form, since the control system now forbids repeating
+  test totals in them. Verified after merging: `npm test` **367 checks, 0
+  failed**; `node scripts/qa-check.mjs` `pass: true` with `missingHandlers` and
+  `notOnWindowExport` both empty; the app loaded in a real browser at 390px and
+  1280px with **0 JavaScript exceptions**, 0 broken images and no sideways
+  scroll. The only failed requests were the five CDN hosts this sandbox blocks
+  and 44 `/api/*` calls, which 404 locally because the static dev server has no
+  serverless functions — both expected, neither a fault in the app. Nothing
+  under `api/` was touched; `hasServerAuth()` still returns `false`.

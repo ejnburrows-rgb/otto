@@ -141,5 +141,27 @@ console.log('\noffline-first — the icons and fonts must survive losing signal'
     /const CACHE = 'otto-crm-v(\d+)'/.exec(sw)?.[1] >= '5', true);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+console.log('\napproved Stitch dashboard structure must stay intact');
+{
+  check('dashboard uses the approved four-card summary',
+    ['jobsToday', 'newCustomers', 'pendingInvoices', 'openEstimates']
+      .every(key => html.includes(`t('${key}')`)), true);
+  check('dashboard includes the weekly schedule strip',
+    html.includes('class="hub-week"'), true);
+  check('dashboard includes recent job cards',
+    html.includes('class="hub-jobs"'), true);
+  check('dashboard uses the approved deep navy surface',
+    html.includes('--bg: #0B1326;'), true);
+  check('dashboard uses the approved electric blue action colour',
+    html.includes('--blue: #2F6BFF;'), true);
+  check('dashboard uses Hanken Grotesk headings',
+    html.includes("'Hanken Grotesk'"), true);
+  check('duplicate floating assistant does not cover dashboard cards',
+    /^\s*ensureFloatingAI\(\);/m.test(html), false);
+  check('phone job footer leaves room for the add button',
+    html.includes('.hub-job-foot { padding-right:62px; }'), true);
+}
+
 console.log(`\n${passed} passed, ${failed} failed\n`);
 process.exit(failed ? 1 : 0);
