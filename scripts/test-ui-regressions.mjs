@@ -93,6 +93,55 @@ console.log('\noffline-first — no image may depend on a remote host');
   check('no unreplaced asset placeholders', /\{\{DATA:IMAGE/.test(html), false);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+console.log('\noffline-first — the icons and fonts must survive losing signal');
+{
+  // WHAT HAPPENED: proven in a real browser with the CDN hosts taken away after
+  // one successful load. Offline, every icon rendered as a blank box and both
+  // webfonts fell back, on a field tool whose whole promise is working with no
+  // signal. Two independent causes, both pinned below.
+  const sw = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
+
+  // Cause 1: the rule that skips API hosts was a substring test, and
+  // 'fonts.googleapis.com'.includes('googleapis.com') is true — so the
+  // stylesheet declaring every @font-face was excluded from the cache, while
+  // the font files it points at were cached and left unusable.
+  check('the API-host rule no longer swallows fonts.googleapis.com',
+    /includes\(\s*['"]googleapis\.com['"]\s*\)/.test(sw), false);
+  check('the Gmail API host is still excluded from caching',
+    sw.includes('gmail.googleapis.com'), true);
+
+  // Cause 2: a cross-origin <link>/<script> without crossorigin is fetched in
+  // no-cors mode and comes back opaque with status 0, so the service worker's
+  // `status === 200` test never matched and it stored nothing.
+  const tags = [
+    ...html.matchAll(/<link\b[^>]*rel=["']stylesheet["'][^>]*>/g),
+    ...html.matchAll(/<script\b[^>]*\bsrc=["']https?:[^"']+["'][^>]*>/g),
+  ].map(m => m[0]);
+  const remoteTags = tags.filter(t => /["']https?:\/\//.test(t));
+  const cacheable = remoteTags.filter(t => /cdnjs|jsdelivr|fonts\.googleapis/.test(t));
+  check('every cacheable cross-origin stylesheet and script asks for CORS',
+    cacheable.filter(t => !/crossorigin/i.test(t)), []);
+  check('the scripts injected at run time ask for CORS too',
+    (html.match(/\bs\.crossOrigin\s*=\s*['"]anonymous['"]/g) || []).length >= 2, true);
+
+  // The service worker must precache the icon and font stylesheets: on a first
+  // visit it is not controlling the page yet, so it never sees those requests,
+  // and a phone that opened the app once and drove out of signal had no icons.
+  check('the icon stylesheet is precached at install',
+    /CDN_SHELL[\s\S]{0,400}font-awesome/.test(sw), true);
+  check('the webfont stylesheet is precached at install',
+    /CDN_SHELL[\s\S]{0,400}fonts\.googleapis\.com/.test(sw), true);
+  // Caching a stylesheet without the .woff2 files it references still leaves
+  // every icon a blank box, and the computed font-family still reads correctly,
+  // so this one is invisible unless you measure a glyph.
+  check('the font files referenced by those stylesheets are precached too',
+    /cacheFontsReferencedBy/.test(sw) && /\.woff2/.test(sw), true);
+  check('the cache name was bumped so devices pick the new rules up',
+    /const CACHE = 'otto-crm-v(\d+)'/.exec(sw)?.[1] >= '5', true);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 console.log('\napproved Stitch dashboard structure must stay intact');
 {
   check('dashboard uses the approved four-card summary',

@@ -44,7 +44,7 @@ Do not begin work until all of these pass. Paste the real output into your first
 
 ```bash
 npm install                    # devDependencies only; there are no runtime deps
-npm test                       # expect: 340 checks, 0 failed
+npm test                       # expect: 359 checks, 0 failed
 node scripts/qa-check.mjs      # expect: "pass": true, missingHandlers []
 npm start                      # serves http://localhost:8000
 ```
