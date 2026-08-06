@@ -18,8 +18,9 @@ Do these on your own phone, on your own internet, before you go.
    will remember — `1234` is fine, this is a demo device, not the real
    business.
 3. Tap **Otto**, type the same code.
-4. You should land on a dashboard reading **Jobs today 3 · Customers 3 ·
-   Field Crew 15**.
+4. You should land on the dark-blue dashboard with four number cards:
+   **Today's jobs 03 · New customers 03 · Pending invoices 01 · Open
+   estimates 01**, followed by the weekly schedule and recent jobs.
 5. Tap **More → Reports**, then come back. Nothing should be blank or red.
 
 If all five steps work, the demo is ready. If step 1 does not load, you have no
@@ -58,11 +59,20 @@ Roughly 6 minutes. Do not rush the first two steps; they set up everything else.
 
 ### Step 2 — Sign in and show the dashboard
 - **CLICK:** Otto → your 4-digit code
-- **SHOW:** Jobs today, Customers, Field Crew, and the Exceptions panel
-- **SAY:** "This is the morning view. Three jobs booked today, and the panel
-  underneath flags anything going wrong — a crew member off-site, a missing
-  photo, a job left open."
-- **AVOID:** the **Ask OTTO** tile (see section 4).
+- **SHOW:** the four number cards, weekly schedule, and recent jobs
+- **SAY:** "This is the morning view. It shows today's workload, new customers,
+  unpaid invoices, open estimates, this week's schedule, and the two most
+  recently updated jobs."
+- **NOTE:** alerts, reports, backups, and the assistant are under **More**.
+
+### Paso 2 — Iniciar sesión y mostrar el panel
+- **TOCA:** Otto → tu código de 4 dígitos
+- **MUESTRA:** las cuatro tarjetas de números, la agenda semanal y los trabajos
+  recientes
+- **DI:** "Esta es la vista de la mañana. Muestra el trabajo de hoy, clientes
+  nuevos, facturas pendientes, presupuestos abiertos, la agenda de esta semana
+  y los dos trabajos actualizados más recientemente."
+- **NOTA:** alertas, reportes, respaldos y el asistente están en **Más**.
 
 ### Step 3 — Open a customer
 - **CLICK:** More → Customers → **Garcia Residence**

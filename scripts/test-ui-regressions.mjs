@@ -117,5 +117,75 @@ console.log('\nthe page must parse — a syntax error blanks the whole app');
   check('every inline script parses', broken, []);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+console.log('\noffline-first — the icons and fonts must survive losing signal');
+{
+  // WHAT HAPPENED: proven in a real browser with the CDN hosts taken away after
+  // one successful load. Offline, every icon rendered as a blank box and both
+  // webfonts fell back, on a field tool whose whole promise is working with no
+  // signal. Two independent causes, both pinned below.
+  const sw = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
+
+  // Cause 1: the rule that skips API hosts was a substring test, and
+  // 'fonts.googleapis.com'.includes('googleapis.com') is true — so the
+  // stylesheet declaring every @font-face was excluded from the cache, while
+  // the font files it points at were cached and left unusable.
+  check('the API-host rule no longer swallows fonts.googleapis.com',
+    /includes\(\s*['"]googleapis\.com['"]\s*\)/.test(sw), false);
+  check('the Gmail API host is still excluded from caching',
+    sw.includes('gmail.googleapis.com'), true);
+
+  // Cause 2: a cross-origin <link>/<script> without crossorigin is fetched in
+  // no-cors mode and comes back opaque with status 0, so the service worker's
+  // `status === 200` test never matched and it stored nothing.
+  const tags = [
+    ...html.matchAll(/<link\b[^>]*rel=["']stylesheet["'][^>]*>/g),
+    ...html.matchAll(/<script\b[^>]*\bsrc=["']https?:[^"']+["'][^>]*>/g),
+  ].map(m => m[0]);
+  const remoteTags = tags.filter(t => /["']https?:\/\//.test(t));
+  const cacheable = remoteTags.filter(t => /cdnjs|jsdelivr|fonts\.googleapis/.test(t));
+  check('every cacheable cross-origin stylesheet and script asks for CORS',
+    cacheable.filter(t => !/crossorigin/i.test(t)), []);
+  check('the scripts injected at run time ask for CORS too',
+    (html.match(/\bs\.crossOrigin\s*=\s*['"]anonymous['"]/g) || []).length >= 2, true);
+
+  // The service worker must precache the icon and font stylesheets: on a first
+  // visit it is not controlling the page yet, so it never sees those requests,
+  // and a phone that opened the app once and drove out of signal had no icons.
+  check('the icon stylesheet is precached at install',
+    /CDN_SHELL[\s\S]{0,400}font-awesome/.test(sw), true);
+  check('the webfont stylesheet is precached at install',
+    /CDN_SHELL[\s\S]{0,400}fonts\.googleapis\.com/.test(sw), true);
+  // Caching a stylesheet without the .woff2 files it references still leaves
+  // every icon a blank box, and the computed font-family still reads correctly,
+  // so this one is invisible unless you measure a glyph.
+  check('the font files referenced by those stylesheets are precached too',
+    /cacheFontsReferencedBy/.test(sw) && /\.woff2/.test(sw), true);
+  check('the cache name was bumped so devices pick the new rules up',
+    /const CACHE = 'otto-crm-v(\d+)'/.exec(sw)?.[1] >= '5', true);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+console.log('\napproved Stitch dashboard structure must stay intact');
+{
+  check('dashboard uses the approved four-card summary',
+    ['jobsToday', 'newCustomers', 'pendingInvoices', 'openEstimates']
+      .every(key => html.includes(`t('${key}')`)), true);
+  check('dashboard includes the weekly schedule strip',
+    html.includes('class="hub-week"'), true);
+  check('dashboard includes recent job cards',
+    html.includes('class="hub-jobs"'), true);
+  check('dashboard uses the approved deep navy surface',
+    html.includes('--bg: #0B1326;'), true);
+  check('dashboard uses the approved electric blue action colour',
+    html.includes('--blue: #2F6BFF;'), true);
+  check('dashboard uses Hanken Grotesk headings',
+    html.includes("'Hanken Grotesk'"), true);
+  check('duplicate floating assistant does not cover dashboard cards',
+    /^\s*ensureFloatingAI\(\);/m.test(html), false);
+  check('phone job footer leaves room for the add button',
+    html.includes('.hub-job-foot { padding-right:62px; }'), true);
+}
+
 console.log(`\n${passed} passed, ${failed} failed\n`);
 process.exit(failed ? 1 : 0);

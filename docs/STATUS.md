@@ -50,6 +50,13 @@ Branch: `main`. Live app: **https://otto-kohl.vercel.app** (verified working).
 - **Bilingual English/Spanish.** 0 missing Spanish translations.
 - **Offline-first storage.** IndexedDB with a localStorage mirror; photos and
   documents stored as blobs (binary files) in IndexedDB.
+- **The app keeps its icons and fonts with no signal** (fixed 2026-08-01).
+  Previously it did not: taken offline after one successful visit, every icon
+  rendered as a blank box and both webfonts fell back, because the service
+  worker was storing font *files* but not the stylesheets that declare them.
+  Proven fixed in a real browser with the CDN hosts taken away —
+  `npm run qa:visual`. Charts still do not draw offline, by choice; the app
+  shows its "Charts appear here once connected." placeholder instead.
 - **AI features with keys kept server-side.** `api/claude.js` and `api/nvidia.js`
   hold their keys in Vercel environment variables, never in the browser.
 - **Inbound email webhook is now secured.** It requires `INBOUND_WEBHOOK_TOKEN`
@@ -797,28 +804,73 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   failed; `npm run qa` passes. Remaining UI verification that cannot be done from
   a sandbox — icons, fonts, themes, the PlumbBot modal, a real phone pass — is
   written up in `docs/UI-DEBUG-HANDOFF.md`.
-- 2026-08-01 — Facelift verification pass. Checked the six items on the session
-  brief against `main` before changing anything: five were already fixed by PRs
-  #82/#83/#89 (sign-in syntax error, interact.js and the draggable HUD, prompt
-  text in `src=`, remote image hosts, `window` exports), and the sixth — service
-  worker precaching — had nothing to add because no asset path changed. So no
-  app code was changed; inventing edits to correct code would have been the
-  risk. What was missing was proof, so this adds it. New
-  `scripts/qa-visual.mjs` (`npm run qa:visual`) signs in through the real
-  sign-in screen and drives seven screens at 1280px and at 390px with touch,
-  failing on any JavaScript error, any broken image, any sideways scroll, and on
-  a list card following the pointer during a swipe — the gesture that was
-  unusable on the owner's phone. It writes 16 screenshots to `evidence/`.
-  Result: 36 passed, 0 failed; icons, fonts, logo and theme colours all render.
-  Added three checks to `scripts/test-ui-regressions.mjs` (11 → 14): every
-  inline script parses (the syntax error that once blanked the app — no other
-  check would notice), every committed image exists on disk (a local path can
-  still point at a file nobody committed), and the parse check cannot pass by
-  finding nothing to parse. `npm test` 354 checks, 0 failed; `npm run qa`
-  passes. **Still not verified: a real phone** — this ran in a container, so the
-  390px pass is a touch-enabled browser, not a handset, and that distinction is
-  exactly how the draggable fault reached the owner. Also recorded, for an owner
-  decision: every icon and both fonts load from a CDN, so a phone that has never
-  once opened the app with a signal gets a working but iconless interface;
-  `sw.js` caches them after the first successful online visit. Detail in
-  `docs/PR-FACELIFT-FINISH.md`.
+- 2026-08-01 — Readiness check against current `main`, which then found and fixed
+  a real fault. The check itself: `npm test` 351 checks 0 failed and
+  `npm run qa` `pass: true` on `main` untouched, so the merged work is sound.
+  The new part is the third gate, which no session here has been able to run.
+  **The CDN hosts this app's whole appearance depends on can be reached from a
+  sandbox with `curl` even where the browser cannot** — so the real Font Awesome
+  and Google Fonts files were fetched and served to the browser from a local
+  HTTPS stand-in, and the app was driven signed-in across all 25 owner screens at
+  390 / 768 / 1280px with its actual icons and fonts present. Result: 0
+  JavaScript errors, 0 broken images, no sideways scroll, and the swipe that used
+  to drag a card 216px now leaves it unmoved. **The fault:** taken offline after
+  one successful visit — a crew phone driving out of coverage — the app lost
+  every icon and both webfonts. Two independent causes, both fixed. (1) `sw.js`
+  skipped caching for any host matching `googleapis.com`, a rule meant for the
+  Gmail API; `fonts.googleapis.com` matches it too, so the stylesheet declaring
+  every font was never stored while the font files it points at were — cached and
+  unusable. (2) A cross-origin `<link>`/`<script>` without `crossorigin` returns
+  an *opaque* response whose status reads 0, so the service worker's
+  `status === 200` test never matched and it stored nothing. Fixed by matching
+  API hosts exactly, adding `crossorigin="anonymous"` to the four cacheable tags
+  (all four hosts send `access-control-allow-origin: *`, verified), and
+  precaching the icon/font stylesheets plus the `.woff2` files they reference —
+  parsed out of the stylesheet, not hardcoded, since those URLs carry version
+  hashes. Offline now keeps its icons and both fonts, shown in a screenshot.
+  Worth remembering: when the font file is missing and every icon is a blank box,
+  the computed `font-family` still reads "Font Awesome 6 Free" — the first
+  version of this check passed while the icons were broken. It now measures a
+  glyph against a deliberately absent font. All of it is repeatable as
+  `npm run qa:visual` (`scripts/qa-visual.mjs`), which refuses to run rather than
+  report a pass it cannot back up; 8 new checks in `scripts/test-ui-regressions.mjs`
+  pin the two causes inside `npm test`. `npm test` 359 checks, 0 failed;
+  `npm run qa` `pass: true`. No cloud records were read, written or deleted, and
+  nothing under `api/` was touched. Still outstanding and still owner-only: a
+  pass on a real phone, the Supabase key rotation, and GitHub Actions (§3.9).
+
+- 2026-08-01 — Refreshed the shared OTTO interface for field use: one navy and
+  teal visual system across roles, clearer screen hierarchy, larger touch areas,
+  and a phone-friendly two-column dashboard. Verified locally on desktop and a
+  390px-wide phone view; `npm test` passed 351 checks with 0 failures and the QA
+  review passed.
+
+- 2026-08-01 — Owner rejected that refresh because it changed only shared
+  styling and did not reproduce the approved Stitch dashboard. Rebuilt the
+  owner/office home screen from the actual Stitch source: four number cards,
+  five-day schedule, two recent-job cards, deep navy surfaces, electric-blue
+  actions, Hanken Grotesk headings, local OTTO artwork, and the single add
+  button. Removed the duplicate floating assistant that covered job details;
+  its functions remain reachable from the header/More menu. Added English and
+  Spanish dashboard guidance. Verified at 390×844 and 1280×900 with no page
+  errors, broken images, or horizontal overflow. `npm test` passed 359 checks
+  with 0 failures; the QA review passed.
+
+- 2026-08-05 — Brought the offline icons-and-fonts fix up to date with `main`,
+  which had moved on to the approved dashboard design and the new repository
+  control system. Seven files conflicted and were resolved by hand rather than
+  by taking one side wholesale: the dashboard keeps `main`'s Hanken Grotesk /
+  JetBrains Mono font set **and** regains the `crossorigin` attribute that is
+  what makes those fonts storable for offline use — taking either side alone
+  would have silently dropped one of the two. `scripts/test-ui-regressions.mjs`
+  keeps both sets of checks (the eight offline ones and the eight guarding the
+  approved dashboard structure); the four tool entry files were reset to
+  `main`'s short-pointer form, since the control system now forbids repeating
+  test totals in them. Verified after merging: `npm test` **367 checks, 0
+  failed**; `node scripts/qa-check.mjs` `pass: true` with `missingHandlers` and
+  `notOnWindowExport` both empty; the app loaded in a real browser at 390px and
+  1280px with **0 JavaScript exceptions**, 0 broken images and no sideways
+  scroll. The only failed requests were the five CDN hosts this sandbox blocks
+  and 44 `/api/*` calls, which 404 locally because the static dev server has no
+  serverless functions — both expected, neither a fault in the app. Nothing
+  under `api/` was touched; `hasServerAuth()` still returns `false`.

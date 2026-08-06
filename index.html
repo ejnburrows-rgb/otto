@@ -9,19 +9,23 @@
   <link rel="manifest" href="./manifest.json" />
   <link rel="icon" type="image/png" href="./icon-192.png" />
   <link rel="apple-touch-icon" href="./icon-192.png" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <!-- crossorigin is what makes these cacheable for offline use. Without it the
+       browser asks for them in no-cors mode and gets back an opaque response
+       whose status reads 0, so the service worker's `status === 200` test never
+       matches and nothing is stored. All four hosts send `access-control-allow-origin: *`. -->
+  <link rel="stylesheet" crossorigin="anonymous" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&display=swap" rel="stylesheet" crossorigin="anonymous" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://apis.google.com/js/api.js"></script>
   <style>
     /* ===== TOKENS: Elegant Blue & Premium Spacing ===== */
     :root {
       /* Refined Color Palette */
-      --blue: #0A2540;        /* Deep, premium navy */
-      --blue2: #143A61;       /* Slightly lighter navy for gradients/hovers */
-      --accent: #0066FF;      /* Crisp, bright primary blue for buttons */
-      --accent-hover: #005CE6;
+      --blue: #2F6BFF;
+      --blue2: #0051E0;
+      --accent: #2F6BFF;
+      --accent-hover: #1F5BEA;
       --green: #047857;       /* Calm, legible emerald */
       --amber: #B45309;       /* Warm amber, not too bright */
       --red: #B91C1C;         /* Confident red */
@@ -54,28 +58,28 @@
       --text3: #94A3B8;       /* Very light slate for placeholders/icons */
       
       /* Geometry & Shadows */
-      --radius: 12px;         /* Elegant, not overly bubbly */
-      --radius-sm: 8px;
+      --radius: 8px;
+      --radius-sm: 4px;
       --shadow-sm: 0 1px 3px rgba(10, 37, 64, 0.04), 0 1px 2px rgba(10, 37, 64, 0.02);
       --shadow: 0 4px 12px rgba(10, 37, 64, 0.06), 0 2px 4px rgba(10, 37, 64, 0.03);
       --shadow2: 0 12px 32px rgba(10, 37, 64, 0.08), 0 4px 12px rgba(10, 37, 64, 0.04);
-      --tap: 52px;            /* Comfortable touch target, slightly tighter than 56px for elegance */
+      --tap: 56px;
     }
 
     [data-theme="dark"] {
-      --bg: #0b1220;
-      --bg2: #0f172a;
-      --card: #161f30;
-      --card-hover: #1c2740;
-      --card-elevated: #202c44;
-      --line: #2b3852;
-      --text: #eef2f8;
-      --text2: #a9b4c7;
+      --bg: #0B1326;
+      --bg2: #060E20;
+      --card: #171F33;
+      --card-hover: #222A3D;
+      --card-elevated: #2D3449;
+      --line: #434655;
+      --text: #DAE2FD;
+      --text2: #C3C5D8;
       --text3: #94a3b8;   /* 6.43:1 on --card, 7.30:1 on --bg — was #74829a (4.24:1) */
-      --blue: #1e3a8a;
-      --blue2: #7bd0ff;
-      --accent: #2f6bff;
-      --accent-hover: #4d80ff;
+      --blue: #2F6BFF;
+      --blue2: #B5C4FF;
+      --accent: #7EA6FF;
+      --accent-hover: #B5C4FF;
       --green: #22c55e;
       --amber: #f59e0b;
       --red: #f87171;
@@ -655,6 +659,111 @@
     .note-item:last-child { border-bottom: none; }
     .note-meta { font-size: 13px; color: var(--text3); margin-top: 8px; font-weight: 500; }
   
+    /* ===== STITCH OTTO CRM DESIGN SYSTEM ===== */
+    body.theme-app {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Hanken Grotesk', Inter, system-ui, sans-serif;
+      --glass-bg: #171F33;
+      --glass-border: #434655;
+    }
+    .topbar {
+      min-height: 64px;
+      background: #0B1326;
+      border-bottom: 1px solid #434655;
+      box-shadow: none;
+    }
+    .topbar .brand { display:flex; align-items:center; gap:10px; font-family:'Hanken Grotesk', sans-serif; font-size:17px; font-weight:800; color:#B5C4FF; white-space:nowrap; }
+    .crystal-logo { width:40px; height:40px; border-radius:50%; object-fit:cover; filter:none; border:1px solid #434655; }
+    .topbar .iconbtn, .langtoggle { background:transparent; border:1px solid #434655; }
+    .langtoggle button.on { background:#2F6BFF; color:#fff; }
+    .wrap { max-width:780px; padding:32px 16px 176px; }
+    .pagehead { margin-bottom: 20px; }
+    .pagehead h1, h1 { font-family:'Hanken Grotesk', Inter, system-ui, sans-serif; font-weight:700; letter-spacing:-.01em; }
+    .pagehead .sub, .greet { color: var(--text2); }
+    .section-title { margin-top:30px; color:var(--text); font-weight:700; text-transform:none; letter-spacing:0; font-size:20px; }
+    .card, .tile, .glass, .sheet, .login .card-login {
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      border-color: var(--line);
+      box-shadow:none;
+    }
+    .card:hover, .tile:hover { transform:none; box-shadow:none; }
+    .tiles { gap: 12px; margin-top: 16px; }
+    .tile { min-height: 132px; padding: 18px 14px; text-align: left; align-items: flex-start; gap: 10px; }
+    .tile .ic { width: 48px; height: 48px; border-radius: 14px; font-size: 20px; box-shadow: none; }
+    .tile .lbl { font-size: 16px; font-weight: 750; }
+    .tile .cnt { font-size: 14px; }
+    .list-item { padding: 17px 18px; gap: 14px; }
+    .list-item:active { background: var(--card-hover); }
+    .avatar { width: 48px; height: 48px; border-radius: 14px; box-shadow: none; }
+    .li-title { font-size: 16px; }
+    .li-sub { font-size: 14px; }
+    .btn { border-radius:4px; font-weight:700; letter-spacing:0; }
+    .btn, .tabs button.on { background:#2F6BFF; }
+    .btn:hover { background:#1F5BEA; }
+    .btn.ghost { background:transparent; border-color:#434655; color:var(--text); }
+    .fab { background:#2F6BFF; border:1px solid #7EA6FF; box-shadow:0 8px 22px rgba(0,0,0,.38); }
+    .bottomnav { background: var(--card); backdrop-filter: none; padding-top: 10px; border-top: 1px solid var(--line); }
+    .bottomnav button { min-height: 56px; font-weight: 650; }
+    .bottomnav button.on, [data-theme="dark"] .bottomnav button.on { color: var(--accent); }
+    .searchbar input { background: var(--card); border-radius: 12px; box-shadow: none; }
+    .tabs { padding: 2px 0 10px; scrollbar-width: thin; }
+    .tabs button { min-height: 44px; padding: 10px 16px; }
+    .login { background: linear-gradient(155deg, #062D3A 0%, #074758 54%, #0B1720 100%); gap: 18px; }
+    .login .card-login { border-radius: 20px; padding: 22px; }
+    .login .logo { width: 92px; height: 92px; border-radius: 20px; background: #fff; color: #007F91; }
+    .login h1 { font-size: 30px; }
+    .pinpad button { border: 1px solid var(--line); min-height: 62px; background: var(--card); }
+    @media (max-width: 480px) {
+      .wrap { padding: 20px 16px 176px; }
+      .topbar { min-height:64px; padding-inline:14px; }
+      .crystal-logo { height: 40px; }
+      .tile { min-height: 124px; }
+    }
+
+    /* Dashboard composition reproduced from the approved Stitch screen. */
+    .hub-dashboard { display:flex; flex-direction:column; gap:28px; }
+    .hub-kpis { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:14px; }
+    .hub-kpi { min-height:136px; padding:16px; border:1px solid var(--line); border-radius:4px; background:var(--card); color:var(--text); display:flex; flex-direction:column; justify-content:space-between; text-align:left; cursor:pointer; }
+    .hub-kpi:active { background:var(--card-hover); transform:scale(.985); }
+    .hub-kpi-label { color:var(--text2); font:500 12px/1.35 'JetBrains Mono', monospace; letter-spacing:.04em; text-transform:uppercase; }
+    .hub-kpi-bottom { display:flex; align-items:flex-end; justify-content:space-between; gap:10px; }
+    .hub-kpi-value { color:#B5C4FF; font:700 40px/1 'Hanken Grotesk', sans-serif; }
+    .hub-kpi-icon { color:#B5C4FF; font-size:21px; }
+    .hub-section-head { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:10px; }
+    .hub-section-head h2 { color:var(--text); font-size:22px; line-height:1.25; font-weight:700; }
+    .hub-section-action { border:0; background:transparent; color:#B5C4FF; min-height:44px; padding:0 4px; font-weight:700; cursor:pointer; }
+    .hub-week { display:grid; grid-template-columns:repeat(5, minmax(58px, 1fr)); gap:10px; overflow-x:auto; padding-bottom:2px; scrollbar-width:none; }
+    .hub-week::-webkit-scrollbar { display:none; }
+    .hub-day { min-height:92px; border:1px solid var(--line); border-radius:4px; background:var(--card); color:var(--text); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; cursor:pointer; }
+    .hub-day.today { background:#2F6BFF; border-color:#7EA6FF; color:#fff; }
+    .hub-day-name { font:500 11px/1.2 'JetBrains Mono', monospace; letter-spacing:.05em; text-transform:uppercase; }
+    .hub-day-number { font-size:22px; line-height:1.2; font-weight:700; }
+    .hub-day-count { min-height:14px; color:var(--text2); font-size:10px; }
+    .hub-day.today .hub-day-count { color:#fff; }
+    .hub-jobs { display:flex; flex-direction:column; gap:12px; }
+    .hub-job { width:100%; border:1px solid var(--line); border-radius:4px; background:var(--card); color:var(--text); padding:16px; text-align:left; cursor:pointer; }
+    .hub-job:active { background:var(--card-hover); }
+    .hub-job-top, .hub-job-foot { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+    .hub-job-title { font-size:17px; line-height:1.25; font-weight:700; }
+    .hub-job-top > span:first-child { display:flex; flex-direction:column; min-width:0; }
+    .hub-job-title, .hub-job-meta { display:block; }
+    .hub-job-meta { color:var(--text2); font-size:13px; margin-top:4px; }
+    .hub-job-status { flex:0 0 auto; border-radius:999px; padding:5px 8px; color:#fff; background:#2F6BFF; font:600 10px/1 'JetBrains Mono', monospace; text-transform:uppercase; }
+    .hub-job-status.completed { background:#059669; }
+    .hub-job-foot { align-items:center; margin-top:14px; padding-top:12px; border-top:1px solid var(--line); }
+    .hub-tech { display:flex; align-items:center; gap:8px; font:500 12px/1.2 'JetBrains Mono', monospace; }
+    .hub-tech-avatar { width:30px; height:30px; border-radius:50%; border:1px solid var(--line); background:var(--card-elevated); display:flex; align-items:center; justify-content:center; color:#B5C4FF; font-size:11px; font-weight:700; }
+    .hub-job-amount { color:#B5C4FF; font:500 12px/1.2 'JetBrains Mono', monospace; }
+    @media (max-width:480px) {
+      .hub-kpi { min-height:124px; padding:14px; }
+      .hub-kpi-value { font-size:34px; }
+      .hub-week { grid-template-columns:repeat(5, 62px); }
+      .hub-job-top { flex-direction:column; }
+      .hub-job-foot { padding-right:62px; }
+    }
+
     /* ---- Printing (invoices, estimates) ----
        On screen the print area is hidden. When printing, everything else is
        hidden instead and only this is shown, in plain black on white so it
@@ -684,7 +793,7 @@
       #print-area .doc-foot { margin-top: 28pt; padding-top: 8pt; border-top: 1px solid #ccc; font-size: 9pt; text-align: center; color: #444 !important; }
     }
   </style>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" crossorigin="anonymous"></script>
 </head>
 
 <body>
@@ -694,21 +803,19 @@
   <div id="app" class="hidden">
     <header class="topbar">
       <div class="brand">
-        <img src="./logo.jpg" alt="OTTO Plumbing" class="crystal-logo" />
+        <img src="./icon-192.png" alt="" class="crystal-logo" />
+        <span>OTTO CRM</span>
       </div>
       <div class="spacer"></div>
       <div class="langtoggle">
         <button id="lang-en" onclick="setLang('en')">EN</button>
         <button id="lang-es" onclick="setLang('es')">ES</button>
       </div>
-      <button class="iconbtn" onclick="openPlumbBotModal()" title="PlumbBot AI Assistant" style="padding:2px;display:flex;align-items:center;justify-content:center;">
-        <i class="fas fa-robot" style="font-size:22px;color:var(--accent);transition:transform 0.2s" onmouseover="this.style.transform='scale(1.18)'" onmouseout="this.style.transform='scale(1)'"></i>
-      </button>
-      <button class="iconbtn" onclick="nav('settings')" title="Settings"><i class="fas fa-gear"></i></button>
+      <button class="iconbtn" onclick="nav(can('alerts') ? 'alerts' : 'settings')" aria-label="Notifications"><i class="fas fa-bell"></i></button>
     </header>
     <main id="main" class="wrap" role="main"></main>
     <div id="print-area" aria-hidden="true"></div>
-    <button id="fab" class="fab hidden" aria-label="${t('add')}" onclick="quickAdd()"><i class="fas fa-plus"></i></button>
+    <button id="fab" class="fab hidden" aria-label="Add" onclick="quickAdd()"><i class="fas fa-plus"></i></button>
     <nav class="bottomnav" id="bottomnav"></nav>
   </div>
 
@@ -863,7 +970,7 @@
       rowsFound: 'rows found', importRows: 'Import these rows', payrollSummary: 'Payroll summary', totalGross: 'Total gross',
       emailsHint: 'Forwarded emails and attachments, matched to the right customer and job.',
       summarizing: 'Summarizing…', importing: 'Importing…', noColumns: "Couldn't read columns — check the file.",
-      hub: 'Hub', jobsToday: 'Jobs today', onSite: 'Workers on site', exceptions: 'Exceptions', readyToClose: 'Ready to close',
+      hub: 'Hub', jobsToday: 'Today\'s jobs', newCustomers: 'New customers', pendingInvoices: 'Pending invoices', openEstimates: 'Open estimates', weeklySchedule: 'Weekly Schedule', viewCalendar: 'View Calendar', recentJobs: 'Recent Jobs', jobCount: 'jobs', onSite: 'Workers on site', exceptions: 'Exceptions', readyToClose: 'Ready to close',
       offSite: 'Off-site', missingPhoto: 'Missing photo', missingChecklist: 'Missing checklist', lateCheckout: 'Late check-out', aiEscalated: 'AI escalated',
       checkIn: 'Check in', checkOut: 'Check out', checkedInAt: 'Checked in', onSiteNow: 'On site', setSite: 'Set job site (I am here)', siteSet: 'Job site location saved',
       beforePhoto: 'Before photo', afterPhoto: 'After photo', checklist: 'Checklist', checklistDone: 'Checklist complete', alerts: 'Alerts', alert: 'Alert',
@@ -947,7 +1054,7 @@
       rowsFound: 'filas encontradas', importRows: 'Importar estas filas', payrollSummary: 'Resumen de nómina', totalGross: 'Total bruto',
       emailsHint: 'Correos reenviados y adjuntos, vinculados al cliente y trabajo correctos.',
       summarizing: 'Resumiendo…', importing: 'Importando…', noColumns: 'No se pudieron leer las columnas — revisa el archivo.',
-      hub: 'Panel', jobsToday: 'Trabajos hoy', onSite: 'En sitio', exceptions: 'Excepciones', readyToClose: 'Listos para cerrar',
+      hub: 'Panel', jobsToday: 'Trabajos de hoy', newCustomers: 'Clientes nuevos', pendingInvoices: 'Facturas pendientes', openEstimates: 'Presupuestos abiertos', weeklySchedule: 'Agenda Semanal', viewCalendar: 'Ver Calendario', recentJobs: 'Trabajos Recientes', jobCount: 'trabajos', onSite: 'En sitio', exceptions: 'Excepciones', readyToClose: 'Listos para cerrar',
       offSite: 'Fuera de sitio', missingPhoto: 'Falta foto', missingChecklist: 'Falta checklist', lateCheckout: 'Salida tardía', aiEscalated: 'IA escaló',
       checkIn: 'Entrar', checkOut: 'Salir', checkedInAt: 'Entrada', onSiteNow: 'En sitio', setSite: 'Marcar sitio (estoy aquí)', siteSet: 'Ubicación del trabajo guardada',
       beforePhoto: 'Foto antes', afterPhoto: 'Foto después', checklist: 'Checklist', checklistDone: 'Checklist completa', alerts: 'Alertas', alert: 'Alerta',
@@ -1842,12 +1949,10 @@
       if (typeof audit === 'function') audit('auth.login', 'user', u.id);
       startApp();
       
-      const who = u ? (u.name || '') : '';
-      const pinStr = String(enteredPin || u?.pin || '');
-      if (who.includes('Otto') || u?.id === 'usr_otto' || pinStr === '1') document.body.className = 'theme-otto';
-      else if (who.includes('Julio') || who.includes('Príncipe') || u?.id === 'usr_julio' || pinStr === '2') document.body.className = 'theme-julio';
-      else if (who.includes('Saray') || u?.id === 'usr_saray' || pinStr === '3') document.body.className = 'theme-saray';
-      else document.body.className = 'theme-field';
+      // One OTTO workspace for every role. The role controls access, not the
+      // visual identity of the app; changing colours by person made the same
+      // work look inconsistent and harder to support in the field.
+      document.body.className = 'theme-app';
 
     }
 
@@ -1960,9 +2065,9 @@
       <i class="fas ${icons[v]}"></i><span>${t(v)}</span></button>`).join('');
   }
   function openMore() {
-    const items = ['team', 'urgent', 'calls', 'kpis', 'reports', 'settings']
+    const items = ['team', 'urgent', 'alerts', 'calls', 'kpis', 'reports', 'backups', 'audit', 'assistant', 'settings']
       .filter(v => can(v));
-    const icons = { team: 'fa-user-gear', urgent: 'fa-bolt', calls: 'fa-phone', kpis: 'fa-chart-pie', reports: 'fa-chart-line', settings: 'fa-gear' };
+    const icons = { team: 'fa-user-gear', urgent: 'fa-bolt', alerts: 'fa-triangle-exclamation', calls: 'fa-phone', kpis: 'fa-chart-pie', reports: 'fa-chart-line', backups: 'fa-database', audit: 'fa-clipboard-list', assistant: 'fa-robot', settings: 'fa-gear' };
     modal(`<h2>${t('more')}</h2><div class="card" style="margin-top:12px">
       ${items.map(v => `<div class="list-item" onclick="closeModal();nav('${v}')"><div class="avatar" style="background:${colorFor(v)}"><i class="fas ${icons[v]}"></i></div><div class="li-main"><div class="li-title">${t(v)}</div></div><i class="fas fa-chevron-right chev"></i></div>`).join('')}
     </div>`);
@@ -1979,6 +2084,7 @@
     const v = route.view;
     const fab = $('#fab');
     fab.classList.toggle('hidden', !['home', 'customers', 'jobs', 'calls', 'emails', 'estimates', 'invoices', 'payments', 'checks', 'payroll', 'followups', 'workflows', 'knowledge', 'team'].includes(v));
+    fab.setAttribute('aria-label', t('add'));
     const views = {
       home: viewHome, customers: viewCustomers, customer: viewCustomer, jobs: viewJobs, job: viewJob,
       calls: viewCalls, inbox: viewInbox, emails: viewEmails, estimates: viewEstimates, invoices: viewInvoices, payments: viewPayments,
@@ -3413,6 +3519,7 @@
     if (loadPdfJs._p) return loadPdfJs._p;
     loadPdfJs._p = new Promise((resolve, reject) => {
       const s = document.createElement('script');
+      s.crossOrigin = 'anonymous';
       s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
       s.onload = () => { try { window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; } catch (e) {} resolve(window.pdfjsLib); };
       s.onerror = () => reject(new Error('pdfjs load failed'));
@@ -3839,6 +3946,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     if (loadXLSX._p) return loadXLSX._p;
     loadXLSX._p = new Promise((resolve, reject) => {
       const s = document.createElement('script');
+      s.crossOrigin = 'anonymous';
       s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
       s.onload = () => resolve(window.XLSX); s.onerror = () => reject(new Error('xlsx load failed'));
       document.head.appendChild(s);
@@ -4416,27 +4524,54 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     return ex;
   }
   function jobsTodayList() { return db.jobs.filter(j => isToday(j.scheduledDate) || j.activeCheckIn || db.job_events.some(e => e.jobId === j.id && isToday(e.ts))); }
-  function workersOnSite() { const ids = new Set(); db.jobs.forEach(j => { if (j.activeCheckIn) { const ev = get('job_events', j.activeCheckIn); if (ev) ids.add(ev.userId); } }); return [...ids]; }
   function readyToCloseList() { return db.jobs.filter(j => !['completed', 'canceled'].includes(j.status) && !j.activeCheckIn && db.photos.some(p => p.jobId === j.id && p.phase === 'before') && db.photos.some(p => p.jobId === j.id && p.phase === 'after') && checklistComplete(j.id)); }
   function viewHub() {
-    const today = jobsTodayList(); const onsite = workersOnSite(); const ex = computeExceptions(); const ready = readyToCloseList();
-    const exTotal = Object.values(ex).reduce((s, a) => s + a.length, 0);
-    const tiles = [
-      ['fa-calendar-day', 'var(--blue)', t('jobsToday'), today.length, "nav('jobs')"],
-      ['fa-users', 'var(--accent)', t('customers'), db.customers.length, "nav('customers')"],
-      ['fa-person-digging', 'var(--green)', t('fieldCrew'), db.users.filter(u=>u.role==='field').length, "nav('team')"],
-      ['fa-robot', 'var(--blue2)', t('ask'), '', "nav('assistant')"],
+    const today = jobsTodayList();
+    const newCustomers = db.customers.filter(c => isToday(c.created));
+    const pendingInvoices = db.invoices.filter(i => invStatus(i) !== 'paid');
+    const openEstimates = db.estimates.filter(e => !['approved', 'canceled'].includes(e.status));
+    const kpis = [
+      ['fa-user-gear', t('jobsToday'), today.length, "nav('jobs')"],
+      ['fa-user-plus', t('newCustomers'), newCustomers.length, "nav('customers')"],
+      ['fa-file-invoice', t('pendingInvoices'), pendingInvoices.length, "nav('invoices')"],
+      ['fa-file-circle-check', t('openEstimates'), openEstimates.length, "nav('estimates')"],
     ];
-    let html = pageHead('OTTO', fmtDate(todayISO()));
-    html += `<div class="tiles">${tiles.map(x => `<div class="tile" onclick="${x[4]}"><div class="ic" style="background:${x[1]}"><i class="fas ${x[0]}"></i></div><div class="lbl">${esc(x[2])}</div><div class="cnt">${x[3]}</div></div>`).join('')}</div>`;
-    const tagDefs = [['off-site', t('offSite')], ['missing-photo', t('missingPhoto')], ['missing-checklist', t('missingChecklist')], ['late-checkout', t('lateCheckout')], ['ai-escalated', t('aiEscalated')]];
-    html += `<div class="section-title">${t('exceptions')}</div><div class="card" style="padding:12px"><div class="btnrow" style="flex-wrap:wrap;gap:8px">${tagDefs.map(([k, l]) => { const n = ex[k].length; return `<button class="btn ${n ? 'red' : 'ghost'} sm" onclick="nav('alerts','${k}')">${esc(l)}${n ? ` <b>${n}</b>` : ''}</button>`; }).join('')}</div>${exTotal ? '' : `<div class="muted" style="margin-top:8px">${t('allClear')} ✅</div>`}</div>`;
-    html += `<div class="btnrow" style="margin-top:12px"><button class="btn block" onclick="showDailySummary()"><i class="fas fa-file-lines"></i> ${t('dailySummary')}</button></div>`;
-    const esc2 = db.ai_escalations.filter(e => e.status !== 'resolved').slice(0, 3);
-    html += `<div class="section-title">${t('aiActivity')}</div><div class="card">${esc2.length ? esc2.map(e => `<div class="list-item" onclick="nav('job','${e.jobId}','ai')"><div class="avatar" style="background:var(--red)"><i class="fas fa-robot"></i></div><div class="li-main"><div class="li-title">${esc(e.question || '')}</div><div class="li-sub">${esc(jobTitle(e.jobId))} · ${timeAgo(e.ts)}</div></div></div>`).join('') : emptyState(t('allClear'))}</div>`;
-    const workers = db.users.filter(u => u.role === 'field');
-    html += `<div class="section-title">${t('consentStatus')}</div><div class="card">${workers.length ? workers.map(u => `<div class="list-item"><div class="avatar" style="background:${colorFor(u.name)}">${initials(u.name)}</div><div class="li-main"><div class="li-title">${esc(u.name)}</div></div><div class="li-right">${hasConsent(u.id) ? `<span class="pill green">${t('iAgree')}</span>` : `<span class="pill amber">—</span>`}</div></div>`).join('') : emptyState()}</div>`;
-    html += `<div class="btnrow" style="margin-top:12px"><button class="btn ghost" onclick="nav('audit')"><i class="fas fa-clipboard-list"></i> ${t('auditTrail')}</button><button class="btn ghost" onclick="nav('backups')"><i class="fas fa-database"></i> ${t('backups')}</button></div>`;
+
+    const now = new Date();
+    const dayOfWeek = now.getDay() || 7;
+    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek + 1);
+    const week = Array.from({ length: 5 }, (_, index) => {
+      const date = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + index);
+      const iso = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+      return { date, iso, jobs: db.jobs.filter(j => (j.scheduledDate || '').slice(0, 10) === iso) };
+    });
+
+    const recentJobs = [...db.jobs]
+      .sort((a, b) => new Date(b.updated || b.created || 0) - new Date(a.updated || a.created || 0))
+      .slice(0, 2);
+    const recentJobCard = j => {
+      const worker = get('users', j.assignedTo);
+      const invoice = db.invoices.find(i => i.jobId === j.id);
+      const estimate = db.estimates.find(e => e.jobId === j.id);
+      const amount = invoice ? invoice.amount : (estimate ? estimate.amount : 0);
+      const workerName = worker ? worker.name : (lang === 'es' ? 'Sin asignar' : 'Unassigned');
+      return `<button class="hub-job" onclick="nav('job','${j.id}')">
+        <span class="hub-job-top"><span><span class="hub-job-title">${esc(j.title || t('untitled'))}</span><span class="hub-job-meta">${esc(customerName(j.customerId))}${j.address ? ` · ${esc(j.address)}` : ''}</span></span><span class="hub-job-status ${j.status === 'completed' ? 'completed' : ''}">${esc(t(j.status))}</span></span>
+        <span class="hub-job-foot"><span class="hub-tech"><span class="hub-tech-avatar">${esc(initials(workerName))}</span>${esc(workerName)}</span><span class="hub-job-amount">${amount ? money(amount) : '—'}</span></span>
+      </button>`;
+    };
+
+    const html = `<div class="hub-dashboard">
+      <section class="hub-kpis" aria-label="${esc(lang === 'es' ? 'Resumen del panel' : 'Dashboard summary')}">
+        ${kpis.map(([icon, label, value, action]) => `<button class="hub-kpi" onclick="${action}"><span class="hub-kpi-label">${esc(label)}</span><span class="hub-kpi-bottom"><span class="hub-kpi-value">${String(value).padStart(2, '0')}</span><i class="fas ${icon} hub-kpi-icon"></i></span></button>`).join('')}
+      </section>
+      <section><div class="hub-section-head"><h2>${esc(t('weeklySchedule'))}</h2><button class="hub-section-action" onclick="nav('jobs')">${esc(t('viewCalendar'))}</button></div>
+        <div class="hub-week">${week.map(day => `<button class="hub-day ${day.iso === todayISO() ? 'today' : ''}" onclick="nav('jobs')"><span class="hub-day-name">${esc(day.date.toLocaleDateString(lang === 'es' ? 'es-US' : 'en-US', { weekday: 'short' }))}</span><span class="hub-day-number">${day.date.getDate()}</span><span class="hub-day-count">${day.iso === todayISO() ? '•' : `${day.jobs.length} ${esc(t('jobCount'))}`}</span></button>`).join('')}</div>
+      </section>
+      <section><div class="hub-section-head"><h2>${esc(t('recentJobs'))}</h2><button class="hub-section-action" aria-label="${esc(t('viewAll'))}" onclick="nav('jobs')"><i class="fas fa-filter"></i></button></div>
+        <div class="hub-jobs">${recentJobs.length ? recentJobs.map(recentJobCard).join('') : emptyState(t('noResults'))}</div>
+      </section>
+    </div>`;
     $('#main').innerHTML = html;
   }
 
@@ -4760,7 +4895,6 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     $('#login').classList.add('hidden'); $('#login').innerHTML = '';
     $('#app').classList.remove('hidden');
     setLang(lang);
-    ensureFloatingAI();  // premium floating AI chat (glass + animations)
     // First-login consent for field workers (Spanish-first work-app permission).
     if (session.role === 'field' && !hasConsent(session.id)) { showConsent(); return; }
 
