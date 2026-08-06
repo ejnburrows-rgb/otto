@@ -874,3 +874,32 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   and 44 `/api/*` calls, which 404 locally because the static dev server has no
   serverless functions — both expected, neither a fault in the app. Nothing
   under `api/` was touched; `hasServerAuth()` still returns `false`.
+
+- 2026-08-06 — Brought the verification branch up to date with `main` and found a
+  live fault in the process. `main`'s own `npm run qa:visual` fails on it: taken
+  offline after one successful visit, the app keeps its icons but **loses both
+  webfonts**. Confirmed against a clean checkout of `origin/main` in a separate
+  worktree — 14 passed, 2 failed there and here before the fix — so it is `main`'s
+  fault, not the branch's. **The cause:** `sw.js` held the stylesheet URLs to
+  precache in a hardcoded `CDN_SHELL` list, and the approved-dashboard work added
+  Hanken Grotesk and JetBrains Mono to the link in `index.html` without touching
+  it. From then on the worker cached a stylesheet the page never asks for while
+  the page asked for one the worker had never cached. The icons kept working
+  because their URL had not changed, which is what hid it. **The fix:** `sw.js`
+  writes no URLs down any more — at install it reads `./index.html`, which it
+  already caches, takes the cross-origin stylesheet links out of it, and caches
+  those plus the `.woff2` files they reference. Cache bumped v5 → v6. Worth
+  recording: two existing checks asserted the hardcoded list *existed*, and both
+  passed the whole time the feature was broken — the list existing was never the
+  point, the two URLs agreeing was. Replaced with checks that the worker derives
+  its list from the page and that no stylesheet URL is hardcoded at all. Also
+  added two checks for faults with no coverage: every inline script parses (the
+  syntax error that once served a white screen — nothing else in the suite reads
+  the file as anything but text) and every committed image exists on disk (a local
+  path can still point at a file nobody committed). After the fix: `npm test`
+  **372 checks, 0 failed**; `node scripts/qa-check.mjs` `pass: true` with
+  `missingHandlers` and `notOnWindowExport` empty; `npm run qa:visual`
+  **16 passed, 0 failed**, including both fonts surviving offline, with a
+  screenshot in `evidence/`. Still owner-only: a pass on a real phone, the
+  Supabase key rotation, and GitHub Actions (§3.9). Nothing under `api/` was
+  touched; `hasServerAuth()` still returns `false`.

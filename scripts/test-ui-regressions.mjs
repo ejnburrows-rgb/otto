@@ -152,10 +152,25 @@ console.log('\noffline-first — the icons and fonts must survive losing signal'
   // The service worker must precache the icon and font stylesheets: on a first
   // visit it is not controlling the page yet, so it never sees those requests,
   // and a phone that opened the app once and drove out of signal had no icons.
-  check('the icon stylesheet is precached at install',
-    /CDN_SHELL[\s\S]{0,400}font-awesome/.test(sw), true);
-  check('the webfont stylesheet is precached at install',
-    /CDN_SHELL[\s\S]{0,400}fonts\.googleapis\.com/.test(sw), true);
+  //
+  // These two used to assert that a hardcoded `CDN_SHELL` list existed in sw.js.
+  // The list did exist, and both checks passed — while the feature was broken.
+  // The dashboard redesign added Hanken Grotesk and JetBrains Mono to the page's
+  // stylesheet link and left sw.js holding the old URL, so the worker cached a
+  // stylesheet the page never asks for and every webfont vanished offline. The
+  // icons kept working, because their URL had not changed, which made it look
+  // fine. The list existing was never the point — the two URLs agreeing was.
+  // So the worker reads them off the page now, and nothing is written twice.
+  check('the worker reads its stylesheet list out of the page',
+    /cdnStylesheetsIn/.test(sw), true);
+  check('no stylesheet URL is hardcoded in the worker, to drift out of date again',
+    [...sw.matchAll(/['"](https:\/\/(?:cdnjs\.cloudflare\.com|fonts\.googleapis\.com)[^'"]+)['"]/g)]
+      .map(m => m[1]), []);
+  const hrefs = cacheable.map(t => (t.match(/href=["']([^"']+)["']/) || [])[1]);
+  check('the page still links the icon stylesheet for the worker to find',
+    hrefs.some(h => h && h.includes('font-awesome')), true);
+  check('the page still links the webfont stylesheet for the worker to find',
+    hrefs.some(h => h && h.includes('fonts.googleapis.com')), true);
   // Caching a stylesheet without the .woff2 files it references still leaves
   // every icon a blank box, and the computed font-family still reads correctly,
   // so this one is invisible unless you measure a glyph.
