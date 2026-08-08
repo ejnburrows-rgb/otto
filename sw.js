@@ -1,7 +1,10 @@
 /* OTTO Plumbing CRM — service worker
    Offline-first shell cache. App data lives in IndexedDB, not here. */
-const CACHE = 'otto-crm-v6';
-const SHELL = ['./', './index.html', './manifest.json', './logo.jpg'];
+const CACHE = 'otto-crm-v7';
+// landing.html and guide.html ship too. Without them here, an installed phone
+// with no signal that opened /guide.html was served the CRM instead, because the
+// navigate handler below falls back to index.html for anything it cannot fetch.
+const SHELL = ['./', './index.html', './landing.html', './guide.html', './manifest.json', './logo.jpg'];
 
 // The icon font and the webfonts, fetched at install rather than waiting for a
 // second visit. On the very first load the service worker is not controlling the
@@ -98,7 +101,15 @@ self.addEventListener('fetch', (e) => {
         const copy = res.clone();
         caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
         return res;
-      }).catch(() => caches.match(req).then((m) => m || caches.match('./index.html')))
+      }).catch(() => caches.match(req).then((m) => {
+        if (m) return m;
+        // Only fall back to the app for app navigations. The marketing site and
+        // the user guide are separate pages; serving the CRM in place of the one
+        // that was asked for is worse than an offline error.
+        const p = url.pathname;
+        if (p.endsWith('/landing.html') || p.endsWith('/guide.html')) return caches.match(p.slice(p.lastIndexOf('/') + 1) ? './' + p.slice(p.lastIndexOf('/') + 1) : './index.html');
+        return caches.match('./index.html');
+      }))
     );
     return;
   }

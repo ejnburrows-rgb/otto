@@ -81,40 +81,78 @@ console.log('\nthe floating assistant button must not cover page content');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-console.log('\noffline-first — no image may depend on a remote host');
+console.log('\nevery page this repo ships — not just the app');
 {
-  // Six images once shipped with image-generation prompt text where the URL
-  // belonged. All 404'd. This app must render with no signal.
-  const imgSrcs = [...html.matchAll(/<img[^>]+src=["']([^"']+)["']/g)].map(m => m[1]);
-  const remote = imgSrcs.filter(s => /^https?:\/\//.test(s));
-  check('every <img> uses a local path', remote, []);
-  check('no image-generation prompt text left in a src',
-    imgSrcs.filter(s => s.length > 120), []);
-  check('no unreplaced asset placeholders', /\{\{DATA:IMAGE/.test(html), false);
+  // WHAT HAPPENED: these checks existed and passed the whole time landing.html —
+  // the public marketing site — was shipping with four unreplaced
+  // {{DATA:IMAGE:...}} placeholders, so the live site had no logo at all; with an
+  // unclosed @media query that left the entire contact section unstyled on
+  // desktop; and with four nav links pointing at sections that do not exist.
+  // Every one of those is exactly what the checks below look for. They only ever
+  // read index.html. The guard was built and aimed at the wrong file. So the
+  // page-level checks now run over every page that deploys.
+  const PAGES = ['index.html', 'landing.html', 'guide.html'];
 
-  // A path can be perfectly local and still point at a file nobody committed —
-  // which renders as nothing and looks fine in the source. So check the disk.
-  // Only fixed paths can be checked: the rest are built at runtime from a blob
-  // in IndexedDB (`${url}`) or are inline base64 sent to the AI.
-  const onDisk = imgSrcs
-    .filter(s => !s.includes('${') && !s.startsWith('data:'))
-    .filter(s => !existsSync(new URL('../' + s.replace(/^\.\//, ''), import.meta.url)));
-  check('every committed image actually exists in the repo', onDisk, []);
-}
+  for (const page of PAGES) {
+    const src = readFileSync(new URL('../' + page, import.meta.url), 'utf8');
+    const where = (name) => page + ': ' + name;
 
-// ─────────────────────────────────────────────────────────────────────────────
-console.log('\nthe page must parse — a syntax error blanks the whole app');
-{
-  // This is fault #1 in AGENTS.md: an unmatched `}` in the sign-in keypad meant
-  // no JavaScript ran at all and the live site served a white screen. Nothing
-  // else in this suite would notice, because every other check reads the file as
-  // text. `new Function` parses the body without running it.
-  const blocks = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)];
-  check('the page has an inline script to check', blocks.length > 0, true);
-  const broken = blocks.map((b, i) => {
-    try { new Function(b[1]); return null; } catch (e) { return `block ${i + 1}: ${e.message}`; }
-  }).filter(Boolean);
-  check('every inline script parses', broken, []);
+    // ---- images ----
+    const imgSrcs = [...src.matchAll(/<img[^>]+src=["']([^"']+)["']/g)].map((m) => m[1]);
+    check(where('every <img> uses a local path'),
+      imgSrcs.filter((v) => /^https?:\/\//.test(v)), []);
+    check(where('no image-generation prompt text left in a src'),
+      imgSrcs.filter((v) => v.length > 120), []);
+    // A CSS url() can hold a placeholder too — that is how the hero background
+    // on landing.html was lost, silently, because the <img> tags carried
+    // onerror handlers that hid the failure.
+    check(where('no unreplaced asset placeholders'), /\{\{DATA:IMAGE/.test(src), false);
+    // A path can be perfectly local and still point at a file nobody committed.
+    // Paths built at runtime (`${url}` from an IndexedDB blob) and inline base64
+    // cannot be resolved on disk, so they are skipped.
+    check(where('every committed image exists in the repo'),
+      imgSrcs
+        .filter((v) => !v.includes('${') && !v.startsWith('data:'))
+        .filter((v) => !existsSync(new URL('../' + v.replace(/^\.\//, ''), import.meta.url))),
+      []);
+
+    // ---- the page must parse ----
+    // An unmatched `}` in index.html once meant no JavaScript ran at all and the
+    // live site served a white screen. `new Function` parses without running.
+    const blocks = [...src.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)];
+    check(where('every inline script parses'),
+      blocks.map((b, i) => {
+        try { new Function(b[1]); return null; } catch (e) { return 'block ' + (i + 1) + ': ' + e.message; }
+      }).filter(Boolean), []);
+
+    // ---- the stylesheet must be balanced ----
+    // NEW. `@media (max-width: 768px) {` was opened in landing.html and never
+    // closed, so every rule after it — the whole booking/contact section — was
+    // trapped inside a mobile-only query and rendered as unstyled default HTML
+    // above 768px. Nothing here would have noticed: the file parses, the page
+    // loads, no JavaScript error is raised. It is only visible by looking, which
+    // is why it survived. Counting braces catches it in a millisecond.
+    const styles = [...src.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map((m) => m[1]);
+    check(where('every <style> block closes every rule it opens'),
+      styles.map((css, i) => {
+        let depth = 0;
+        for (const ch of css.replace(/\/\*[\s\S]*?\*\//g, '')) {
+          if (ch === '{') depth++;
+          else if (ch === '}') depth--;
+        }
+        return depth === 0 ? null : '<style> block ' + (i + 1) + ' ends at depth ' + depth;
+      }).filter(Boolean), []);
+
+    // ---- in-page links must go somewhere ----
+    // NEW. landing.html carried four links to #portfolio and #mastery across two
+    // separate navs. Neither section has ever existed, so a third of the site
+    // navigation did nothing at all.
+    const ids = new Set([...src.matchAll(/\bid=["']([^"']+)["']/g)].map((m) => m[1]));
+    const fragments = [...src.matchAll(/href=["']#([^"']+)["']/g)]
+      .map((m) => m[1]).filter((f) => f && f !== 'top');
+    check(where('every in-page link points at a section that exists'),
+      [...new Set(fragments.filter((f) => !ids.has(f)))].sort(), []);
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -311,6 +349,55 @@ console.log('\nthe design system must hold across every screen, not just the das
     /\[class\*=["']theme-["']\]/.test(html.replace(/\/\*[\s\S]*?\*\//g, '')), false);
   check('no hardcoded colour singles one person out',
     /#EC4899/i.test(html), false);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+console.log('\nthe install and the deploy must be what they claim to be');
+{
+  // WHAT HAPPENED: manifest.json declared the same SVG twice, once as 512x512
+  // and once as 192x192, and referenced neither PNG that ships. Meanwhile
+  // icon-192.png was actually 512x512 and byte-identical to icon-512.png — the
+  // same image under two names. An install prompt wants a real raster icon at
+  // the size it was promised.
+  const manifest = JSON.parse(readFileSync(new URL('../manifest.json', import.meta.url), 'utf8'));
+  const pngSize = (file) => {
+    const buf = readFileSync(new URL('../' + file, import.meta.url));
+    return { w: buf.readUInt32BE(16), h: buf.readUInt32BE(20) };
+  };
+  const iconProblems = [];
+  for (const icon of manifest.icons || []) {
+    const rel = icon.src.replace(/^\.\//, '');
+    if (!existsSync(new URL('../' + rel, import.meta.url))) {
+      iconProblems.push(`${icon.src} is declared but not in the repo`);
+      continue;
+    }
+    if (!rel.endsWith('.png') || icon.sizes === 'any') continue;
+    const { w, h } = pngSize(rel);
+    if (`${w}x${h}` !== icon.sizes) {
+      iconProblems.push(`${icon.src} claims ${icon.sizes} but is actually ${w}x${h}`);
+    }
+  }
+  check('every manifest icon exists and is the size it claims', iconProblems, []);
+  check('the manifest ships at least one real raster icon',
+    (manifest.icons || []).some((i) => i.src.endsWith('.png')), true);
+  check('the manifest start_url is a page that exists',
+    existsSync(new URL('../' + String(manifest.start_url || '').replace(/^\.\//, ''), import.meta.url)), true);
+
+  // WHAT HAPPENED: vercel.json sets outputDirectory to ".", so the entire
+  // repository was published. docs/STATUS.md — which details three past
+  // credential incidents, names the Supabase project and states that sign-in is
+  // browser-side only and bypassable — returned 200 on the public domain, as did
+  // AGENTS.md, every script, and the database schema.
+  const ignore = readFileSync(new URL('../.vercelignore', import.meta.url), 'utf8');
+  const mustNotPublish = ['docs/', 'scripts/', 'supabase/', 'legacy/', '*.md'];
+  check('the deploy still excludes the working documents and tooling',
+    mustNotPublish.filter((entry) => !ignore.split('\n').some((l) => l.trim() === entry)), []);
+
+  // The pages, the worker and the icons must NOT be excluded, or the site ships
+  // broken. Cheap sanity check on the same file.
+  const shipped = ['index.html', 'landing.html', 'guide.html', 'manifest.json', 'sw.js', 'logo.jpg'];
+  check('nothing that must ship is excluded',
+    shipped.filter((f) => ignore.split('\n').some((l) => l.trim() === f)), []);
 }
 
 console.log(`\n${passed} passed, ${failed} failed\n`);

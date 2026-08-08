@@ -28,10 +28,21 @@ jobs:
         with:
           node-version: '20'
 
-      # Checks the cloud sync merge rules and the sign-in code handling.
-      # These are the parts where a mistake silently loses customer records.
-      - name: Run the tests
-        run: npm test
+      # Playwright's browser is needed by the two browser stages of `verify`.
+      - name: Install dependencies
+        run: npm ci || npm install
 
-      - name: Check the app still holds together
-        run: node scripts/qa-check.mjs
+      - name: Install the browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Start the local server
+        run: npm start &
+
+      # One command, one verdict. It runs the unit and source checks, the button
+      # wiring, the CRM in a real browser (online and offline), the public site
+      # and the guide in a real browser with an axe-core accessibility scan, and
+      # finally the live deployment. A stage it cannot run is reported as a
+      # failure rather than skipped quietly — that silent-skip behaviour is what
+      # produced every false "verified" claim in this project's history.
+      - name: Verify
+        run: npm run verify
