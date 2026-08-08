@@ -1,0 +1,43 @@
+# What must NOT be published.
+#
+# vercel.json sets outputDirectory to ".", so before this file existed the whole
+# repository was served from the public domain. Verified on production:
+# docs/STATUS.md, docs/OWNER-MANUAL-STEPS.md, AGENTS.md, scripts/*.mjs and
+# supabase/migrations/0001_init_schema.sql all returned 200. STATUS.md describes
+# the three past credential incidents in detail, names the Supabase project, and
+# states plainly that sign-in is enforced in the browser only and can be
+# bypassed. That is a map for anyone who thinks to look.
+#
+# None of it is a live credential — the keys live in Vercel's environment, not
+# in the repo — and nothing here is deleted. It simply stops being published.
+
+# Working documents and process
+docs/
+*.md
+!api/**/*.md
+.github/
+.githooks/
+.vscode/
+.cursorrules
+.mcp.json
+
+# Test and tooling source.
+# `scripts/*` rather than `scripts/` deliberately: gitignore semantics do not
+# allow re-including a file whose parent directory is excluded, and the build
+# needs exactly one file out of here. Excluding the contents instead leaves the
+# negation below able to work. stamp-version.mjs holds no secrets — it reads two
+# environment variables and writes version.json.
+scripts/*
+!scripts/stamp-version.mjs
+evidence/
+
+# Database schema and migrations
+supabase/
+
+# Superseded material
+legacy/
+
+# Local environment
+.env
+.env.*
+node_modules/

@@ -942,3 +942,76 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   screens driven at 390 / 768 / 1280px with real icons and fonts: 0 JavaScript
   errors, 0 broken images, no sideways scroll. Nothing under `api/` was touched;
   `hasServerAuth()` still returns `false`. **Still not verified: a real phone.**
+
+- 2026-08-08 — Verification pass over everything that ships, after the facelift
+  merge. The CRM had just been proven; **the public website had never been
+  tested by anything at all.** Not one of the thirteen `npm test` scripts, not
+  `qa-check`, not `qa:visual` reads, fetches or opens `landing.html`. The
+  2026-07-31 entry above records the booking form as "Verified with
+  `qa-check.mjs` and `npm test` (all 307 checks pass)" — neither command reads
+  the file that was changed. What was actually being served to the public:
+  - **The whole contact section rendered as unstyled default HTML on desktop.**
+    `@media (max-width: 768px)` was opened at line 822 and never closed, so every
+    rule after it — all the booking CSS — was trapped in a mobile-only query.
+    Measured: the stylesheet ended at brace depth 1.
+  - **No logo anywhere on the site.** All four image sources were unreplaced
+    `{{DATA:IMAGE:IMAGE_nn}}` template placeholders — the same fault fixed in
+    `index.html` on 2026-07-31 and never looked for here. Each `<img>` carried
+    `onerror="this.style.display='none'"`, so the page hid its own breakage.
+  - **The heading font had never loaded.** The Newsreader stylesheet URL was
+    malformed (`ital,wdth,wght@0,75..100,400;700;800` — Newsreader has `opsz`,
+    not `wdth`, and the value list did not match the axis list). Google returns
+    **400**. Every heading has been falling back to a system serif since it
+    shipped. Found because the new harness refuses to run when it cannot fetch a
+    font stylesheet, rather than carrying on.
+  - Four links pointed at `#portfolio` and `#mastery` across two navs; neither
+    section exists. Every sidebar and bottom-nav link was inert anyway —
+    `preventDefault()` cancelled the navigation and only moved a highlight.
+  - The language toggle was a `<button>` nested inside a `<button>`. No parser
+    accepts that; the outer one is auto-closed, so its CSS never matched and its
+    handler never bound. There is no Spanish copy on the page to switch to.
+    Removed rather than left as decoration.
+  - Unescaped user input into `innerHTML`, and the booking form addressed its
+    lead SMS to **the customer's own phone** rather than to the business.
+  **The booking form is gone, deliberately.** It POSTed to `/api/notify`, which
+  is fail-closed (403) until #70 ships, so its success path had never run once in
+  production: a visitor typed a name, a phone number and a description of their
+  problem, and all of it was discarded when they closed the tab. The section now
+  leads with call and text. A real form can return when there is something behind
+  it.
+  **`guide.html`** had one non-blocking HTTP 200 ping against production and
+  nothing else. An axe-core scan found **34 failing elements** — the blue was
+  3.42:1 as text on its own background, the muted grey 4.03:1, the green 2.76:1,
+  the orange 2.58:1. Palette corrected; now 0.
+  **Root cause of all of it:** the checks that would have caught the placeholders
+  and the dead links already existed in `scripts/test-ui-regressions.mjs`. They
+  only ever read `index.html`. The guard was built and aimed at the wrong file.
+  Those checks now run over every page that deploys, plus two new ones: a CSS
+  brace-balance check (the unclosed media query would otherwise be invisible —
+  the file parses, the page loads, no error is raised) and an in-page link check.
+  **Also closed:** `vercel.json` publishes the repository root and there was no
+  `.vercelignore`, so **this file**, `AGENTS.md`, `docs/OWNER-MANUAL-STEPS.md`,
+  every script and the Supabase schema all returned 200 on the public domain —
+  a document describing three past credential incidents, naming the Supabase
+  project, and stating that sign-in is browser-side only and bypassable. Nothing
+  was deleted; it stops being published. `legacy/dream-cooling-crm.html` (2.5MB,
+  a CRM belonging to a different company, referenced by nothing) was removed.
+  `manifest.json` declared the same SVG twice under two different `sizes` and
+  referenced neither PNG; `icon-192.png` was in fact 512×512 and byte-identical
+  to `icon-512.png`. A real 192px icon now exists and the manifest names both.
+  `sw.js` precaches the site and the guide, and no longer serves the CRM in place
+  of them offline. `version.json` was hand-maintained and stale, so the deployed
+  build could not say which commit it was; it is stamped from git at build time.
+  **Everything folds into one command, `npm run verify`** (`scripts/verify.mjs`):
+  unit and source checks, button wiring, the CRM in a browser online and offline,
+  the site and guide in a browser with axe, then the live deployment. It starts
+  and stops the server itself, and **a stage it cannot run is reported as a
+  FAILURE by name, never skipped quietly** — the silent skip is what produced
+  every false claim in the list above.
+  **Evidence:** `npm test` **402 checks, 0 failed**. `qa-check` `pass: true`.
+  `qa:visual` 14/14. `qa:site` **20/20**, including axe-core **0 failing
+  elements** on both `landing.html` and `guide.html`. Nothing under `api/` was
+  touched; `hasServerAuth()` still returns `false`. **Still unproven, and not
+  claimed: a real phone, and everything behind #70** — cloud sync, cross-device
+  photos, customer notifications and QuickBooks remain off, which also means the
+  website still cannot deliver a lead to an inbox.

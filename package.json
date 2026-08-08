@@ -5,10 +5,13 @@
     "dev": "node scripts/local-server.js",
     "start": "node scripts/local-server.js",
     "preview": "node scripts/local-server.js",
-    "build": "echo \"No build step - static single-file PWA\" && node -e \"console.log('index.html', require('fs').statSync('index.html').size, 'bytes')\"",
+    "build": "node scripts/stamp-version.mjs",
     "test": "node scripts/test-merge.mjs && node scripts/test-inpage-merge.mjs && node scripts/test-pin.mjs && node scripts/test-inbound-email.mjs && node scripts/test-notify.mjs && node scripts/test-quickbooks.mjs && node scripts/test-nvidia.mjs && node scripts/test-photos.mjs && node scripts/test-server-auth.mjs && node scripts/test-demo-seed.mjs && node scripts/test-roles.mjs && node scripts/test-backup-export.mjs && node scripts/test-ui-regressions.mjs",
     "qa": "node scripts/qa-check.mjs",
-    "qa:visual": "node scripts/qa-visual.mjs"
+    "qa:visual": "node scripts/qa-visual.mjs",
+    "qa:site": "node scripts/qa-site.mjs",
+    "verify": "node scripts/verify.mjs",
+    "verify:live": "node scripts/verify-live.mjs"
   },
   "devDependencies": {
     "playwright": "^1.61.1"

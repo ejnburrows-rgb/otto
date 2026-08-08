@@ -28,10 +28,35 @@ jobs:
         with:
           node-version: '20'
 
-      # Checks the cloud sync merge rules and the sign-in code handling.
-      # These are the parts where a mistake silently loses customer records.
-      - name: Run the tests
-        run: npm test
+      # Playwright's browser is needed by the two browser stages of `verify`.
+      - name: Install dependencies
+        run: npm ci || npm install
 
-      - name: Check the app still holds together
-        run: node scripts/qa-check.mjs
+      - name: Install the browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Start the local server
+        run: npm start &
+
+      # On a pull request, everything except the live stage. The live stage
+      # checks production for changes this pull request has not deployed yet —
+      # that the working documents have stopped being published, for instance —
+      # so gating a pull request on it fails by construction. VERIFY_SKIP_LIVE
+      # makes that stage exit 3, which the aggregator reports as SKIPPED and
+      # refuses to count as a pass, so the verdict here is honest about what it
+      # did and did not check.
+      - name: Verify (source, app, and site)
+        if: github.event_name == 'pull_request'
+        run: npm run verify -- --no-live
+
+      # On main, after Vercel has had a chance to deploy the merge, the live
+      # stage runs too. A stage it cannot run is reported as a failure rather
+      # than skipped quietly — that silent skip is what produced every false
+      # "verified" claim in this project's history.
+      - name: Wait for the deploy to land
+        if: github.event_name != 'pull_request'
+        run: sleep 90
+
+      - name: Verify (everything, including the live deployment)
+        if: github.event_name != 'pull_request'
+        run: npm run verify

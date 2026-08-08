@@ -6,9 +6,15 @@
 <title>OTTO Plumbing CRM — User Guide / Guía de Uso</title>
 <style>
 :root{
-  --text:#2C2C2B; --text2:#7D7A75; --canvas:#FFFFFF; --soft:#F9F8F7; --surface2:#F0EFED;
-  --border:#E6E5E3; --blue:#2783DE; --blue-soft:#E5F2FC; --green:#46A171; --green-soft:#E8F1EC;
-  --orange:#D5803B; --orange-soft:#FBEBDE; --red:#E56458; --red-soft:#FCE9E7;
+  /* Light palette. These were measured with axe-core and several missed WCAG AA:
+     the blue was 3.42:1 as text on its own soft background and 3.90:1 behind
+     white, the muted grey 4.03:1, the green 2.76:1 and the orange 2.58:1. This
+     is a guide read on a phone in a van, so it is the last place to be casual
+     about legibility. Ratios now: blue 5.69:1 on --blue-soft and 6.48:1 behind
+     white, text2 5.55:1, green 5.78:1, orange 5.66:1. */
+  --text:#2C2C2B; --text2:#67645F; --canvas:#FFFFFF; --soft:#F9F8F7; --surface2:#F0EFED;
+  --border:#E6E5E3; --blue:#175FA8; --blue-soft:#E5F2FC; --green:#276845; --green-soft:#E8F1EC;
+  --orange:#8A4E1C; --orange-soft:#FBEBDE; --red:#C1352A; --red-soft:#FCE9E7;
 }
 @media (prefers-color-scheme: dark){
   :root{

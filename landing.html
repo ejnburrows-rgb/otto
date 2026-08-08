@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>OTTO Plumbing Inc. — Miami's Elite Services</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wdth,wght@0,75..100,400;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400..800;1,6..72,400..800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <link rel="icon" type="image/svg+xml" href="./favicon-miami-luxe.svg" />
   <link rel="apple-touch-icon" href="./apple-touch-icon.svg" />
@@ -34,7 +34,7 @@
       font-family: 'Inter', system-ui, sans-serif;
       background: 
         linear-gradient(135deg, rgba(0, 75, 79, 0.92) 0%, rgba(0, 121, 145, 0.75) 50%, rgba(255, 183, 77, 0.18) 100%),
-        url('{{DATA:IMAGE:IMAGE_10}}');
+        url('./logo.jpg');
       background-size: cover;
       background-attachment: fixed;
       background-position: center;
@@ -161,36 +161,6 @@
       padding: 0 12px;
     }
 
-    .lang-toggle {
-      display: flex;
-      background: var(--glass-bg);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      border-radius: var(--radius-full);
-      overflow: hidden;
-      width: 100%;
-    }
-
-    .lang-toggle button {
-      flex: 1;
-      border: none;
-      background: transparent;
-      color: var(--text-muted);
-      padding: 10px 0;
-      font-size: 11px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .lang-toggle button:hover {
-      background: rgba(255, 255, 255, 0.12);
-    }
-
-    .lang-toggle button.active {
-      background: var(--glass-bg);
-      color: var(--white);
-    }
 
     .cta-book {
       display: flex;
@@ -319,21 +289,6 @@
       font-size: 14px;
     }
 
-    .mobile-topbar .lang-btn {
-      padding: 6px 12px;
-      border-radius: var(--radius-full);
-      background: var(--glass-bg);
-      color: var(--text-muted);
-      font-size: 11px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .mobile-topbar .lang-btn:hover {
-      background: rgba(255, 255, 255, 0.12);
-      color: var(--white);
-    }
 
     /* ─── NAVBAR (Desktop) ─── */
     nav {
@@ -836,6 +791,14 @@
       .phone-badge .text {
         text-align: center;
       }
+    }
+    /* ─── END MOBILE RESPONSIVE ───
+       This closing brace was missing. `@media (max-width: 768px)` opened above
+       and never closed, so every rule below it — the entire booking/contact
+       section — was trapped inside a mobile-only query and rendered as
+       unstyled default HTML on any screen wider than 768px. A CSS
+       brace-balance check now runs over every shipped page so this class of
+       fault cannot ship silently again. */
 
     html {
       scroll-behavior: smooth;
@@ -860,91 +823,13 @@
       box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
     }
 
-    .booking-form {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .form-group label {
-      font-size: 14px;
-      font-weight: 600;
-      color: #ffffff;
-    }
-
-    .form-group input,
-    .form-group textarea {
-      width: 100%;
-      background: rgba(255, 255, 255, 0.07);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 8px;
-      padding: 12px 16px;
-      color: #ffffff;
-      font-family: inherit;
-      font-size: 15px;
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-
-    .form-group input:focus,
-    .form-group textarea:focus {
-      outline: none;
-      border-color: var(--teal);
-      box-shadow: 0 0 0 3px rgba(12, 145, 178, 0.25);
-    }
-
-    .form-group input[aria-invalid="true"],
-    .form-group textarea[aria-invalid="true"] {
-      border-color: #ef4444;
-      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
-    }
-
-    .form-error-msg {
-      font-size: 13px;
-      color: #f87171;
-      min-height: 18px;
-      font-weight: 500;
-    }
-
-    .booking-fallback-banner {
-      background: rgba(12, 145, 178, 0.15);
-      border: 1px solid rgba(12, 145, 178, 0.4);
-      border-radius: 12px;
-      padding: 20px;
-      margin-top: 10px;
-      text-align: center;
-      color: #ffffff;
-    }
-
-    .booking-fallback-banner p {
-      font-size: 15px;
-      margin-bottom: 14px;
-      line-height: 1.5;
-    }
-
-    .btn-call-fallback {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      background: linear-gradient(135deg, var(--teal), #0C7AA9);
-      color: #ffffff;
-      text-decoration: none;
-      padding: 12px 24px;
-      border-radius: 9999px;
-      font-weight: 700;
-      font-size: 15px;
-      box-shadow: 0 4px 16px rgba(12, 145, 178, 0.4);
-      transition: transform 0.2s;
-    }
-
-    .btn-call-fallback:hover {
-      transform: translateY(-2px);
+    /* Contact section — call-first. */
+    .contact-actions { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; }
+    .contact-actions .btn-primary,
+    .contact-actions .btn-ghost { flex: 1 1 240px; justify-content: center; }
+    .contact-note {
+      margin-top: 22px; text-align: center; color: var(--text-muted);
+      font-size: 15px; line-height: 1.6;
     }
   </style>
 </head>
@@ -957,17 +842,11 @@
     </div>
     <div class="sidebar-tagline">Miami's Elite Services</div>
     <div class="sidebar-nav">
-      <a href="#services" class="on"><i class="fas fa-list"></i></a>
-      <a href="#why" class=""><i class="fas fa-bolt"></i></a>
-      <a href="#portfolio" class=""><i class="fas fa-images"></i></a>
-      <a href="#mastery" class=""><i class="fas fa-crown"></i></a>
-      <a href="#contact" class=""><i class="fas fa-envelope"></i></a>
+      <a href="#services" class="on" aria-label="Services"><i class="fas fa-list"></i></a>
+      <a href="#why" class="" aria-label="Why choose us"><i class="fas fa-bolt"></i></a>
+      <a href="#contact" class="" aria-label="Contact"><i class="fas fa-envelope"></i></a>
     </div>
     <div class="sidebar-bottom">
-      <button class="lang-toggle">
-        <button class="active">EN</button>
-        <button>ES</button>
-      </button>
       <a href="#contact" class="cta-book">
         <i class="fas fa-calendar-plus"></i>
         Book Now
@@ -985,14 +864,6 @@
       <i class="fas fa-bolt"></i>
       <span>Why</span>
     </a>
-    <a href="#portfolio">
-      <i class="fas fa-images"></i>
-      <span>Portfolio</span>
-    </a>
-    <a href="#mastery">
-      <i class="fas fa-crown"></i>
-      <span>Mastery</span>
-    </a>
     <a href="#contact">
       <i class="fas fa-envelope"></i>
       <span>Contact</span>
@@ -1005,16 +876,15 @@
       <div class="logo-icon">O</div>
       <span class="logo-text">OTTO</span>
     </div>
-    <button class="lang-btn">EN | ES</button>
   </div>
 
   <!-- ─── DESKTOP NAVBAR ─── -->
   <nav>
     <div class="nav-logo">
-      <img src="{{DATA:IMAGE:IMAGE_61}}" alt="OTTO Plumbing Inc. logo" onerror="this.style.display='none'">
+      <img src="./logo.jpg" alt="OTTO Plumbing Inc. logo">
       <span>OTTO Plumbing Inc.</span>
     </div>
-    <a class="nav-cta phone-display" href="tel:">
+    <a class="nav-cta phone-display" href="tel:" aria-label="Call us">
       <i class="fas fa-phone"></i>
     </a>
     <a class="nav-cta-book" href="#contact">Book a Plumber</a>
@@ -1024,9 +894,8 @@
   <section class="hero">
     <img
       class="hero-logo"
-      src="{{DATA:IMAGE:IMAGE_61}}"
+      src="./logo.jpg"
       alt="OTTO Plumbing Inc. logo"
-      onerror="this.style.display='none'"
     />
 
     <h1>Miami's Most<br><span>Trusted Plumbers</span></h1>
@@ -1120,63 +989,32 @@
   </section>
 
   <!-- ─── CONTACT / BOOKING FORM ─── -->
+  <!-- Contact. This deliberately leads with calling rather than a form.
+       The form that used to sit here POSTed to /api/notify, which returns 403
+       until real server-side sign-in exists (issue #70) — so it never once
+       delivered a lead. A visitor typed a name, a phone number and a
+       description of their problem, and all of it was discarded the moment
+       they closed the tab. Asking for details we cannot receive is worse than
+       not asking. When #70 ships and a notification provider is connected, a
+       real form can go back here. -->
   <section id="contact" class="booking-section reveal">
     <div class="section-label" style="text-align:center;">Fast Dispatch</div>
-    <h2 class="section-title" style="text-align:center;">Book a Plumber</h2>
-    <p class="section-sub" style="text-align:center;">Fill out the request form below or call us directly. We respond promptly.</p>
-    
+    <h2 class="section-title" style="text-align:center;">Get a Plumber Out</h2>
+    <p class="section-sub" style="text-align:center;">Call or text us and we will get someone to you fast. Mon&nbsp;&ndash;&nbsp;Sat, 7&nbsp;AM&nbsp;&ndash;&nbsp;7&nbsp;PM.</p>
+
     <div class="booking-container">
-      <form id="booking-form" class="booking-form" novalidate>
-        <div class="form-group">
-          <label for="booking-name">Full Name <span style="color:#f87171;">*</span></label>
-          <input 
-            type="text" 
-            id="booking-name" 
-            name="name" 
-            required 
-            autocomplete="name" 
-            placeholder="e.g. Jane Doe"
-            aria-required="true"
-            aria-describedby="name-error"
-          />
-          <div id="name-error" class="form-error-msg" role="alert" aria-live="polite"></div>
-        </div>
-
-        <div class="form-group">
-          <label for="booking-phone">Phone Number <span style="color:#f87171;">*</span></label>
-          <input 
-            type="tel" 
-            id="booking-phone" 
-            name="phone" 
-            required 
-            autocomplete="tel" 
-            placeholder="e.g. (786) 555-0199"
-            aria-required="true"
-            aria-describedby="phone-error"
-          />
-          <div id="phone-error" class="form-error-msg" role="alert" aria-live="polite"></div>
-        </div>
-
-        <div class="form-group">
-          <label for="booking-message">What do you need help with? <span style="color:#f87171;">*</span></label>
-          <textarea 
-            id="booking-message" 
-            name="message" 
-            rows="3" 
-            required 
-            placeholder="Describe your plumbing issue (e.g. leaking water heater, clogged drain)..."
-            aria-required="true"
-            aria-describedby="message-error"
-          ></textarea>
-          <div id="message-error" class="form-error-msg" role="alert" aria-live="polite"></div>
-        </div>
-
-        <button type="submit" id="booking-submit-btn" class="btn-primary" style="width:100%; justify-content:center; cursor:pointer;">
-          <i class="fas fa-paper-plane"></i> Submit Booking Request
-        </button>
-
-        <div id="booking-status" role="region" aria-live="polite"></div>
-      </form>
+      <div class="contact-actions">
+        <a class="btn-primary phone-display" href="tel:">
+          <i class="fas fa-phone-volume"></i>
+        </a>
+        <a class="btn-ghost sms-link" href="sms:">
+          <i class="fas fa-comment-sms"></i> Text us instead
+        </a>
+      </div>
+      <p class="contact-note">
+        Tell us your address and what is going wrong &mdash; a leak, a blockage,
+        no hot water &mdash; and we will tell you when we can be there.
+      </p>
     </div>
   </section>
 
@@ -1191,9 +1029,9 @@
 
   <!-- ─── FOOTER ─── -->
   <footer>
-    <img src="{{DATA:IMAGE:IMAGE_61}}" alt="OTTO Plumbing Inc. logo" onerror="this.style.display='none'">
+    <img src="./logo.jpg" alt="OTTO Plumbing Inc. logo">
     <span>© 2026 OTTO Plumbing Inc. — South Florida &nbsp;|&nbsp; Licensed &amp; Insured</span>
-    <a href="tel:" class="phone-display"><i class="fas fa-phone"></i></a>
+    <a href="tel:" class="phone-display" aria-label="Call us"><i class="fas fa-phone"></i></a>
   </footer>
 
   <script>
@@ -1204,6 +1042,9 @@
     };
 
     function populateBusinessPhone() {
+      document.querySelectorAll('a[href^="sms:"]').forEach(link => {
+        link.href = `sms:${BUSINESS_PHONE.dial}`;
+      });
       document.querySelectorAll('a[href^="tel:"]').forEach(link => {
         link.href = `tel:${BUSINESS_PHONE.dial}`;
         if (link.classList.contains('phone-display')) {
@@ -1231,20 +1072,15 @@
     }, { threshold: 0.12 });
     document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
 
-    // Language toggle
-    document.querySelectorAll('.lang-toggle button').forEach(btn => {
-      btn.addEventListener('click', function() {
-        this.classList.toggle('active');
-        if (!this.classList.contains('active')) {
-          this.classList.add('active');
-        }
-      });
-    });
+    /* The language control that used to sit here has been removed. It was a
+       <button> nested inside a <button>, which no parser accepts — the outer
+       one was auto-closed, so its styling never applied and this handler never
+       bound to anything. It also had nothing to switch: unlike guide.html,
+       this page has no Spanish copy. A dead control is worse than none. */
 
     // Sidebar nav active state
     document.querySelectorAll('.sidebar-nav a').forEach(link => {
-      link.addEventListener('click', function(e) {
-        e.preventDefault();
+      link.addEventListener('click', function() {
         document.querySelectorAll('.sidebar-nav a').forEach(l => l.classList.remove('on'));
         this.classList.add('on');
       });
@@ -1252,105 +1088,19 @@
 
     // Mobile nav active state
     document.querySelectorAll('.bottom-nav a').forEach(link => {
-      link.addEventListener('click', function(e) {
-        e.preventDefault();
+      link.addEventListener('click', function() {
         document.querySelectorAll('.bottom-nav a').forEach(l => l.classList.remove('active'));
         this.classList.add('active');
       });
     });
     // Booking Form Submission & Validation
-    const bookingForm = document.getElementById('booking-form');
-    if (bookingForm) {
-      bookingForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const nameInput = document.getElementById('booking-name');
-        const phoneInput = document.getElementById('booking-phone');
-        const msgInput = document.getElementById('booking-message');
-        
-        const nameErr = document.getElementById('name-error');
-        const phoneErr = document.getElementById('phone-error');
-        const msgErr = document.getElementById('message-error');
-        const statusDiv = document.getElementById('booking-status');
-        
-        // Clear previous error states
-        [nameInput, phoneInput, msgInput].forEach(el => el.setAttribute('aria-invalid', 'false'));
-        nameErr.textContent = '';
-        phoneErr.textContent = '';
-        msgErr.textContent = '';
-        statusDiv.innerHTML = '';
-        
-        let isValid = true;
-        
-        // Name validation
-        if (!nameInput.value.trim()) {
-          nameInput.setAttribute('aria-invalid', 'true');
-          nameErr.textContent = 'Please enter your full name.';
-          isValid = false;
-        }
-        
-        // Phone validation (at least 7 digits)
-        const digits = phoneInput.value.replace(/\D/g, '');
-        if (!phoneInput.value.trim() || digits.length < 7) {
-          phoneInput.setAttribute('aria-invalid', 'true');
-          phoneErr.textContent = 'Please enter a valid phone number with at least 7 digits.';
-          isValid = false;
-        }
-        
-        // Message validation
-        if (!msgInput.value.trim()) {
-          msgInput.setAttribute('aria-invalid', 'true');
-          msgErr.textContent = 'Please describe what you need help with.';
-          isValid = false;
-        }
-        
-        if (!isValid) return;
-        
-        const submitBtn = document.getElementById('booking-submit-btn');
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
-        
-        const payload = {
-          channel: 'sms',
-          to: phoneInput.value.trim(),
-          body: `New Lead from ${nameInput.value.trim()} (${phoneInput.value.trim()}): ${msgInput.value.trim()}`
-        };
-        
-        try {
-          const res = await fetch('/api/notify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-          
-          if (res.ok) {
-            statusDiv.innerHTML = `
-              <div class="booking-fallback-banner" style="background: rgba(34, 197, 94, 0.15); border-color: rgba(34, 197, 94, 0.4);">
-                <p style="color: #4ade80; font-weight:700;"><i class="fas fa-check-circle"></i> Request Received!</p>
-                <p>Thank you ${nameInput.value.trim()}! We received your request and will call you back shortly.</p>
-              </div>
-            `;
-            bookingForm.reset();
-          } else {
-            throw new Error('Backend not configured or error returned');
-          }
-        } catch (err) {
-          // Graceful Degradation Fallback: preserve user input, provide call-now option
-          statusDiv.innerHTML = `
-            <div class="booking-fallback-banner">
-              <p><strong><i class="fas fa-info-circle"></i> Direct Call Preferred</strong></p>
-              <p>Thanks ${nameInput.value.trim()}! To confirm your appointment immediately, please call us directly:</p>
-              <a href="tel:+17863442837" class="btn-call-fallback">
-                <i class="fas fa-phone-volume"></i> Call (786) 344-2837 Now
-              </a>
-            </div>
-          `;
-        } finally {
-          submitBtn.disabled = false;
-          submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Booking Request';
-        }
-      });
-    }
+    /* The booking-form submit handler that used to sit here is gone with the
+       form. It POSTed to /api/notify — a route that is fail-closed by design —
+       so its success path never ran in production even once. It also addressed
+       the notification SMS to the visitor's own phone rather than to the
+       business, so had the route ever opened, the lead would have been texted
+       to the customer and never to us. */
+
   </script>
 </body>
 </html>
