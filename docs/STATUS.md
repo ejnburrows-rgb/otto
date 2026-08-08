@@ -590,7 +590,8 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   text sat at 2.15–2.77:1. Added separate `--*-fill` variables for solid buttons,
   lifted dark `--text3`, the language toggle, the sign-in secondary text, the
   dark blue pill and the active nav label, and gave the icon-only back button a
-  translated `aria-label`. The scan now reports **0**. Print styles were already
+  translated `aria-label`. The scan reported **0** at the time. **It did not
+  stay at 0 — see the 2026-08-08 entry, which measured 88 on `main`.** Print styles were already
   shipped on 2026-07-21 and were re-checked here: under print media the whole app
   interface is hidden and only the document prints, black on white.
 - 2026-07-29 — Standardised the eight test scripts on one summary line,
@@ -874,3 +875,70 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   and 44 `/api/*` calls, which 404 locally because the static dev server has no
   serverless functions — both expected, neither a fault in the app. Nothing
   under `api/` was touched; `hasServerAuth()` still returns `false`.
+
+- 2026-08-08 — Finished the facelift, which had only ever been done on one
+  screen. The approved Stitch design was merged for the owner/office dashboard
+  and the other 24 screens were left on the previous styling, so the app carried
+  two visual languages: Customers put a solid green "Add customer" beside a solid
+  blue "Photo → new customer", Backups stacked a green, a blue and an orange
+  button in one column, list avatars were `hsl(hash % 360, 55%, 30%)` — olive and
+  magenta against the navy interface, and clumped, so nine field workers in a row
+  got the same colour — and cards, inputs and the search box sat on four
+  different corner radii with three shadow treatments. The open pull request for
+  this (#99) was never merged, conflicts with `main`, and its CSS cancels itself
+  out (`.avatar` sets `font-size:18px` then `16px` in the same rule, `.kv .k`
+  sets `13px` then `14px`), so it was not used. What is here instead: one primary
+  action per screen in the approved blue with everything secondary as a bordered
+  ghost and red kept for destructive actions only, a fixed eight-tone record
+  palette in place of the hue wheel, one flat 4px surface everywhere, and the
+  dashboard's uppercase JetBrains Mono label treatment carried onto form labels,
+  detail rows and page-header counts (which nine list screens previously did not
+  show at all).
+  **Five real faults were found while doing it, none of them cosmetic.**
+  (1) Taken offline after one visit the app lost every webfont — `sw.js` held a
+  hardcoded stylesheet URL and the dashboard redesign had added Hanken Grotesk
+  and JetBrains Mono to the page without updating it, so the worker cached a
+  stylesheet the page never asks for. The icons kept working, because their URL
+  had not changed, which is what hid it. The worker now reads the list out of
+  `index.html` and writes no URLs down. `npm run qa:visual` on `main` fails 2 of
+  16 checks on this; it now passes 14 of 14, and it tests all four real families
+  rather than the two it used to hardcode — the same drift, in the harness.
+  (2) **The 2026-07-29 entry above says the axe scan "now reports 0". That
+  stopped being true when the dashboard landed.** A rerun against `main` reports
+  **88 failing elements** across 25 screens × 2 languages. Almost all of it is
+  one colour: `#2F6BFF` carrying white text measures 4.499:1 and misses AA by a
+  hundredth, on every primary button, both language-toggle states, every selected
+  tab and every dashboard status pill. Added `--action` (#2C67F8, 4.77:1) for
+  surfaces that carry white and kept `--blue` as the brand colour. The scan now
+  reports **0**, and the sign-in screen scans clean in both languages too.
+  (3) Twelve avatar and tile squares were filled with the bright *text* tokens —
+  white icons at 1.71:1 to 2.77:1 — and the Reports screen reached them through a
+  colour table, so it escaped the first sweep. All moved to the `--*-fill`
+  tokens, which exist for this and are all above 5:1.
+  (4) Five CSS variables were used and defined nowhere: `--gray` (three avatars,
+  painted transparent) and `--pri` (two location icons). A custom property that
+  does not exist fails silently, so nothing had ever noticed.
+  (5) `numberToWords()` declared `const dollars` and then reassigned it, so any
+  amount of $1,000 or more threw. Nothing called it; removed rather than
+  repaired. Also: four buttons asked for a size class (`small`) this stylesheet
+  has never defined and rendered full-size; two different screens were both
+  called "Inbox" in both languages, so the More menu listed the name twice (the
+  stored one is now "Email log" / "Registro de correos"); "1 jobs" appeared in
+  two places; an icon-only button on Urgent had no accessible name; and the
+  dashboard's icon-only filter button was a 24px-wide tap target.
+  Also removed the last of the 2026-07-31 facelift residue: four per-person
+  gradient themes, two cameo animations and a draggable-HUD class, none of which
+  could run, plus the glass override that came with them — it selected
+  `[class*="theme-"]`, which `theme-app` matches, so it had been forcing an
+  `!important` background and a 40px shadow onto every card and the top bar, and
+  the top bar has not been the approved #0B1326 since. And a hardcoded pink that
+  singled one named person out on the sign-in screen.
+  **Evidence:** `npm test` **382 checks, 0 failed** (10 new ones pin the design
+  system, including a computed contrast assertion and an every-CSS-variable-is-
+  defined check — those two are what found faults 3 and 4). `node
+  scripts/qa-check.mjs` `pass: true`, `missingHandlers` and `notOnWindowExport`
+  both empty. `npm run qa:visual` 14 passed, 0 failed. axe-core 0 failing
+  elements over 25 screens × 2 languages, against 88 on `main`. All 25 owner
+  screens driven at 390 / 768 / 1280px with real icons and fonts: 0 JavaScript
+  errors, 0 broken images, no sideways scroll. Nothing under `api/` was touched;
+  `hasServerAuth()` still returns `false`. **Still not verified: a real phone.**

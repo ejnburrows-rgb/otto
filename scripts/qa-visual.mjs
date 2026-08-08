@@ -54,17 +54,45 @@ fs.mkdirSync(path.join(CDN, 'gstatic'), { recursive: true });
 // ── the assets, fetched once and kept ────────────────────────────────────────
 // curl rather than fetch(): it honours the proxy settings some sandboxes need,
 // and this has to work in an environment the browser itself cannot reach out of.
-const FA = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css';
-const GF = 'https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Inter:wght@400;500;600;700;800&display=swap';
+//
+// The two stylesheet URLs are read out of index.html, never written down here.
+// They were written down here once, and the dashboard redesign then added two
+// font families to the page without touching this file — so the stand-in went on
+// serving a stylesheet declaring Newsreader and Inter while the app asked for
+// one declaring Hanken Grotesk and JetBrains Mono as well. The offline check
+// passed against fonts the app no longer uses. Same fault as the one in sw.js
+// that it exists to catch, in the harness rather than the product.
+const pageHtml = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const stylesheetsInPage = [...pageHtml.matchAll(/<link\b[^>]*>/g)]
+  .filter((tag) => /rel=["']stylesheet["']/.test(tag[0]))
+  .map((tag) => (tag[0].match(/href=["']([^"']+)["']/) || [])[1])
+  .filter((href) => href && href.startsWith('https://'));
+const FA = stylesheetsInPage.find((u) => u.includes('font-awesome'));
+const GF = stylesheetsInPage.find((u) => u.includes('fonts.googleapis.com'));
+if (!FA) stop('index.html no longer links a Font Awesome stylesheet — nothing to stand in for.');
+if (!GF) stop('index.html no longer links a Google Fonts stylesheet — nothing to stand in for.');
+
+// The families the page actually asks for, so the offline check below tests the
+// fonts the app really uses rather than a list that can quietly go stale.
+const FAMILIES = [...new URL(GF).searchParams.getAll('family')]
+  .map((f) => f.split(':')[0].replace(/\+/g, ' '));
+
 const CHART = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js';
 const PDFJS = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
 const UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36';
 
+// The cached copy is keyed by the URL it came from. Keying it by filename alone
+// means an edit to the page's font list silently reuses the previous download.
 function grab(url, dest) {
-  if (fs.existsSync(dest) && fs.statSync(dest).size > 0) return true;
+  const stamp = dest + '.url';
+  const fresh = fs.existsSync(dest) && fs.statSync(dest).size > 0
+    && fs.existsSync(stamp) && fs.readFileSync(stamp, 'utf8') === url;
+  if (fresh) return true;
   try {
     execFileSync('curl', ['-sfL', '-A', UA, '--max-time', '30', '-o', dest, url], { stdio: 'pipe' });
-    return fs.existsSync(dest) && fs.statSync(dest).size > 0;
+    const ok = fs.existsSync(dest) && fs.statSync(dest).size > 0;
+    if (ok) fs.writeFileSync(stamp, url);
+    return ok;
   } catch { return false; }
 }
 
@@ -145,21 +173,24 @@ page.on('response', r => { if (r.status() >= 400 && !expected(r.url())) badReq.p
 // Reads what is actually on screen. Note the glyph measurement: when the .woff2
 // is missing the computed font-family still reads "Font Awesome 6 Free" and
 // every icon is a blank box, so the name alone proves nothing.
-const visualState = () => page.evaluate(async () => {
+const visualState = () => page.evaluate(async (families) => {
   await document.fonts.ready;
   const el = document.querySelector('i.fas, i.fa-solid');
   const family = el ? getComputedStyle(el, '::before').fontFamily : 'none';
   const faceLoaded = await document.fonts.load('900 16px "Font Awesome 6 Free"').then(r => r.length > 0).catch(() => false);
   const width = (font) => { const c = document.createElement('canvas').getContext('2d'); c.font = font; return c.measureText('\uf015').width; };
   const glyph = width('900 16px "Font Awesome 6 Free"'), tofu = width('900 16px "NoSuchFontAnywhere"');
+  const webfonts = {};
+  for (const f of families) {
+    webfonts[f] = await document.fonts.load(`600 32px "${f}"`).then(r => r.length > 0).catch(() => false);
+  }
   return {
     iconsRender: /Font Awesome/i.test(family) && faceLoaded && glyph !== tofu,
-    glyph, tofu,
-    newsreader: await document.fonts.load('600 32px Newsreader').then(r => r.length > 0).catch(() => false),
-    inter: await document.fonts.load('400 16px Inter').then(r => r.length > 0).catch(() => false),
+    glyph, tofu, webfonts,
+    missing: Object.entries(webfonts).filter(([, ok]) => !ok).map(([f]) => f),
     chart: typeof window.Chart !== 'undefined',
   };
-});
+}, FAMILIES);
 
 try {
   // ── 1. online ──────────────────────────────────────────────────────────────
@@ -170,8 +201,8 @@ try {
   check('no JavaScript error on load', errors.length === 0, errors.slice(0, 3).join(' | '));
   const online = await visualState();
   check('the icons render as real glyphs', online.iconsRender, `glyph ${online.glyph}px vs fallback ${online.tofu}px`);
-  check('the heading font (Newsreader) loaded', online.newsreader);
-  check('the body font (Inter) loaded', online.inter);
+  check(`every webfont the page asks for loaded (${FAMILIES.join(', ')})`,
+    online.missing.length === 0, online.missing.join(', '));
 
   // ── 2. sign in through the real keypad ─────────────────────────────────────
   // Invented here, typed here, thrown away with the browser profile. It is
@@ -277,26 +308,29 @@ try {
   await p2.reload({ waitUntil: 'domcontentloaded' }).catch(() => {});
   await p2.waitForTimeout(3500);
 
-  const offline = await p2.evaluate(async () => {
+  const offline = await p2.evaluate(async (families) => {
     await document.fonts.ready;
     const el = document.querySelector('i.fas, i.fa-solid');
     const family = el ? getComputedStyle(el, '::before').fontFamily : 'none';
     const faceLoaded = await document.fonts.load('900 16px "Font Awesome 6 Free"').then(r => r.length > 0).catch(() => false);
     const width = (f) => { const c = document.createElement('canvas').getContext('2d'); c.font = f; return c.measureText('\uf015').width; };
     const glyph = width('900 16px "Font Awesome 6 Free"'), tofu = width('900 16px "NoSuchFontAnywhere"');
+    const missing = [];
+    for (const f of families) {
+      const ok = await document.fonts.load(`600 32px "${f}"`).then(r => r.length > 0).catch(() => false);
+      if (!ok) missing.push(f);
+    }
     return {
       iconsRender: /Font Awesome/i.test(family) && faceLoaded && glyph !== tofu,
-      glyph, tofu,
-      newsreader: await document.fonts.load('600 32px Newsreader').then(r => r.length > 0).catch(() => false),
-      inter: await document.fonts.load('400 16px Inter').then(r => r.length > 0).catch(() => false),
+      glyph, tofu, missing,
       renders: document.body.innerText.trim().length > 0,
     };
-  });
+  }, FAMILIES);
   await p2.screenshot({ path: path.join(SHOTS, 'offline-390.png') });
   check('the app still opens with no signal', offline.renders);
   check('the icons are still real glyphs offline', offline.iconsRender, `glyph ${offline.glyph}px vs fallback ${offline.tofu}px`);
-  check('the heading font survives offline', offline.newsreader);
-  check('the body font survives offline', offline.inter);
+  check(`every webfont survives offline (${FAMILIES.join(', ')})`,
+    offline.missing.length === 0, offline.missing.join(', '));
 } finally {
   try { server.close(); } catch { /* already closed */ }
   await browser.close();

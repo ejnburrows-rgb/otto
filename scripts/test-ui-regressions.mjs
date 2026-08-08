@@ -7,7 +7,7 @@
 //
 // Run with:  node scripts/test-ui-regressions.mjs
 
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 
@@ -91,6 +91,30 @@ console.log('\noffline-first — no image may depend on a remote host');
   check('no image-generation prompt text left in a src',
     imgSrcs.filter(s => s.length > 120), []);
   check('no unreplaced asset placeholders', /\{\{DATA:IMAGE/.test(html), false);
+
+  // A path can be perfectly local and still point at a file nobody committed —
+  // which renders as nothing and looks fine in the source. So check the disk.
+  // Only fixed paths can be checked: the rest are built at runtime from a blob
+  // in IndexedDB (`${url}`) or are inline base64 sent to the AI.
+  const onDisk = imgSrcs
+    .filter(s => !s.includes('${') && !s.startsWith('data:'))
+    .filter(s => !existsSync(new URL('../' + s.replace(/^\.\//, ''), import.meta.url)));
+  check('every committed image actually exists in the repo', onDisk, []);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+console.log('\nthe page must parse — a syntax error blanks the whole app');
+{
+  // This is fault #1 in AGENTS.md: an unmatched `}` in the sign-in keypad meant
+  // no JavaScript ran at all and the live site served a white screen. Nothing
+  // else in this suite would notice, because every other check reads the file as
+  // text. `new Function` parses the body without running it.
+  const blocks = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)];
+  check('the page has an inline script to check', blocks.length > 0, true);
+  const broken = blocks.map((b, i) => {
+    try { new Function(b[1]); return null; } catch (e) { return `block ${i + 1}: ${e.message}`; }
+  }).filter(Boolean);
+  check('every inline script parses', broken, []);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -128,10 +152,25 @@ console.log('\noffline-first — the icons and fonts must survive losing signal'
   // The service worker must precache the icon and font stylesheets: on a first
   // visit it is not controlling the page yet, so it never sees those requests,
   // and a phone that opened the app once and drove out of signal had no icons.
-  check('the icon stylesheet is precached at install',
-    /CDN_SHELL[\s\S]{0,400}font-awesome/.test(sw), true);
-  check('the webfont stylesheet is precached at install',
-    /CDN_SHELL[\s\S]{0,400}fonts\.googleapis\.com/.test(sw), true);
+  //
+  // These two used to assert that a hardcoded `CDN_SHELL` list existed in sw.js.
+  // The list did exist, and both checks passed — while the feature was broken.
+  // The dashboard redesign added Hanken Grotesk and JetBrains Mono to the page's
+  // stylesheet link and left sw.js holding the old URL, so the worker cached a
+  // stylesheet the page never asks for and every webfont vanished offline. The
+  // icons kept working, because their URL had not changed, which made it look
+  // fine. The list existing was never the point — the two URLs agreeing was.
+  // So the worker reads them off the page now, and nothing is written twice.
+  check('the worker reads its stylesheet list out of the page',
+    /cdnStylesheetsIn/.test(sw), true);
+  check('no stylesheet URL is hardcoded in the worker, to drift out of date again',
+    [...sw.matchAll(/['"](https:\/\/(?:cdnjs\.cloudflare\.com|fonts\.googleapis\.com)[^'"]+)['"]/g)]
+      .map(m => m[1]), []);
+  const hrefs = cacheable.map(t => (t.match(/href=["']([^"']+)["']/) || [])[1]);
+  check('the page still links the icon stylesheet for the worker to find',
+    hrefs.some(h => h && h.includes('font-awesome')), true);
+  check('the page still links the webfont stylesheet for the worker to find',
+    hrefs.some(h => h && h.includes('fonts.googleapis.com')), true);
   // Caching a stylesheet without the .woff2 files it references still leaves
   // every icon a blank box, and the computed font-family still reads correctly,
   // so this one is invisible unless you measure a glyph.
@@ -161,6 +200,117 @@ console.log('\napproved Stitch dashboard structure must stay intact');
     /^\s*ensureFloatingAI\(\);/m.test(html), false);
   check('phone job footer leaves room for the add button',
     html.includes('.hub-job-foot { padding-right:62px; }'), true);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+console.log('\nthe design system must hold across every screen, not just the dashboard');
+{
+  // WHAT HAPPENED: the dashboard was rebuilt to the approved design and the
+  // other 24 screens were not, so the app had two visual languages in it. The
+  // most visible symptom was button colour — Customers put a green "Add
+  // customer" next to a blue "Photo → new customer", and Backups stacked a
+  // green, a blue and an orange button in one column, so nothing on the screen
+  // said which action mattered. One primary, everything else secondary, red
+  // only where something is destroyed.
+  check('no green or amber button variant is defined',
+    /\.btn\.(green|amber)\s*\{/.test(html), false);
+  check('no button asks for a green or amber variant',
+    [...html.matchAll(/class="btn[^"]*"/g)].map(m => m[0]).filter(c => /\b(green|amber)\b/.test(c)), []);
+  // `small` was never a size in this stylesheet — `sm` is — so four buttons
+  // asking for it silently rendered at full size.
+  check('no button asks for a size that does not exist',
+    [...html.matchAll(/class="btn[^"]*"/g)].map(m => m[0])
+      .filter(c => /\bsmall\b/.test(c) || /\bbtn-primary\b/.test(c)), []);
+
+  // WHAT HAPPENED: --green/--amber/--red/--blue2 are the *text* colours, kept
+  // deliberately bright so they read on a dark card. Twelve avatar and tile
+  // squares used them as solid fills with a white icon on top, which measures
+  // 1.71:1 to 2.77:1 — well under the 4.5:1 AA needs. The --*-fill tokens exist
+  // for exactly this and are all above 5:1.
+  //
+  // The first version of this check read the style attribute, and missed the
+  // Reports screen entirely, because those six squares get their colour from a
+  // table (`'var(--amber)'` in an array) rather than from the literal attribute.
+  // So it looks at both: anything painted as a background, and any bright token
+  // sitting in a quoted string ready to be handed to one.
+  const BRIGHT = String.raw`--(?:green|amber|red|blue2|blue|accent)\b`;
+  // Small dots and bars carry nothing on top of them, so a bright colour is
+  // exactly right there — they are pure indicators, not surfaces. Everything
+  // else that gets painted has a label or a glyph sitting on it.
+  const INDICATOR = /notif-dot|sched-dots|pindots|dotsHtml/;
+  const offenders = [];
+  html.split('\n').forEach((line, i) => {
+    if (INDICATOR.test(line)) return;
+    const bg = new RegExp(String.raw`background:\s*var\(\s*(${BRIGHT})\s*\)`).exec(line);
+    if (bg) offenders.push(`line ${i + 1}: ${bg[0]}`);
+    // A colour handed to a `.ic` or `.avatar` square through a table rather than
+    // written into the attribute — how the Reports screen escaped the first
+    // version of this check. Lines that name a text colour are skipped: putting
+    // a bright token on text is the whole reason those tokens are bright. The
+    // `background:` case above does not use this exemption, so a line that sets
+    // both a background and a colour is still caught.
+    if (/color/i.test(line)) return;
+    const tbl = new RegExp(String.raw`'var\(\s*(${BRIGHT})\s*\)'`).exec(line);
+    if (tbl) offenders.push(`line ${i + 1}: ${tbl[0]}`);
+  });
+  check('nothing paints a solid surface with a bright text colour', offenders, []);
+
+  // WHAT HAPPENED: three avatars asked for `var(--gray)`, which is defined
+  // nowhere in this file, so they painted transparent. Nothing caught it,
+  // because a CSS custom property that does not exist fails silently.
+  {
+    const declared = new Set([...html.matchAll(/(--[a-z0-9-]+)\s*:/gi)].map(m => m[1]));
+    const used = new Set([...html.matchAll(/var\((--[a-z0-9-]+)/gi)].map(m => m[1]));
+    check('every CSS variable the page uses is actually defined',
+      [...used].filter(v => !declared.has(v)).sort(), []);
+  }
+
+  // WHAT HAPPENED: #2F6BFF carrying white text measures 4.499:1 and misses AA by
+  // a hundredth, so an axe-core run over 25 screens in both languages reported
+  // it on every primary button, both language-toggle states, every selected tab
+  // and every dashboard status pill — 88 failing elements. --action is the same
+  // blue moved just far enough to clear the bar. This computes the ratio rather
+  // than trusting the hex, so nudging the colour back cannot pass quietly.
+  {
+    const lum = (hex) => {
+      const c = [0, 2, 4].map(i => parseInt(hex.slice(1 + i, 3 + i), 16) / 255)
+        .map(v => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)));
+      return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+    };
+    const onWhite = (hex) => (Math.max(lum(hex), 1) + 0.05) / (Math.min(lum(hex), 1) + 0.05);
+    const tokens = ['--action', '--status-done', '--accent-fill', '--green-fill',
+      '--amber-fill', '--red-fill', '--neutral-fill'];
+    const failing = tokens.map((tok) => {
+      const hex = (html.match(new RegExp(`${tok}\\s*:\\s*(#[0-9a-f]{6})`, 'i')) || [])[1];
+      return { tok, hex, ratio: hex ? Number(onWhite(hex).toFixed(2)) : null };
+    }).filter(r => r.hex === undefined || r.ratio === null || r.ratio < 4.5);
+    check('every token that carries white text clears WCAG AA (4.5:1)', failing, []);
+  }
+
+  // WHAT HAPPENED: two different screens were both called "Inbox", in both
+  // languages, so the More menu listed the same name twice.
+  {
+    const table = (start) => html.slice(html.indexOf(start), html.indexOf(start) + 9000);
+    const nameFor = (block, key) => (block.match(new RegExp(`[ {,]${key}:\\s*'([^']*)'`)) || [])[1];
+    const en = table('    en: {'), es = table('    es: {');
+    check('the email log and the inbox are not both called the same thing',
+      [nameFor(en, 'emails') === nameFor(en, 'inbox'), nameFor(es, 'emails') === nameFor(es, 'inbox')],
+      [false, false]);
+  }
+
+  // WHAT HAPPENED: the 2026-07-31 facelift left four per-person gradient themes,
+  // two cameo animations and a glass override behind. None could run —
+  // finishLogin() sets `theme-app` for every role — but the glass rule selected
+  // [class*="theme-"], which theme-app matches, so it was forcing an !important
+  // background and a 40px shadow onto every card and the top bar.
+  check('the dead per-person theme rules have not come back',
+    /body\.theme-(otto|julio|principe|saray|field)\s*[,{]/.test(html), false);
+  check('nothing styles by partial theme class name again',
+    // Comments stripped first: this file explains the rule it is banning, and
+    // the explanation must not be what trips the check.
+    /\[class\*=["']theme-["']\]/.test(html.replace(/\/\*[\s\S]*?\*\//g, '')), false);
+  check('no hardcoded colour singles one person out',
+    /#EC4899/i.test(html), false);
 }
 
 console.log(`\n${passed} passed, ${failed} failed\n`);

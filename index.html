@@ -41,6 +41,24 @@
       --green-fill: #047857;
       --amber-fill: #B45309;
       --red-fill: #B91C1C;
+      /* The neutral of the same family, for a state that is neither good nor
+         bad — an unticked checklist item, a low-severity alert. Three places
+         asked for a --gray token, which was never defined anywhere, so
+         those squares painted transparent. 7.58:1 against #fff. */
+      --neutral-fill: #475569;
+      /* The approved electric blue is --blue (#2F6BFF) and stays the brand
+         colour. It is not safe to put white text on: measured against #ffffff it
+         is 4.49:1, missing WCAG AA (4.5:1) by a hundredth. That is not a
+         rounding curiosity — an axe-core run over 25 screens in both languages
+         reported it on every primary button, both language-toggle states, every
+         selected tab and every dashboard status pill. --action is the same blue
+         moved just far enough to clear the bar (4.77:1) and is indistinguishable
+         from it on screen. Use --action wherever white sits on top; use --blue
+         for the brand itself. --status-done is the same story for the green
+         "Completed" pill, which was 3.76:1 at 10px. */
+      --action: #2C67F8;
+      --action-hover: #1F5BEA;
+      --status-done: #047857;
 
       /* Surface Colors */
       --bg: #F8FAFC;          /* Very subtle cool off-white */
@@ -94,120 +112,25 @@
     /* ===== RESET & BASE TYPOGRAPHY ===== */
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html { background: var(--bg); }
-    /* ===== 8K EXECUTIVE DESK BACKGROUND THEMES & CRYSTAL GLASS HUD ===== */
-    body.theme-otto {
-      background: linear-gradient(180deg, #08203f 0%, #0a1929 55%, #0b1220 100%);
-      background-size: cover;
-      --accent: #0066FF;
-      --accent-hover: #005CE6;
-      --glass-bg: rgba(10, 25, 47, 0.75);
-      --glass-border: rgba(56, 189, 248, 0.35);
-    }
-    body.theme-julio, body.theme-principe {
-      background: linear-gradient(180deg, #06301f 0%, #06231a 55%, #0b1220 100%);
-      background-size: cover;
-      --accent: #16a34a;
-      --accent-hover: #15803d;
-      --glass-bg: rgba(6, 78, 59, 0.75);
-      --glass-border: rgba(74, 222, 128, 0.35);
-    }
-    body.theme-saray {
-      background: linear-gradient(180deg, #3b0d29 0%, #26102a 55%, #0b1220 100%);
-      background-size: cover;
-      --accent: #f472b6;
-      --accent-hover: #db2777;
-      --glass-bg: rgba(131, 24, 67, 0.75);
-      --glass-border: rgba(244, 114, 182, 0.35);
-    }
-    body.theme-field {
-      background: linear-gradient(180deg, #0b1220 0%, #0f172a 100%);
-      --accent: #0284c7;
-      --accent-hover: #0369a1;
-      --glass-bg: rgba(15, 23, 42, 0.85);
-      --glass-border: rgba(255, 255, 255, 0.15);
-    }
-
-    body[class*="theme-"] .topbar,
-    body[class*="theme-"] .card,
-    body[class*="theme-"] .modal-content,
-    body[class*="theme-"] .tile,
-    body[class*="theme-"] .login {
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      background: var(--glass-bg) !important;
-      border: 1px solid var(--glass-border) !important;
-      box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.45);
-    }
-
-    /* ===== BEACON PULSE & CAMEO ANIMATIONS ===== */
-    @keyframes beacon-pulse {
-      0%, 100% {
-        filter: drop-shadow(0 0 12px rgba(239, 68, 68, 0.8)) drop-shadow(0 0 25px rgba(239, 68, 68, 0.5));
-        transform: scale(1);
-      }
-      50% {
-        filter: drop-shadow(0 0 28px rgba(239, 68, 68, 1)) drop-shadow(0 0 50px rgba(239, 68, 68, 0.9));
-        transform: scale(1.08);
-      }
-    }
-
-    @keyframes float-cameo {
-      0%, 100% { transform: translateY(0px) rotate(0deg); }
-      50% { transform: translateY(-10px) rotate(2deg); }
-    }
-
-    /* Persona cameo styling. The <img> elements were removed because the only
-       sources ever committed were image-generation prompt text, not files, so
-       every one 404'd in production. Re-add the images here once real artwork
-       ships in the repo. */
-    .rose-beacon-el {
-      position: fixed;
-      top: 68px;
-      right: 24px;
-      width: 72px;
-      height: 72px;
-      z-index: 99;
-      pointer-events: auto;
-      cursor: pointer;
-      animation: beacon-pulse 3s infinite ease-in-out;
-      display: none;
-      object-fit: contain;
-    }
-    body.theme-julio .rose-beacon-el, body.theme-principe .rose-beacon-el {
-      display: block;
-    }
-
-    .prince-cameo-el {
-      position: fixed;
-      bottom: 24px;
-      right: 24px;
-      width: 100px;
-      height: 130px;
-      z-index: 99;
-      pointer-events: auto;
-      cursor: pointer;
-      animation: float-cameo 4s infinite ease-in-out;
-      display: none;
-      object-fit: contain;
-    }
-    body.theme-saray .prince-cameo-el {
-      display: block;
-    }
+    /* The per-person gradient themes, the "rose beacon" and "prince cameo"
+       animations and the draggable-HUD class that used to sit here have been
+       removed. All of it came from the 2026-07-31 facelift commit and none of it
+       could ever run: `finishLogin()` sets `body.className = 'theme-app'` for
+       every role, so no `theme-otto` / `theme-julio` / `theme-saray` rule ever
+       matched, the two cameo elements have no artwork in this repository and no
+       markup on the page, and the drag binding was deleted in PR #89 because it
+       was carrying list cards up the screen on an ordinary scroll. The glass
+       override that came with them selected `[class*="theme-"]`, which *does*
+       match `theme-app`, so it was quietly forcing an `!important` background
+       and a 40px shadow onto every card and the top bar — which is why the top
+       bar has not been the approved #0B1326 since the dashboard landed. One
+       theme, defined once, in the design-system block below. */
 
     .crystal-logo {
       height: 42px;
       object-fit: contain;
       border-radius: 8px;
-      filter: drop-shadow(0 4px 12px rgba(0, 102, 255, 0.3));
       transition: transform 0.25s ease;
-    }
-    .crystal-logo:hover {
-      transform: scale(1.05);
-    }
-
-    .draggable-hud {
-      touch-action: none;
-      user-select: none;
     }
 
     body { height: 100%; }
@@ -231,8 +154,8 @@
     /* ===== TOP BAR ===== */
     .topbar {
       position: sticky; top: 0; z-index: 40;
-      background: var(--blue);
-      color: #fff;
+      background: var(--bg2);
+      color: var(--text);
       display: flex; align-items: center; gap: 12px;
       padding: 12px 20px; padding-top: max(12px, env(safe-area-inset-top));
       box-shadow: var(--shadow-sm);
@@ -313,7 +236,7 @@
     .sched-day .dn { font-size: 18px; font-weight: 600; margin-top: 4px; color: var(--text); }
     .sched-dots { display: flex; gap: 4px; margin-top: 8px; height: 6px; }
     .sched-dots span { width: 6px; height: 6px; border-radius: 50%; }
-    .sched-pto { background: var(--green) !important; color: #fff !important; border-color: var(--green) !important; }
+    .sched-pto { background: var(--green-fill) !important; color: #fff !important; border-color: var(--green-fill) !important; }
     .sched-pto .dw, .sched-pto .dn { color: #fff; }
     .notif-dot { position: absolute; top: -3px; right: -3px; width: 12px; height: 12px; background: var(--red); border-radius: 50%; border: 2px solid var(--card); }
 
@@ -356,10 +279,9 @@
     .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     
     .btn.block { width: 100%; }
-    .btn.green { background: var(--green-fill); box-shadow: 0 2px 4px rgba(5, 150, 105, 0.2); }
-    .btn.green:hover { background: #036347; box-shadow: 0 4px 8px rgba(5, 150, 105, 0.3); }
-    .btn.amber { background: var(--amber-fill); box-shadow: 0 2px 4px rgba(217, 119, 6, 0.2); }
-    .btn.amber:hover { background: #96450A; box-shadow: 0 4px 8px rgba(217, 119, 6, 0.3); }
+    /* No .green or .amber button variant — see the design-system block below.
+       --green-fill and --amber-fill are still used, by the status pills and the
+       schedule dots, where the colour means something. */
     .btn.red { background: var(--red-fill); box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2); }
     .btn.red:hover { background: #991818; box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3); }
     
@@ -373,7 +295,7 @@
 
     .fab {
       position: fixed; right: 24px; bottom: calc(88px + env(safe-area-inset-bottom));
-      width: 56px; height: 56px; border-radius: 50%; background: var(--accent); color: #fff;
+      width: 56px; height: 56px; border-radius: 50%; background: var(--action); color: #fff;
       border: none; font-size: 24px; box-shadow: var(--shadow2); cursor: pointer; z-index: 30;
       transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; justify-content: center;
     }
@@ -496,12 +418,12 @@
 
     .toast {
       position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(100px + env(safe-area-inset-bottom));
-      background: var(--blue); color: #fff; padding: 14px 20px; border-radius: var(--radius-sm); z-index: 90;
+      background: var(--action); color: #fff; padding: 14px 20px; border-radius: var(--radius-sm); z-index: 90;
       box-shadow: var(--shadow2); font-weight: 500; font-size: 15px; max-width: 90vw; text-align: center;
       animation: pop 0.3s cubic-bezier(0.16, 1, 0.3, 1); 
     }
-    .toast.success { background: var(--green); }
-    .toast.error { background: var(--red); }
+    .toast.success { background: var(--green-fill); }
+    .toast.error { background: var(--red-fill); }
     @keyframes pop { from { opacity: 0; transform: translate(-50%, 20px) scale(0.95); } }
 
     .listening { animation: pulse 1.5s ease-in-out infinite; }
@@ -510,7 +432,7 @@
     /* ===== LOGIN ===== */
     .login { 
       min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; 
-      padding: 24px; gap: 24px; background: var(--blue); color: #fff;
+      padding: 24px; gap: 24px; background: var(--bg2); color: var(--text);
     }
     /* Secondary text on the sign-in screen sits on the navy background, not on a
        card, so it needs its own lighter value — var(--text2) only clears AA
@@ -536,7 +458,7 @@
       font-size: 24px; font-weight: 500; cursor: pointer; transition: all 0.1s ease;
     }
     .pinpad button:hover { background: var(--card-hover); }
-    .pinpad button:active { background: var(--accent); color: #fff; transform: scale(0.95); }
+    .pinpad button:active { background: var(--action); color: #fff; transform: scale(0.95); }
     
     .pindots { display: flex; gap: 16px; justify-content: center; margin: 20px 0; }
     .pindots span { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--accent); transition: all 0.2s ease; }
@@ -565,7 +487,7 @@
     }
     .bubble:hover .copy-btn { opacity: 1; }
     .bubble .avatar { 
-      width: 22px; height: 22px; border-radius: 50%; background: var(--blue2); color: #fff; 
+      width: 22px; height: 22px; border-radius: 50%; background: var(--action); color: #fff; 
       display: inline-flex; align-items: center; justify-content: center; font-size: 11px; margin-right: 8px; vertical-align: middle;
     }
     .bubble.me .avatar { background: rgba(255,255,255,0.2); }
@@ -667,6 +589,7 @@
       --glass-bg: #171F33;
       --glass-border: #434655;
     }
+
     .topbar {
       min-height: 64px;
       background: #0B1326;
@@ -676,7 +599,7 @@
     .topbar .brand { display:flex; align-items:center; gap:10px; font-family:'Hanken Grotesk', sans-serif; font-size:17px; font-weight:800; color:#B5C4FF; white-space:nowrap; }
     .crystal-logo { width:40px; height:40px; border-radius:50%; object-fit:cover; filter:none; border:1px solid #434655; }
     .topbar .iconbtn, .langtoggle { background:transparent; border:1px solid #434655; }
-    .langtoggle button.on { background:#2F6BFF; color:#fff; }
+    .langtoggle button.on { background:var(--action); color:#fff; }
     .wrap { max-width:780px; padding:32px 16px 176px; }
     .pagehead { margin-bottom: 20px; }
     .pagehead h1, h1 { font-family:'Hanken Grotesk', Inter, system-ui, sans-serif; font-weight:700; letter-spacing:-.01em; }
@@ -699,17 +622,66 @@
     .avatar { width: 48px; height: 48px; border-radius: 14px; box-shadow: none; }
     .li-title { font-size: 16px; }
     .li-sub { font-size: 14px; }
-    .btn { border-radius:4px; font-weight:700; letter-spacing:0; }
-    .btn, .tabs button.on { background:#2F6BFF; }
-    .btn:hover { background:#1F5BEA; }
-    .btn.ghost { background:transparent; border-color:#434655; color:var(--text); }
-    .fab { background:#2F6BFF; border:1px solid #7EA6FF; box-shadow:0 8px 22px rgba(0,0,0,.38); }
+
+    /* One primary action per screen, and it is always this blue.
+       The green and amber solid buttons that used to appear alongside it are
+       gone: "Add customer" green next to "Photo → new customer" blue told a
+       user nothing about which one mattered, and the Backups screen stacked a
+       green, a blue and an orange button in a column. Colour now carries
+       meaning rather than decoration — blue is the action to take, a bordered
+       ghost button is a secondary action, and red is reserved for the ones that
+       destroy something. Status is shown on pills, which is where a reader
+       looks for it. `.btn.green` and `.btn.amber` are deliberately left
+       undefined so anything still asking for them falls back to the primary
+       fill rather than to an undefined colour. */
+    .btn { border-radius:4px; font-weight:700; letter-spacing:0; box-shadow:none; }
+    .btn, .tabs button.on { background:var(--action); }
+    .btn:hover { background:var(--action-hover); box-shadow:none; transform:none; }
+    .btn:active { transform:scale(.985); box-shadow:none; }
+    .btn.ghost { background:transparent; border-color:#434655; color:var(--text); box-shadow:none; }
+    .btn.ghost:hover { background:var(--card-hover); border-color:#7EA6FF; color:var(--text); box-shadow:none; }
+    .btn.red { background:var(--red-fill); box-shadow:none; }
+    .btn.red:hover { background:#991818; box-shadow:none; }
+    .btn.sm { border-radius:4px; }
+
+    .fab { background:var(--action); border:1px solid #7EA6FF; box-shadow:0 8px 22px rgba(0,0,0,.38); }
     .bottomnav { background: var(--card); backdrop-filter: none; padding-top: 10px; border-top: 1px solid var(--line); }
     .bottomnav button { min-height: 56px; font-weight: 650; }
     .bottomnav button.on, [data-theme="dark"] .bottomnav button.on { color: var(--accent); }
-    .searchbar input { background: var(--card); border-radius: 12px; box-shadow: none; }
     .tabs { padding: 2px 0 10px; scrollbar-width: thin; }
-    .tabs button { min-height: 44px; padding: 10px 16px; }
+    .tabs button { min-height: 44px; padding: 10px 16px; box-shadow:none; }
+    .tabs button.on { box-shadow:none; }
+
+    /* ---- one surface, one corner radius ----
+       Cards, inputs, the search box and the tiles were on four different radii
+       (8px, 12px, 14px, 4px) with three different shadow treatments, because
+       each was styled by a different pass. The dashboard set the house style at
+       a flat 4px card with a 1px --line border and no shadow; everything else
+       now follows it. */
+    .card, .tile { border-radius:4px; }
+    .searchbar input { background: var(--card); border-radius:4px; box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none; min-height:52px; }
+    .searchbar input:focus { border-color:#7EA6FF; box-shadow:0 0 0 2px rgba(47,107,255,.28); }
+    .field input, .field select, .field textarea { border-radius:4px; background:var(--card); }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color:#7EA6FF; box-shadow:0 0 0 2px rgba(47,107,255,.28); }
+    .sheet { border-radius:16px 16px 0 0; }
+    @media (min-width:600px) { .sheet { border-radius:6px; } }
+    .sheet h2 { font-family:'Hanken Grotesk', Inter, system-ui, sans-serif; font-weight:700; font-size:22px; }
+    .sheet-close { border-radius:4px; }
+    .photos-grid img { border-radius:4px; }
+
+    /* ---- labels read as labels ----
+       The dashboard cards label their numbers in uppercase JetBrains Mono. The
+       detail screens used the same weight and size for the label and the value,
+       so a customer record read as an undifferentiated column of grey text. */
+    .field label, .field .field-heading { font:500 12px/1.35 'JetBrains Mono', monospace; letter-spacing:.04em; text-transform:uppercase; color:var(--text2); margin-bottom:8px; }
+    .kv { padding:16px 0; }
+    .kv .k { width:150px; font:500 12px/1.35 'JetBrains Mono', monospace; letter-spacing:.04em; text-transform:uppercase; color:var(--text2); }
+    .kv .v { font-size:16px; font-weight:500; color:var(--text); }
+    .pagehead .sub { font:500 12px/1.35 'JetBrains Mono', monospace; letter-spacing:.05em; text-transform:uppercase; color:var(--text2); margin-top:6px; }
+    .section-title { font-family:'Hanken Grotesk', Inter, system-ui, sans-serif; }
+    .empty { padding:56px 20px; gap:14px; }
+    .empty i { font-size:34px; color:var(--text3); opacity:.55; }
+    .toast { border-radius:4px; }
     .login { background: linear-gradient(155deg, #062D3A 0%, #074758 54%, #0B1720 100%); gap: 18px; }
     .login .card-login { border-radius: 20px; padding: 22px; }
     .login .logo { width: 92px; height: 92px; border-radius: 20px; background: #fff; color: #007F91; }
@@ -733,11 +705,11 @@
     .hub-kpi-icon { color:#B5C4FF; font-size:21px; }
     .hub-section-head { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:10px; }
     .hub-section-head h2 { color:var(--text); font-size:22px; line-height:1.25; font-weight:700; }
-    .hub-section-action { border:0; background:transparent; color:#B5C4FF; min-height:44px; padding:0 4px; font-weight:700; cursor:pointer; }
+    .hub-section-action { border:0; background:transparent; color:#B5C4FF; min-width:44px; min-height:44px; padding:0 4px; font-weight:700; cursor:pointer; }
     .hub-week { display:grid; grid-template-columns:repeat(5, minmax(58px, 1fr)); gap:10px; overflow-x:auto; padding-bottom:2px; scrollbar-width:none; }
     .hub-week::-webkit-scrollbar { display:none; }
     .hub-day { min-height:92px; border:1px solid var(--line); border-radius:4px; background:var(--card); color:var(--text); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; cursor:pointer; }
-    .hub-day.today { background:#2F6BFF; border-color:#7EA6FF; color:#fff; }
+    .hub-day.today { background:var(--action); border-color:#7EA6FF; color:#fff; }
     .hub-day-name { font:500 11px/1.2 'JetBrains Mono', monospace; letter-spacing:.05em; text-transform:uppercase; }
     .hub-day-number { font-size:22px; line-height:1.2; font-weight:700; }
     .hub-day-count { min-height:14px; color:var(--text2); font-size:10px; }
@@ -750,8 +722,8 @@
     .hub-job-top > span:first-child { display:flex; flex-direction:column; min-width:0; }
     .hub-job-title, .hub-job-meta { display:block; }
     .hub-job-meta { color:var(--text2); font-size:13px; margin-top:4px; }
-    .hub-job-status { flex:0 0 auto; border-radius:999px; padding:5px 8px; color:#fff; background:#2F6BFF; font:600 10px/1 'JetBrains Mono', monospace; text-transform:uppercase; }
-    .hub-job-status.completed { background:#059669; }
+    .hub-job-status { flex:0 0 auto; border-radius:999px; padding:5px 8px; color:#fff; background:var(--action); font:600 10px/1 'JetBrains Mono', monospace; text-transform:uppercase; }
+    .hub-job-status.completed { background:var(--status-done); }
     .hub-job-foot { align-items:center; margin-top:14px; padding-top:12px; border-top:1px solid var(--line); }
     .hub-tech { display:flex; align-items:center; gap:8px; font:500 12px/1.2 'JetBrains Mono', monospace; }
     .hub-tech-avatar { width:30px; height:30px; border-radius:50%; border:1px solid var(--line); background:var(--card-elevated); display:flex; align-items:center; justify-content:center; color:#B5C4FF; font-size:11px; font-weight:700; }
@@ -839,7 +811,7 @@
       </div>
       <div style="padding:12px 16px;border-top:1px solid var(--line);display:flex;gap:8px;background:var(--card-elevated);">
         <input type="text" id="plumbbot-input" placeholder="Ask PlumbBot anything..." style="flex:1;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 14px;color:var(--text);" onkeydown="if(event.key==='Enter')sendPlumbBotMsg()" />
-        <button class="btn btn-primary" onclick="sendPlumbBotMsg()" style="padding:10px 16px;border-radius:8px;"><i class="fas fa-paper-plane"></i></button>
+        <button class="btn sm" onclick="sendPlumbBotMsg()" style="padding:10px 16px;"><i class="fas fa-paper-plane"></i></button>
       </div>
     </div>
   </div>
@@ -871,44 +843,10 @@
   async function serverFetch(url, options = {}) {
     return fetch(url, options);
   }
-  // Auto-estimating: number to words converter for proposal totals
-  function numberToWords(n) {
-    if (n === 0) return 'Zero Dollars';
-    const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
-    const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
-    const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
-    
-    function convertHundreds(num) {
-      let str = '';
-      if (num >= 100) { str += ones[Math.floor(num / 100)] + ' Hundred '; num %= 100; }
-      if (num >= 20) { str += tens[Math.floor(num / 10)] + ' '; num %= 10; }
-      else if (num >= 10) { str += teens[num - 10] + ' '; num = 0; }
-      if (num > 0) { str += ones[num] + ' '; }
-      return str.trim();
-    }
-    
-    const dollars = Math.floor(n);
-    const cents = Math.round((n - dollars) * 100);
-    let result = '';
-    
-    if (dollars >= 1000000) {
-      result += convertHundreds(Math.floor(dollars / 1000000)) + ' Million ';
-      dollars %= 1000000;
-    }
-    if (dollars >= 1000) {
-      result += convertHundreds(Math.floor(dollars / 1000)) + ' Thousand ';
-      dollars %= 1000;
-    }
-    if (dollars > 0) {
-      result += convertHundreds(dollars);
-    }
-    
-    result = result.trim() + ' Dollar' + (Math.floor(n) !== 1 ? 's' : '');
-    if (cents > 0) {
-      result += ' and ' + convertHundreds(cents) + ' Cent' + (cents !== 1 ? 's' : '');
-    }
-    return result;
-  }
+  /* `numberToWords()` used to sit here, unused and unusable: it declared
+     `const dollars` and then reassigned it, so any amount of $1,000 or more
+     threw "Assignment to constant variable". Nothing called it. Removed rather
+     than repaired — printed invoices spell amounts with `money()`. */
 
   /* ============================ i18n ============================ */
   let lang = localStorage.getItem('otto_lang') || 'en';
@@ -961,7 +899,7 @@
       createEstimate: 'Create estimate from this', aiNotReady: 'AI is not set up yet — the file was saved. You can type the estimate.',
       couldntRead: "Couldn't read much from this file — you can still type the estimate below.",
       showInLang: 'Show in this language', drawingHint: 'Upload a drawing or PDF and I will read it and draft a materials list.',
-      emails: 'Inbox', inbox: 'Inbox', payroll: 'Payroll', addEmail: 'Add email', importEmail: 'Import email file',
+      emails: 'Email log', inbox: 'Inbox', payroll: 'Payroll', addEmail: 'Add email', importEmail: 'Import email file',
       all: 'All', escalations: 'Escalations', approvalHistory: 'Approval history',
       from: 'From', subject: 'Subject', message: 'Message', attachments: 'Attachments', matchedTo: 'Matched to',
       matchCustomer: 'Customer / job', summarize: 'Summarize', aiSummary: 'AI summary', noMatch: 'Not matched yet',
@@ -970,7 +908,7 @@
       rowsFound: 'rows found', importRows: 'Import these rows', payrollSummary: 'Payroll summary', totalGross: 'Total gross',
       emailsHint: 'Forwarded emails and attachments, matched to the right customer and job.',
       summarizing: 'Summarizing…', importing: 'Importing…', noColumns: "Couldn't read columns — check the file.",
-      hub: 'Hub', jobsToday: 'Today\'s jobs', newCustomers: 'New customers', pendingInvoices: 'Pending invoices', openEstimates: 'Open estimates', weeklySchedule: 'Weekly Schedule', viewCalendar: 'View Calendar', recentJobs: 'Recent Jobs', jobCount: 'jobs', onSite: 'Workers on site', exceptions: 'Exceptions', readyToClose: 'Ready to close',
+      hub: 'Hub', jobsToday: 'Today\'s jobs', newCustomers: 'New customers', pendingInvoices: 'Pending invoices', openEstimates: 'Open estimates', weeklySchedule: 'Weekly Schedule', viewCalendar: 'View Calendar', recentJobs: 'Recent Jobs', jobCount: 'jobs', jobCountOne: 'job', onSite: 'Workers on site', exceptions: 'Exceptions', readyToClose: 'Ready to close',
       offSite: 'Off-site', missingPhoto: 'Missing photo', missingChecklist: 'Missing checklist', lateCheckout: 'Late check-out', aiEscalated: 'AI escalated',
       checkIn: 'Check in', checkOut: 'Check out', checkedInAt: 'Checked in', onSiteNow: 'On site', setSite: 'Set job site (I am here)', siteSet: 'Job site location saved',
       beforePhoto: 'Before photo', afterPhoto: 'After photo', checklist: 'Checklist', checklistDone: 'Checklist complete', alerts: 'Alerts', alert: 'Alert',
@@ -1045,7 +983,7 @@
       createEstimate: 'Crear presupuesto con esto', aiNotReady: 'La IA aún no está configurada — el archivo se guardó. Puedes escribir el estimado.',
       couldntRead: 'No se pudo leer mucho de este archivo — puedes escribir el estimado abajo.',
       showInLang: 'Mostrar en este idioma', drawingHint: 'Sube un plano o PDF y lo leeré para hacer una lista de materiales.',
-      emails: 'Bandeja', inbox: 'Bandeja', payroll: 'Nómina', addEmail: 'Agregar correo', importEmail: 'Importar archivo de correo',
+      emails: 'Registro de correos', inbox: 'Bandeja', payroll: 'Nómina', addEmail: 'Agregar correo', importEmail: 'Importar archivo de correo',
       all: 'Todos', approvalHistory: 'Historial de aprobaciones',
       from: 'De', subject: 'Asunto', message: 'Mensaje', attachments: 'Adjuntos', matchedTo: 'Vinculado a',
       matchCustomer: 'Cliente / trabajo', summarize: 'Resumir', aiSummary: 'Resumen de IA', noMatch: 'Sin vincular aún',
@@ -1054,7 +992,7 @@
       rowsFound: 'filas encontradas', importRows: 'Importar estas filas', payrollSummary: 'Resumen de nómina', totalGross: 'Total bruto',
       emailsHint: 'Correos reenviados y adjuntos, vinculados al cliente y trabajo correctos.',
       summarizing: 'Resumiendo…', importing: 'Importando…', noColumns: 'No se pudieron leer las columnas — revisa el archivo.',
-      hub: 'Panel', jobsToday: 'Trabajos de hoy', newCustomers: 'Clientes nuevos', pendingInvoices: 'Facturas pendientes', openEstimates: 'Presupuestos abiertos', weeklySchedule: 'Agenda Semanal', viewCalendar: 'Ver Calendario', recentJobs: 'Trabajos Recientes', jobCount: 'trabajos', onSite: 'En sitio', exceptions: 'Excepciones', readyToClose: 'Listos para cerrar',
+      hub: 'Panel', jobsToday: 'Trabajos de hoy', newCustomers: 'Clientes nuevos', pendingInvoices: 'Facturas pendientes', openEstimates: 'Presupuestos abiertos', weeklySchedule: 'Agenda Semanal', viewCalendar: 'Ver Calendario', recentJobs: 'Trabajos Recientes', jobCount: 'trabajos', jobCountOne: 'trabajo', onSite: 'En sitio', exceptions: 'Excepciones', readyToClose: 'Listos para cerrar',
       offSite: 'Fuera de sitio', missingPhoto: 'Falta foto', missingChecklist: 'Falta checklist', lateCheckout: 'Salida tardía', aiEscalated: 'IA escaló',
       checkIn: 'Entrar', checkOut: 'Salir', checkedInAt: 'Entrada', onSiteNow: 'En sitio', setSite: 'Marcar sitio (estoy aquí)', siteSet: 'Ubicación del trabajo guardada',
       beforePhoto: 'Foto antes', afterPhoto: 'Foto después', checklist: 'Checklist', checklistDone: 'Checklist completa', alerts: 'Alertas', alert: 'Alerta',
@@ -1774,7 +1712,25 @@
     return fmtDate(s);
   }
   const initials = (s) => (s || '?').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
-  const colorFor = (s) => { let h = 0; for (const c of (s || 'x')) h = (h * 31 + c.charCodeAt(0)) % 360; return `hsl(${h},55%,30%)`; };
+  /* Record colours come from a fixed palette, not from the whole hue wheel.
+     This used to be `hsl(hash % 360, 55%, 30%)`, which produced olive, mustard
+     and magenta next to the navy interface — and produced them badly: the hash
+     multiplied by 31 and took the remainder, so names differing only in their
+     last character landed on neighbouring hues, and the Team screen showed nine
+     identical magenta avatars followed by six identical olive ones. The colour
+     was carrying no information and costing the app its composure.
+
+     These eight are the interface's own blues and teals plus three warm
+     anchors, all dark enough to clear WCAG AA for the white initials on top
+     (measured against #fff: 5.02:1 at worst, 8.02:1 at best). The hash is now a
+     32-bit FNV-1a so that adjacent names scatter across the set instead of
+     clumping. */
+  const RECORD_COLORS = ['#1D4ED8', '#0F766E', '#4338CA', '#075985', '#6D28D9', '#9F1239', '#B45309', '#047857'];
+  const colorFor = (s) => {
+    let h = 0x811c9dc5;
+    for (const c of String(s || 'x')) { h ^= c.charCodeAt(0); h = Math.imul(h, 0x01000193) >>> 0; }
+    return RECORD_COLORS[h % RECORD_COLORS.length];
+  };
 
   /* status helpers */
   function statusPill(s) {
@@ -1833,7 +1789,7 @@
             <label for="boot-pin">${esc(first && first.name ? first.name : t('owner'))}</label>
             <input id="boot-pin" type="password" inputmode="numeric" maxlength="4" placeholder="••••">
           </div>
-          <button class="btn green block" onclick="window.__bootstrap()"><i class="fas fa-check"></i> ${esc(t('save'))}</button>`;
+          <button class="btn block" onclick="window.__bootstrap()"><i class="fas fa-check"></i> ${esc(t('save'))}</button>`;
         return;
       }
       if (!selUser) {
@@ -1850,9 +1806,11 @@
                  in the Team screen. */
               const signInRow = (u) => {
                 const ready = hasPin(u);
-                const isSaray = u.name && u.name.includes('Saray');
-                const titleStyle = isSaray ? ' style="color:#EC4899;font-weight:bold;"' : '';
-                const avatarBg = isSaray ? '#EC4899' : colorFor(u.name);
+                /* One person used to be singled out here with a hardcoded pink
+                   name and avatar, left over from the per-person themes. Every
+                   account gets the same treatment. */
+                const titleStyle = '';
+                const avatarBg = colorFor(u.name);
                 const displayName = u.name ? esc(u.name) : `<span style="color:var(--text3);font-style:italic;">${lang === 'es' ? 'Vacante' : 'Vacant'}</span>`;
                 const roleText = u.id === 'it-1' ? (lang === 'es' ? 'Soporte / TI' : 'Logging / IT') : t(u.role);
                 const sub = ready ? roleText : `${roleText} · ${t('notSetUp')}`;
@@ -1877,9 +1835,8 @@
           </div>
           <div class="langtoggle"><button class="${lang === 'en' ? 'on' : ''}" onclick="setLang('en')">EN</button><button class="${lang === 'es' ? 'on' : ''}" onclick="setLang('es')">ES</button></div>`;
       } else {
-        const isSaray = selUser.name && selUser.name.includes('Saray');
-        const nameStyle = isSaray ? ' style="color:#EC4899;font-weight:bold;"' : '';
-        const avatarBg = isSaray ? 'background:#EC4899;' : `background:${colorFor(selUser.name)};`;
+        const nameStyle = '';
+        const avatarBg = `background:${colorFor(selUser.name)};`;
         const displayName = selUser.name ? esc(selUser.name) : (lang === 'es' ? 'Vacante' : 'Vacant');
         lg.innerHTML = `
           <div class="logo" style="${avatarBg}">${initials(selUser.name)}</div>
@@ -2014,7 +1971,7 @@
     inp.value = '';
 
     const userMsg = document.createElement('div');
-    userMsg.style.cssText = 'align-self:flex-end;max-width:88%;background:var(--accent);color:#fff;border-radius:14px 14px 2px 14px;padding:12px 16px;font-size:14px;box-shadow:var(--shadow-sm);';
+    userMsg.style.cssText = 'align-self:flex-end;max-width:88%;background:var(--action);color:#fff;border-radius:14px 14px 2px 14px;padding:12px 16px;font-size:14px;box-shadow:var(--shadow-sm);';
     userMsg.textContent = txt;
     hist.appendChild(userMsg);
     hist.scrollTop = hist.scrollHeight;
@@ -2102,7 +2059,7 @@
       if (openJob && (route.view !== 'job' || route.id !== openJob.id)) {
         const banner = document.createElement('div');
         banner.id = 'open-job-banner';
-        banner.style = "position:fixed; top:0; left:0; right:0; background:var(--red); color:#fff; padding:12px; padding-top:max(12px, env(safe-area-inset-top)); text-align:center; z-index:100; font-weight:bold; cursor:pointer; box-shadow:0 2px 10px rgba(0,0,0,0.2)";
+        banner.style = "position:fixed; top:0; left:0; right:0; background:var(--red-fill); color:#fff; padding:12px; padding-top:max(12px, env(safe-area-inset-top)); text-align:center; z-index:100; font-weight:bold; cursor:pointer; box-shadow:0 2px 10px rgba(0,0,0,0.2)";
         banner.innerHTML = `<i class="fas fa-triangle-exclamation"></i> ${t('openJobReminder')}`;
         banner.onclick = () => nav('job', openJob.id);
         document.body.appendChild(banner);
@@ -2118,6 +2075,15 @@
     return `<div class="pagehead">${withBack ? `<button class="back" aria-label="${esc(t('goBack'))}" onclick="${withBack}"><i class="fas fa-arrow-left"></i></button>` : ''}
       <div><h1>${esc(title)}</h1>${sub ? `<div class="sub">${esc(sub)}</div>` : ''}</div>${actions || ''}</div>`;
   }
+  /* The count line under a list screen's title. Every list screen showed
+     something different before this — Customers printed a bare "3", Audit trail
+     a bare number, and Jobs, Calls, Invoices, Payments, Cheques, Follow-ups,
+     Estimates, the email log and Payroll printed nothing at all, so the same
+     kind of screen looked like three different products. The `n · label` shape
+     is the one the Team screen already used, and it sidesteps pluralising a
+     noun in two languages. `.pagehead .sub` renders it in the same uppercase
+     mono the dashboard cards label their numbers with. */
+  function countSub(n, key) { return `${n} · ${t(key)}`; }
   function searchBox(id, ph) { return `<div class="searchbar"><i class="fas fa-magnifying-glass"></i><input id="${id}" aria-label="${esc(ph || t('search'))}" placeholder="${esc(ph || t('search'))}" oninput="render()" value="${esc(_search[id] || '')}"></div>`; }
   const _search = {};
   function bindSearch(id) { const el = $('#' + id); if (el) el.oninput = () => { _search[id] = el.value; render(); el2focus(id); }; }
@@ -2176,9 +2142,9 @@
       html += `<div class="card">${todayJobs.length ? todayJobs.map(jobRow).join('') : emptyState(t('noJobsToday'))}</div>`;
       
       const tiles = [
-        { icon: 'fa-camera', color: 'var(--green)', lbl: t('addPhoto'), action: 'quickPhoto()' },
-        { icon: 'fa-location-dot', color: 'var(--accent)', lbl: t('clockIn'), action: 'shareLocation()' },
-        { icon: 'fa-robot', color: 'var(--blue2)', lbl: t('ask'), action: "nav('assistant')" }
+        { icon: 'fa-camera', color: 'var(--green-fill)', lbl: t('addPhoto'), action: 'quickPhoto()' },
+        { icon: 'fa-location-dot', color: 'var(--accent-fill)', lbl: t('clockIn'), action: 'shareLocation()' },
+        { icon: 'fa-robot', color: 'var(--accent-fill)', lbl: t('ask'), action: "nav('assistant')" }
       ];
       html += `<div class="tiles" style="margin-top:20px">${tiles.map(x => `<div class="tile" onclick="${x.action}"><div class="ic" style="background:${x.color}"><i class="fas ${x.icon}"></i></div><div class="lbl">${esc(x.lbl)}</div></div>`).join('')}</div>`;
       $('#main').innerHTML = html;
@@ -2189,10 +2155,10 @@
     const openFollow = db.followups.filter(f => f.status !== 'done' && (!f.assignedTo || f.assignedTo === session.id));
     const tiles = [];
     const T_ = (icon, color, lbl, action, cnt) => ({ icon, color, lbl, action, cnt });
-    tiles.push(T_('fa-phone', 'var(--green)', t('newCall'), 'newCall()'));
-    tiles.push(T_('fa-screwdriver-wrench', 'var(--blue)', t('newJob'), 'openJobForm()'));
-    tiles.push(T_('fa-users', 'var(--accent)', t('customers'), "nav('customers')", db.customers.length + ''));
-    tiles.push(T_('fa-robot', 'var(--blue2)', t('ask'), "nav('assistant')"));
+    tiles.push(T_('fa-phone', 'var(--green-fill)', t('newCall'), 'newCall()'));
+    tiles.push(T_('fa-screwdriver-wrench', 'var(--accent-fill)', t('newJob'), 'openJobForm()'));
+    tiles.push(T_('fa-users', 'var(--accent-fill)', t('customers'), "nav('customers')", db.customers.length + ''));
+    tiles.push(T_('fa-robot', 'var(--accent-fill)', t('ask'), "nav('assistant')"));
 
     let html = `<div class="greet">${greet}, <b>${esc(session.name)}</b></div>
       <div class="muted">${fmtDate(todayISO())}</div>
@@ -2213,17 +2179,17 @@
   function viewCustomers() {
     const q = _search['cust'] || '';
     const list = db.customers.filter(c => matches(c, q));
-    let html = pageHead(t('customers'), db.customers.length + '') + searchBox('cust');
+    let html = pageHead(t('customers'), countSub(db.customers.length, 'customers')) + searchBox('cust');
     if (session.role === 'owner' || session.role === 'office') {
-      html += `<div class="btnrow"><button class="btn green block" onclick="openCustomerForm()"><i class="fas fa-plus"></i> ${t('addCustomer')}</button>
-        <button class="btn block" onclick="photoScanCreateCustomer()"><i class="fas fa-camera"></i> ${t('photoNewCustomer')}</button></div>`;
+      html += `<div class="btnrow"><button class="btn block" onclick="openCustomerForm()"><i class="fas fa-plus"></i> ${t('addCustomer')}</button>
+        <button class="btn ghost block" onclick="photoScanCreateCustomer()"><i class="fas fa-camera"></i> ${t('photoNewCustomer')}</button></div>`;
     }
     html += `<div class="card">${list.length ? list.map(c => {
       const jc = db.jobs.filter(j => j.customerId === c.id).length;
       return `<div class="list-item" onclick="nav('customer','${c.id}')">
         <div class="avatar" style="background:${colorFor(c.name)}">${initials(c.name)}</div>
         <div class="li-main"><div class="li-title">${esc(c.name)}</div><div class="li-sub">${esc(c.phone || c.address || '')}</div></div>
-        <div class="li-right">${jc} ${t('jobs').toLowerCase()}</div><i class="fas fa-chevron-right chev"></i></div>`;
+        <div class="li-right">${jc} ${(jc === 1 ? t('job') : t('jobs')).toLowerCase()}</div><i class="fas fa-chevron-right chev"></i></div>`;
     }).join('') : emptyState()}</div>`;
     $('#main').innerHTML = html; bindSearch('cust');
   }
@@ -2243,7 +2209,7 @@
       ${owed > 0 ? kv(t('outstanding'), `<span class="pill amber">${money(owed)}</span>`) : ''}
     </div>
     <div class="btnrow">
-      <button class="btn green" onclick="openJobForm(null,'${c.id}')"><i class="fas fa-plus"></i> ${t('newJob')}</button>
+      <button class="btn" onclick="openJobForm(null,'${c.id}')"><i class="fas fa-plus"></i> ${t('newJob')}</button>
       <button class="btn ghost" onclick="openCustomerForm('${c.id}')"><i class="fas fa-pen"></i> ${t('edit')}</button>
       <button class="btn red" onclick="confirmDel(()=>{remove('customers','${c.id}');nav('customers')})"><i class="fas fa-trash"></i> ${t('delete')}</button>
     </div>`;
@@ -2291,7 +2257,7 @@
     if (session.role === 'field') list = list.filter(j => j.assignedTo === session.id);
     if (f === 'active') list = list.filter(j => !['completed', 'canceled'].includes(j.status));
     else if (f !== 'all') list = list.filter(j => j.status === f);
-    let html = pageHead(t('jobs'), '') + searchBox('job');
+    let html = pageHead(t('jobs'), countSub(list.length, 'jobs')) + searchBox('job');
     html += `<div class="tabs">${['active', 'all', ...JOB_STATUSES].map(s => `<button class="${f === s ? 'on' : ''}" onclick="setSearch('jobfilter','${s}')">${s === 'active' ? (lang === 'es' ? 'Activos' : 'Active') : s === 'all' ? (lang === 'es' ? 'Todos' : 'All') : t(s)}</button>`).join('')}</div>`;
     html += `<div class="card">${list.length ? list.map(jobRow).join('') : emptyState()}</div>`;
     $('#main').innerHTML = html; bindSearch('job');
@@ -2330,9 +2296,9 @@
 
     if (tab === 'overview') {
       html += `<div class="btnrow">
-        <button class="btn green sm" onclick="quickPhoto('${j.id}','before')"><i class="fas fa-camera"></i> ${t('beforePhoto')}</button>
-        <button class="btn green sm" onclick="quickPhoto('${j.id}','after')"><i class="fas fa-camera"></i> ${t('afterPhoto')}</button>
-        <button class="btn amber sm" onclick="quickVoiceNote('${j.id}')"><i class="fas fa-microphone"></i> ${t('voiceNote')}</button>
+        <button class="btn sm" onclick="quickPhoto('${j.id}','before')"><i class="fas fa-camera"></i> ${t('beforePhoto')}</button>
+        <button class="btn sm" onclick="quickPhoto('${j.id}','after')"><i class="fas fa-camera"></i> ${t('afterPhoto')}</button>
+        <button class="btn ghost sm" onclick="quickVoiceNote('${j.id}')"><i class="fas fa-microphone"></i> ${t('voiceNote')}</button>
         <button class="btn sm" onclick="openNoteForm('${j.id}')"><i class="fas fa-pen"></i> ${t('addNote')}</button>
         <button class="btn ghost sm" onclick="openFollowForm(null,'${j.id}')"><i class="fas fa-bell"></i> ${t('followUp')}</button>
       </div>`;
@@ -2341,15 +2307,15 @@
       if (photos.length) html += `<div class="section-title">${t('photos')}</div><div class="photos-grid" id="jobphotos"></div>`;
       if (follows.length) html += `<div class="section-title">${t('followups')}</div><div class="card">${follows.map(followRow).join('')}</div>`;
     } else if (tab === 'photos') {
-      html += `<div class="btnrow"><button class="btn green block" onclick="quickPhoto('${j.id}')"><i class="fas fa-camera"></i> ${t('takePhoto')}</button></div>`;
+      html += `<div class="btnrow"><button class="btn block" onclick="quickPhoto('${j.id}')"><i class="fas fa-camera"></i> ${t('takePhoto')}</button></div>`;
       html += photos.length ? `<div class="photos-grid" id="jobphotos" style="margin-top:14px"></div>` : emptyState();
     } else if (tab === 'notes') {
-      html += `<div class="btnrow"><button class="btn amber sm" onclick="quickVoiceNote('${j.id}')"><i class="fas fa-microphone"></i> ${t('voiceNote')}</button><button class="btn sm" onclick="openNoteForm('${j.id}')"><i class="fas fa-pen"></i> ${t('addNote')}</button></div>`;
+      html += `<div class="btnrow"><button class="btn ghost sm" onclick="quickVoiceNote('${j.id}')"><i class="fas fa-microphone"></i> ${t('voiceNote')}</button><button class="btn sm" onclick="openNoteForm('${j.id}')"><i class="fas fa-pen"></i> ${t('addNote')}</button></div>`;
       html += `<div class="card" style="padding:14px;margin-top:12px">${notes.length ? notes.map(noteHTML).join('') : emptyState()}</div>`;
     } else if (tab === 'documents') {
       html += `<div class="btnrow">
         <button class="btn sm" onclick="uploadDoc('${j.id}','doc')"><i class="fas fa-file-arrow-up"></i> ${t('uploadDoc')}</button>
-        <button class="btn amber sm" onclick="uploadDoc('${j.id}','scan')"><i class="fas fa-expand"></i> ${t('scanDoc')}</button>
+        <button class="btn ghost sm" onclick="uploadDoc('${j.id}','scan')"><i class="fas fa-expand"></i> ${t('scanDoc')}</button>
         <button class="btn ghost sm" onclick="uploadDoc('${j.id}','cad')"><i class="fas fa-vector-square"></i> ${t('cadFile')}</button>
       </div>
       <div class="muted" style="margin-top:6px;font-size:13px"><i class="fas fa-wand-magic-sparkles"></i> ${t('drawingHint')}</div>`;
@@ -2358,7 +2324,7 @@
     } else if (tab === 'ai') {
       html += projectAIHTML(j.id);
     } else if (tab === 'money') {
-      html += `<div class="btnrow"><button class="btn sm" onclick="openEstimateForm(null,'${j.id}')"><i class="fas fa-plus"></i> ${t('estimates')}</button><button class="btn green sm" onclick="openInvoiceForm(null,'${j.id}')"><i class="fas fa-plus"></i> ${t('invoices')}</button></div>`;
+      html += `<div class="btnrow"><button class="btn sm" onclick="openEstimateForm(null,'${j.id}')"><i class="fas fa-plus"></i> ${t('estimates')}</button><button class="btn ghost sm" onclick="openInvoiceForm(null,'${j.id}')"><i class="fas fa-plus"></i> ${t('invoices')}</button></div>`;
       html += `<div class="section-title">${t('estimates')}</div><div class="card">${ests.length ? ests.map(estRow).join('') : emptyState()}</div>`;
       html += `<div class="section-title">${t('invoices')}</div><div class="card">${invs.length ? invs.map(invRow).join('') : emptyState()}</div>`;
       if (checks.length) html += `<div class="section-title">${t('checks')}</div><div class="card">${checks.map(checkRow).join('')}</div>`;
@@ -2423,15 +2389,15 @@
   /* ============================ CALLS ============================ */
   function callRow(c) {
     return `<div class="list-item" onclick="openCallView('${c.id}')">
-      <div class="avatar" style="background:var(--green)"><i class="fas fa-phone"></i></div>
+      <div class="avatar" style="background:var(--green-fill)"><i class="fas fa-phone"></i></div>
       <div class="li-main"><div class="li-title">${esc(c.callerName || customerName(c.customerId))}</div>
       <div class="li-sub">${esc(c.summary || '')}</div></div><div class="li-right">${timeAgo(c.created)}</div></div>`;
   }
   function viewCalls() {
     const q = _search['call'] || '';
     const list = db.calls.filter(c => matches(c, q));
-    let html = pageHead(t('calls'), '') + searchBox('call');
-    html += `<div class="btnrow"><button class="btn green block" onclick="newCall()"><i class="fas fa-phone"></i> ${t('newCall')}</button></div>`;
+    let html = pageHead(t('calls'), countSub(list.length, 'calls')) + searchBox('call');
+    html += `<div class="btnrow"><button class="btn block" onclick="newCall()"><i class="fas fa-phone"></i> ${t('newCall')}</button></div>`;
     html += `<div class="card" style="margin-top:12px">${list.length ? list.map(callRow).join('') : emptyState()}</div>`;
     $('#main').innerHTML = html; bindSearch('call');
   }
@@ -2444,7 +2410,7 @@
         ${kv(t('date'), fmtDate(c.created))}
         ${c.customerId ? kv(t('customer'), `<a onclick="closeModal();nav('customer','${c.customerId}')" style="cursor:pointer">${esc(customerName(c.customerId))}</a>`) : ''}
         ${c.jobId ? kv(t('job'), `<a onclick="closeModal();nav('job','${c.jobId}')" style="cursor:pointer">${esc(jobTitle(c.jobId))}</a>`) : ''}
-      </div>${!c.jobId ? `<button class="btn green block" style="margin-top:12px" onclick="jobFromCall('${id}')"><i class="fas fa-screwdriver-wrench"></i> ${t('createJob')}</button>` : ''}`);
+      </div>${!c.jobId ? `<button class="btn block" style="margin-top:12px" onclick="jobFromCall('${id}')"><i class="fas fa-screwdriver-wrench"></i> ${t('createJob')}</button>` : ''}`);
   }
 
   // New-call workflow: capture caller, match/create customer, optionally create job.
@@ -2455,7 +2421,7 @@
       <div class="field"><label for="call-phone">${t('callerPhone')}</label><input id="call-phone" type="tel"></div>
       <div class="field"><label for="call-summary">${t('whatNeed')}</label><div class="with-voice"><textarea id="call-summary" placeholder="${lang === 'es' ? 'Ej: Fuga bajo el lavabo, urgente' : 'e.g. Leak under sink, urgent'}"></textarea>${voiceBtn('call-summary')}</div></div>
       <label style="display:flex;gap:10px;align-items:center;margin:6px 0 14px"><input type="checkbox" id="call-makejob" checked style="width:22px;height:22px"> ${t('createJob')}</label>
-      <button class="btn green block" onclick="saveCall()"><i class="fas fa-check"></i> ${t('logCall')}</button>`);
+      <button class="btn block" onclick="saveCall()"><i class="fas fa-check"></i> ${t('logCall')}</button>`);
   }
   function saveCall() {
     const name = $('#call-name').value.trim(); if (!name) return toast(t('name') + '?', 'error');
@@ -2542,7 +2508,7 @@
     const icon = draw ? 'fa-vector-square' : d.mime && d.mime.includes('pdf') ? 'fa-file-pdf' : d.mime && d.mime.includes('image') ? 'fa-file-image' : 'fa-file';
     const badge = d.estimate ? ` <span class="pill green">${t('estimateReady')}</span>` : '';
     return `<div class="list-item" onclick="openDoc('${d.id}')">
-      <div class="avatar" style="background:${draw ? 'var(--blue2)' : 'var(--accent)'}"><i class="fas ${icon}"></i></div>
+      <div class="avatar" style="background:var(--accent-fill)"><i class="fas ${icon}"></i></div>
       <div class="li-main"><div class="li-title">${esc(d.name)}${badge}</div><div class="li-sub">${d.kind === 'cad' ? 'AutoCAD' : (d.kind || 'doc')} · ${timeAgo(d.created)}</div></div></div>`;
   }
   function uploadDoc(jobId, kind) {
@@ -2588,8 +2554,8 @@
       ${estCard}
       ${d.ocr ? `<div class="card" style="padding:12px;margin-bottom:10px"><div class="muted">OCR</div><pre style="white-space:pre-wrap;font-family:inherit">${esc(typeof d.ocr === 'string' ? d.ocr : JSON.stringify(d.ocr, null, 2))}</pre></div>` : ''}
       ${draw ? `<div class="btnrow">
-        ${e ? `<button class="btn green" onclick="closeModal();showDrawingReview('${id}')"><i class="fas fa-pen"></i> ${t('reviewEdit')}</button>
-              <button class="btn" onclick="closeModal();estimateFromDrawing('${id}')"><i class="fas fa-file-invoice-dollar"></i> ${t('createEstimate')}</button>` : ''}
+        ${e ? `<button class="btn" onclick="closeModal();showDrawingReview('${id}')"><i class="fas fa-pen"></i> ${t('reviewEdit')}</button>
+              <button class="btn ghost" onclick="closeModal();estimateFromDrawing('${id}')"><i class="fas fa-file-invoice-dollar"></i> ${t('createEstimate')}</button>` : ''}
         <button class="btn ghost" onclick="closeModal();analyzeDrawing('${id}')"><i class="fas fa-rotate"></i> ${e ? t('readAgain') : t('readEstimate')}</button>
       </div>` : ''}
       <div class="btnrow">
@@ -2604,8 +2570,8 @@
     modal(`<h2>${t('scanDoc')}</h2><div class="sheet-sub">${lang === 'es' ? 'Esto fue lo que leí:' : 'Here is what I read:'}</div>
       <div class="card" style="padding:12px;margin-bottom:12px">${Object.entries(p).filter(([k, v]) => v).map(([k, v]) => kv(k, esc(v))).join('')}</div>
       <div class="btnrow">
-        <button class="btn green" onclick="closeModal();openCheckForm({payer:'${esc(p.name || p.payer || '')}',amount:${Number(p.amount) || 0},checkNumber:'${esc(p.checkNumber || '')}',memo:'${esc(p.memo || '')}',date:'${esc(p.date || todayISO())}',jobId:'${jobId || ''}'})"><i class="fas fa-money-check-dollar"></i> ${t('addCheck')}</button>
-        <button class="btn" onclick="closeModal();openInvoiceForm(null,'${jobId || ''}',{amount:${Number(p.amount) || 0}})"><i class="fas fa-file-invoice-dollar"></i> ${t('addInvoice')}</button>
+        <button class="btn" onclick="closeModal();openCheckForm({payer:'${esc(p.name || p.payer || '')}',amount:${Number(p.amount) || 0},checkNumber:'${esc(p.checkNumber || '')}',memo:'${esc(p.memo || '')}',date:'${esc(p.date || todayISO())}',jobId:'${jobId || ''}'})"><i class="fas fa-money-check-dollar"></i> ${t('addCheck')}</button>
+        <button class="btn ghost" onclick="closeModal();openInvoiceForm(null,'${jobId || ''}',{amount:${Number(p.amount) || 0}})"><i class="fas fa-file-invoice-dollar"></i> ${t('addInvoice')}</button>
       </div>`);
   }
 
@@ -2635,7 +2601,7 @@
         <button type="button" class="btn sm ghost" onclick="adjustEstimateMargin(0.10)">+10%</button>
       </div>
       <button class="btn block" onclick="saveEstimate('${id || ''}')"><i class="fas fa-check"></i> ${t('save')}</button>
-      ${id ? `<button class="btn green block" style="margin-top:10px" onclick="estimateToInvoice('${id}')"><i class="fas fa-file-invoice-dollar"></i> ${lang === 'es' ? 'Convertir a factura' : 'Convert to invoice'}</button>` : ''}
+      ${id ? `<button class="btn block" style="margin-top:10px" onclick="estimateToInvoice('${id}')"><i class="fas fa-file-invoice-dollar"></i> ${lang === 'es' ? 'Convertir a factura' : 'Convert to invoice'}</button>` : ''}
       ${id ? `<button class="btn ghost block" style="margin-top:8px" onclick="printDoc('estimate','${id}')"><i class="fas fa-print"></i> ${t('print')}</button>` : ''}
       ${id ? `<button class="btn red block" style="margin-top:8px" onclick="confirmDel(()=>{remove('estimates','${id}');closeModal();render()})"><i class="fas fa-trash"></i> ${t('delete')}</button>` : ''}`);
   }
@@ -2648,14 +2614,14 @@
   function estimateToInvoice(id) { const e = get('estimates', id); openInvoiceForm(null, e.jobId, { amount: e.amount, title: e.title }); }
 
   /* ============================ INVOICES ============================ */
-  function invRow(i) { const bal = (i.amount || 0) - (i.paid || 0); return `<div class="list-item" onclick="openInvoiceView('${i.id}')"><div class="avatar" style="background:var(--green)"><i class="fas fa-file-invoice-dollar"></i></div><div class="li-main"><div class="li-title">${esc(i.number || ('#' + i.id.slice(-5)))}</div><div class="li-sub">${esc(customerName(i.customerId))}</div></div><div class="li-right">${money(i.amount)}<br>${statusPill(invStatus(i))}</div></div>`; }
+  function invRow(i) { const bal = (i.amount || 0) - (i.paid || 0); return `<div class="list-item" onclick="openInvoiceView('${i.id}')"><div class="avatar" style="background:var(--green-fill)"><i class="fas fa-file-invoice-dollar"></i></div><div class="li-main"><div class="li-title">${esc(i.number || ('#' + i.id.slice(-5)))}</div><div class="li-sub">${esc(customerName(i.customerId))}</div></div><div class="li-right">${money(i.amount)}<br>${statusPill(invStatus(i))}</div></div>`; }
   function invStatus(i) { const bal = (i.amount || 0) - (i.paid || 0); if (bal <= 0 && i.amount > 0) return 'paid'; if (i.paid > 0) return 'partial'; if (i.dueDate && new Date(i.dueDate) < new Date()) return 'overdue'; return 'unpaid'; }
   function viewInvoices() {
     const q = _search['inv'] || '';
     const list = db.invoices.filter(i => matches(i, q));
     const owed = list.reduce((s, i) => s + Math.max(0, (i.amount || 0) - (i.paid || 0)), 0);
-    let html = pageHead(t('invoices'), '') + searchBox('inv');
-    html += `<div class="btnrow"><button class="btn green" onclick="openInvoiceForm()"><i class="fas fa-plus"></i> ${t('addInvoice')}</button><button class="btn ghost" onclick="exportQuickBooks('invoices')"><i class="fas fa-file-export"></i> QuickBooks</button></div>`;
+    let html = pageHead(t('invoices'), countSub(list.length, 'invoices')) + searchBox('inv');
+    html += `<div class="btnrow"><button class="btn" onclick="openInvoiceForm()"><i class="fas fa-plus"></i> ${t('addInvoice')}</button><button class="btn ghost" onclick="exportQuickBooks('invoices')"><i class="fas fa-file-export"></i> QuickBooks</button></div>`;
     html += `<div class="card" style="margin:12px 0;padding:14px">${kv(t('outstanding'), `<b>${money(owed)}</b>`)}</div>`;
     html += `<div class="card">${list.length ? list.map(invRow).join('') : emptyState()}</div>`;
     $('#main').innerHTML = html; bindSearch('inv');
@@ -2693,7 +2659,7 @@
       </div>
       ${pays.length ? `<div class="section-title">${t('payments')}</div><div class="card">${pays.map(payRow).join('')}</div>` : ''}
       <div class="btnrow">
-        <button class="btn green" onclick="closeModal();openPaymentForm(null,'${id}')"><i class="fas fa-money-bill-wave"></i> ${t('recordPayment')}</button>
+        <button class="btn" onclick="closeModal();openPaymentForm(null,'${id}')"><i class="fas fa-money-bill-wave"></i> ${t('recordPayment')}</button>
         <button class="btn ghost" onclick="closeModal();openInvoiceForm('${id}')"><i class="fas fa-pen"></i> ${t('edit')}</button>
         <button class="btn ghost" onclick="printDoc('invoice','${id}')"><i class="fas fa-print"></i> ${t('print')}</button>
       </div>
@@ -2768,15 +2734,15 @@
   }
 
   /* ============================ PAYMENTS ============================ */
-  function payRow(p) { return `<div class="list-item"><div class="avatar" style="background:var(--green)"><i class="fas fa-money-bill-wave"></i></div><div class="li-main"><div class="li-title">${money(p.amount)}</div><div class="li-sub">${esc(p.method || '')} · ${fmtDate(p.date)}</div></div></div>`; }
+  function payRow(p) { return `<div class="list-item"><div class="avatar" style="background:var(--green-fill)"><i class="fas fa-money-bill-wave"></i></div><div class="li-main"><div class="li-title">${money(p.amount)}</div><div class="li-sub">${esc(p.method || '')} · ${fmtDate(p.date)}</div></div></div>`; }
   function viewPayments() {
     const q = _search['pay'] || '';
     const list = db.payments.filter(p => matches(p, q));
     const total = list.reduce((s, p) => s + (p.amount || 0), 0);
-    let html = pageHead(t('payments'), '') + searchBox('pay');
-    html += `<div class="btnrow"><button class="btn green" onclick="openPaymentForm()"><i class="fas fa-plus"></i> ${t('addPayment')}</button><button class="btn ghost" onclick="exportQuickBooks('payments')"><i class="fas fa-file-export"></i> QuickBooks</button></div>`;
+    let html = pageHead(t('payments'), countSub(list.length, 'payments')) + searchBox('pay');
+    html += `<div class="btnrow"><button class="btn" onclick="openPaymentForm()"><i class="fas fa-plus"></i> ${t('addPayment')}</button><button class="btn ghost" onclick="exportQuickBooks('payments')"><i class="fas fa-file-export"></i> QuickBooks</button></div>`;
     html += `<div class="card" style="margin:12px 0;padding:14px">${kv(t('total'), `<b>${money(total)}</b>`)}</div>`;
-    html += `<div class="card">${list.length ? list.map(p => `<div class="list-item"><div class="avatar" style="background:var(--green)"><i class="fas fa-money-bill-wave"></i></div><div class="li-main"><div class="li-title">${money(p.amount)} · ${esc(customerName(p.customerId))}</div><div class="li-sub">${esc(p.method || '')} · ${fmtDate(p.date)}</div></div><button class="btn red sm" aria-label="${esc(t('delete'))}" onclick="confirmDel(()=>deletePayment('${p.id}'))"><i class="fas fa-trash"></i></button></div>`).join('') : emptyState()}</div>`;
+    html += `<div class="card">${list.length ? list.map(p => `<div class="list-item"><div class="avatar" style="background:var(--green-fill)"><i class="fas fa-money-bill-wave"></i></div><div class="li-main"><div class="li-title">${money(p.amount)} · ${esc(customerName(p.customerId))}</div><div class="li-sub">${esc(p.method || '')} · ${fmtDate(p.date)}</div></div><button class="btn red sm" aria-label="${esc(t('delete'))}" onclick="confirmDel(()=>deletePayment('${p.id}'))"><i class="fas fa-trash"></i></button></div>`).join('') : emptyState()}</div>`;
     $('#main').innerHTML = html; bindSearch('pay');
   }
   /* Deleting a payment has to give the money back to the invoice it was paid
@@ -2799,7 +2765,7 @@
       <div class="field"><label for="p-inv">${t('linkInvoice')}</label><select id="p-inv"><option value="">—</option>${invOpts}</select></div>
       <div class="row2"><div class="field"><label for="p-amount">${t('amount')}</label><input id="p-amount" type="number" step="0.01" value="${inv ? ((inv.amount || 0) - (inv.paid || 0)) : ''}"></div>
       <div class="field"><label for="p-method">${lang === 'es' ? 'Método' : 'Method'}</label><select id="p-method"><option>Cash</option><option>Check</option><option>Card</option><option>Transfer</option><option>QuickBooks</option></select></div></div>
-      <button class="btn green block" onclick="savePayment()"><i class="fas fa-check"></i> ${t('save')}</button>`);
+      <button class="btn block" onclick="savePayment()"><i class="fas fa-check"></i> ${t('save')}</button>`);
   }
   function savePayment() {
     const amount = parseFloat($('#p-amount').value) || 0; if (!amount) return toast(t('amount') + '?', 'error');
@@ -2810,12 +2776,12 @@
   }
 
   /* ============================ CHECKS ============================ */
-  function checkRow(c) { return `<div class="list-item" onclick="openCheckForm(get('checks','${c.id}'))"><div class="avatar" style="background:var(--blue2)"><i class="fas fa-money-check-dollar"></i></div><div class="li-main"><div class="li-title">${money(c.amount)} · ${esc(c.payer || '')}</div><div class="li-sub">#${esc(c.checkNumber || '')} · ${fmtDate(c.date)}</div></div></div>`; }
+  function checkRow(c) { return `<div class="list-item" onclick="openCheckForm(get('checks','${c.id}'))"><div class="avatar" style="background:var(--accent-fill)"><i class="fas fa-money-check-dollar"></i></div><div class="li-main"><div class="li-title">${money(c.amount)} · ${esc(c.payer || '')}</div><div class="li-sub">#${esc(c.checkNumber || '')} · ${fmtDate(c.date)}</div></div></div>`; }
   function viewChecks() {
     const q = _search['chk'] || '';
     const list = db.checks.filter(c => matches(c, q));
-    let html = pageHead(t('checks'), '') + searchBox('chk');
-    html += `<div class="btnrow"><button class="btn amber" onclick="quickScanCheck()"><i class="fas fa-camera"></i> ${t('scanCheck')}</button><button class="btn ghost" onclick="openCheckForm({})"><i class="fas fa-plus"></i> ${t('addCheck')}</button></div>`;
+    let html = pageHead(t('checks'), countSub(list.length, 'checks')) + searchBox('chk');
+    html += `<div class="btnrow"><button class="btn" onclick="quickScanCheck()"><i class="fas fa-camera"></i> ${t('scanCheck')}</button><button class="btn ghost" onclick="openCheckForm({})"><i class="fas fa-plus"></i> ${t('addCheck')}</button></div>`;
     html += `<div class="card" style="margin-top:12px">${list.length ? list.map(checkRow).join('') : emptyState()}</div>`;
     $('#main').innerHTML = html; bindSearch('chk');
   }
@@ -2861,7 +2827,7 @@
   function followRow(f) {
     const overdue = f.status !== 'done' && f.dueDate && new Date(f.dueDate) < new Date();
     return `<div class="list-item" onclick="toggleFollow('${f.id}')">
-      <div class="avatar" style="background:${f.status === 'done' ? 'var(--green)' : overdue ? 'var(--red)' : 'var(--amber)'}"><i class="fas ${f.status === 'done' ? 'fa-check' : 'fa-bell'}"></i></div>
+      <div class="avatar" style="background:${f.status === 'done' ? 'var(--green-fill)' : overdue ? 'var(--red-fill)' : 'var(--amber-fill)'}"><i class="fas ${f.status === 'done' ? 'fa-check' : 'fa-bell'}"></i></div>
       <div class="li-main"><div class="li-title" style="${f.status === 'done' ? 'text-decoration:line-through;opacity:.6' : ''}">${esc(f.title)}</div>
       <div class="li-sub">${f.jobId ? esc(jobTitle(f.jobId)) + ' · ' : ''}${f.dueDate ? t('dueIn') + ' ' + fmtDate(f.dueDate) : ''}</div></div>
       <div class="li-right">${f.priority ? `<span class="pill ${f.priority === 'high' ? 'red' : f.priority === 'low' ? 'gray' : 'amber'}">${t(f.priority)}</span>` : ''}</div></div>`;
@@ -2871,7 +2837,7 @@
     let list = db.followups.filter(f => matches(f, q));
     if (session.role === 'field') list = list.filter(f => !f.assignedTo || f.assignedTo === session.id);
     list.sort((a, b) => (a.status === 'done') - (b.status === 'done') || new Date(a.dueDate || 0) - new Date(b.dueDate || 0));
-    let html = pageHead(t('followups'), '') + searchBox('fu');
+    let html = pageHead(t('followups'), countSub(list.length, 'followups')) + searchBox('fu');
     html += `<div class="card">${list.length ? list.map(followRow).join('') : emptyState()}</div>`;
     $('#main').innerHTML = html; bindSearch('fu');
   }
@@ -2882,7 +2848,7 @@
       ${f.jobId ? kv(t('job'), `<a onclick="closeModal();nav('job','${f.jobId}')" style="cursor:pointer">${esc(jobTitle(f.jobId))}</a>`) : ''}
       ${kv(t('dueDate'), fmtDate(f.dueDate))}${kv(t('assignedTo'), esc(userName(f.assignedTo)))}${kv(t('status'), statusPill(f.status === 'done' ? 'done' : 'pending'))}</div>
       <div class="btnrow">
-        <button class="btn green" onclick="update('followups','${id}',{status:'${f.status === 'done' ? 'pending' : 'done'}'});closeModal();render()"><i class="fas fa-check"></i> ${f.status === 'done' ? t('reopen') : t('complete')}</button>
+        <button class="btn" onclick="update('followups','${id}',{status:'${f.status === 'done' ? 'pending' : 'done'}'});closeModal();render()"><i class="fas fa-check"></i> ${f.status === 'done' ? t('reopen') : t('complete')}</button>
         <button class="btn ghost" onclick="closeModal();openFollowForm('${id}')"><i class="fas fa-pen"></i> ${t('edit')}</button>
       </div>`);
   }
@@ -2909,7 +2875,7 @@
   function viewWorkflows() {
     let html = pageHead(t('workflows'), '');
     html += `<div class="card">${db.workflows.map(w => `<div class="list-item" onclick="openWorkflow('${w.id}')">
-      <div class="avatar" style="background:var(--blue2)"><i class="fas fa-diagram-project"></i></div>
+      <div class="avatar" style="background:var(--accent-fill)"><i class="fas fa-diagram-project"></i></div>
       <div class="li-main"><div class="li-title">${esc(lang === 'es' && w.name_es ? w.name_es : w.name)}</div>
       <div class="li-sub">${(lang === 'es' && w.steps_es ? w.steps_es : w.steps || []).length} ${lang === 'es' ? 'pasos' : 'steps'}${w.trigger ? ' · ' + w.trigger : ''}</div></div></div>`).join('')}</div>`;
     $('#main').innerHTML = html;
@@ -2956,9 +2922,9 @@
   function viewKnowledge() {
     const q = _search['kb'] || '';
     const list = db.sops.filter(s => matches(s, q));
-    let html = pageHead(t('knowledge'), '') + searchBox('kb');
+    let html = pageHead(t('knowledge'), countSub(list.length, 'knowledge')) + searchBox('kb');
     html += `<div class="card">${list.length ? list.map(s => `<div class="list-item" onclick="openSop('${s.id}')">
-      <div class="avatar" style="background:var(--blue)"><i class="fas fa-book"></i></div>
+      <div class="avatar" style="background:var(--accent-fill)"><i class="fas fa-book"></i></div>
       <div class="li-main"><div class="li-title">${esc(lang === 'es' && s.title_es ? s.title_es : s.title)}</div><div class="li-sub">${esc(s.category || '')}</div></div></div>`).join('') : emptyState()}</div>`;
     $('#main').innerHTML = html; bindSearch('kb');
   }
@@ -3019,12 +2985,12 @@
     const activeJobs = db.jobs.filter(j => !['completed', 'canceled'].includes(j.status)).length;
     const doneThisMonth = db.jobs.filter(j => j.status === 'completed' && (j.updated || '').startsWith(mKey)).length;
     const cards = [
-      [t('thisMonth'), money(monthRev), 'var(--green)', 'fa-calendar-check'],
-      ['YTD', money(ytd), 'var(--blue)', 'fa-chart-line'],
-      [t('outstanding'), money(outstanding), 'var(--amber)', 'fa-hourglass-half'],
-      [t('activeJobs'), activeJobs + '', 'var(--accent)', 'fa-screwdriver-wrench'],
-      [lang === 'es' ? 'Completados (mes)' : 'Completed (mo)', doneThisMonth + '', 'var(--blue2)', 'fa-check'],
-      [t('customers'), db.customers.length + '', 'var(--red)', 'fa-users'],
+      [t('thisMonth'), money(monthRev), 'var(--green-fill)', 'fa-calendar-check'],
+      ['YTD', money(ytd), 'var(--action)', 'fa-chart-line'],
+      [t('outstanding'), money(outstanding), 'var(--amber-fill)', 'fa-hourglass-half'],
+      [t('activeJobs'), activeJobs + '', 'var(--accent-fill)', 'fa-screwdriver-wrench'],
+      [lang === 'es' ? 'Completados (mes)' : 'Completed (mo)', doneThisMonth + '', 'var(--neutral-fill)', 'fa-check'],
+      [t('customers'), db.customers.length + '', 'var(--red-fill)', 'fa-users'],
     ];
     let html = pageHead(t('reports'), '');
     html += `<div class="tiles">${cards.map(c => `<div class="tile"><div class="ic" style="background:${c[2]}"><i class="fas ${c[3]}"></i></div><div class="lbl">${c[1]}</div><div class="cnt">${esc(c[0])}</div></div>`).join('')}</div>`;
@@ -3039,7 +3005,7 @@
       <div class="btnrow"><button class="btn ghost block" onclick="exportQuickBooks('invoices')"><i class="fas fa-file-export"></i> ${t('exportQB')}</button></div>`;
     $('#main').innerHTML = html;
   }
-  function exportRow(col, label) { return `<div class="list-item" onclick="exportCSV('${col}')"><div class="avatar" style="background:var(--green)"><i class="fas fa-file-csv"></i></div><div class="li-main"><div class="li-title">${esc(label)}</div><div class="li-sub">${db[col].length} ${lang === 'es' ? 'registros' : 'records'}</div></div><i class="fas fa-download chev"></i></div>`; }
+  function exportRow(col, label) { return `<div class="list-item" onclick="exportCSV('${col}')"><div class="avatar" style="background:var(--green-fill)"><i class="fas fa-file-csv"></i></div><div class="li-main"><div class="li-title">${esc(label)}</div><div class="li-sub">${db[col].length} ${lang === 'es' ? 'registros' : 'records'}</div></div><i class="fas fa-download chev"></i></div>`; }
 
   /* ============================ TEAM ============================ */
   function viewTeam() {
@@ -3096,10 +3062,10 @@
         html += `<div class="section-title">${t('timeOff')}</div><div class="card">` + ptos.map(p => {
           const isPending = p.status === 'pending';
           const isApproved = p.status === 'approved';
-          const col = isPending ? 'var(--amber)' : (isApproved ? 'var(--green)' : 'var(--red)');
+          const statusTextColor = isPending ? 'var(--amber)' : (isApproved ? 'var(--green)' : 'var(--red)');
           return `<div class="list-item">
             <div class="li-main"><div class="li-title">${fmtDate(p.startDate)} - ${fmtDate(p.endDate)}</div><div class="li-sub">${esc(p.reason || '')}</div></div>
-            <div class="li-right"><span style="font-size:12px; font-weight:bold; color:${col}">${p.status.toUpperCase()}</span></div>
+            <div class="li-right"><span style="font-size:12px; font-weight:bold; color:${statusTextColor}">${p.status.toUpperCase()}</span></div>
           </div>`;
         }).join('') + `</div>`;
       }
@@ -3162,9 +3128,9 @@
 
     html += `<div class="section-title"><i class="fas fa-database"></i> ${lang === 'es' ? 'Datos' : 'Data'}</div>
       <div class="card">
-        <div class="list-item" onclick="exportAll()"><div class="avatar" style="background:var(--green)"><i class="fas fa-download"></i></div><div class="li-main"><div class="li-title">${lang === 'es' ? 'Respaldar todo (JSON)' : 'Backup all (JSON)'}</div></div></div>
-        <div class="list-item" onclick="importAll()"><div class="avatar" style="background:var(--accent)"><i class="fas fa-upload"></i></div><div class="li-main"><div class="li-title">${lang === 'es' ? 'Restaurar respaldo' : 'Restore backup'}</div></div></div>
-        ${can('team') ? `<div class="list-item" onclick="nav('team')"><div class="avatar" style="background:var(--blue2)"><i class="fas fa-user-gear"></i></div><div class="li-main"><div class="li-title">${t('team')}</div></div></div>` : ''}
+        <div class="list-item" onclick="exportAll()"><div class="avatar" style="background:var(--green-fill)"><i class="fas fa-download"></i></div><div class="li-main"><div class="li-title">${lang === 'es' ? 'Respaldar todo (JSON)' : 'Backup all (JSON)'}</div></div></div>
+        <div class="list-item" onclick="importAll()"><div class="avatar" style="background:var(--accent-fill)"><i class="fas fa-upload"></i></div><div class="li-main"><div class="li-title">${lang === 'es' ? 'Restaurar respaldo' : 'Restore backup'}</div></div></div>
+        ${can('team') ? `<div class="list-item" onclick="nav('team')"><div class="avatar" style="background:var(--accent-fill)"><i class="fas fa-user-gear"></i></div><div class="li-main"><div class="li-title">${t('team')}</div></div></div>` : ''}
       </div>`;
 
     html += `<div class="btnrow"><button class="btn red block" onclick="signOut()"><i class="fas fa-right-from-bracket"></i> ${t('signOut')}</button></div>
@@ -3214,20 +3180,20 @@
       id: e.id, workerId: e.workerId || e.userId, text: e.question || e.msg || '', status: 'open', ts: e.ts, kind: 'ai', jobId: e.jobId,
     }))].sort((a, b) => new Date(b.ts) - new Date(a.ts));
     const open = msgs.filter(m => m.status === 'open');
-    let html = pageHead(t('urgentHub'), open.length + ' ' + (lang === 'es' ? 'abiertos' : 'open'));
+    let html = pageHead(t('urgentHub'), `${open.length} · ${lang === 'es' ? 'ABIERTOS' : 'OPEN'}`);
     html += `<div class="card">${open.length ? open.map(m => {
       const w = get('users', m.workerId) || {};
       return `<div class="list-item" style="flex-direction:column;align-items:stretch">
         <div style="display:flex;gap:10px;align-items:center">
           <div class="avatar" style="background:${colorFor(w.name || '?')}">${initials(w.name || '?')}</div>
           <div style="flex:1"><div style="font-weight:700">${esc(w.name || 'Worker')}</div><div class="muted">${timeAgo(m.ts)}</div></div>
-          ${m.jobId ? `<button class="btn ghost sm" onclick="nav('job','${m.jobId}')"><i class="fas fa-wrench"></i></button>` : ''}
+          ${m.jobId ? `<button class="btn ghost sm" aria-label="${esc(t('job'))}" onclick="nav('job','${m.jobId}')"><i class="fas fa-wrench"></i></button>` : ''}
         </div>
         <div style="margin:10px 0 8px">${esc(m.text)}</div>
         ${m.ownerReply ? `<div class="muted" style="margin-bottom:8px"><b>${t('replyToWorker')}:</b> ${esc(m.ownerReply)}</div>` : ''}
         <div class="btnrow" style="margin:0">
           <button class="btn sm" onclick="replyUrgent('${m.id}','${m.kind || 'msg'}')"><i class="fas fa-reply"></i> ${t('replyToWorker')}</button>
-          <button class="btn green sm" onclick="resolveUrgent('${m.id}','${m.kind || 'msg'}')"><i class="fas fa-check"></i> ${t('markHandled')}</button>
+          <button class="btn ghost sm" onclick="resolveUrgent('${m.id}','${m.kind || 'msg'}')"><i class="fas fa-check"></i> ${t('markHandled')}</button>
           <button class="btn ghost sm" onclick="nav('worker_profile','${m.workerId}')">${t('workerProfile')}</button>
         </div>
       </div>`;
@@ -3393,7 +3359,7 @@
   function downloadFile(name, content, type) { const blob = new Blob([content], { type }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
 
   /* ============================ VOICE INPUT ============================ */
-  function voiceBtn(targetId) { return `<button type="button" class="iconbtn" aria-label="${t('voiceNote')}" style="background:var(--amber);width:var(--tap);height:var(--tap);flex:0 0 auto" onclick="voiceInto('${targetId}',this)"><i class="fas fa-microphone"></i></button>`; }
+  function voiceBtn(targetId) { return `<button type="button" class="iconbtn" aria-label="${t('voiceNote')}" style="background:var(--amber-fill);width:var(--tap);height:var(--tap);flex:0 0 auto" onclick="voiceInto('${targetId}',this)"><i class="fas fa-microphone"></i></button>`; }
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   function voiceInto(targetId, btn) {
     if (!SR) return toast(t('noVoice'), 'error');
@@ -3413,7 +3379,7 @@
     const rec = new SR(); rec.lang = lang === 'es' ? 'es-ES' : 'en-US'; rec.interimResults = true;
     modal(`<h2><i class="fas fa-microphone"></i> ${t('voiceNote')}</h2><div class="sheet-sub">${t('speakNow')}</div>
       <div class="field"><textarea id="vn-text" style="min-height:120px" placeholder="${t('listen')}"></textarea></div>
-      <button class="btn green block" onclick="saveNote('${jobId}',true)"><i class="fas fa-check"></i> ${t('save')}</button>`);
+      <button class="btn block" onclick="saveNote('${jobId}',true)"><i class="fas fa-check"></i> ${t('save')}</button>`);
     const el = $('#vn-text'); el.classList.add('listening');
     rec.onresult = (e) => { let txt = ''; for (const r of e.results) txt += r[0].transcript; el.value = txt; };
     rec.onend = () => el.classList.remove('listening');
@@ -3658,7 +3624,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
       <div class="card" style="padding:14px;margin:10px 0"><b>${esc(q)}</b></div>
       <div class="field"><div class="with-voice"><textarea id="dq-ans" placeholder="${esc(q)}"></textarea>${voiceBtn('dq-ans')}</div></div>
       <div class="btnrow">
-        <button class="btn green" onclick="answerDrawingQ('${docId}')"><i class="fas fa-check"></i> ${t('answerIt')}</button>
+        <button class="btn" onclick="answerDrawingQ('${docId}')"><i class="fas fa-check"></i> ${t('answerIt')}</button>
         <button class="btn ghost" onclick="skipDrawingQ('${docId}')">${t('skip')}</button>
       </div>`);
   }
@@ -3681,7 +3647,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
       <button class="btn ghost sm" style="margin:4px 0 12px" onclick="addMaterialRow()"><i class="fas fa-plus"></i> ${t('addItem')}</button>
       ${qtys.length ? `<div class="card" style="padding:12px;margin-bottom:10px"><div class="muted">${t('quantities')}</div>${qtys.map(q => kv(esc(q.label || ''), esc(String(q.count || '')))).join('')}</div>` : ''}
       ${(e.assumptions && e.assumptions.length) ? `<div class="card" style="padding:12px;margin-bottom:10px"><div class="muted">${t('assumptions')}</div><ul style="margin:6px 0 0 16px;padding:0">${e.assumptions.map(a => `<li>${esc(a)}</li>`).join('')}</ul></div>` : ''}
-      <button class="btn green block" onclick="saveDrawingEstimate('${docId}')"><i class="fas fa-check"></i> ${t('confirm')}</button>
+      <button class="btn block" onclick="saveDrawingEstimate('${docId}')"><i class="fas fa-check"></i> ${t('confirm')}</button>
       <button class="btn ghost block" style="margin-top:10px" onclick="closeModal();estimateFromDrawing('${docId}')"><i class="fas fa-file-invoice-dollar"></i> ${t('createEstimate')}</button>`);
   }
   function matRowHTML(m) {
@@ -3740,8 +3706,8 @@ Rules: Never invent precise counts you cannot support from the data — instead 
   function viewEmails() {
     const q = _search['eml'] || '';
     const list = db.emails.filter(e => matches(e, q)).sort((a, b) => new Date(b.date || b.created) - new Date(a.date || a.created));
-    let html = pageHead(t('emails'), '') + searchBox('eml');
-    html += `<div class="btnrow"><button class="btn green" onclick="openEmailForm()"><i class="fas fa-plus"></i> ${t('addEmail')}</button><button class="btn ghost" onclick="importEml()"><i class="fas fa-file-import"></i> ${t('importEmail')}</button></div>`;
+    let html = pageHead(t('emails'), countSub(list.length, 'emails')) + searchBox('eml');
+    html += `<div class="btnrow"><button class="btn" onclick="openEmailForm()"><i class="fas fa-plus"></i> ${t('addEmail')}</button><button class="btn ghost" onclick="importEml()"><i class="fas fa-file-import"></i> ${t('importEmail')}</button></div>`;
     html += `<div class="muted" style="margin:8px 0;font-size:13px"><i class="fas fa-inbox"></i> ${t('emailsHint')}</div>`;
     html += `<div class="card">${list.length ? list.map(emailRow).join('') : emptyState()}</div>`;
     $('#main').innerHTML = html; bindSearch('eml');
@@ -3758,7 +3724,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
       <div class="field"><label for="em-from">${t('from')}</label><input id="em-from" placeholder="name@email.com"></div>
       <div class="field"><label for="em-subj">${t('subject')}</label><input id="em-subj"></div>
       <div class="field"><label for="em-body">${t('message')}</label><div class="with-voice"><textarea id="em-body" style="min-height:120px"></textarea>${voiceBtn('em-body')}</div></div>
-      <button class="btn green block" onclick="saveEmailForm()"><i class="fas fa-check"></i> ${t('save')}</button>`);
+      <button class="btn block" onclick="saveEmailForm()"><i class="fas fa-check"></i> ${t('save')}</button>`);
   }
   function saveEmailForm() {
     const from = ($('#em-from').value || '').trim(); const subject = ($('#em-subj').value || '').trim(); const body = ($('#em-body').value || '').trim();
@@ -3828,7 +3794,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     modal(`<h2>${t('matchCustomer')}</h2>
       <div class="field"><label for="em-cust">${t('customer')}</label><select id="em-cust"><option value="">—</option>${custOpts}</select></div>
       <div class="field"><label for="em-job">${t('job')}</label><select id="em-job"><option value="">—</option>${jobOpts}</select></div>
-      <button class="btn green block" onclick="saveEmailLink('${id}')"><i class="fas fa-check"></i> ${t('save')}</button>`);
+      <button class="btn block" onclick="saveEmailLink('${id}')"><i class="fas fa-check"></i> ${t('save')}</button>`);
   }
   function saveEmailLink(id) {
     const customerId = $('#em-cust').value; const jobId = $('#em-job').value; const job = jobId ? get('jobs', jobId) : null;
@@ -3895,8 +3861,8 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     const list = db.payroll.filter(p => matches(p, q));
     const total = list.reduce((s, p) => s + (p.gross || 0), 0);
     const totalHours = list.reduce((s, p) => s + (p.hours || 0), 0);
-    let html = pageHead(t('payroll'), '') + searchBox('pay2');
-    html += `<div class="btnrow"><button class="btn green block" onclick="importPayroll()"><i class="fas fa-file-import"></i> ${t('importPayroll')}</button></div>`;
+    let html = pageHead(t('payroll'), countSub(list.length, 'payroll')) + searchBox('pay2');
+    html += `<div class="btnrow"><button class="btn block" onclick="importPayroll()"><i class="fas fa-file-import"></i> ${t('importPayroll')}</button></div>`;
     html += `<div class="muted" style="margin:8px 0;font-size:13px"><i class="fas fa-file-excel"></i> ${t('importExcelHint')}</div>`;
     if (list.length) html += `<div class="card" style="padding:14px;margin-bottom:10px">${kv('Total Hours', '<b>' + totalHours + '</b>')}${kv(t('totalGross'), '<b>' + money(total) + '</b>')}
       <div class="btnrow" style="margin-top:8px"><button class="btn ghost sm" onclick="exportCSV('payroll')"><i class="fas fa-file-export"></i> CSV</button><button class="btn ghost sm" onclick="summarizePayrollAll()"><i class="fas fa-robot"></i> ${t('summarize')}</button></div></div>`;
@@ -3988,7 +3954,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     modal(`<h2>${t('importPayroll')}</h2><div class="sheet-sub">${esc(fname)} · ${recs.length} ${t('rowsFound')}</div>
       <div class="card" style="padding:12px;margin:10px 0">${kv(t('totalGross'), '<b>' + money(total) + '</b>')}</div>
       <div class="card" style="max-height:240px;overflow:auto">${recs.slice(0, 12).map(p => `<div class="list-item"><div class="li-main"><div class="li-title">${esc(p.employee || '—')}</div><div class="li-sub">${p.hours || 0} ${t('hours')} · ${money(p.gross)}</div></div></div>`).join('')}${recs.length > 12 ? `<div class="muted" style="padding:8px">+${recs.length - 12}…</div>` : ''}</div>
-      <button class="btn green block" onclick="confirmPayrollImport()"><i class="fas fa-check"></i> ${t('importRows')}</button>`);
+      <button class="btn block" onclick="confirmPayrollImport()"><i class="fas fa-check"></i> ${t('importRows')}</button>`);
   }
   function confirmPayrollImport() {
     const pend = _pendingPayroll; _pendingPayroll = null; if (!pend) return;
@@ -4107,7 +4073,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     const floatBtn = document.createElement('div');
     floatBtn.id = 'ai-float-btn';
     floatBtn.className = 'glass';
-    floatBtn.style.cssText = `position:fixed;bottom:92px;right:22px;width:54px;height:54px;border-radius:999px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:var(--shadow2);cursor:pointer;z-index:55;transition:transform .2s cubic-bezier(0.23,1,0.32,1),box-shadow .2s;`;
+    floatBtn.style.cssText = `position:fixed;bottom:92px;right:22px;width:54px;height:54px;border-radius:999px;background:var(--action);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:var(--shadow2);cursor:pointer;z-index:55;transition:transform .2s cubic-bezier(0.23,1,0.32,1),box-shadow .2s;`;
     floatBtn.innerHTML = `<i class="fas fa-robot"></i>`;
     floatBtn.title = t('openAiChat');
     floatBtn.onclick = toggleFloatingChat;
@@ -4216,7 +4182,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
   function listView(col, title, sk, rowFn, addFn) {
     const q = _search[sk] || '';
     const list = db[col].filter(o => matches(o, q));
-    let html = pageHead(title, '') + searchBox(sk);
+    let html = pageHead(title, countSub(list.length, col)) + searchBox(sk);
     html += `<div class="card">${list.length ? list.map(rowFn).join('') : emptyState()}</div>`;
     $('#main').innerHTML = html; bindSearch(sk);
   }
@@ -4371,7 +4337,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
       if (isOT && !j.otAcknowledgedAt && session.role === 'field') {
         actionBtn = `<button class="btn red block" onclick="acknowledgeOT('${j.id}')"><i class="fas fa-triangle-exclamation"></i> ${t('ackOT')}</button>`;
       } else {
-        actionBtn = `<button class="btn green block" onclick="startCheckInFlow('${j.id}')"><i class="fas fa-right-to-bracket"></i> ${t('startJob')}</button>`;
+        actionBtn = `<button class="btn block" onclick="startCheckInFlow('${j.id}')"><i class="fas fa-right-to-bracket"></i> ${t('startJob')}</button>`;
       }
     }
     
@@ -4395,10 +4361,10 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     modal(`<h2>${t('startJob')}</h2>
       <p style="margin:14px 0">${lang === 'es' ? 'Por favor confirma que estás listo para empezar este trabajo.' : 'Please confirm you are ready to start this job.'}</p>
       <div class="btnrow" style="margin-bottom:16px;">
-        <button class="btn green block" onclick="doCheckIn('${jobId}')"><i class="fas fa-check"></i> ${t('acknowledge')}</button>
+        <button class="btn block" onclick="doCheckIn('${jobId}')"><i class="fas fa-check"></i> ${t('acknowledge')}</button>
       </div>
       <div style="text-align:center;">
-        <label class="btn amber sm" style="cursor:pointer; width:100%">
+        <label class="btn ghost sm" style="cursor:pointer; width:100%">
           <i class="fas fa-camera"></i> ${t('beforePhoto')}
           <input type="file" accept="image/*" capture="environment" class="hidden" onchange="handleFlowPhoto(event, '${jobId}', 'before', () => doCheckIn('${jobId}'))">
         </label>
@@ -4430,7 +4396,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     modal(`<h2>${t('submitAndClose')}</h2>
       <p style="margin:14px 0">${t('checklistDone')} ✅</p>
       <div style="margin-bottom:16px; text-align:center;">
-        <label class="btn amber sm" style="cursor:pointer; width:100%">
+        <label class="btn ghost sm" style="cursor:pointer; width:100%">
           <i class="fas fa-camera"></i> ${t('afterPhoto')}
           <input type="file" accept="image/*" capture="environment" class="hidden" onchange="handleFlowPhoto(event, '${jobId}', 'after', () => {})">
         </label>
@@ -4505,7 +4471,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     const cl = ensureChecklist(jobId); const doneN = cl.items.filter(i => i.done).length;
     return `<div class="section-title">${t('checklist')} (${doneN}/${cl.items.length})${doneN === cl.items.length ? ' ✅' : ''}</div>
       <div class="card" style="padding:6px 0">${cl.items.map(i => `<div class="list-item">
-        <div class="avatar" style="background:${i.done ? (i.note ? 'var(--amber)' : 'var(--green)') : 'var(--gray)'}" onclick="toggleChecklistItem('${jobId}','${i.key}')">
+        <div class="avatar" style="background:${i.done ? (i.note ? 'var(--amber-fill)' : 'var(--green-fill)') : 'var(--neutral-fill)'}" onclick="toggleChecklistItem('${jobId}','${i.key}')">
           <i class="fas ${i.done ? (i.note ? 'fa-triangle-exclamation' : 'fa-check') : 'fa-square'}"></i>
         </div>
         <div class="li-main" onclick="toggleChecklistItem('${jobId}','${i.key}')">
@@ -4566,7 +4532,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
         ${kpis.map(([icon, label, value, action]) => `<button class="hub-kpi" onclick="${action}"><span class="hub-kpi-label">${esc(label)}</span><span class="hub-kpi-bottom"><span class="hub-kpi-value">${String(value).padStart(2, '0')}</span><i class="fas ${icon} hub-kpi-icon"></i></span></button>`).join('')}
       </section>
       <section><div class="hub-section-head"><h2>${esc(t('weeklySchedule'))}</h2><button class="hub-section-action" onclick="nav('jobs')">${esc(t('viewCalendar'))}</button></div>
-        <div class="hub-week">${week.map(day => `<button class="hub-day ${day.iso === todayISO() ? 'today' : ''}" onclick="nav('jobs')"><span class="hub-day-name">${esc(day.date.toLocaleDateString(lang === 'es' ? 'es-US' : 'en-US', { weekday: 'short' }))}</span><span class="hub-day-number">${day.date.getDate()}</span><span class="hub-day-count">${day.iso === todayISO() ? '•' : `${day.jobs.length} ${esc(t('jobCount'))}`}</span></button>`).join('')}</div>
+        <div class="hub-week">${week.map(day => `<button class="hub-day ${day.iso === todayISO() ? 'today' : ''}" onclick="nav('jobs')"><span class="hub-day-name">${esc(day.date.toLocaleDateString(lang === 'es' ? 'es-US' : 'en-US', { weekday: 'short' }))}</span><span class="hub-day-number">${day.date.getDate()}</span><span class="hub-day-count">${day.iso === todayISO() ? '•' : `${day.jobs.length} ${esc(day.jobs.length === 1 ? t('jobCountOne') : t('jobCount'))}`}</span></button>`).join('')}</div>
       </section>
       <section><div class="hub-section-head"><h2>${esc(t('recentJobs'))}</h2><button class="hub-section-action" aria-label="${esc(t('viewAll'))}" onclick="nav('jobs')"><i class="fas fa-filter"></i></button></div>
         <div class="hub-jobs">${recentJobs.length ? recentJobs.map(recentJobCard).join('') : emptyState(t('noResults'))}</div>
@@ -4617,7 +4583,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
         html += `<div class="list-item" style="flex-direction:column;align-items:flex-start">
           <div style="font-weight:bold;margin-bottom:4px">${timeStr}</div>
           <div style="color:var(--text);font-size:14px;margin-bottom:4px">
-            <i class="fas fa-location-dot" style="color:var(--pri)"></i> <span id="${id}">${c.locationLabel || (c.lat ? 'Loading address...' : 'Unknown')}</span>
+            <i class="fas fa-location-dot" style="color:var(--accent)"></i> <span id="${id}">${c.locationLabel || (c.lat ? 'Loading address...' : 'Unknown')}</span>
           </div>
           <div class="muted">Events: ${evTypes}</div>
         </div>`;
@@ -4669,18 +4635,18 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     const filter = route.id;
     let list = db.alerts.slice().sort((a, b) => (a.status === b.status ? new Date(b.ts) - new Date(a.ts) : a.status === 'open' ? -1 : 1));
     if (filter) list = list.filter(a => a.type === filter);
-    const sevColor = { high: 'var(--red)', medium: 'var(--amber)', low: 'var(--gray)' };
+    const sevColor = { high: 'var(--red-fill)', medium: 'var(--amber-fill)', low: 'var(--neutral-fill)' };
     let html = pageHead(t('alerts'), filter ? alertLabel(filter) : '');
     html += `<div class="card">${list.length ? list.map(a => `<div class="list-item" ${a.sourceType === 'job' && a.sourceId ? `onclick="nav('job','${a.sourceId}')"` : ''}>
-      <div class="avatar" style="background:${sevColor[a.severity] || 'var(--gray)'}"><i class="fas fa-triangle-exclamation"></i></div>
+      <div class="avatar" style="background:${sevColor[a.severity] || 'var(--neutral-fill)'}"><i class="fas fa-triangle-exclamation"></i></div>
       <div class="li-main"><div class="li-title">${esc(a.msg || alertLabel(a.type))}</div><div class="li-sub">${esc(alertLabel(a.type))} · ${esc(a.severity)} · ${timeAgo(a.ts)}</div></div>
-      <div class="li-right" onclick="event.stopPropagation()">${a.status === 'open' ? `<button class="btn green sm" onclick="resolveAlert('${a.id}')">${t('resolve')}</button>` : `<span class="pill green">${t('resolved')}</span>`}</div></div>`).join('') : emptyState(t('allClear'))}</div>`;
+      <div class="li-right" onclick="event.stopPropagation()">${a.status === 'open' ? `<button class="btn sm" onclick="resolveAlert('${a.id}')">${t('resolve')}</button>` : `<span class="pill green">${t('resolved')}</span>`}</div></div>`).join('') : emptyState(t('allClear'))}</div>`;
     $('#main').innerHTML = html;
   }
   function viewAudit() {
     const q = _search['aud'] || '';
     const list = db.audit_log.filter(a => matches(a, q)).slice(0, 300);
-    let html = pageHead(t('auditTrail'), db.audit_log.length + '') + searchBox('aud');
+    let html = pageHead(t('auditTrail'), countSub(db.audit_log.length, 'auditTrail')) + searchBox('aud');
     html += `<div class="card">${list.length ? list.map(a => `<div class="list-item"><div class="avatar" style="background:${colorFor(a.byName || 'sys')}"><i class="fas fa-clipboard-list"></i></div><div class="li-main"><div class="li-title">${esc(a.action)}</div><div class="li-sub">${esc(a.byName || 'system')} · ${esc(a.entity || '')} · ${timeAgo(a.ts)}</div></div></div>`).join('') : emptyState()}</div>`;
     $('#main').innerHTML = html; bindSearch('aud');
   }
@@ -4694,7 +4660,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
       <div class="logo" style="margin:0 auto 14px"><i class="fas fa-shield-heart"></i></div>
       <h1 style="text-align:center">${t('consentTitle')}</h1>
       <div class="card" style="padding:16px;margin:16px 0;line-height:1.6">${esc(t('consentBody'))}</div>
-      <button class="btn green block" onclick="acceptConsent()"><i class="fas fa-check"></i> ${t('iAgree')}</button>
+      <button class="btn block" onclick="acceptConsent()"><i class="fas fa-check"></i> ${t('iAgree')}</button>
       <button class="btn ghost block" style="margin-top:10px" onclick="signOut()">${t('notNow')}</button></div>`;
   }
   function acceptConsent() { add('consent_records', { userId: session.id, accepted: true, version: 1, ts: nowISO(), lang }); audit('consent.accept', 'user', session.id); toast(t('saved'), 'success'); nav('home'); }
@@ -4711,7 +4677,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     h += `<div class="chat-log" id="paichat" style="margin-top:10px;min-height:80px">${convo.length ? convo.map(c => `<div class="bubble ${c.role === 'user' ? 'me' : 'bot'}">${esc(c.text)}${c.escalated ? ` <span class="src"><i class="fas fa-arrow-up"></i> ${t('escalateToOwner')}</span>` : ''}</div>`).join('') : `<div class="bubble bot">${esc(t('askProject'))}</div>`}</div>`;
     h += `<div class="field" style="margin-top:10px"><div class="with-voice"><input id="pai-in" placeholder="${t('askProject')}" onkeydown="if(event.key==='Enter')askProjectAI('${jobId}')">${voiceBtn('pai-in')}<button class="btn" style="flex:0 0 auto" onclick="askProjectAI('${jobId}')"><i class="fas fa-paper-plane"></i></button></div></div>`;
     h += `<div class="btnrow" style="margin-top:8px"><button class="btn ghost sm" onclick="escalateProjectAI('${jobId}', ($('#pai-in')&&$('#pai-in').value)||'(question)','manual')"><i class="fas fa-arrow-up-from-bracket"></i> ${t('escalateToOwner')}</button></div>`;
-    if (esc3.length) h += `<div class="section-title">${t('escalations')}</div><div class="card">${esc3.map(e => `<div class="list-item"><div class="avatar" style="background:${e.status === 'resolved' ? 'var(--green)' : 'var(--red)'}"><i class="fas fa-arrow-up"></i></div><div class="li-main"><div class="li-title">${esc(e.question || '')}</div><div class="li-sub">${timeAgo(e.ts)}</div></div></div>`).join('')}</div>`;
+    if (esc3.length) h += `<div class="section-title">${t('escalations')}</div><div class="card">${esc3.map(e => `<div class="list-item"><div class="avatar" style="background:${e.status === 'resolved' ? 'var(--green-fill)' : 'var(--red-fill)'}"><i class="fas fa-arrow-up"></i></div><div class="li-main"><div class="li-title">${esc(e.question || '')}</div><div class="li-sub">${timeAgo(e.ts)}</div></div></div>`).join('')}</div>`;
     return h;
   }
   function openProjectAIForm(jobId) {
@@ -4767,7 +4733,7 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
       // group by docGroup, show latest version per group
       const groups = {};
       items.forEach(d => { (groups[d.group] = groups[d.group] || []).push(d); });
-      const rows = Object.values(groups).map(vs => { vs.sort((a, b) => b.version - a.version); const cur = vs[0]; return `<div class="list-item" onclick="openProjectDoc('${col}','${cur.group}')"><div class="avatar" style="background:var(--blue2)"><i class="fas fa-file"></i></div><div class="li-main"><div class="li-title">${esc(cur.name)}</div><div class="li-sub">${t(kind === 'contract' ? 'contracts' : kind === 'proposal' ? 'proposals' : 'plans')} · ${t('version')} ${cur.version}${cur.status === 'approved' ? ' · ✅ ' + t('approved2') : ''}</div></div></div>`; }).join('');
+      const rows = Object.values(groups).map(vs => { vs.sort((a, b) => b.version - a.version); const cur = vs[0]; return `<div class="list-item" onclick="openProjectDoc('${col}','${cur.group}')"><div class="avatar" style="background:var(--accent-fill)"><i class="fas fa-file"></i></div><div class="li-main"><div class="li-title">${esc(cur.name)}</div><div class="li-sub">${t(kind === 'contract' ? 'contracts' : kind === 'proposal' ? 'proposals' : 'plans')} · ${t('version')} ${cur.version}${cur.status === 'approved' ? ' · ✅ ' + t('approved2') : ''}</div></div></div>`; }).join('');
       if (rows) h += `<div class="card" style="margin-top:8px">${rows}</div>`;
     });
     return h;
@@ -4797,7 +4763,7 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
       <div class="card" style="padding:12px">${kv(t('version'), String(cur.version))}${kv(t('status'), cur.status === 'approved' ? '✅ ' + t('approved2') : t('draft'))}</div>
       <div class="btnrow" style="margin-top:10px">
         ${url ? `<a class="btn ghost" href="${url}" download="${esc(cur.name)}"><i class="fas fa-download"></i> ${lang === 'es' ? 'Descargar' : 'Download'}</a>` : ''}
-        ${cur.status !== 'approved' ? `<button class="btn green" onclick="approveProjectDoc('${col}','${cur.id}')"><i class="fas fa-check"></i> ${t('approve')}</button>` : ''}
+        ${cur.status !== 'approved' ? `<button class="btn" onclick="approveProjectDoc('${col}','${cur.id}')"><i class="fas fa-check"></i> ${t('approve')}</button>` : ''}
       </div>
       <div class="section-title">${t('versionHistory')}</div>
       <div class="card">${versions.map(v => `<div class="list-item"><div class="li-main"><div class="li-title">${t('version')} ${v.version}</div><div class="li-sub">${fmtDate(v.created)}${v.status === 'approved' ? ' · ✅' : ''}</div></div></div>`).join('')}</div>
@@ -4866,8 +4832,8 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     const lastExport = db.meta.lastExport;
     const exportAgeDays = lastExport ? (Date.now() - new Date(lastExport)) / 86400000 : Infinity;
     const exportStale = exportAgeDays > 7;
-    let html = pageHead(t('backups'), restorable + ' ' + t('copies'));
-    html += `<div class="btnrow"><button class="btn green" onclick="backupNow(true)"><i class="fas fa-database"></i> ${t('backupNow')}</button><button class="btn" onclick="restoreTest()"><i class="fas fa-rotate"></i> ${t('testRestore')}</button><button class="btn ${exportStale ? 'amber' : 'ghost'}" onclick="exportAll()"><i class="fas fa-download"></i> ${lang === 'es' ? 'Descargar' : 'Download'}</button></div>`;
+    let html = pageHead(t('backups'), countSub(restorable, 'copies'));
+    html += `<div class="btnrow"><button class="btn" onclick="backupNow(true)"><i class="fas fa-database"></i> ${t('backupNow')}</button><button class="btn ghost" onclick="restoreTest()"><i class="fas fa-rotate"></i> ${t('testRestore')}</button><button class="btn ghost" onclick="exportAll()"><i class="fas fa-download"></i> ${lang === 'es' ? 'Descargar' : 'Download'}</button></div>`;
     /* The download is the only copy that leaves this device, so its age is the
        number that actually matters. Say so plainly rather than burying it. */
     if (exportStale) {
@@ -4884,7 +4850,7 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
         ? '<b>Copias en este teléfono</b> guardan los registros solamente, sin fotos, y viven en este mismo aparato — si lo pierdes, se pierden con él.<br><b>Descargar</b> guarda todo, fotos incluidas, en un archivo que puedes poner a salvo.'
         : '<b>Copies on this phone</b> hold the records only — no photos — and live on this same device, so a lost phone loses them with it.<br><b>Download</b> saves everything, photos included, as one file you can keep somewhere safe.'}</div>
     </div>`;
-    html += `<div class="section-title">${t('backupLog')}</div><div class="card">${list.length ? list.slice(0, 50).map(b => `<div class="list-item"><div class="avatar" style="background:${b.verified ? 'var(--green)' : 'var(--amber)'}"><i class="fas fa-database"></i></div><div class="li-main"><div class="li-title">${fmtDate(b.ts)}</div><div class="li-sub">${(b.size / 1024 | 0)} KB · ${esc(b.location)}${b.verified ? ' · ' + t('verified') : ''}${b.restorePass != null ? ' · ' + (b.restorePass ? t('restorePass') : t('restoreFail')) : ''}</div></div></div>`).join('') : emptyState()}</div>`;
+    html += `<div class="section-title">${t('backupLog')}</div><div class="card">${list.length ? list.slice(0, 50).map(b => `<div class="list-item"><div class="avatar" style="background:${b.verified ? 'var(--green-fill)' : 'var(--amber-fill)'}"><i class="fas fa-database"></i></div><div class="li-main"><div class="li-title">${fmtDate(b.ts)}</div><div class="li-sub">${(b.size / 1024 | 0)} KB · ${esc(b.location)}${b.verified ? ' · ' + t('verified') : ''}${b.restorePass != null ? ' · ' + (b.restorePass ? t('restorePass') : t('restoreFail')) : ''}</div></div></div>`).join('') : emptyState()}</div>`;
     $('#main').innerHTML = html;
   }
 
@@ -4921,9 +4887,9 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     const msgEs = "OTTO requiere acceso al GPS para registrar las horas de trabajo. Toca Permitir para continuar.";
     $('#main').innerHTML = `
       <div style="padding:40px 20px;text-align:center;max-width:400px;margin:0 auto">
-        <h2><i class="fas fa-location-dot" style="font-size:40px;color:var(--pri)"></i></h2>
+        <h2><i class="fas fa-location-dot" style="font-size:40px;color:var(--accent)"></i></h2>
         <p style="margin:20px 0;font-size:16px">${lang === 'es' ? msgEs : msgEn}</p>
-        <button class="btn green block" onclick="acceptGps()"><i class="fas fa-check"></i> ${lang === 'es' ? 'Permitir' : 'Allow'}</button>
+        <button class="btn block" onclick="acceptGps()"><i class="fas fa-check"></i> ${lang === 'es' ? 'Permitir' : 'Allow'}</button>
       </div>`;
   }
   
@@ -5111,7 +5077,7 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
           <div style="font-weight:700; margin-bottom:4px;">${esc(u.name)} ${t('ptoRequests')} ${fmtDate(p.startDate)} - ${fmtDate(p.endDate)}</div>
           ${warn}
           <div class="btnrow" style="margin-top:8px;">
-            <button class="btn green sm" onclick="approvePTO('${p.id}')">${t('approve')}</button>
+            <button class="btn sm" onclick="approvePTO('${p.id}')">${t('approve')}</button>
             <button class="btn red sm" onclick="denyPTO('${p.id}')">${t('deny')}</button>
           </div>
         </div>`;
@@ -5412,8 +5378,8 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
               return `<div style="background:var(--bg); border-radius:8px; padding:10px; margin-top:8px">
                 <div style="font-size:13px; font-weight:600; margin-bottom:8px"><i class="fas fa-file-pdf" style="color:var(--red)"></i> ${esc(a.name)}</div>
                 <div class="btnrow" style="margin:0">
-                  <button class="btn ghost small" onclick="previewPDF('${e.id}', ${i})"><i class="fas fa-eye"></i> ${t('preview')}</button>
-                  <button class="btn small" onclick="analyzePdfAI('${e.id}', ${i})"><i class="fas fa-robot"></i> ${t('analyzeAI')}</button>
+                  <button class="btn ghost sm" onclick="previewPDF('${e.id}', ${i})"><i class="fas fa-eye"></i> ${t('preview')}</button>
+                  <button class="btn sm" onclick="analyzePdfAI('${e.id}', ${i})"><i class="fas fa-robot"></i> ${t('analyzeAI')}</button>
                 </div>
               </div>`;
             } else {
@@ -5434,11 +5400,11 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `<div class="modal" style="width:100%; height:100%; max-width:none; max-height:none; border-radius:0; display:flex; flex-direction:column; padding:0;">
-      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:var(--blue); color:white">
+      <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:var(--action); color:white">
         <div style="font-weight:bold">${esc(att.name)}</div>
         <div>
-          <button class="btn small" style="background:var(--accent); border:none;" onclick="analyzePdfAI('${e.id}', ${attIdx})"><i class="fas fa-robot"></i> ${t('analyzeAI')}</button>
-          <button class="btn ghost small" style="color:white; margin-left:8px; border:none;" onclick="this.closest('.modal-overlay').remove()"><i class="fas fa-xmark"></i></button>
+          <button class="btn sm" onclick="analyzePdfAI('${e.id}', ${attIdx})"><i class="fas fa-robot"></i> ${t('analyzeAI')}</button>
+          <button class="btn ghost sm" style="color:white; margin-left:8px; border:none;" onclick="this.closest('.modal-overlay').remove()"><i class="fas fa-xmark"></i></button>
         </div>
       </div>
       <div id="pdf-viewer" style="flex:1; overflow:auto; background:var(--bg2); display:flex; flex-direction:column; align-items:center; padding:20px; gap:20px;"></div>
