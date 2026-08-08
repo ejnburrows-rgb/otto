@@ -1,16 +1,25 @@
 /* OTTO Plumbing CRM — service worker
    Offline-first shell cache. App data lives in IndexedDB, not here. */
-const CACHE = 'otto-crm-v5';
+const CACHE = 'otto-crm-v6';
 const SHELL = ['./', './index.html', './manifest.json', './logo.jpg'];
 
-// The icon font and the two webfonts, fetched at install rather than waiting for
-// a second visit. On the very first load the service worker is not controlling
-// the page yet, so it never sees those requests — a phone that opened the app
-// once and then lost signal had no icons at all.
-const CDN_SHELL = [
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css',
-  'https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&family=Inter:wght@400;500;600;700;800&display=swap',
-];
+// The icon font and the webfonts, fetched at install rather than waiting for a
+// second visit. On the very first load the service worker is not controlling the
+// page yet, so it never sees those requests — a phone that opened the app once
+// and then lost signal had no icons at all.
+//
+// These URLs are read out of index.html rather than listed here. They were
+// listed here once, and then the dashboard redesign added two more font families
+// to the page's stylesheet link without touching this file. The worker went on
+// caching the old URL, the page went on asking for the new one, and every
+// webfont vanished the moment a phone lost signal — while the icons, whose URL
+// had not changed, carried on working and made it look fine. One URL, one place.
+function cdnStylesheetsIn(html) {
+  return [...html.matchAll(/<link\b[^>]*>/g)]
+    .filter((tag) => /rel=["']stylesheet["']/.test(tag[0]))
+    .map((tag) => (tag[0].match(/href=["']([^"']+)["']/) || [])[1])
+    .filter((href) => href && href.startsWith('https://'));
+}
 
 // A stylesheet on its own is not enough: caching all.min.css while its
 // fa-solid-900.woff2 stays on the network leaves every icon a blank box, and the
@@ -36,7 +45,14 @@ self.addEventListener('install', (e) => {
     for (const url of SHELL) {
       try { await c.add(url); } catch (err) { /* keep going */ }
     }
-    for (const url of CDN_SHELL) {
+    // Ask the page itself which stylesheets it loads. If it cannot be read there
+    // is nothing to cache and nothing to guess at.
+    let cdnShell = [];
+    try {
+      const page = await fetch('./index.html');
+      if (page && page.status === 200) cdnShell = cdnStylesheetsIn(await page.text());
+    } catch (err) { /* keep going */ }
+    for (const url of cdnShell) {
       try {
         const res = await fetch(url, { mode: 'cors' });
         if (!res || res.status !== 200) continue;
