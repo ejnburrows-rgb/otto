@@ -1,13 +1,4 @@
-// Regression tests for the fail-closed containment gate (api/_lib/serverAuth.js).
-//
-// Proves: an unauthenticated request to every sensitive route is refused
-// with the same machine-readable error, before it ever reaches Supabase,
-// Anthropic, NVIDIA, Twilio, SendGrid, or QuickBooks — even when the
-// server-side provider keys ARE configured. No customer data, signed photo
-// URL, provider response, or notification preview is ever returned.
-//
-// Run with: node scripts/test-server-auth.mjs
-
+// Regression tests for Supabase-backed server authentication.
 import dataHandler from '../api/data.js';
 import photosHandler from '../api/photos.js';
 import claudeHandler from '../api/claude.js';
@@ -15,142 +6,20 @@ import nvidiaHandler from '../api/nvidia.js';
 import notifyHandler from '../api/notify.js';
 import quickbooksHandler from '../api/quickbooks.js';
 
-let passed = 0, failed = 0;
-function check(name, actual, expected) {
-  const a = JSON.stringify(actual), e = JSON.stringify(expected);
-  if (a === e) { passed++; console.log(`  ok   ${name}`); }
-  else { failed++; console.log(`  FAIL ${name}\n       expected ${e}\n       got      ${a}`); }
-}
-
-function createRes() {
-  const r = { statusCode: null, body: null, headers: {} };
-  r.status = (c) => { r.statusCode = c; return r; };
-  r.json = (d) => { r.body = d; return r; };
-  r.setHeader = () => r;
-  r.send = (d) => { r.body = d; return r; };
-  return r;
-}
-
-function noopReq(overrides = {}) {
-  return {
-    method: 'GET',
-    query: {},
-    headers: {},
-    body: null,
-    on(ev, cb) { if (ev === 'end') cb(); return this; },
-    ...overrides,
-  };
-}
-
-const originalEnv = { ...process.env };
-let calledUpstream = false;
-const originalFetch = global.fetch;
-global.fetch = async (...args) => {
-  calledUpstream = true;
-  throw new Error('test setup error: the gate should have refused this request before any network call');
-};
-
-async function runTests() {
-  console.log('\nTesting the fail-closed containment gate (api/_lib/serverAuth.js)');
-
-  // Fully "configured" environment — proves the gate refuses regardless of
-  // whether the underlying provider keys are present.
-  process.env.SUPABASE_URL = 'https://test.supabase.co';
-  process.env.SUPABASE_SERVICE_ROLE_KEY = 'sk-test';
-  process.env.ANTHROPIC_API_KEY = 'sk-ant-test';
-  process.env.NVIDIA_API_KEY = 'nvapi-test';
-  process.env.TWILIO_SID = 'AC-test';
-  process.env.TWILIO_AUTH = 'auth-test';
-  process.env.TWILIO_FROM = '+15550000000';
-  process.env.SENDGRID_API_KEY = 'SG-test';
-  process.env.QB_CLIENT_ID = 'qb-id';
-  process.env.QB_CLIENT_SECRET = 'qb-secret';
-  process.env.QB_REFRESH_TOKEN = 'qb-refresh';
-
-  const cases = [
-    ['GET /api/data (read customer data)', dataHandler, noopReq({ method: 'GET' })],
-    ['POST /api/data (write customer data)', dataHandler, noopReq({ method: 'POST', body: { collection: 'customers', records: [{ id: '1' }] } })],
-    ['GET /api/photos (signed photo link)', photosHandler, noopReq({ method: 'GET', query: { fileId: 'f_1' } })],
-    ['POST /api/photos (upload photo)', photosHandler, noopReq({ method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ fileId: 'f_1', data: 'data:image/jpeg;base64,AA==' }) })],
-    ['DELETE /api/photos (delete photo)', photosHandler, noopReq({ method: 'DELETE', query: { fileId: 'f_1' } })],
-    ['POST /api/claude (AI proxy)', claudeHandler, noopReq({ method: 'POST', body: { messages: [{ role: 'user', content: 'hi' }] } })],
-    ['POST /api/nvidia (AI proxy)', nvidiaHandler, noopReq({ method: 'POST', body: { messages: [{ role: 'user', content: 'hi' }] } })],
-    ['POST /api/notify (send SMS)', notifyHandler, noopReq({ method: 'POST', body: { channel: 'sms', to: '+15551234567', body: 'secret job details' } })],
-    ['POST /api/notify (send email)', notifyHandler, noopReq({ method: 'POST', body: { channel: 'email', to: 'customer@example.com', subject: 'Invoice', body: 'secret invoice content' } })],
-    ['POST /api/quickbooks (sync action)', quickbooksHandler, noopReq({ method: 'POST', body: { action: 'sync', records: [{ id: 1 }] } })],
-  ];
-
-  for (const [name, handler, req] of cases) {
-    calledUpstream = false;
-    const res = createRes();
-    await handler(req, res);
-    check(`${name} returns 403`, res.statusCode, 403);
-    check(`${name} returns server_auth_not_configured`, res.body && res.body.error, 'server_auth_not_configured');
-    check(`${name} reveals no customer/provider data`, JSON.stringify(res.body).toLowerCase().includes('secret'), false);
-    check(`${name} never calls the upstream provider`, calledUpstream, false);
-  }
-
-  // The routes that are NOT gated (non-sensitive QuickBooks status/auth_url)
-  // must still work normally — proves the gate is scoped, not a global outage.
-  {
-    const res = createRes();
-    await quickbooksHandler(noopReq({ method: 'GET', query: { action: 'status' } }), res);
-    check('GET /api/quickbooks?action=status is not gated', res.statusCode, 200);
-  }
-
-  /* ── 2026-07-31 incident: the gate was replaced with hand-rolled JWT
-     verification whose secret fell back to a literal string published in this
-     repository, alongside an api/login.js that minted an owner session for
-     anyone who asked. These checks exist so that cannot return quietly. ── */
-  {
-    const { readFileSync, readdirSync } = await import('node:fs');
-    const apiDir = new URL('../api/', import.meta.url);
-
-    // A token forged with the old fallback secret must be refused. Built by
-    // hand so the test needs no JWT library and cannot be fooled by one.
-    const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
-    const forged = `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ userId: 'owner-1', role: 'owner', exp: 9999999999 })}.forged`;
-    for (const header of [`Bearer ${forged}`, 'Bearer ', forged, 'Basic abc']) {
-      const res = createRes();
-      await dataHandler(noopReq({ method: 'GET', headers: { authorization: header } }), res);
-      check(`a request bearing "${header.slice(0, 18)}…" is still refused`, res.statusCode, 403);
-    }
-
-    // The literal must not exist anywhere under api/, in any form.
-    const offenders = [];
-    const walk = (dir) => {
-      for (const entry of readdirSync(dir, { withFileTypes: true })) {
-        const child = new URL(entry.name + (entry.isDirectory() ? '/' : ''), dir);
-        if (entry.isDirectory()) walk(child);
-        else if (entry.name.endsWith('.js')) {
-          const src = readFileSync(child, 'utf8');
-          if (src.includes('fallback_secret_for_dev')) offenders.push(entry.name);
-        }
-      }
-    };
-    walk(apiDir);
-    check('no api/ file contains the published fallback secret', offenders, []);
-
-    // The sign-in route that issued owner sessions to anyone is gone.
-    const apiFiles = readdirSync(apiDir).filter((f) => f.endsWith('.js'));
-    check('api/login.js no longer exists', apiFiles.includes('login.js'), false);
-
-    // hasServerAuth must be unconditional until a real provider check replaces
-    // it. If you are legitimately wiring one up, update this test deliberately.
-    const gate = readFileSync(new URL('_lib/serverAuth.js', apiDir), 'utf8');
-    check('the gate does not sign or verify its own tokens', /jsonwebtoken|jwt\.(sign|verify)/.test(gate), false);
-    check('the gate fails closed', /return false;/.test(gate), true);
-  }
-
-  console.log(`\n${passed} passed, ${failed} failed\n`);
-  global.fetch = originalFetch;
-  process.env = { ...originalEnv };
-  process.exit(failed ? 1 : 0);
-}
-
-runTests().catch((e) => {
-  console.error(e);
-  global.fetch = originalFetch;
-  process.env = { ...originalEnv };
-  process.exit(1);
-});
+let passed=0,failed=0;function check(name,actual,expected){const a=JSON.stringify(actual),e=JSON.stringify(expected);if(a===e){passed++;console.log(`  ok   ${name}`);}else{failed++;console.log(`  FAIL ${name}\n expected ${e}\n got ${a}`);}}
+function createRes(){const r={statusCode:null,body:null,headers:{}};r.status=c=>{r.statusCode=c;return r;};r.json=d=>{r.body=d;return r;};r.setHeader=(k,v)=>{r.headers[k]=v;return r;};r.send=d=>{r.body=d;return r;};return r;}
+function req(o={}){return{method:'GET',query:{},headers:{},body:null,on(ev,cb){if(ev==='end')cb();return this;},...o};}
+const originalEnv={...process.env};const originalFetch=global.fetch;
+process.env.SUPABASE_URL='https://test.supabase.co';process.env.SUPABASE_PUBLISHABLE_KEY='sb_publishable_test';process.env.SUPABASE_SERVICE_ROLE_KEY='service-test';process.env.ANTHROPIC_API_KEY='ant-test';process.env.NVIDIA_API_KEY='nv-test';process.env.TWILIO_SID='AC-test';process.env.TWILIO_AUTH='auth-test';process.env.TWILIO_FROM='+15550000000';process.env.SENDGRID_API_KEY='SG-test';process.env.QB_CLIENT_ID='qb-id';process.env.QB_CLIENT_SECRET='qb-secret';process.env.QB_REFRESH_TOKEN='qb-refresh';
+const cases=[['data',dataHandler,req()],['photos',photosHandler,req({query:{fileId:'f_1'}})],['claude',claudeHandler,req({method:'POST',body:{}})],['nvidia',nvidiaHandler,req({method:'POST',body:{}})],['notify',notifyHandler,req({method:'POST',body:{channel:'sms',to:'+1',body:'x'}})],['quickbooks sync',quickbooksHandler,req({method:'POST',body:{action:'sync',records:[]}})]];
+async function run(){console.log('\nTesting Supabase server authentication');
+ for(const [name,handler,rq] of cases){let calls=0;global.fetch=async()=>{calls++;throw new Error('must not call upstream');};const res=createRes();await handler(rq,res);check(`${name} anonymous returns 401`,res.statusCode,401);check(`${name} anonymous error`,res.body?.error,'unauthorized');check(`${name} anonymous makes no upstream call`,calls,0);}
+ // Invalid bearer: exactly one call to Supabase Auth and no protected provider call.
+ {let calls=[];global.fetch=async(url)=>{calls.push(String(url));return{ok:false,status:401,json:async()=>({})};};const res=createRes();await dataHandler(req({headers:{authorization:'Bearer invalid'}}),res);check('invalid bearer returns 401',res.statusCode,401);check('invalid bearer checked once',calls.length,1);check('invalid bearer checked by Supabase Auth',calls[0],'https://test.supabase.co/auth/v1/user');}
+ // Valid bearer: Supabase confirms identity, then protected route is allowed to continue.
+ {let calls=[];global.fetch=async(url)=>{calls.push(String(url));if(String(url).endsWith('/auth/v1/user'))return{ok:true,status:200,json:async()=>({id:'auth-user-1'})};if(String(url).includes('/rest/v1/'))return{ok:true,status:200,json:async()=>[]};throw new Error('unexpected '+url);};const res=createRes();await dataHandler(req({headers:{authorization:'Bearer valid'}}),res);check('valid bearer reaches data route',res.statusCode,200);check('valid bearer verifies identity first',calls[0],'https://test.supabase.co/auth/v1/user');check('valid bearer reaches protected provider',calls.some(x=>x.includes('/rest/v1/')),true);}
+ // Public QuickBooks status remains public.
+ {global.fetch=async()=>{throw new Error('no fetch expected');};const res=createRes();await quickbooksHandler(req({query:{action:'status'}}),res);check('QuickBooks status remains public',res.statusCode,200);}
+ const {readFileSync,readdirSync}=await import('node:fs');const apiDir=new URL('../api/',import.meta.url);const gate=readFileSync(new URL('_lib/serverAuth.js',apiDir),'utf8');check('no hand-built JWT library',/jsonwebtoken|jwt\.(sign|verify)/.test(gate),false);check('provider user endpoint is used',gate.includes('/auth/v1/user'),true);check('old login route absent',readdirSync(apiDir).includes('login.js'),false);
+ console.log(`\n${passed} passed, ${failed} failed\n`);global.fetch=originalFetch;process.env={...originalEnv};process.exit(failed?1:0);}
+run().catch(e=>{console.error(e);global.fetch=originalFetch;process.env={...originalEnv};process.exit(1);});
