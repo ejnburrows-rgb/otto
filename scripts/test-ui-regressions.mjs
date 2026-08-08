@@ -389,9 +389,16 @@ console.log('\nthe install and the deploy must be what they claim to be');
   // browser-side only and bypassable — returned 200 on the public domain, as did
   // AGENTS.md, every script, and the database schema.
   const ignore = readFileSync(new URL('../.vercelignore', import.meta.url), 'utf8');
-  const mustNotPublish = ['docs/', 'scripts/', 'supabase/', 'legacy/', '*.md'];
-  check('the deploy still excludes the working documents and tooling',
-    mustNotPublish.filter((entry) => !ignore.split('\n').some((l) => l.trim() === entry)), []);
+  const lines = ignore.split('\n').map((l) => l.trim());
+  const mustNotPublish = ['docs/', 'supabase/', 'legacy/', '*.md'];
+  check('the deploy still excludes the working documents',
+    mustNotPublish.filter((entry) => !lines.includes(entry)), []);
+  // `scripts/*` rather than `scripts/`, so the one build-time file can be
+  // re-included — gitignore cannot re-include from an excluded directory.
+  check('the deploy still excludes the test and tooling source',
+    lines.includes('scripts/*') || lines.includes('scripts/'), true);
+  check('only the build stamper is re-included from scripts',
+    lines.filter((l) => l.startsWith('!scripts/')), ['!scripts/stamp-version.mjs']);
 
   // The pages, the worker and the icons must NOT be excluded, or the site ships
   // broken. Cheap sanity check on the same file.
@@ -418,19 +425,29 @@ console.log('\nthe deployed build must be able to say which commit it is');
 
   check('the deploy stamps a version marker', typeof vercel.buildCommand === 'string', true);
   const build = vercel.buildCommand || '';
-  // The trap this check exists for: a buildCommand pointing at a path that
-  // .vercelignore excludes. It fails the whole deployment, and it did.
-  const ignored = ignore.split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('#') && l.endsWith('/'));
-  check('the build command does not reach into an unpublished folder',
-    ignored.filter((dir) => build.includes(dir)), []);
 
-  const FIELDS = ['project', 'repository', 'sourceBranch', 'commit', 'shortCommit', 'builtAt', 'serverAuth'];
-  check('the inline build command writes every marker field',
-    FIELDS.filter((f) => !build.includes(f)), []);
-  check('the local stamper writes the same fields',
+  // THE TRAP THIS EXISTS FOR: a buildCommand pointing at a path .vercelignore
+  // excludes. .vercelignore controls what is uploaded, not just what is
+  // published, so the builder cannot resolve it and the whole deployment fails
+  // before producing any output. It did exactly that.
+  const ignoreLines = ignore.split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('#'));
+  const reIncluded = new Set(ignoreLines.filter((l) => l.startsWith('!')).map((l) => l.slice(1)));
+  const scriptPath = (build.match(/\b((?:[\w.-]+\/)+[\w.-]+\.m?js)\b/) || [])[1];
+  if (scriptPath) {
+    const excludedDir = ignoreLines.some((l) => {
+      const dir = l.replace(/\/\*$/, '/');
+      return dir.endsWith('/') && scriptPath.startsWith(dir);
+    });
+    check('the build command runs a file the deployment will actually have',
+      !excludedDir || reIncluded.has(scriptPath), true);
+    check('that file exists', existsSync(new URL('../' + scriptPath, import.meta.url)), true);
+  }
+
+  const FIELDS = ['repository', 'sourceBranch', 'commit', 'shortCommit', 'builtAt', 'serverAuth'];
+  check('the stamper writes every marker field',
     FIELDS.filter((f) => !stamper.includes(f)), []);
   check('the marker records that the server gate is shut',
-    build.includes('fail-closed') && stamper.includes('fail-closed'), true);
+    stamper.includes('fail-closed'), true);
 }
 
 console.log(`\n${passed} passed, ${failed} failed\n`);

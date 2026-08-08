@@ -28,6 +28,14 @@ import http from 'node:http';
 const PORT = Number(process.env.VERIFY_PORT || 8000);
 const BASE = `http://localhost:${PORT}`;
 
+// `--no-live` omits the production stage entirely, for a pull request: that
+// stage asserts things about production which the branch has not deployed yet
+// (that the working documents have stopped being published, for one), so gating
+// a pull request on it fails by construction. The stage is dropped rather than
+// faked, and the verdict says so in words — an all-clear that quietly did not
+// look at production is exactly the kind of claim this file exists to prevent.
+const NO_LIVE = process.argv.includes('--no-live');
+
 const STAGES = [
   { name: 'unit + source checks', cmd: ['npm', 'test'], needsServer: false,
     covers: 'merge rules, PINs, API routes, roles, demo seeding, and the page-level guards over index.html, landing.html and guide.html' },
@@ -37,14 +45,16 @@ const STAGES = [
     covers: '25 screens at 390/768/1280px, real icons and fonts, and the offline pass' },
   { name: 'the public site in a browser', cmd: ['node', 'scripts/qa-site.mjs'], needsServer: true,
     covers: 'landing.html and guide.html at three widths, links, images, and axe-core WCAG AA' },
-  { name: 'the live deployment', cmd: ['node', 'scripts/verify-live.mjs'], needsServer: false,
+  { name: 'the live deployment', cmd: ['node', 'scripts/verify-live.mjs'], needsServer: false, live: true,
     covers: 'production serves a known commit, the working documents are not published, and the API gate is still 403' },
-];
+].filter((stage) => !(NO_LIVE && stage.live));
 
+// Exit 3 means "this stage deliberately did not run" (see verify-live.mjs).
+// It is reported as SKIPPED and, critically, is not a pass.
 const run = (cmd) => new Promise((resolve) => {
   const child = spawn(cmd[0], cmd.slice(1), { stdio: 'inherit', shell: process.platform === 'win32' });
-  child.on('close', (code) => resolve(code === 0));
-  child.on('error', () => resolve(false));
+  child.on('close', (code) => resolve(code === 0 ? 'pass' : code === 3 ? 'skip' : 'fail'));
+  child.on('error', () => resolve('fail'));
 });
 
 const serverUp = () => new Promise((resolve) => {
@@ -81,17 +91,22 @@ for (const stage of STAGES) {
 
   if (stage.needsServer && !haveServer) {
     console.log(`  cannot run: no server on ${BASE}`);
-    results.push({ ...stage, ok: false, why: 'the local server would not start' });
+    results.push({ ...stage, state: 'fail', why: 'the local server would not start' });
     continue;
   }
   if (stage.cmd.includes('scripts/qa-visual.mjs') || stage.cmd.includes('scripts/qa-site.mjs')) {
     if (!havePlaywright) {
-      results.push({ ...stage, ok: false, why: 'playwright is not installed (npm install)' });
+      results.push({ ...stage, state: 'fail', why: 'playwright is not installed (npm install)' });
       continue;
     }
   }
-  const ok = await run(stage.cmd);
-  results.push({ ...stage, ok, why: ok ? '' : 'reported failures — see its output above' });
+  const state = await run(stage.cmd);
+  results.push({
+    ...stage, state,
+    why: state === 'pass' ? ''
+      : state === 'skip' ? 'was skipped — it did not run, so it proves nothing'
+        : 'reported failures — see its output above',
+  });
 }
 
 if (ownServer) ownServer.kill();
@@ -102,19 +117,27 @@ console.log('\n' + '='.repeat(64));
 console.log('RESULT');
 console.log('='.repeat(64));
 for (const r of results) {
-  console.log(`  ${r.ok ? 'PASS' : 'FAIL'}  ${r.name.padEnd(pad)}${r.ok ? '' : '   ' + r.why}`);
+  const label = r.state === 'pass' ? 'PASS' : r.state === 'skip' ? 'SKIP' : 'FAIL';
+  console.log(`  ${label}  ${r.name.padEnd(pad)}${r.state === 'pass' ? '' : '   ' + r.why}`);
 }
-const failedStages = results.filter((r) => !r.ok);
+// A skipped stage is not a passed stage. Nothing here may print an all-clear
+// unless every stage actually ran and actually passed.
+const failedStages = results.filter((r) => r.state !== 'pass');
 console.log('='.repeat(64));
 if (failedStages.length === 0) {
-  console.log('\nPASS — every stage ran and every stage passed.\n');
+  console.log(NO_LIVE
+    ? '\nPASS — every stage that ran passed. PRODUCTION WAS NOT CHECKED (--no-live).\n'
+    : '\nPASS — every stage ran and every stage passed.\n');
   console.log('Still not covered by any of this, and worth saying plainly:');
+  if (NO_LIVE) console.log('  · what production is actually serving (run: npm run verify)');
   console.log('  · a real phone in a real hand');
   console.log('  · anything behind issue #70 (server-side sign-in): cloud sync,');
   console.log('    cross-device photos, customer notifications, QuickBooks\n');
   process.exit(0);
 }
-console.log(`\nFAIL — ${failedStages.length} of ${results.length} stage(s) did not pass:\n`);
+const skippedCount = failedStages.filter((r) => r.state === 'skip').length;
+console.log(`\nNOT VERIFIED — ${failedStages.length} of ${results.length} stage(s) did not pass`
+  + (skippedCount ? ` (${skippedCount} skipped, which is not a pass)` : '') + ':\n');
 for (const r of failedStages) console.log(`  · ${r.name}: ${r.why}`);
 console.log('\nNothing here is a pass until every stage above says PASS.\n');
 process.exit(1);

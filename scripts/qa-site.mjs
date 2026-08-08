@@ -79,18 +79,22 @@ const FA = [...linked].find((u) => u.includes('font-awesome'));
 if (FA && !grab(FA, path.join(CDN, 'fa.css'))) {
   stop(`could not fetch Font Awesome (${FA}). Without it this would test a page with no icons, which proves nothing.`);
 }
-let gIndex = 0;
-const gfiles = [];
+// Keyed by the request path+query, not by position. Answering every font
+// request with whichever stylesheet happened to be fetched first means a page
+// asking for two families gets one of them twice, and the missing one falls
+// back silently — indistinguishable, in the screenshots, from success.
+const gfiles = new Map();
 for (const u of [...linked].filter((x) => x.includes('fonts.googleapis.com'))) {
-  const f = path.join(CDN, `gfonts-${gIndex++}.css`);
+  const key = new URL(u).pathname + new URL(u).search;
+  const f = path.join(CDN, 'gfonts-' + Buffer.from(key).toString('base64url').slice(0, 40) + '.css');
   if (!grab(u, f)) stop(`could not fetch a Google Fonts stylesheet (${u}).`);
-  gfiles.push(f);
+  gfiles.set(key, f);
 }
 for (const f of ['fa-solid-900', 'fa-regular-400', 'fa-brands-400']) {
   grab(`https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/webfonts/${f}.woff2`,
     path.join(CDN, 'webfonts', `${f}.woff2`));
 }
-for (const f of gfiles) {
+for (const f of gfiles.values()) {
   const css = fs.readFileSync(f, 'utf8');
   for (const u of new Set([...css.matchAll(/(https:\/\/fonts\.gstatic\.com[^)"']+)/g)].map((m) => m[1]))) {
     grab(u, path.join(CDN, 'gstatic', u.split('/').pop()));
@@ -101,7 +105,7 @@ if (!grab('https://cdnjs.cloudflare.com/ajax/libs/axe-core/4.10.2/axe.min.js', A
   stop('could not fetch axe-core, so accessibility cannot be measured. Refusing to report a pass without it.');
 }
 const axeSource = fs.readFileSync(AXE, 'utf8');
-console.log(`  ${gfiles.length} font stylesheet(s) and the icon set ready\n`);
+console.log(`  ${gfiles.size} font stylesheet(s) and the icon set ready\n`);
 
 // ── a stand-in for the CDN hosts, so requests stay genuinely cross-origin ────
 const certDir = path.join(WORK, 'cert');
@@ -119,7 +123,13 @@ const server = https.createServer({ key: fs.readFileSync(KEY), cert: fs.readFile
   let file = null, type = 'text/plain';
   if (host.startsWith('cdnjs') && p.endsWith('all.min.css')) { file = path.join(CDN, 'fa.css'); type = 'text/css'; }
   else if (host.startsWith('cdnjs') && p.includes('/webfonts/')) { file = path.join(CDN, 'webfonts', p.split('/').pop()); type = 'font/woff2'; }
-  else if (host.startsWith('fonts.googleapis')) { file = gfiles[0]; type = 'text/css'; }
+  else if (host.startsWith('fonts.googleapis')) {
+    // Exact match on path+query. If the page asks for a stylesheet this run did
+    // not fetch, 404 rather than substitute a different one — a wrong answer
+    // here looks like a pass and proves nothing.
+    file = gfiles.get(req.url) || null;
+    type = 'text/css';
+  }
   else if (host.startsWith('fonts.gstatic')) { file = path.join(CDN, 'gstatic', p.split('/').pop()); type = 'font/woff2'; }
   if (file && fs.existsSync(file)) {
     res.writeHead(200, { 'content-type': type, 'access-control-allow-origin': '*', 'cache-control': 'max-age=3600' });
@@ -185,6 +195,32 @@ try {
     if (imgs.length) {
       check(`${page}: every image actually decoded`,
         imgs.every((i) => i.w > 0), imgs.filter((i) => !i.w).map((i) => i.src).join(', '));
+    }
+
+    // ---- the webfonts the page asks for actually loaded ----
+    // The Newsreader stylesheet URL on landing.html was malformed and returned
+    // 400 from Google, so every heading had been falling back to a system serif
+    // since the page shipped. Asking the browser which faces loaded is the only
+    // honest test; a request that 200s from a stand-in proves nothing.
+    const families = [...new Set(
+      [...fs.readFileSync(new URL('../' + page, import.meta.url), 'utf8').matchAll(/<link\b[^>]*>/g)]
+        .filter((tag) => /rel=["']stylesheet["']/.test(tag[0]))
+        .map((tag) => (tag[0].match(/href=["']([^"']+)["']/) || [])[1])
+        .filter((href) => href && href.includes('fonts.googleapis.com'))
+        .flatMap((href) => new URL(href).searchParams.getAll('family')
+          .map((f) => f.split(':')[0].replace(/\+/g, ' '))))];
+    if (families.length) {
+      const missing = await tab.evaluate(async (fams) => {
+        await document.fonts.ready;
+        const out = [];
+        for (const f of fams) {
+          const ok = await document.fonts.load(`400 16px "${f}"`).then((r) => r.length > 0).catch(() => false);
+          if (!ok) out.push(f);
+        }
+        return out;
+      }, families);
+      check(`${page}: every webfont it asks for actually loaded (${families.join(', ')})`,
+        missing.length === 0, missing.join(', '));
     }
 
     // ---- every in-page link goes somewhere real ----

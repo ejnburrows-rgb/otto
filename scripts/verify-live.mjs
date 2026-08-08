@@ -9,8 +9,10 @@
 // from days earlier, because it was maintained by hand. It is generated at build
 // time now (scripts/stamp-version.mjs), so it can be compared.
 //
-// Set VERIFY_SKIP_LIVE=1 to skip when offline. It says it skipped; it does not
-// pretend to pass.
+// Set VERIFY_SKIP_LIVE=1 to skip when offline. It exits 3, not 0 — a skip must
+// never be able to read as a pass. `verify.mjs` treats 3 as SKIPPED and refuses
+// to print an all-clear verdict, because "every stage passed" over a stage that
+// never ran is the exact failure this whole exercise exists to remove.
 
 import { execFileSync } from 'node:child_process';
 
@@ -23,8 +25,8 @@ const check = (name, ok, detail = '') => {
 };
 
 if (process.env.VERIFY_SKIP_LIVE) {
-  console.log('\nlive deployment — SKIPPED (VERIFY_SKIP_LIVE set)\n');
-  process.exit(0);
+  console.log('\nlive deployment — SKIPPED (VERIFY_SKIP_LIVE set). Production was NOT checked.\n');
+  process.exit(3);
 }
 
 const curl = (args) => {
