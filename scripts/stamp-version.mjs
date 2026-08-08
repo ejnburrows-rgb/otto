@@ -6,7 +6,10 @@
 // `docs/DEPLOYMENT-VERIFY.md` is built around this marker, so a stale one makes
 // that whole procedure meaningless.
 //
-// Run by `npm run build`, which Vercel runs on every deploy.
+// Run by `npm run build` locally. Vercel does NOT run this file: .vercelignore
+// keeps scripts/ out of the upload, so it would not exist in the build. The
+// same marker is written there by an inline buildCommand in vercel.json — the
+// two must agree, and the shape is asserted by test-ui-regressions.mjs.
 
 import { execFileSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';

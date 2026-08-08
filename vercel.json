@@ -1,5 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "outputDirectory": ".",
-  "buildCommand": "node scripts/stamp-version.mjs"
+  "buildCommand": "node -e \"const fs=require('fs');const c=process.env.VERCEL_GIT_COMMIT_SHA||'unknown';fs.writeFileSync('version.json',JSON.stringify({project:'OTTO Plumbing CRM',repository:'ejnburrows-rgb/otto',sourceBranch:process.env.VERCEL_GIT_COMMIT_REF||'unknown',commit:c,shortCommit:c.slice(0,7),builtAt:new Date().toISOString(),serverAuth:'fail-closed'},null,2))\""
 }

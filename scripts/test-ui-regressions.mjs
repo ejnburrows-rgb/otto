@@ -400,5 +400,38 @@ console.log('\nthe install and the deploy must be what they claim to be');
     shipped.filter((f) => ignore.split('\n').some((l) => l.trim() === f)), []);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+console.log('\nthe deployed build must be able to say which commit it is');
+{
+  // version.json used to be edited by hand and went stale immediately, so
+  // "production is up to date" was a claim nobody could check — which is exactly
+  // what docs/DEPLOYMENT-VERIFY.md is built around. It is generated now, but by
+  // TWO places: `npm run build` locally, and an inline buildCommand in
+  // vercel.json, because .vercelignore keeps scripts/ out of the upload so
+  // Vercel cannot run the script. Two writers of the same file is precisely the
+  // shape of the sw.js drift that cost the app its webfonts, so pin it: both
+  // must produce the same fields, and the build must not depend on an ignored
+  // path.
+  const vercel = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'));
+  const stamper = readFileSync(new URL('./stamp-version.mjs', import.meta.url), 'utf8');
+  const ignore = readFileSync(new URL('../.vercelignore', import.meta.url), 'utf8');
+
+  check('the deploy stamps a version marker', typeof vercel.buildCommand === 'string', true);
+  const build = vercel.buildCommand || '';
+  // The trap this check exists for: a buildCommand pointing at a path that
+  // .vercelignore excludes. It fails the whole deployment, and it did.
+  const ignored = ignore.split('\n').map((l) => l.trim()).filter((l) => l && !l.startsWith('#') && l.endsWith('/'));
+  check('the build command does not reach into an unpublished folder',
+    ignored.filter((dir) => build.includes(dir)), []);
+
+  const FIELDS = ['project', 'repository', 'sourceBranch', 'commit', 'shortCommit', 'builtAt', 'serverAuth'];
+  check('the inline build command writes every marker field',
+    FIELDS.filter((f) => !build.includes(f)), []);
+  check('the local stamper writes the same fields',
+    FIELDS.filter((f) => !stamper.includes(f)), []);
+  check('the marker records that the server gate is shut',
+    build.includes('fail-closed') && stamper.includes('fail-closed'), true);
+}
+
 console.log(`\n${passed} passed, ${failed} failed\n`);
 process.exit(failed ? 1 : 0);
