@@ -2316,7 +2316,8 @@
   }
 
   function viewHome() {
-    if (session.role === 'owner' || session.role === 'office') return viewHub();
+    // Wallpaper-first home with 4 panels: Today, Field Workers, Inbox, Tools
+    // For owner/office, show 4-panel home instead of hub dashboard
     const hour = new Date().getHours();
     const greet = hour < 12 ? (lang === 'es' ? 'Buenos días' : 'Good morning') : hour < 18 ? (lang === 'es' ? 'Buenas tardes' : 'Good afternoon') : (lang === 'es' ? 'Buenas noches' : 'Good evening');
     
@@ -2345,30 +2346,28 @@
       return;
     }
 
-    const activeJobs = db.jobs.filter(j => !['completed', 'canceled'].includes(j.status));
-    const openFollow = db.followups.filter(f => f.status !== 'done' && (!f.assignedTo || f.assignedTo === session.id));
-    const tiles = [];
-    const T_ = (icon, color, lbl, action, cnt) => ({ icon, color, lbl, action, cnt });
-    tiles.push(T_('fa-phone', 'var(--green-fill)', t('newCall'), 'newCall()'));
-    tiles.push(T_('fa-screwdriver-wrench', 'var(--accent-fill)', t('newJob'), 'openJobForm()'));
-    tiles.push(T_('fa-users', 'var(--accent-fill)', t('customers'), "nav('customers')", db.customers.length + ''));
-    tiles.push(T_('fa-robot', 'var(--accent-fill)', t('ask'), "nav('assistant')"));
-
-    let html = `<div class="greet">${greet}, <b>${esc(session.name)}</b></div>
-      <div class="muted">${fmtDate(todayISO())}</div>
-      <div class="tiles">${tiles.map(x => `<div class="tile" onclick="${x.action}">
-        <div class="ic" style="background:${x.color}"><i class="fas ${x.icon}"></i></div>
-        <div class="lbl">${esc(x.lbl)}</div>${x.cnt != null ? `<div class="cnt">${x.cnt}</div>` : ''}</div>`).join('')}</div>`;
-
-    html += `<div class="section-title">${t('activeJobs')}</div>`;
-    html += `<div class="card">${activeJobs.length ? activeJobs.slice(0, 5).map(jobRow).join('') : emptyState(t('noResults'))}</div>`;
-
-    if (openFollow.length) {
-      html += `<div class="section-title">${t('followups')}</div><div class="card">${openFollow.slice(0, 4).map(followRow).join('')}</div>`;
-    }
-    $('#main').innerHTML = html;
+    // Owner\/Office: Wallpaper-first 4-panel home
+    const todayJobs = db.jobs.filter(j => (j.scheduledDate||"").slice(0, 10) === todayISO());
+    const fieldWorkers = db.users.filter(u => u.role === "field" && u.name);
+    const inboxItems = db.alerts.filter(a => a.status === "open").slice(0, 5);
+    let html = `<div class="wallpaper-home-header"><div class="greet">${greet}, <b>${esc(session.name)}</b></div><div class="muted">${fmtDate(todayISO())}</div></div>`;
+    html += `<div class="home-panels">
+      <div class="home-panel" onclick="expandPanel('panel-today')"><div class="panel-header"><div class="panel-icon"><i class="fas fa-calendar-day"></i></div><div class="panel-title">${t("today")}</div><div class="panel-count">${todayJobs.length}</div></div><div class="panel-preview">${todayJobs.length ? todayJobs.slice(0,3).map(j=>`<div class="panel-item">${esc(j.title||t("untitled"))}</div>`).join("") : `<div class="panel-empty">${lang==="es"?"Sin trabajos hoy":"No jobs today"}</div>`}</div><div class="panel-controls"><button class="panel-btn" onclick="event.stopPropagation();nav('jobs')">${lang==="es"?"Ver todos":"View all"}</button></div></div>
+      <div class="home-panel" onclick="expandPanel('panel-field')"><div class="panel-header"><div class="panel-icon"><i class="fas fa-users-gear"></i></div><div class="panel-title">${lang==="es"?"Trabajadores":"Field Workers"}</div><div class="panel-count">${fieldWorkers.length}</div></div><div class="panel-preview">${fieldWorkers.length ? fieldWorkers.slice(0,3).map(w=>`<div class="panel-item">${esc(w.name)}</div>`).join("") : `<div class="panel-empty">${lang==="es"?"Sin trabajadores":"No workers"}</div>`}</div><div class="panel-controls"><button class="panel-btn" onclick="event.stopPropagation();nav('team')">${lang==="es"?"Ver equipo":"View team"}</button></div></div>
+      <div class="home-panel" onclick="expandPanel('panel-inbox')"><div class="panel-header"><div class="panel-icon"><i class="fas fa-inbox"></i></div><div class="panel-title">${t("inbox")}</div><div class="panel-count">${inboxItems.length}</div></div><div class="panel-preview">${inboxItems.length ? inboxItems.slice(0,3).map(a=>`<div class="panel-item">${esc(a.msg||a.type)}</div>`).join("") : `<div class="panel-empty">${lang==="es"?"Sin mensajes":"No messages"}</div>`}</div><div class="panel-controls"><button class="panel-btn" onclick="event.stopPropagation();nav('alerts')">${lang==="es"?"Ver alertas":"View alerts"}</button></div></div>
+      <div class="home-panel" onclick="expandPanel('panel-tools')"><div class="panel-header"><div class="panel-icon"><i class="fas fa-toolbox"></i></div><div class="panel-title">${t("tools")}</div><div class="panel-count">4</div></div><div class="panel-preview"><div class="panel-item">${t("money")}</div><div class="panel-item">${t("jobs")}</div><div class="panel-item">${lang==="es"?"Negocio":"Business"}</div><div class="panel-item">${t("settings")}</div></div><div class="panel-controls"><button class="panel-btn" onclick="event.stopPropagation();expandTools()">${lang==="es"?"Abrir herramientas":"Open tools"}</button></div></div>
+    </div>`;
+    $("#main").innerHTML = html;
   }
 
+  function expandPanel(panelId) {
+    const panel = document.getElementById(panelId) || document.querySelector(`.home-panel[onclick*="${panelId}"]`);
+    if (panel) panel.classList.toggle("expanded");
+  }
+
+  function expandTools() {
+    modal(`<h2>${t("tools")}</h2><div class="card" style="padding:16px"><div class="list-item" onclick="closeModal();nav('invoices')"><div class="li-main"><div class="li-title"><i class="fas fa-file-invoice-dollar"></i> ${t("money")}</div><div class="li-sub">${t("invoices")}, ${t("payments")}, ${t("payroll")}</div></div></div><div class="list-item" onclick="closeModal();nav('jobs')"><div class="li-main"><div class="li-title"><i class="fas fa-screwdriver-wrench"></i> ${t("jobs")}</div><div class="li-sub">${t("customers")}, ${t("estimates")}, ${t("documents")}</div></div></div><div class="list-item" onclick="closeModal();nav('reports')"><div class="li-main"><div class="li-title"><i class="fas fa-chart-line"></i> ${lang==="es"?"Negocio":"Business"}</div><div class="li-sub">${t("reports")}, ${t("analytics")}</div></div></div><div class="list-item" onclick="closeModal();nav('settings')"><div class="li-main"><div class="li-title"><i class="fas fa-cog"></i> ${t("settings")}</div><div class="li-sub">${t("team")}, ${t("language")}, ${t("appearance")}</div></div></div></div>`);
+  }
   /* ============================ CUSTOMERS ============================ */
   function viewCustomers() {
     const q = _search['cust'] || '';
