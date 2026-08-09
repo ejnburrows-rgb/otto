@@ -1,9 +1,9 @@
 # What must NOT be published.
 #
-# vercel.json sets outputDirectory to ".". Working documents, schemas, and
-# development tooling stay excluded. Only the exact build/source-check scripts
-# below are admitted during the build, and vercel.json removes scripts/ before
-# the deployment output is published.
+# vercel.json sets outputDirectory to ".", so before this file existed the whole
+# repository was served from the public domain. Verified on production:
+# docs/STATUS.md, docs/OWNER-MANUAL-STEPS.md, AGENTS.md, scripts/*.mjs and
+# supabase/migrations/0001_init_schema.sql all returned 200.
 
 # Working documents and process
 docs/
@@ -15,26 +15,9 @@ docs/
 .cursorrules
 .mcp.json
 
-# Test and build tooling: deny by default, allow only what the build executes.
+# Test and tooling source. The one existing build stamper is required by Vercel.
 scripts/*
 !scripts/stamp-version.mjs
-!scripts/apply-otto-home-patch.mjs
-!scripts/test-otto-home.mjs
-!scripts/sync-merge.mjs
-!scripts/test-merge.mjs
-!scripts/test-inpage-merge.mjs
-!scripts/test-pin.mjs
-!scripts/test-inbound-email.mjs
-!scripts/test-notify.mjs
-!scripts/test-quickbooks.mjs
-!scripts/test-nvidia.mjs
-!scripts/test-photos.mjs
-!scripts/test-server-auth.mjs
-!scripts/test-demo-seed.mjs
-!scripts/test-roles.mjs
-!scripts/test-backup-export.mjs
-!scripts/test-ui-regressions.mjs
-!scripts/qa-check.mjs
 evidence/
 
 # Database schema and migrations
