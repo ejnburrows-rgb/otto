@@ -17,7 +17,12 @@ export function patchSource(source) {
     ['Ask PlumbBot anything...', 'Ask OTTO…'],
     ['PlumbBot AI here! I analyzed', 'OTTO received'],
     ['All systems operational. Margins and dispatch are synchronized for maximum efficiency, Boss!', 'I will use the information available in OTTO and will not invent operational status.'],
-    ['Field crew status: All active jobs are mapped and tracked in real-time. No delays reported today!', 'Open Field Workers to see the current information OTTO actually has for the crew.']
+    ['Field crew status: All active jobs are mapped and tracked in real-time. No delays reported today!', 'Open Field Workers to see the current information OTTO actually has for the crew.'],
+    ["const pendingPTO = db.time_off.filter(p => p.status === 'pending');", "const pendingPTO = [...(db.pto_requests || []), ...(db.time_off || [])].filter(p => p.status === 'pending');"],
+    ["for (const p of db.time_off) {", "for (const p of [...(db.pto_requests || []), ...(db.time_off || [])]) {"],
+    ["function approvePTO(id) { update('time_off', id, {status: 'approved'}); toast(t('ptoApproved'), 'success'); render(); }", "function approvePTO(id) { const col = get('pto_requests', id) ? 'pto_requests' : 'time_off'; update(col, id, {status: 'approved', readByWorker: false}); toast(t('ptoApproved'), 'success'); render(); }"],
+    ["function denyPTO(id) { update('time_off', id, {status: 'denied'}); toast(t('ptoDenied'), 'error'); render(); }", "function denyPTO(id) { const col = get('pto_requests', id) ? 'pto_requests' : 'time_off'; update(col, id, {status: 'denied', readByWorker: false}); toast(t('ptoDenied'), 'error'); render(); }"],
+    ['<img src="./icon-192.png" alt="" class="crystal-logo" />', '<img src="./icon-192.png" alt="OTTO CRM" class="crystal-logo" data-otto-logo-slot="replaceable" />']
   ];
 
   for (const [from, to] of replacements) {
@@ -47,6 +52,9 @@ export function validatePatchedSource(source) {
     ['Sarays migration', source.includes("fixUser('ops-1', 'Sarays');")],
     ['minimal home stylesheet wired', source.includes('data-otto-home-styles')],
     ['minimal home runtime wired', source.includes('data-otto-home-runtime')],
+    ['PTO dashboard reads current requests', source.includes("...(db.pto_requests || [])") && source.includes("const pendingPTO = [")],
+    ['PTO approval updates current requests', source.includes("get('pto_requests', id) ? 'pto_requests' : 'time_off'")],
+    ['replaceable OTTO logo slot', source.includes('data-otto-logo-slot="replaceable"')],
     ['legacy Boss-Level copy removed', !source.includes('Boss-Level Intelligence')],
     ['legacy PlumbBot heading removed', !source.includes('PlumbBot AI Assistant')]
   ];
