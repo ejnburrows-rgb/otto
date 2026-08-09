@@ -602,6 +602,11 @@
     }
     .wallpaper-container.fade-out { opacity: 0; }
     
+    /* User wallpaper mapping - applied via JS based on session.id */
+    #wallpaper-bg[data-user="owner-2"] { background-image: url('./design-assets/wallpapers/julio-pablo.avif'); }
+    #wallpaper-bg[data-user="ops-1"] { background-image: url('./design-assets/wallpapers/sarays.avif'); }
+    /* owner-1 (Otto) has no wallpaper supplied - stays transparent */
+    
     /* Panel system for Today/Field Workers/Inbox/Tools */
     .home-panels {
       display: grid;
