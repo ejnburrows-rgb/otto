@@ -132,7 +132,7 @@ if (failedStages.length === 0) {
   if (NO_LIVE) console.log('  · what production is actually serving (run: npm run verify)');
   console.log('  · a real phone in a real hand');
   console.log('  · anything behind issue #70 (server-side sign-in): cloud sync,');
-  console.log('    cross-device photos, customer notifications, QuickBooks\n');
+  console.log('    cross-device photos and customer notifications\n');
   process.exit(0);
 }
 const skippedCount = failedStages.filter((r) => r.state === 'skip').length;
