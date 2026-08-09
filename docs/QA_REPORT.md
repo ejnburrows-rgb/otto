@@ -1,11 +1,11 @@
 # OTTO QA Report
 
-**Run:** 2026-08-09T00:48:36.100Z
+**Run:** 2026-08-09T00:59:46.178Z
 **Overall:** PASS (with notes below)
 
 ## Button wiring
-- Functions in app: 412
-- Buttons checked: 127
+- Functions in app: 416
+- Buttons checked: 129
 - Broken buttons: NONE
 - New features not on window export list: NONE (browser still OK)
 
@@ -17,7 +17,7 @@
 
 ## Live checks
 - prod: OK 200
-- local: OK 200
+- local: FAIL connect ECONNREFUSED 127.0.0.1:8000
 - guide: OK 200
 - manifest: OK 200
 - sw: OK 200
@@ -30,9 +30,9 @@
 ## JSON
 ```json
 {
-  "ts": "2026-08-09T00:48:36.100Z",
-  "functions": 412,
-  "onclickCalls": 127,
+  "ts": "2026-08-09T00:59:46.178Z",
+  "functions": 416,
+  "onclickCalls": 129,
   "missingHandlers": [],
   "notOnWindowExport": [],
   "missingSpanishKeys": [],
@@ -45,8 +45,9 @@
       "ok": true
     },
     "local": {
-      "status": 200,
-      "ok": true
+      "status": 0,
+      "ok": false,
+      "error": "connect ECONNREFUSED 127.0.0.1:8000"
     },
     "guide": {
       "status": 200,

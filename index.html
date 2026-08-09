@@ -930,6 +930,20 @@
     try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { }
     return true;
   }
+  /* The owner's way in on a brand-new device, and the way the very first
+     account is claimed. Supabase sends the email itself — we only ask it to.
+     Crew never see this screen; they arrive by the WhatsApp link the owner
+     sends, which is what /api/invite produces. */
+  async function sbEmailLink(email) {
+    const r = await fetch(`${SUPABASE.url}/auth/v1/otp`, {
+      method: 'POST',
+      headers: { apikey: SUPABASE.key, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, create_user: true,
+        options: { email_redirect_to: location.origin + location.pathname } }),
+    });
+    return r.ok;
+  }
+
   /** Who does this session belong to? Asked of Supabase, not of the page. */
   async function sbWhoAmI() {
     const token = await sbToken();
@@ -942,8 +956,22 @@
       const u = await r.json();
       // field-3@otto.local -> field-3. The address is an internal identifier
       // that nothing is ever sent to; it exists so Supabase has a key.
-      const local = String(u.email || '').split('@')[0];
-      return local ? { uid: u.id, userId: local } : null;
+      const email = String(u.email || '');
+      // Crew arrive as field-3@otto.local, which names their app id directly.
+      // An owner arrives as their real address, and the server has bound it to
+      // an owner row — so ask the server who that is rather than guessing.
+      if (email.endsWith('@otto.local')) {
+        const local = email.split('@')[0];
+        return local ? { uid: u.id, userId: local, email } : null;
+      }
+      try {
+        const me = await serverFetch('/api/whoami');
+        if (me && me.ok) {
+          const who = await me.json();
+          return { uid: u.id, userId: who.id, email, role: who.role };
+        }
+      } catch (e) { /* offline — fall through */ }
+      return { uid: u.id, userId: null, email };
     } catch (e) { return null; }
   }
   /* `numberToWords()` used to sit here, unused and unusable: it declared
@@ -1003,6 +1031,11 @@
       couldntRead: "Couldn't read much from this file — you can still type the estimate below.",
       showInLang: 'Show in this language', drawingHint: 'Upload a drawing or PDF and I will read it and draft a materials list.',
       photoNotSentYet: 'A photo has not reached the office yet. It is safe on this phone and will keep trying.',
+      ownerEmailSignIn: 'Sign in by email (owner)',
+      ownerEmailHint: 'We will email you a link. Tap it on this device and you are in — there is no password.',
+      sendLink: 'Send me a link',
+      linkSent: 'Check your email for the link.',
+      email: 'Email',
       pickYourPin: 'Choose a 4-digit code you will use to open OTTO',
       sendSignInLink: 'Send sign-in link',
       sendSignInLinkHint: 'Share this over WhatsApp. They tap it, choose a PIN, and they are in. It works once.',
@@ -1094,6 +1127,11 @@
       couldntRead: 'No se pudo leer mucho de este archivo — puedes escribir el estimado abajo.',
       showInLang: 'Mostrar en este idioma', drawingHint: 'Sube un plano o PDF y lo leeré para hacer una lista de materiales.',
       photoNotSentYet: 'Una foto todavía no llegó a la oficina. Está guardada en este teléfono y se seguirá intentando.',
+      ownerEmailSignIn: 'Iniciar sesión por correo (dueño)',
+      ownerEmailHint: 'Le enviaremos un enlace por correo. Tóquelo en este dispositivo y ya está dentro — no hay contraseña.',
+      sendLink: 'Envíenme un enlace',
+      linkSent: 'Revise su correo para ver el enlace.',
+      email: 'Correo',
       pickYourPin: 'Elija un código de 4 dígitos para abrir OTTO',
       sendSignInLink: 'Enviar enlace de acceso',
       sendSignInLinkHint: 'Compártalo por WhatsApp. Lo tocan, eligen un PIN y ya están dentro. Sirve una sola vez.',
@@ -1963,7 +2001,8 @@
               return `<div style="font-size:12px;color:var(--text2);margin-bottom:4px">OWNERS</div>${owners || ''}<div style="font-size:12px;color:var(--text2);margin:8px 0 4px">OPS & IT</div>${mgrs || ''}<div style="font-size:12px;color:var(--text2);margin:8px 0 4px">FIELD TEAM${namedFields.length ? ` (${namedFields.length})` : ``}</div>${fields || ''}`;
             })()}
           </div>
-          <div class="langtoggle"><button class="${lang === 'en' ? 'on' : ''}" onclick="setLang('en')">EN</button><button class="${lang === 'es' ? 'on' : ''}" onclick="setLang('es')">ES</button></div>`;
+          <div class="langtoggle"><button class="${lang === 'en' ? 'on' : ''}" onclick="setLang('en')">EN</button><button class="${lang === 'es' ? 'on' : ''}" onclick="setLang('es')">ES</button></div>
+          <button class="btn ghost block" style="margin-top:14px" onclick="window.__ownerEmail()"><i class="fas fa-envelope"></i> ${esc(t('ownerEmailSignIn'))}</button>`;
       } else {
         const nameStyle = '';
         const avatarBg = `background:${colorFor(selUser.name)};`;
@@ -2002,6 +2041,31 @@
       save();
       toast(t('codeSaved'), 'success');
       selUser = null; pin = ''; draw();
+    };
+    /* For an owner on a device that has never been used, or after a sign-out.
+       Supabase sends the email; tapping the link in it lands back here signed
+       in. Crew never need this — they get a WhatsApp link from the owner. */
+    window.__ownerEmail = () => {
+      lg.innerHTML = `
+        <div style="text-align:center;margin-bottom:20px;">
+          <img src="./logo.jpg" alt="OTTO Plumbing" style="width:150px;border-radius:12px" />
+        </div>
+        <h1>${esc(t('ownerEmailSignIn'))}</h1>
+        <p>${esc(t('ownerEmailHint'))}</p>
+        <div class="card-login">
+          <div class="field"><label for="owner-email">${esc(t('email'))}</label>
+            <input id="owner-email" type="email" inputmode="email" autocomplete="email" placeholder="you@company.com"></div>
+          <button class="btn block" onclick="window.__sendOwnerLink()"><i class="fas fa-paper-plane"></i> ${esc(t('sendLink'))}</button>
+          <button class="btn ghost block" style="margin-top:10px" onclick="window.__back2()">${esc(t('goBack'))}</button>
+        </div>`;
+    };
+    window.__sendOwnerLink = async () => {
+      const el = document.getElementById('owner-email');
+      const email = (el && el.value || '').trim();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return toast(t('email') + '?', 'error');
+      toast('…');
+      const ok = await sbEmailLink(email);
+      toast(ok ? t('linkSent') : t('linkFailed'), ok ? 'success' : 'error');
     };
     window.__pick = (id) => { selUser = get('users', id); pin = ''; draw(); };
     window.__back2 = () => { selUser = null; pin = ''; draw(); };
@@ -5199,9 +5263,12 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
         // Pull the company's data down before showing anything, so a new phone
         // opens with real work on it rather than an empty app.
         try { await cloudPull(); } catch (e) { }
-        const person = get('users', who.userId);
+        const person = who.userId ? get('users', who.userId) : null;
         if (person) {
-          showSetPinForLink(person);
+          // Already has a code on this device? Then this was just a new session
+          // on a phone they use — no need to choose a PIN again.
+          if (hasPin(person)) { finishLogin(person, null); }
+          else showSetPinForLink(person);
           if ('serviceWorker' in navigator) { try { navigator.serviceWorker.register('./sw.js'); } catch (e) { } }
           return;
         }

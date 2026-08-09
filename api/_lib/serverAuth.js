@@ -37,7 +37,17 @@
 // ---------------------------------------------------------------------------
 
 function config() {
-  return { url: process.env.SUPABASE_URL, key: process.env.SUPABASE_SERVICE_ROLE_KEY };
+  return {
+    url: process.env.SUPABASE_URL,
+    key: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    // Bootstrap. Somebody has to be able to sign in before anybody can be
+    // invited, and /api/invite is owner-only — without this the door is locked
+    // from the inside with the key in the room. These addresses are set in
+    // Vercel, not in the code, and matched against an email SUPABASE has
+    // verified. Nobody can claim one without receiving mail at it.
+    ownerEmails: String(process.env.OWNER_EMAILS || '')
+      .split(',').map((e) => e.trim().toLowerCase()).filter(Boolean),
+  };
 }
 
 /** Pull the bearer token off the request. No cookies, no query string — a token
@@ -81,6 +91,30 @@ async function appUser(authUid) {
   return { id: row.id, name: data.name, role: data.role };
 }
 
+/** Claims an owner row for a verified address on the OWNER_EMAILS list. Runs at
+ *  most once per person: after this they have an auth_uid. */
+async function bindBootstrapOwner(authed) {
+  const { url, key, ownerEmails } = config();
+  const email = String(authed.email || '').toLowerCase();
+  if (!email || !ownerEmails.includes(email)) return null;
+  if (!authed.email_confirmed_at && !authed.confirmed_at) return null;  // unverified: no
+  const headers = { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' };
+  const res = await fetch(`${url}/rest/v1/users?select=id,data,auth_uid&limit=200`, { headers });
+  if (!res.ok) return null;
+  const rows = await res.json();
+  const owners = (Array.isArray(rows) ? rows : []).filter((r) => r.data && r.data.role === 'owner' && !r.data.deleted);
+  // Prefer a row already carrying this address; otherwise the first unclaimed owner.
+  const target = owners.find((r) => String((r.data.email || '')).toLowerCase() === email)
+    || owners.find((r) => !r.auth_uid);
+  if (!target) return null;
+  const patch = await fetch(`${url}/rest/v1/users?id=eq.${encodeURIComponent(target.id)}`, {
+    method: 'PATCH', headers,
+    body: JSON.stringify({ auth_uid: authed.id, data: { ...target.data, email } }),
+  });
+  if (!patch.ok) return null;
+  return { id: target.id, name: target.data.name, role: 'owner' };
+}
+
 /**
  * The caller, or null. Null means refuse — there is no third answer.
  * @returns {Promise<{uid:string,id:string,name:string,role:'owner'|'office'|'field'}|null>}
@@ -93,7 +127,10 @@ export async function getCaller(req) {
     if (!token) return null;
     const authed = await supabaseUser(token);
     if (!authed) return null;
-    const row = await appUser(authed.id);
+    let row = await appUser(authed.id);
+    // First sign-in by a listed owner: bind their Supabase account to an owner
+    // row, once. Afterwards they are found by auth_uid like everybody else.
+    if (!row) row = await bindBootstrapOwner(authed);
     if (!row) return null;
     return { uid: authed.id, id: row.id, name: row.name, role: row.role };
   } catch {
