@@ -2089,8 +2089,17 @@
       session = u; localStorage.setItem('otto_session', u.id);
       if (u.lang) setLang(u.lang);
       if (typeof audit === 'function') audit('auth.login', 'user', u.id);
-      startApp();
       
+      // Set wallpaper based on user identity
+      const wp = document.getElementById('wallpaper-bg');
+      if (wp) {
+        if (u.id === 'owner-2') wp.setAttribute('data-user', 'owner-2'); // Julio Pablo - mountain/rose
+        else if (u.id === 'ops-1') wp.setAttribute('data-user', 'ops-1'); // Sarays - city night
+        else wp.removeAttribute('data-user'); // Otto and others - no wallpaper
+      }
+      
+      startApp();
+
       // One OTTO workspace for every role. The role controls access, not the
       // visual identity of the app; changing colours by person made the same
       // work look inconsistent and harder to support in the field.
