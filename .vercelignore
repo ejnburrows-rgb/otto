@@ -20,6 +20,7 @@ scripts/*
 !scripts/stamp-version.mjs
 !scripts/apply-otto-home-patch.mjs
 !scripts/test-otto-home.mjs
+!scripts/sync-merge.mjs
 !scripts/test-merge.mjs
 !scripts/test-inpage-merge.mjs
 !scripts/test-pin.mjs
