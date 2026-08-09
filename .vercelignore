@@ -15,8 +15,11 @@ docs/
 .cursorrules
 .mcp.json
 
-# Test and tooling source. The one existing build stamper is required by Vercel.
+# Test and tooling source. Only the three build-time scripts below are sent to
+# Vercel; vercel.json removes them again before deployment output is published.
 scripts/*
+!scripts/apply-otto-home-patch.mjs
+!scripts/test-otto-home.mjs
 !scripts/stamp-version.mjs
 evidence/
 

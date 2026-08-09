@@ -4,6 +4,7 @@ import { patchSource, validatePatchedSource } from './apply-otto-home-patch.mjs'
 const index = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const runtime = fs.readFileSync(new URL('../otto-home.js', import.meta.url), 'utf8');
 const styles = fs.readFileSync(new URL('../otto-home.css', import.meta.url), 'utf8');
+const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
 const patched = patchSource(index);
 
 const checks = [
@@ -21,6 +22,12 @@ const checks = [
   ['mobile layout rule', styles.includes('@media (max-width: 700px)')],
   ['fullscreen panel rule', styles.includes('.home-panel[data-state="fullscreen"]')],
   ['Ask OTTO routes to real assistant', runtime.includes("openPlumbBotModal = function ()") && runtime.includes("nav('assistant')")],
+  ['attention center includes real email data', runtime.includes('db.inbox_emails')],
+  ['attention center includes worker messages', runtime.includes('db.employee_messages') && runtime.includes("nav('urgent')")],
+  ['attention center includes pending PTO', runtime.includes('db.pto_requests') && runtime.includes("nav('kpis')")],
+  ['owner navigation hides legacy bottom tabs', runtime.includes("classList.toggle('admin-nav-hidden', admin)") && styles.includes('.bottomnav.admin-nav-hidden')],
+  ['owner navigation provides Home and Tools dock', runtime.includes("id = 'otto-utility-nav'") && styles.includes('.otto-utility-nav')],
+  ['payroll Excel parser cached for offline use', sw.includes('xlsx.full.min.js') && sw.includes("const CACHE = 'otto-crm-v9'")],
   ['fake operational status not emitted by new runtime', !runtime.includes('No delays reported today')],
   ['public landing page untouched by patch', !runtime.includes('landing.html') && !styles.includes('landing.html')]
 ];

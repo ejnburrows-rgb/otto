@@ -1,6 +1,6 @@
 /* OTTO Plumbing CRM — service worker
    Offline-first shell cache. App data lives in IndexedDB, not here. */
-const CACHE = 'otto-crm-v8';
+const CACHE = 'otto-crm-v9';
 // landing.html and guide.html ship too. Without them here, an installed phone
 // with no signal that opened /guide.html was served the CRM instead, because the
 // navigate handler below falls back to index.html for anything it cannot fetch.
@@ -8,6 +8,14 @@ const SHELL = [
   './', './index.html', './landing.html', './guide.html', './manifest.json', './logo.jpg',
   './otto-home.css', './otto-home.js',
   './design-assets/wallpapers/julio-pablo.avif', './design-assets/wallpapers/sarays.avif'
+];
+
+// Runtime libraries that are loaded only when a user invokes a specialized
+// workflow. Payroll Excel import uses SheetJS on demand, so cache it at install
+// time instead of letting the first no-signal import fail simply because that
+// screen had never been opened online before.
+const DYNAMIC_CDN = [
+  'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'
 ];
 
 // The icon font and the webfonts, fetched at install rather than waiting for a
@@ -28,6 +36,12 @@ function cdnStylesheetsIn(html) {
     .filter((href) => href && href.startsWith('https://'));
 }
 
+function cdnScriptsIn(html) {
+  return [...html.matchAll(/<script\b[^>]*src=["']([^"']+)["'][^>]*>/g)]
+    .map((m) => m[1])
+    .filter((src) => src && src.startsWith('https://'));
+}
+
 // A stylesheet on its own is not enough: caching all.min.css while its
 // fa-solid-900.woff2 stays on the network leaves every icon a blank box, and the
 // computed font-family still reads "Font Awesome", so it looks fine to a test
@@ -37,7 +51,7 @@ function cdnStylesheetsIn(html) {
 async function cacheFontsReferencedBy(cache, cssUrl, cssText) {
   const urls = [...cssText.matchAll(/url\(\s*['"]?([^'")]+)['"]?\s*\)/g)]
     .map((m) => m[1])
-    .filter((u) => u.endsWith('.woff2'))       // every browser this app targets uses woff2
+    .filter((u) => u.endsWith('.woff2'))
     .map((u) => new URL(u, cssUrl).href);
   for (const u of [...new Set(urls)]) {
     try { await cache.add(new Request(u, { mode: 'cors' })); } catch (err) { /* keep going */ }
@@ -52,20 +66,25 @@ self.addEventListener('install', (e) => {
     for (const url of SHELL) {
       try { await c.add(url); } catch (err) { /* keep going */ }
     }
-    // Ask the page itself which stylesheets it loads. If it cannot be read there
-    // is nothing to cache and nothing to guess at.
-    let cdnShell = [];
+
+    let html = '';
     try {
       const page = await fetch('./index.html');
-      if (page && page.status === 200) cdnShell = cdnStylesheetsIn(await page.text());
+      if (page && page.status === 200) html = await page.text();
     } catch (err) { /* keep going */ }
-    for (const url of cdnShell) {
+
+    for (const url of cdnStylesheetsIn(html)) {
       try {
         const res = await fetch(url, { mode: 'cors' });
         if (!res || res.status !== 200) continue;
         await c.put(url, res.clone());
         await cacheFontsReferencedBy(c, url, await res.text());
       } catch (err) { /* keep going */ }
+    }
+
+    const runtimeScripts = [...new Set([...cdnScriptsIn(html), ...DYNAMIC_CDN])];
+    for (const url of runtimeScripts) {
+      try { await c.add(new Request(url, { mode: 'cors' })); } catch (err) { /* keep going */ }
     }
   }).catch(() => {}));
 });
@@ -117,7 +136,7 @@ self.addEventListener('fetch', (e) => {
     );
     return;
   }
-  // Cache-first for static CDN assets (fonts, icons).
+  // Cache-first for static CDN assets and app assets.
   e.respondWith(
     caches.match(req).then((m) => m || fetch(req).then((res) => {
       if (res && res.status === 200 && (url.hostname.includes('cdnjs') || url.hostname.includes('fonts') || url.hostname.includes('cdn-icons') || url.hostname.includes('jsdelivr'))) {

@@ -88,22 +88,69 @@
     return `<div class="home-panel-item"><i class="fas fa-user"></i><span class="home-panel-item-main">${esc(worker.name)}</span><span class="home-panel-item-meta">${esc(meta)}</span></div>`;
   }
 
-  function attentionItems() {
-    const unreadMail = (db.inbox_emails || []).filter(e => !e.read).map(e => ({
-      icon: 'fa-envelope',
-      text: e.subject || e.from || words('Email', 'Correo'),
-      meta: words('Email', 'Correo')
+  function userName(id) {
+    const u = (db.users || []).find(x => x.id === id);
+    return u ? (u.name || u.name_en || u.name_es || '') : '';
+  }
+
+  function attentionItems(includeMail = true) {
+    const items = [];
+
+    if (includeMail) {
+      (db.inbox_emails || []).filter(e => !e.read).forEach(e => items.push({
+        kind: 'email',
+        id: e.id,
+        icon: 'fa-envelope',
+        text: e.subject || e.from || words('Email', 'Correo'),
+        meta: words('Email', 'Correo'),
+        action: "nav('inbox')"
+      }));
+    }
+
+    const openMessages = (db.employee_messages || []).filter(m => m.status === 'open');
+    const messageText = new Set();
+    openMessages.forEach(m => {
+      const text = m.text || words('Worker message', 'Mensaje del trabajador');
+      messageText.add(String(text).trim().toLowerCase());
+      items.push({
+        kind: 'worker',
+        id: m.id,
+        icon: 'fa-bolt',
+        text: `${userName(m.workerId) || words('Field worker', 'Trabajador')}: ${text}`,
+        meta: words('Worker', 'Trabajador'),
+        action: "nav('urgent')"
+      });
+    });
+
+    (db.pto_requests || []).filter(p => p.status === 'pending').forEach(p => items.push({
+      kind: 'pto',
+      id: p.id,
+      icon: 'fa-calendar-check',
+      text: `${userName(p.workerId) || words('Worker', 'Trabajador')} · ${p.startDate || ''}${p.endDate && p.endDate !== p.startDate ? ` – ${p.endDate}` : ''}`,
+      meta: words('Time off', 'Tiempo libre'),
+      action: "nav('kpis')"
     }));
-    const openAlerts = (db.alerts || []).filter(a => a.status === 'open').map(a => ({
-      icon: 'fa-triangle-exclamation',
-      text: a.msg || a.title || a.type || t('alert'),
-      meta: t('alert')
-    }));
-    return [...unreadMail, ...openAlerts];
+
+    (db.alerts || []).filter(a => a.status === 'open').forEach(a => {
+      const text = a.msg || a.title || a.type || t('alert');
+      if (messageText.has(String(text).trim().toLowerCase())) return;
+      items.push({
+        kind: 'alert',
+        id: a.id,
+        icon: 'fa-triangle-exclamation',
+        text,
+        meta: t('alert'),
+        action: "nav('alerts')"
+      });
+    });
+
+    return items;
   }
 
   function attentionItem(item) {
-    return `<div class="home-panel-item"><i class="fas ${item.icon}"></i><span class="home-panel-item-main">${esc(item.text)}</span><span class="home-panel-item-meta">${esc(item.meta)}</span></div>`;
+    const tag = item.action ? 'button' : 'div';
+    const action = item.action ? ` type="button" onclick="${item.action}"` : '';
+    return `<${tag} class="home-panel-item${item.action ? ' attention-link' : ''}"${action}><i class="fas ${item.icon}"></i><span class="home-panel-item-main">${esc(item.text)}</span><span class="home-panel-item-meta">${esc(item.meta)}</span></${tag}>`;
   }
 
   function toolItem(icon, en, es) {
@@ -112,18 +159,18 @@
 
   viewHome = function () {
     if (session.role === 'field') {
-      document.body.classList.remove('admin-home', 'panel-fullscreen-open');
+      document.body.classList.remove('admin-home', 'admin-workspace', 'panel-fullscreen-open');
       return legacyViewHome();
     }
 
     applySessionWallpaper();
-    document.body.classList.add('theme-app', 'admin-home');
+    document.body.classList.add('theme-app', 'admin-home', 'admin-workspace');
 
     const hour = new Date().getHours();
     const greet = hour < 12 ? words('Good morning', 'Buenos días') : hour < 18 ? words('Good afternoon', 'Buenas tardes') : words('Good evening', 'Buenas noches');
     const todayJobs = (db.jobs || []).filter(j => (j.scheduledDate || '').slice(0, 10) === todayISO());
     const fieldWorkers = (db.users || []).filter(u => u.role === 'field' && u.name);
-    const attention = attentionItems();
+    const attention = attentionItems(true);
 
     const todayPreview = todayJobs.length
       ? todayJobs.slice(0, 3).map(jobItem).join('')
@@ -177,17 +224,39 @@
       <div class="list-item" onclick="closeModal();nav('payroll')"><div class="avatar" style="background:var(--amber-fill)"><i class="fas fa-money-check-dollar"></i></div><div class="li-main"><div class="li-title">${esc(t('payroll'))}</div><div class="li-sub">${L ? 'Subir Excel/CSV y revisar' : 'Upload Excel/CSV and review'}</div></div><i class="fas fa-chevron-right chev"></i></div>
       <div class="list-item" onclick="closeModal();nav('jobs')"><div class="avatar" style="background:var(--action)"><i class="fas fa-screwdriver-wrench"></i></div><div class="li-main"><div class="li-title">${esc(t('jobs'))}</div><div class="li-sub">${L ? 'Trabajos, clientes y documentos' : 'Jobs, customers and documents'}</div></div><i class="fas fa-chevron-right chev"></i></div>
       <div class="list-item" onclick="closeModal();nav('reports')"><div class="avatar" style="background:var(--green-fill)"><i class="fas fa-chart-line"></i></div><div class="li-main"><div class="li-title">${esc(t('reports'))}</div><div class="li-sub">${L ? 'Resumen del negocio' : 'Business overview'}</div></div><i class="fas fa-chevron-right chev"></i></div>
+      <div class="list-item" onclick="closeModal();nav('assistant')"><div class="avatar" style="background:var(--action)"><i class="fas fa-sparkles"></i></div><div class="li-main"><div class="li-title">${L ? 'Preguntar a OTTO' : 'Ask OTTO'}</div><div class="li-sub">${L ? 'Un solo lugar para la asistencia de IA' : 'One place for AI assistance'}</div></div><i class="fas fa-chevron-right chev"></i></div>
       <div class="list-item" onclick="closeModal();nav('settings')"><div class="avatar" style="background:var(--neutral-fill)"><i class="fas fa-gear"></i></div><div class="li-main"><div class="li-title">${esc(t('settings'))}</div><div class="li-sub">${L ? 'QuickBooks, idioma, apariencia y equipo' : 'QuickBooks, language, appearance and team'}</div></div><i class="fas fa-chevron-right chev"></i></div>
     </div>`);
   };
 
+  function renderUtilityNav() {
+    let dock = document.getElementById('otto-utility-nav');
+    const show = session && session.role !== 'field' && route.view !== 'home';
+    if (!show) {
+      if (dock) dock.remove();
+      return;
+    }
+    if (!dock) {
+      dock = document.createElement('nav');
+      dock.id = 'otto-utility-nav';
+      dock.className = 'otto-utility-nav';
+      dock.setAttribute('aria-label', words('Primary navigation', 'Navegación principal'));
+      document.body.appendChild(dock);
+    }
+    dock.innerHTML = `<button type="button" onclick="nav('home')"><i class="fas fa-house"></i><span>${words('Home', 'Inicio')}</span></button>
+      <button type="button" onclick="expandTools()"><i class="fas fa-toolbox"></i><span>${words('Tools', 'Herramientas')}</span></button>`;
+  }
+
   renderNav = function () {
     legacyRenderNav();
-    const minimalHome = session && session.role !== 'field' && route.view === 'home';
-    document.body.classList.toggle('admin-home', Boolean(minimalHome));
+    const admin = Boolean(session && session.role !== 'field');
+    const minimalHome = admin && route.view === 'home';
+    document.body.classList.toggle('admin-workspace', admin);
+    document.body.classList.toggle('admin-home', minimalHome);
     if (!minimalHome) document.body.classList.remove('panel-fullscreen-open');
     const bn = document.getElementById('bottomnav');
-    if (bn) bn.classList.toggle('home-minimal', Boolean(minimalHome));
+    if (bn) bn.classList.toggle('admin-nav-hidden', admin);
+    renderUtilityNav();
   };
 
   startApp = function (...args) {
@@ -199,14 +268,14 @@
   viewInbox = function () {
     legacyViewInbox();
     if (!session || session.role === 'field') return;
-    const alerts = (db.alerts || []).filter(a => a.status === 'open');
-    if (!alerts.length) return;
+    const attention = attentionItems(false);
+    if (!attention.length) return;
     const main = document.getElementById('main');
     if (!main) return;
     const strip = document.createElement('section');
     strip.className = 'attention-strip';
-    strip.innerHTML = `<div class="attention-strip-title"><i class="fas fa-triangle-exclamation"></i><span>${words('Needs attention', 'Requiere atención')}</span><span class="pill">${alerts.length}</span></div>
-      ${alerts.slice(0, 5).map(a => `<button type="button" class="attention-item" onclick="nav('alerts')"><i class="fas fa-bell"></i><span>${esc(a.msg || a.title || a.type || t('alert'))}</span></button>`).join('')}`;
+    strip.innerHTML = `<div class="attention-strip-title"><i class="fas fa-triangle-exclamation"></i><span>${words('Needs attention', 'Requiere atención')}</span><span class="pill">${attention.length}</span></div>
+      ${attention.slice(0, 8).map(item => `<button type="button" class="attention-item" onclick="${item.action}"><i class="fas ${item.icon}"></i><span>${esc(item.text)}</span><small>${esc(item.meta)}</small></button>`).join('')}`;
     const head = main.querySelector('.pagehead');
     if (head) head.insertAdjacentElement('afterend', strip);
     else main.prepend(strip);
@@ -244,5 +313,6 @@
     document.body.classList.add('theme-app');
     applySessionWallpaper();
     if (route.view === 'home') render();
+    else renderNav();
   }, 0);
 })();
