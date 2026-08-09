@@ -1,14 +1,16 @@
 import fs from 'node:fs';
-import { patchSource, validatePatchedSource } from './apply-otto-home-patch.mjs';
+import { patchSource, patchRuntime, validatePatchedSource, validatePatchedRuntime } from './apply-otto-home-patch.mjs';
 
 const index = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
-const runtime = fs.readFileSync(new URL('../otto-home.js', import.meta.url), 'utf8');
+const runtimeSource = fs.readFileSync(new URL('../otto-home.js', import.meta.url), 'utf8');
 const styles = fs.readFileSync(new URL('../otto-home.css', import.meta.url), 'utf8');
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
 const patched = patchSource(index);
+const runtime = patchRuntime(runtimeSource);
 
 const checks = [
   ...validatePatchedSource(patched),
+  ...validatePatchedRuntime(runtime),
   ['four named panel states', ['collapsed', 'compact', 'expanded', 'fullscreen'].every(s => runtime.includes(`'${s}'`))],
   ['Today panel', runtime.includes("'panel-today'")],
   ['Field Workers panel', runtime.includes("'panel-field'")],
@@ -28,6 +30,8 @@ const checks = [
   ['owner navigation hides legacy bottom tabs', runtime.includes("classList.toggle('admin-nav-hidden', admin)") && styles.includes('.bottomnav.admin-nav-hidden')],
   ['owner navigation provides Home and Tools dock', runtime.includes("id = 'otto-utility-nav'") && styles.includes('.otto-utility-nav')],
   ['payroll Excel parser cached for offline use', sw.includes('xlsx.full.min.js') && sw.includes("const CACHE = 'otto-crm-v9'")],
+  ['generic CSV export remains', patched.includes('function exportCSV(col)')],
+  ['QuickBooks payment method removed', !patched.includes('<option>QuickBooks</option>')],
   ['fake operational status not emitted by new runtime', !runtime.includes('No delays reported today')],
   ['public landing page untouched by patch', !runtime.includes('landing.html') && !styles.includes('landing.html')]
 ];
