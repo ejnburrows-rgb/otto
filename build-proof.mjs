@@ -10,7 +10,7 @@ run('node', ['--check', 'otto-home.js']);
 run('node', ['--check', 'sw.js']);
 run('node', ['scripts/test-otto-home.mjs']);
 run('node', ['scripts/apply-otto-home-patch.mjs']);
-run('npx', ['playwright', 'install', 'chromium']);
+run('npm', ['install', '--no-save', '--no-package-lock', '@sparticuz/chromium']);
 run('node', ['capture-proof.mjs']);
 run('node', ['scripts/stamp-version.mjs']);
 
