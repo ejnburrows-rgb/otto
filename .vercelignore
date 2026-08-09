@@ -23,12 +23,13 @@ docs/
 
 # Test and tooling source.
 # `scripts/*` rather than `scripts/` deliberately: gitignore semantics do not
-# allow re-including a file whose parent directory is excluded, and the build
-# needs exactly one file out of here. Excluding the contents instead leaves the
-# negation below able to work. stamp-version.mjs holds no secrets — it reads two
-# environment variables and writes version.json.
+# allow re-including a file whose parent directory is excluded. The build needs
+# the version stamper plus the two OTTO home build-time checks. vercel.json
+# deletes the two home build scripts after they run, before the output is served.
 scripts/*
 !scripts/stamp-version.mjs
+!scripts/apply-otto-home-patch.mjs
+!scripts/test-otto-home.mjs
 evidence/
 
 # Database schema and migrations
