@@ -1,10 +1,14 @@
 /* OTTO Plumbing CRM — service worker
    Offline-first shell cache. App data lives in IndexedDB, not here. */
-const CACHE = 'otto-crm-v7';
+const CACHE = 'otto-crm-v8';
 // landing.html and guide.html ship too. Without them here, an installed phone
 // with no signal that opened /guide.html was served the CRM instead, because the
 // navigate handler below falls back to index.html for anything it cannot fetch.
-const SHELL = ['./', './index.html', './landing.html', './guide.html', './manifest.json', './logo.jpg'];
+const SHELL = [
+  './', './index.html', './landing.html', './guide.html', './manifest.json', './logo.jpg',
+  './otto-home.css', './otto-home.js',
+  './design-assets/wallpapers/julio-pablo.avif', './design-assets/wallpapers/sarays.avif'
+];
 
 // The icon font and the webfonts, fetched at install rather than waiting for a
 // second visit. On the very first load the service worker is not controlling the
