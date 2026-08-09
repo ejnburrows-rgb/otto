@@ -1,9 +1,8 @@
 // Shared fail-closed gate for sensitive server endpoints.
 //
 // WHY THIS EXISTS: api/data.js, api/photos.js, api/claude.js, api/nvidia.js,
-// api/notify.js, and the QuickBooks sync action in api/quickbooks.js all run
-// with a secret server-side key (Supabase service-role, Anthropic, NVIDIA,
-// Twilio/SendGrid, QuickBooks) but have no server-side check of who is
+// and api/notify.js run with secret server-side keys (Supabase service-role,
+// Anthropic, NVIDIA, Twilio/SendGrid) but have no server-side check of who is
 // calling. Anyone who can reach the URL could otherwise read or change real
 // customer data, pull signed photo links, spend AI credit, or send customer
 // notifications.
@@ -13,9 +12,9 @@
 // docs/STATUS.md, "MISSING FOR LAUNCH"). AGENTS.md also forbids hand-building
 // one. Until the real thing exists, this module is a closed gate, not a
 // login system: every sensitive route refuses every request and does it
-// before touching Supabase/Anthropic/NVIDIA/Twilio/SendGrid/QuickBooks, so no
-// request reaches those services and no response ever carries customer data,
-// signed URLs, provider replies, or message previews.
+// before touching Supabase/Anthropic/NVIDIA/Twilio/SendGrid, so no request
+// reaches those services and no response ever carries customer data, signed
+// URLs, provider replies, or message previews.
 //
 // ---------------------------------------------------------------------------
 // 2026-07-31 — RESTORED after a live authentication bypass. Read this before

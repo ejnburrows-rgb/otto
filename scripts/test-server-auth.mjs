@@ -2,9 +2,9 @@
 //
 // Proves: an unauthenticated request to every sensitive route is refused
 // with the same machine-readable error, before it ever reaches Supabase,
-// Anthropic, NVIDIA, Twilio, SendGrid, or QuickBooks — even when the
-// server-side provider keys ARE configured. No customer data, signed photo
-// URL, provider response, or notification preview is ever returned.
+// Anthropic, NVIDIA, Twilio, or SendGrid — even when the server-side provider
+// keys ARE configured. No customer data, signed photo URL, provider response,
+// or notification preview is ever returned.
 //
 // Run with: node scripts/test-server-auth.mjs
 
@@ -13,7 +13,6 @@ import photosHandler from '../api/photos.js';
 import claudeHandler from '../api/claude.js';
 import nvidiaHandler from '../api/nvidia.js';
 import notifyHandler from '../api/notify.js';
-import quickbooksHandler from '../api/quickbooks.js';
 
 let passed = 0, failed = 0;
 function check(name, actual, expected) {
@@ -63,9 +62,6 @@ async function runTests() {
   process.env.TWILIO_AUTH = 'auth-test';
   process.env.TWILIO_FROM = '+15550000000';
   process.env.SENDGRID_API_KEY = 'SG-test';
-  process.env.QB_CLIENT_ID = 'qb-id';
-  process.env.QB_CLIENT_SECRET = 'qb-secret';
-  process.env.QB_REFRESH_TOKEN = 'qb-refresh';
 
   const cases = [
     ['GET /api/data (read customer data)', dataHandler, noopReq({ method: 'GET' })],
@@ -77,7 +73,6 @@ async function runTests() {
     ['POST /api/nvidia (AI proxy)', nvidiaHandler, noopReq({ method: 'POST', body: { messages: [{ role: 'user', content: 'hi' }] } })],
     ['POST /api/notify (send SMS)', notifyHandler, noopReq({ method: 'POST', body: { channel: 'sms', to: '+15551234567', body: 'secret job details' } })],
     ['POST /api/notify (send email)', notifyHandler, noopReq({ method: 'POST', body: { channel: 'email', to: 'customer@example.com', subject: 'Invoice', body: 'secret invoice content' } })],
-    ['POST /api/quickbooks (sync action)', quickbooksHandler, noopReq({ method: 'POST', body: { action: 'sync', records: [{ id: 1 }] } })],
   ];
 
   for (const [name, handler, req] of cases) {
@@ -88,14 +83,6 @@ async function runTests() {
     check(`${name} returns server_auth_not_configured`, res.body && res.body.error, 'server_auth_not_configured');
     check(`${name} reveals no customer/provider data`, JSON.stringify(res.body).toLowerCase().includes('secret'), false);
     check(`${name} never calls the upstream provider`, calledUpstream, false);
-  }
-
-  // The routes that are NOT gated (non-sensitive QuickBooks status/auth_url)
-  // must still work normally — proves the gate is scoped, not a global outage.
-  {
-    const res = createRes();
-    await quickbooksHandler(noopReq({ method: 'GET', query: { action: 'status' } }), res);
-    check('GET /api/quickbooks?action=status is not gated', res.statusCode, 200);
   }
 
   /* ── 2026-07-31 incident: the gate was replaced with hand-rolled JWT

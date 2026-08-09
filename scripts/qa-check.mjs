@@ -43,7 +43,7 @@ for (const oc of onclick) {
 }
 
 const missing = [...calls].filter((c) => !funcs.has(c)).sort();
-const mustExport = ['photoScanCreateCustomer', 'viewUrgentHub', 'openUrgentForm', 'submitUrgentMessage', 'replyUrgent', 'resolveUrgent', 'connectQuickBooks', 'saveNotifyPrefs', 'refreshIntegrationStatus'];
+const mustExport = ['photoScanCreateCustomer', 'viewUrgentHub', 'openUrgentForm', 'submitUrgentMessage', 'replyUrgent', 'resolveUrgent', 'saveNotifyPrefs', 'refreshIntegrationStatus'];
 const winBlock = html.match(/Object\.assign\(window[\s\S]*?\);/)?.[0] || '';
 const exported = new Set([...winBlock.matchAll(/\b([a-zA-Z_$][\w$]*)\b(?=\s*[,}])/g)].map((m) => m[1]));
 
@@ -80,7 +80,6 @@ for (const [name, url] of urls) {
   urlResults[name] = await fetchUrl(url);
 }
 
-const apiQb = await fetchUrl('https://otto-kohl.vercel.app/api/quickbooks?action=status');
 const apiNotify = await new Promise((resolve) => {
   const req = https.request('https://otto-kohl.vercel.app/api/notify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, timeout: 15000 }, (res) => {
     let data = '';
@@ -106,8 +105,8 @@ const report = {
   prodHasUrgent: urlResults.prod?.body?.includes('viewUrgentHub') ?? false,
   prodHasPhoto: urlResults.prod?.body?.includes('photoScanCreateCustomer') ?? false,
   prodDarkDefault: urlResults.prod?.body?.includes('data-theme="dark"') ?? false,
-  apiQuickbooks: apiQb.status,
   apiNotify: apiNotify.status,
+  quickBooksRemovedFromBuild: !html.includes('connectQuickBooks') && !html.includes('/api/quickbooks') && !html.includes('exportQuickBooks'),
   pass: missing.length === 0 && urlResults.prod?.ok && (urlResults.prod?.body?.includes('viewUrgentHub') ?? false),
 };
 
@@ -134,7 +133,7 @@ const lines = [
   `- Production has urgent hub: ${report.prodHasUrgent}`,
   `- Production has photo customer: ${report.prodHasPhoto}`,
   `- Production dark default: ${report.prodDarkDefault}`,
-  `- QuickBooks API responds: ${report.apiQuickbooks}`,
+  `- QuickBooks removed from local build: ${report.quickBooksRemovedFromBuild}`,
   `- Notify API responds: ${report.apiNotify}`,
   ``,
   `## JSON`,
