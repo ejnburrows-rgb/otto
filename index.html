@@ -590,6 +590,185 @@
       --glass-border: #434655;
     }
 
+    /* Wallpaper-first home: user's wallpaper fills the viewport behind panels */
+    .wallpaper-container {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      transition: opacity 0.3s ease;
+    }
+    .wallpaper-container.fade-out { opacity: 0; }
+    
+    /* Panel system for Today/Field Workers/Inbox/Tools */
+    .home-panels {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+    @media (max-width: 600px) {
+      .home-panels { grid-template-columns: 1fr; }
+    }
+    
+    .home-panel {
+      background: var(--glass-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 16px;
+      min-height: 140px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .home-panel:hover {
+      background: rgba(23, 31, 51, 0.95);
+      transform: translateY(-2px);
+    }
+    .home-panel:active {
+      transform: scale(0.98);
+    }
+    .home-panel.expanded {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      border-radius: 0;
+      min-height: auto;
+      overflow-y: auto;
+      margin: 0;
+    }
+    .home-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .home-panel-title {
+      font-family: 'Hanken Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 16px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .home-panel-title i {
+      color: var(--accent);
+      font-size: 18px;
+    }
+    .home-panel-count {
+      background: var(--action);
+      color: #fff;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 99px;
+    }
+    .home-panel-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .home-panel-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      background: rgba(255,255,255,0.03);
+      border-radius: 8px;
+      font-size: 14px;
+      color: var(--text2);
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    .home-panel-item:hover {
+      background: rgba(255,255,255,0.06);
+    }
+    .home-panel-item-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+    .home-panel-empty {
+      color: var(--text3);
+      font-size: 14px;
+      text-align: center;
+      padding: 20px 0;
+    }
+    .panel-controls {
+      display: flex;
+      gap: 8px;
+    }
+    .panel-btn {
+      width: 32px;
+      height: 32px;
+      border: none;
+      border-radius: 6px;
+      background: rgba(255,255,255,0.08);
+      color: var(--text2);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      transition: all 0.15s ease;
+    }
+    .panel-btn:hover {
+      background: rgba(255,255,255,0.15);
+      color: var(--text);
+    }
+    
+    /* Tools panel categories */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    .tool-category {
+      background: rgba(255,255,255,0.03);
+      border-radius: 10px;
+      padding: 14px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .tool-category:hover {
+      background: rgba(255,255,255,0.06);
+    }
+    .tool-category-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      margin-bottom: 8px;
+    }
+    .tool-category-label {
+      font-family: 'Hanken Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--text);
+    }
+    .tool-category-sub {
+      font-size: 12px;
+      color: var(--text3);
+      margin-top: 2px;
+    }
+
     .topbar {
       min-height: 64px;
       background: #0B1326;

@@ -1,7 +1,11 @@
-# Files Git should never save or publish.
-.vercel
-.env*
-backups/
-!.env.example
-node_modules/
-.worktrees/
+```gitignore
+# Compressed and encoded files
+*.b64.part*
+*.avif.b64.part*
+
+# Temp files
+*.tmp
+
+# Logs
+*.log
+```
