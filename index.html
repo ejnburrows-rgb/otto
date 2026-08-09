@@ -1048,6 +1048,7 @@
       title: 'Title', status: 'Status', date: 'Date', amount: 'Amount', notesLabel: 'Notes',
       customer: 'Customer', job: 'Job', open: 'Open', noResults: 'Nothing here yet.',
       welcome: 'Welcome', tapToStart: 'Tap a big button to get started.',
+      today: 'Today', tools: 'Tools', money: 'Money', fieldWorkers: 'Field Workers',
       callFrom: 'Who is calling?', whatNeed: 'What do they need?', createJob: 'Create job from this call',
       scheduled: 'Scheduled', inProgress: 'In Progress', completed: 'Completed', onHold: 'On Hold',
       canceled: 'Canceled', new: 'New', draft: 'Draft', sent: 'Sent', approved: 'Approved',
@@ -1132,6 +1133,7 @@
       title: 'Título', status: 'Estado', date: 'Fecha', amount: 'Monto', notesLabel: 'Notas',
       customer: 'Cliente', job: 'Trabajo', open: 'Abrir', noResults: 'Todavía no hay nada aquí.',
       welcome: 'Bienvenido', tapToStart: 'Toca un botón grande para empezar.',
+      today: 'Hoy', tools: 'Herramientas', money: 'Dinero', fieldWorkers: 'Trabajadores de Campo',
       callFrom: '¿Quién llama?', whatNeed: '¿Qué necesita?', createJob: 'Crear trabajo de esta llamada',
       scheduled: 'Agendado', inProgress: 'En Proceso', completed: 'Completado', onHold: 'En Espera',
       canceled: 'Cancelado', new: 'Nuevo', draft: 'Borrador', sent: 'Enviado', approved: 'Aprobado',
@@ -2353,7 +2355,7 @@
     let html = `<div class="wallpaper-home-header"><div class="greet">${greet}, <b>${esc(session.name)}</b></div><div class="muted">${fmtDate(todayISO())}</div></div>`;
     html += `<div class="home-panels">
       <div class="home-panel" onclick="expandPanel('panel-today')"><div class="panel-header"><div class="panel-icon"><i class="fas fa-calendar-day"></i></div><div class="panel-title">${t("today")}</div><div class="panel-count">${todayJobs.length}</div></div><div class="panel-preview">${todayJobs.length ? todayJobs.slice(0,3).map(j=>`<div class="panel-item">${esc(j.title||t("untitled"))}</div>`).join("") : `<div class="panel-empty">${lang==="es"?"Sin trabajos hoy":"No jobs today"}</div>`}</div><div class="panel-controls"><button class="panel-btn" onclick="event.stopPropagation();nav('jobs')">${lang==="es"?"Ver todos":"View all"}</button></div></div>
-      <div class="home-panel" onclick="expandPanel('panel-field')"><div class="panel-header"><div class="panel-icon"><i class="fas fa-users-gear"></i></div><div class="panel-title">${lang==="es"?"Trabajadores":"Field Workers"}</div><div class="panel-count">${fieldWorkers.length}</div></div><div class="panel-preview">${fieldWorkers.length ? fieldWorkers.slice(0,3).map(w=>`<div class="panel-item">${esc(w.name)}</div>`).join("") : `<div class="panel-empty">${lang==="es"?"Sin trabajadores":"No workers"}</div>`}</div><div class="panel-controls"><button class="panel-btn" onclick="event.stopPropagation();nav('team')">${lang==="es"?"Ver equipo":"View team"}</button></div></div>
+      <div class="home-panel" onclick="expandPanel('panel-field')"><div class="panel-header"><div class="panel-icon"><i class="fas fa-users-gear"></i></div><div class="panel-title">${t("fieldWorkers")}</div><div class="panel-count">${fieldWorkers.length}</div></div><div class="panel-preview">${fieldWorkers.length ? fieldWorkers.slice(0,3).map(w=>`<div class="panel-item">${esc(w.name)}</div>`).join("") : `<div class="panel-empty">${lang==="es"?"Sin trabajadores":"No workers"}</div>`}</div><div class="panel-controls"><button class="panel-btn" onclick="event.stopPropagation();nav('team')">${lang==="es"?"Ver equipo":"View team"}</button></div></div>
       <div class="home-panel" onclick="expandPanel('panel-inbox')"><div class="panel-header"><div class="panel-icon"><i class="fas fa-inbox"></i></div><div class="panel-title">${t("inbox")}</div><div class="panel-count">${inboxItems.length}</div></div><div class="panel-preview">${inboxItems.length ? inboxItems.slice(0,3).map(a=>`<div class="panel-item">${esc(a.msg||a.type)}</div>`).join("") : `<div class="panel-empty">${lang==="es"?"Sin mensajes":"No messages"}</div>`}</div><div class="panel-controls"><button class="panel-btn" onclick="event.stopPropagation();nav('alerts')">${lang==="es"?"Ver alertas":"View alerts"}</button></div></div>
       <div class="home-panel" onclick="expandPanel('panel-tools')"><div class="panel-header"><div class="panel-icon"><i class="fas fa-toolbox"></i></div><div class="panel-title">${t("tools")}</div><div class="panel-count">4</div></div><div class="panel-preview"><div class="panel-item">${t("money")}</div><div class="panel-item">${t("jobs")}</div><div class="panel-item">${lang==="es"?"Negocio":"Business"}</div><div class="panel-item">${t("settings")}</div></div><div class="panel-controls"><button class="panel-btn" onclick="event.stopPropagation();expandTools()">${lang==="es"?"Abrir herramientas":"Open tools"}</button></div></div>
     </div>`;
