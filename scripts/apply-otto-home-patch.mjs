@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const ROOT_INDEX = new URL('../index.html', import.meta.url);
+const HOME_RUNTIME = new URL('../otto-home.js', import.meta.url);
 
 export function patchSource(source) {
   let out = source;
@@ -22,12 +23,67 @@ export function patchSource(source) {
     ["for (const p of db.time_off) {", "for (const p of [...(db.pto_requests || []), ...(db.time_off || [])]) {"],
     ["function approvePTO(id) { update('time_off', id, {status: 'approved'}); toast(t('ptoApproved'), 'success'); render(); }", "function approvePTO(id) { const col = get('pto_requests', id) ? 'pto_requests' : 'time_off'; update(col, id, {status: 'approved', readByWorker: false}); toast(t('ptoApproved'), 'success'); render(); }"],
     ["function denyPTO(id) { update('time_off', id, {status: 'denied'}); toast(t('ptoDenied'), 'error'); render(); }", "function denyPTO(id) { const col = get('pto_requests', id) ? 'pto_requests' : 'time_off'; update(col, id, {status: 'denied', readByWorker: false}); toast(t('ptoDenied'), 'error'); render(); }"],
-    ['<img src="./icon-192.png" alt="" class="crystal-logo" />', '<img src="./icon-192.png" alt="OTTO CRM" class="crystal-logo" data-otto-logo-slot="replaceable" />']
+    ['<img src="./icon-192.png" alt="" class="crystal-logo" />', '<img src="./icon-192.png" alt="OTTO CRM" class="crystal-logo" data-otto-logo-slot="replaceable" />'],
+
+    // QuickBooks is deliberately out of scope. OTTO keeps its own invoices,
+    // payments and generic CSV exports; there is no Intuit account/API setup.
+    [' · QuickBooks · reports', ' · reports'],
+    ["exportQB: 'Export for QuickBooks', ", ''],
+    ["exportQB: 'Exportar a QuickBooks', ", ''],
+    ["connectQuickBooks: 'Connect QuickBooks', quickBooksSection: 'QuickBooks', ", ''],
+    ["connectQuickBooks: 'Conectar QuickBooks', quickBooksSection: 'QuickBooks', ", ''],
+    ['<option>Cash</option><option>Check</option><option>Card</option><option>Transfer</option><option>QuickBooks</option>', '<option>Cash</option><option>Check</option><option>Card</option><option>Transfer</option>'],
+    ["openUserForm, saveUser, toggleTheme,\n    cloudPullNow", "openUserForm, saveUser, toggleTheme,\n    cloudPullNow"],
+    ['exportCSV, exportQuickBooks, openUserForm', 'exportCSV, openUserForm'],
+    ['connectQuickBooks, saveNotifyPrefs, refreshIntegrationStatus', 'saveNotifyPrefs, refreshIntegrationStatus']
   ];
 
   for (const [from, to] of replacements) {
     out = out.split(from).join(to);
   }
+
+  // Remove the QuickBooks buttons from Invoices and Payments while preserving
+  // the normal create actions.
+  out = out.replace(
+    /<div class="btnrow"><button class="btn" onclick="openInvoiceForm\(\)"><i class="fas fa-plus"><\/i> \$\{t\('addInvoice'\)\}<\/button><button class="btn ghost" onclick="exportQuickBooks\('invoices'\)"><i class="fas fa-file-export"><\/i> QuickBooks<\/button><\/div>/g,
+    '<div class="btnrow"><button class="btn" onclick="openInvoiceForm()"><i class="fas fa-plus"></i> ${t(\'addInvoice\')}</button></div>'
+  );
+  out = out.replace(
+    /<div class="btnrow"><button class="btn" onclick="openPaymentForm\(\)"><i class="fas fa-plus"><\/i> \$\{t\('addPayment'\)\}<\/button><button class="btn ghost" onclick="exportQuickBooks\('payments'\)"><i class="fas fa-file-export"><\/i> QuickBooks<\/button><\/div>/g,
+    '<div class="btnrow"><button class="btn" onclick="openPaymentForm()"><i class="fas fa-plus"></i> ${t(\'addPayment\')}</button></div>'
+  );
+
+  // Remove the QuickBooks-only button from the general Export screen.
+  out = out.replace(
+    /\n\s*<div class="btnrow"><button class="btn ghost block" onclick="exportQuickBooks\('invoices'\)"><i class="fas fa-file-export"><\/i> \$\{t\('exportQB'\)\}<\/button><\/div>`;/g,
+    '`;'
+  );
+
+  // Remove the owner/office QuickBooks Settings card, but keep the customer
+  // notification section immediately after it.
+  out = out.replace(
+    /\n\s*html \+= `<div class="section-title"><i class="fas fa-file-invoice-dollar"><\/i> \$\{t\('quickBooksSection'\)\}<\/div>[\s\S]*?<\/div>`;\n\s*(?=html \+= `<div class="section-title"><i class="fas fa-bell")/g,
+    '\n      '
+  );
+
+  // QuickBooks status is no longer part of Settings integration checks.
+  out = out.replace(
+    /\s*const qbEl = \$\('#qb-status'\); const nEl = \$\('#notify-status'\);\n\s*try \{\n\s*const qb = await serverFetch\('\/api\/quickbooks\?action=status'\)[\s\S]*?\} catch \(e\) \{ if \(qbEl\) qbEl\.textContent = t\('notConfigured'\); \}\n/g,
+    "    const nEl = $('#notify-status');\n"
+  );
+
+  // Remove the browser-side QuickBooks CSV compatibility helper. Generic CSV
+  // export remains available through exportCSV().
+  out = out.replace(
+    /\n\s*\/\* ============================ QuickBooks export ============================ \*\/[\s\S]*?\n\s*function exportCSV\(col\)/g,
+    '\n  function exportCSV(col)'
+  );
+
+  // Remove the OAuth launcher entirely.
+  out = out.replace(
+    /\n\s*async function connectQuickBooks\(\) \{[\s\S]*?\n\s*\}\n(?=\s*(?:async )?function |\s*\/\*|\s*Object\.assign)/g,
+    '\n'
+  );
 
   if (!out.includes('data-otto-home-styles')) {
     const link = '  <link rel="stylesheet" href="./otto-home.css" data-otto-home-styles />\n';
@@ -44,6 +100,12 @@ export function patchSource(source) {
   return out;
 }
 
+export function patchRuntime(source) {
+  return source
+    .split("${L ? 'QuickBooks, idioma, apariencia y equipo' : 'QuickBooks, language, appearance and team'}")
+    .join("${L ? 'Idioma, apariencia y equipo' : 'Language, appearance and team'}");
+}
+
 export function validatePatchedSource(source) {
   const checks = [
     ['Julio Pablo canonical seed', source.includes("id: 'owner-2', name: 'Julio Pablo'")],
@@ -56,19 +118,39 @@ export function validatePatchedSource(source) {
     ['PTO approval updates current requests', source.includes("get('pto_requests', id) ? 'pto_requests' : 'time_off'")],
     ['replaceable OTTO logo slot', source.includes('data-otto-logo-slot="replaceable"')],
     ['legacy Boss-Level copy removed', !source.includes('Boss-Level Intelligence')],
-    ['legacy PlumbBot heading removed', !source.includes('PlumbBot AI Assistant')]
+    ['legacy PlumbBot heading removed', !source.includes('PlumbBot AI Assistant')],
+    ['QuickBooks API calls removed', !source.includes('/api/quickbooks')],
+    ['QuickBooks connect handler removed', !source.includes('connectQuickBooks')],
+    ['QuickBooks export helper removed', !source.includes('exportQuickBooks')],
+    ['QuickBooks settings section removed', !source.includes('quickBooksSection')]
   ];
   return checks;
 }
 
+export function validatePatchedRuntime(source) {
+  return [
+    ['QuickBooks removed from minimal Tools copy', !source.includes('QuickBooks')]
+  ];
+}
+
 function run() {
-  const path = fileURLToPath(ROOT_INDEX);
-  const before = fs.readFileSync(path, 'utf8');
-  const after = patchSource(before);
-  const failed = validatePatchedSource(after).filter(([, ok]) => !ok);
-  if (failed.length) throw new Error(`OTTO home patch validation failed: ${failed.map(([name]) => name).join(', ')}`);
-  if (after !== before) fs.writeFileSync(path, after);
-  console.log(`OTTO home patch: ${after === before ? 'already applied' : 'applied and validated'}`);
+  const indexPath = fileURLToPath(ROOT_INDEX);
+  const runtimePath = fileURLToPath(HOME_RUNTIME);
+
+  const beforeIndex = fs.readFileSync(indexPath, 'utf8');
+  const afterIndex = patchSource(beforeIndex);
+  const failedIndex = validatePatchedSource(afterIndex).filter(([, ok]) => !ok);
+  if (failedIndex.length) throw new Error(`OTTO home patch validation failed: ${failedIndex.map(([name]) => name).join(', ')}`);
+
+  const beforeRuntime = fs.readFileSync(runtimePath, 'utf8');
+  const afterRuntime = patchRuntime(beforeRuntime);
+  const failedRuntime = validatePatchedRuntime(afterRuntime).filter(([, ok]) => !ok);
+  if (failedRuntime.length) throw new Error(`OTTO runtime patch validation failed: ${failedRuntime.map(([name]) => name).join(', ')}`);
+
+  if (afterIndex !== beforeIndex) fs.writeFileSync(indexPath, afterIndex);
+  if (afterRuntime !== beforeRuntime) fs.writeFileSync(runtimePath, afterRuntime);
+
+  console.log(`OTTO home patch: index ${afterIndex === beforeIndex ? 'already applied' : 'applied'}; runtime ${afterRuntime === beforeRuntime ? 'already applied' : 'applied'}; validated`);
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) run();
