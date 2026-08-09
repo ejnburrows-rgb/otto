@@ -103,6 +103,7 @@ th{color:var(--text2);font-size:14px;text-transform:uppercase;letter-spacing:0.0
     <ol>
       <li><a href="#install"><span class="en">Put OTTO on your phone</span><span class="es">Instale OTTO en su teléfono</span></a></li>
       <li><a href="#signin"><span class="en">Sign in</span><span class="es">Iniciar sesión</span></a></li>
+      <li><a href="#codes"><span class="en">Setting up a phone, and forgotten codes</span><span class="es">Configurar un teléfono y códigos olvidados</span></a></li>
       <li><a href="#language"><span class="en">Change the language</span><span class="es">Cambiar el idioma</span></a></li>
       <li><a href="#worker"><span class="en">Field workers: your day</span><span class="es">Trabajadores: su día</span></a></li>
       <li><a href="#timeoff"><span class="en">Request time off</span><span class="es">Pedir días libres</span></a></li>
@@ -151,15 +152,66 @@ th{color:var(--text2);font-size:14px;text-transform:uppercase;letter-spacing:0.0
       <span class="es">Nunca comparta su PIN. Es su firma personal dentro de la aplicación.</span></div></div>
   </section>
 
+  <section id="codes">
+    <h2><span class="en">3. Setting up a phone, and forgotten codes</span><span class="es">3. Configurar un teléfono y códigos olvidados</span></h2>
+    <span class="who owner"><span class="en">Owner &amp; office</span><span class="es">Dueño y oficina</span></span>
+
+    <h3><span class="en">A brand-new phone</span><span class="es">Un teléfono nuevo</span></h3>
+    <p><span class="en">The very first time OTTO is opened on a phone, nobody has a code on it yet, so it does <b>not</b> show the sign-in list. It shows a setup screen asking you to choose a 4-digit code for the owner. Type any four digits and tap <b>Save</b>. You are now signed in on that phone.</span>
+    <span class="es">La primera vez que se abre OTTO en un teléfono, nadie tiene un código todavía, así que <b>no</b> muestra la lista de personas. Muestra una pantalla para elegir un código de 4 dígitos para el dueño. Escriba cuatro dígitos y toque <b>Guardar</b>. Ya está dentro en ese teléfono.</span></p>
+    <ol class="steps">
+      <li><span class="en">Open the app. Choose a 4-digit code on the setup screen. Tap <b>Save</b>.</span>
+          <span class="es">Abra la aplicación. Elija un código de 4 dígitos en la pantalla de configuración. Toque <b>Guardar</b>.</span></li>
+      <li><span class="en">Go to <b>Team</b>. Tap the person who uses this phone.</span>
+          <span class="es">Vaya a <b>Equipo</b>. Toque a la persona que usa este teléfono.</span></li>
+      <li><span class="en">Type a 4-digit PIN for them and tap <b>Save</b>. They can now sign in here.</span>
+          <span class="es">Escriba un PIN de 4 dígitos para esa persona y toque <b>Guardar</b>. Ya puede iniciar sesión aquí.</span></li>
+    </ol>
+    <p><span class="en">A person greyed out on the sign-in list with <b>“No code yet”</b> has no PIN on this phone. They cannot be tapped until an owner sets one from the Team screen.</span>
+    <span class="es">Una persona en gris en la lista con <b>“Sin código”</b> no tiene PIN en este teléfono. No se puede tocar hasta que un dueño le ponga uno desde la pantalla de Equipo.</span></p>
+
+    <div class="callout warn"><span class="ic">⚠</span><div>
+      <span class="en"><b>Each phone is separate.</b> Codes are kept on the phone itself, not on a server. Setting somebody’s PIN on your phone does <b>not</b> set it on theirs — every phone needs its own setup, once. This changes when cloud sync is switched on.</span>
+      <span class="es"><b>Cada teléfono es independiente.</b> Los códigos se guardan en el propio teléfono, no en un servidor. Poner el PIN de alguien en su teléfono <b>no</b> lo pone en el de esa persona — cada teléfono necesita su propia configuración, una vez. Esto cambiará cuando se active la sincronización en la nube.</span></div></div>
+
+    <h3><span class="en">Staying signed in</span><span class="es">Permanecer con la sesión iniciada</span></h3>
+    <p><span class="en">You stay signed in. Closing the app, locking the phone, restarting it or losing signal all keep you in. OTTO only asks for your code again if you tap <b>Sign out</b>, or if the phone’s browsing data is cleared.</span>
+    <span class="es">La sesión queda iniciada. Cerrar la aplicación, bloquear el teléfono, reiniciarlo o quedarse sin señal no le sacan. OTTO solo vuelve a pedir el código si toca <b>Cerrar sesión</b>, o si se borran los datos del navegador.</span></p>
+
+    <h3><span class="en">Somebody forgot their code</span><span class="es">Alguien olvidó su código</span></h3>
+    <ol class="steps">
+      <li><span class="en">Sign in as owner on that phone, go to <b>Team</b> and tap the person.</span>
+          <span class="es">Inicie sesión como dueño en ese teléfono, vaya a <b>Equipo</b> y toque a la persona.</span></li>
+      <li><span class="en">Type a new 4-digit PIN and tap <b>Save</b>. The old one stops working straight away.</span>
+          <span class="es">Escriba un PIN nuevo de 4 dígitos y toque <b>Guardar</b>. El anterior deja de funcionar de inmediato.</span></li>
+    </ol>
+    <p><span class="en">Leaving the PIN box empty keeps their current code — useful when you only want to change a name or a role.</span>
+    <span class="es">Dejar la casilla del PIN vacía mantiene el código actual — útil si solo quiere cambiar un nombre o un puesto.</span></p>
+    <p><span class="en">After <b>five</b> wrong tries in a row, that person is locked out for <b>60 seconds</b> on that phone. Waiting is enough; setting a new PIN also clears it immediately.</span>
+    <span class="es">Después de <b>cinco</b> intentos incorrectos seguidos, esa persona queda bloqueada <b>60 segundos</b> en ese teléfono. Basta con esperar; poner un PIN nuevo también lo desbloquea de inmediato.</span></p>
+
+    <div class="callout warn"><span class="ic">⚠</span><div>
+      <span class="en"><b>If the owner code is forgotten, it cannot be recovered.</b> Nobody — not even OTTO — can read a code back; only a scrambled fingerprint of it is kept. Use another phone where you are still signed in. Failing that, clearing the browser’s data for the site returns that phone to the setup screen, but it also <b>erases that phone’s records</b>. Take <b>Backups → Download</b> first, and keep that file somewhere safe.</span>
+      <span class="es"><b>Si se olvida el código del dueño, no se puede recuperar.</b> Nadie — ni OTTO — puede leer un código; solo se guarda una huella cifrada. Use otro teléfono donde siga con la sesión iniciada. Si no, borrar los datos del sitio en el navegador devuelve ese teléfono a la pantalla de configuración, pero también <b>borra los registros de ese teléfono</b>. Haga primero <b>Respaldos → Descargar</b> y guarde ese archivo en un lugar seguro.</span></div></div>
+
+    <h3><span class="en">The owner’s second code</span><span class="es">El segundo código del dueño</span></h3>
+    <p><span class="en">An owner can set a second 4-digit code in <b>Settings</b>. Once it is set, signing in as that owner asks for it after the normal PIN. It is checked on the phone, like the PIN — it raises the bar, but it is not the same as the two-step verification a bank uses.</span>
+    <span class="es">Un dueño puede poner un segundo código de 4 dígitos en <b>Ajustes</b>. Una vez puesto, al iniciar sesión como ese dueño se lo pide después del PIN normal. Se verifica en el teléfono, igual que el PIN — sube el listón, pero no es la verificación en dos pasos de un banco.</span></p>
+
+    <div class="callout"><span class="ic">ℹ</span><div>
+      <span class="en"><b>Where your work is kept today.</b> Everything lives on the phone that entered it. Work does not yet move between phones, and photos stay on the phone that took them. Until that is switched on, the only copy that survives a lost phone is the one you make with <b>Backups → Download</b>.</span>
+      <span class="es"><b>Dónde se guarda su trabajo hoy.</b> Todo vive en el teléfono donde se escribió. El trabajo todavía no pasa de un teléfono a otro, y las fotos se quedan en el teléfono que las tomó. Hasta que eso se active, la única copia que sobrevive a un teléfono perdido es la que usted hace con <b>Respaldos → Descargar</b>.</span></div></div>
+  </section>
+
   <section id="language">
-    <h2><span class="en">3. Change the language</span><span class="es">3. Cambiar el idioma</span></h2>
+    <h2><span class="en">4. Change the language</span><span class="es">4. Cambiar el idioma</span></h2>
     <span class="who all"><span class="en">Everyone</span><span class="es">Todos</span></span>
     <p><span class="en">Every screen in OTTO exists in English and Spanish. Tap the language button at the top of the app (EN / ES) to switch instantly. Your choice is remembered — you only do this once.</span>
     <span class="es">Cada pantalla de OTTO existe en inglés y español. Toque el botón de idioma en la parte superior de la aplicación (EN / ES) para cambiar al instante. Su elección queda guardada — solo lo hace una vez.</span></p>
   </section>
 
   <section id="worker">
-    <h2><span class="en">4. Field workers: your day in 5 taps</span><span class="es">4. Trabajadores: su día en 5 toques</span></h2>
+    <h2><span class="en">5. Field workers: your day in 5 taps</span><span class="es">4. Trabajadores: su día en 5 toques</span></h2>
     <span class="who worker"><span class="en">Field workers</span><span class="es">Trabajadores de campo</span></span>
     <p><span class="en">When you open OTTO, you see today's jobs: the time, the address, and what kind of job it is.</span>
     <span class="es">Al abrir OTTO, verá los trabajos de hoy: la hora, la dirección y el tipo de trabajo.</span></p>
@@ -181,7 +233,7 @@ th{color:var(--text2);font-size:14px;text-transform:uppercase;letter-spacing:0.0
   </section>
 
   <section id="timeoff">
-    <h2><span class="en">5. Request time off</span><span class="es">5. Pedir días libres</span></h2>
+    <h2><span class="en">6. Request time off</span><span class="es">5. Pedir días libres</span></h2>
     <span class="who worker"><span class="en">Field workers</span><span class="es">Trabajadores de campo</span></span>
     <ol class="steps">
       <li><span class="en">Go to <b>Settings</b> → <b>Request Time Off</b>.</span>
@@ -194,7 +246,7 @@ th{color:var(--text2);font-size:14px;text-transform:uppercase;letter-spacing:0.0
   </section>
 
   <section id="owner">
-    <h2><span class="en">6. Owner &amp; office: your home screen</span><span class="es">6. Dueño y oficina: su pantalla principal</span></h2>
+    <h2><span class="en">7. Owner &amp; office: your home screen</span><span class="es">6. Dueño y oficina: su pantalla principal</span></h2>
     <span class="who owner"><span class="en">Owner &amp; office</span><span class="es">Dueño y oficina</span></span>
     <p><span class="en">Your home screen shows four big tiles. That's the whole company at a glance:</span>
     <span class="es">Su pantalla principal muestra cuatro recuadros grandes. Toda la empresa de un vistazo:</span></p>
@@ -214,7 +266,7 @@ th{color:var(--text2);font-size:14px;text-transform:uppercase;letter-spacing:0.0
   </section>
 
   <section id="jobs">
-    <h2><span class="en">7. Customers &amp; jobs</span><span class="es">7. Clientes y trabajos</span></h2>
+    <h2><span class="en">8. Customers &amp; jobs</span><span class="es">7. Clientes y trabajos</span></h2>
     <span class="who owner"><span class="en">Owner &amp; office</span><span class="es">Dueño y oficina</span></span>
     <ol class="steps">
       <li><span class="en"><b>A customer calls?</b> Tap <b>Log Call</b>. OTTO finds the customer (or creates a new one) and can open a new job right there.</span>
@@ -229,7 +281,7 @@ th{color:var(--text2);font-size:14px;text-transform:uppercase;letter-spacing:0.0
   </section>
 
   <section id="documents">
-    <h2><span class="en">8. Photos, documents &amp; blueprints</span><span class="es">8. Fotos, documentos y planos</span></h2>
+    <h2><span class="en">9. Photos, documents &amp; blueprints</span><span class="es">8. Fotos, documentos y planos</span></h2>
     <span class="who all"><span class="en">Everyone</span><span class="es">Todos</span></span>
     <ol class="steps">
       <li><span class="en">Open a job → <b>Documents</b> tab → upload or scan. Everything stays in that job's folder.</span>
@@ -245,7 +297,7 @@ th{color:var(--text2);font-size:14px;text-transform:uppercase;letter-spacing:0.0
   </section>
 
   <section id="money">
-    <h2><span class="en">9. Money: estimates, invoices, payments</span><span class="es">9. Dinero: presupuestos, facturas, pagos</span></h2>
+    <h2><span class="en">10. Money: estimates, invoices, payments</span><span class="es">9. Dinero: presupuestos, facturas, pagos</span></h2>
     <span class="who owner"><span class="en">Owner, office &amp; accounting</span><span class="es">Dueño, oficina y contabilidad</span></span>
     <ol class="steps">
       <li><span class="en"><b>Estimate → Invoice → Payment.</b> Each one turns into the next with one tap. No re-typing.</span>
@@ -260,7 +312,7 @@ th{color:var(--text2);font-size:14px;text-transform:uppercase;letter-spacing:0.0
   </section>
 
   <section id="askotto">
-    <h2><span class="en">10. Ask OTTO — your built-in assistant</span><span class="es">10. Pregúntele a OTTO — su asistente integrado</span></h2>
+    <h2><span class="en">11. Ask OTTO — your built-in assistant</span><span class="es">10. Pregúntele a OTTO — su asistente integrado</span></h2>
     <span class="who all"><span class="en">Everyone</span><span class="es">Todos</span></span>
     <p><span class="en">Ask OTTO is a chat inside the app that answers from YOUR company's information: jobs, customers, notes, invoices, emails, payroll, and manuals. Ask in English or Spanish, typing or speaking (tap the microphone).</span>
     <span class="es">Pregúntele a OTTO es un chat dentro de la aplicación que responde con la información de SU empresa: trabajos, clientes, notas, facturas, correos, nómina y manuales. Pregunte en inglés o español, escribiendo o hablando (toque el micrófono).</span></p>
@@ -275,7 +327,7 @@ th{color:var(--text2);font-size:14px;text-transform:uppercase;letter-spacing:0.0
   </section>
 
   <section id="help">
-    <h2><span class="en">11. If something goes wrong</span><span class="es">11. Si algo sale mal</span></h2>
+    <h2><span class="en">12. If something goes wrong</span><span class="es">11. Si algo sale mal</span></h2>
     <span class="who all"><span class="en">Everyone</span><span class="es">Todos</span></span>
     <table>
       <tr><th><span class="en">Problem</span><span class="es">Problema</span></th><th><span class="en">What to do</span><span class="es">Qué hacer</span></th></tr>
