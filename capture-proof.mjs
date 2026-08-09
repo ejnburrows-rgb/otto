@@ -1,4 +1,5 @@
 import { chromium } from 'playwright';
+import chromiumLambda from '@sparticuz/chromium';
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -23,7 +24,12 @@ const server = http.createServer((req, res) => {
 });
 await new Promise((resolve, reject) => { server.once('error', reject); server.listen(port, '127.0.0.1', resolve); });
 
-const browser = await chromium.launch({ headless: true, args: ['--no-sandbox'] });
+const executablePath = await chromiumLambda.executablePath();
+const browser = await chromium.launch({
+  headless: true,
+  executablePath,
+  args: [...chromiumLambda.args, '--no-sandbox', '--disable-dev-shm-usage']
+});
 const errors = [];
 
 async function signInAndCapture({ id, name, slug, lang, dark }) {
@@ -61,7 +67,6 @@ async function signInAndCapture({ id, name, slug, lang, dark }) {
   await page.waitForTimeout(700);
 
   const state = await page.evaluate(() => ({
-    session: window.__db ? { route: window.location.hash, title: document.title } : null,
     homePanels: [...document.querySelectorAll('.home-panel')].map(x => x.querySelector('.home-panel-title')?.textContent?.trim()),
     wallpaperUser: document.getElementById('wallpaper-bg')?.getAttribute('data-user') || null,
     theme: document.documentElement.getAttribute('data-theme') || 'light',
