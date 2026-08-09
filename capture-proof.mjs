@@ -32,31 +32,26 @@ const browser = await chromium.launch({
 });
 const errors = [];
 
-async function signInAndCapture({ id, name, slug, lang, dark }) {
+async function openIdentityAndCapture({ id, name, slug, lang, dark }) {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
   const page = await ctx.newPage();
   page.on('pageerror', err => errors.push(`${slug}: ${err.message}`));
-  const code = String(Math.floor(Math.random() * 9000) + 1000);
 
   await page.goto(`http://127.0.0.1:${port}/index.html?demo=1`, { waitUntil: 'networkidle', timeout: 60000 });
-  await page.waitForFunction(() => typeof window.__db === 'function' && typeof window.__save === 'function', null, { timeout: 15000 });
-  await page.evaluate(({ userId, pin }) => {
+  await page.waitForFunction(() => typeof window.__db === 'function', null, { timeout: 15000 });
+
+  // This is an isolated visual harness, not a sign-in bypass shipped to users.
+  // It selects an already seeded role in an ephemeral browser profile so the
+  // requested per-user home can be rendered without storing or inventing a PIN.
+  await page.evaluate((userId) => {
     const u = window.__db().users.find(x => x.id === userId);
     if (!u) throw new Error(`user ${userId} missing`);
-    delete u.pinHash; delete u.pinSalt; delete u.mfaPin; delete u.mfaHash; delete u.mfaSalt;
-    u.pin = pin;
-    window.__save();
-  }, { userId: id, pin: code });
-
-  await page.reload({ waitUntil: 'networkidle', timeout: 60000 });
-  await page.waitForTimeout(700);
-  const row = page.locator('.list-item').filter({ hasText: name }).first();
-  if (!(await row.count())) throw new Error(`${name} sign-in row missing`);
-  await row.click();
-  for (const digit of code) {
-    await page.locator('.pinpad button').filter({ hasText: new RegExp(`^${digit}$`) }).first().click();
-  }
+    session = u;
+    startApp();
+    nav('home');
+  }, id);
   await page.waitForSelector('#app:not(.hidden)', { timeout: 15000 });
+  await page.waitForSelector('.home-panels', { timeout: 15000 });
   await page.waitForTimeout(1800);
 
   if (lang === 'es') await page.evaluate(() => setLang('es'));
@@ -67,12 +62,14 @@ async function signInAndCapture({ id, name, slug, lang, dark }) {
   await page.waitForTimeout(700);
 
   const state = await page.evaluate(() => ({
+    displayedName: document.querySelector('.wallpaper-home-header .greet')?.textContent?.trim() || '',
     homePanels: [...document.querySelectorAll('.home-panel')].map(x => x.querySelector('.home-panel-title')?.textContent?.trim()),
     wallpaperUser: document.getElementById('wallpaper-bg')?.getAttribute('data-user') || null,
     theme: document.documentElement.getAttribute('data-theme') || 'light',
     lang: document.documentElement.lang,
-    bottomNavVisible: !!document.querySelector('#bottomnav:not(.admin-nav-hidden)') && getComputedStyle(document.querySelector('#bottomnav')).display !== 'none'
+    bottomNavVisible: (() => { const el = document.querySelector('#bottomnav'); return !!el && getComputedStyle(el).display !== 'none'; })()
   }));
+  if (!state.displayedName.includes(name)) throw new Error(`${name} identity mismatch: ${JSON.stringify(state)}`);
   if (state.homePanels.length !== 4) throw new Error(`${name} did not render four home panels: ${JSON.stringify(state)}`);
   if (state.wallpaperUser !== id) throw new Error(`${name} wallpaper mapping mismatch: ${JSON.stringify(state)}`);
   if (state.bottomNavVisible) throw new Error(`${name} legacy bottom nav is still visible`);
@@ -93,8 +90,8 @@ async function signInAndCapture({ id, name, slug, lang, dark }) {
 }
 
 try {
-  await signInAndCapture({ id: 'owner-2', name: 'Julio Pablo', slug: 'julio', lang: 'en', dark: false });
-  await signInAndCapture({ id: 'ops-1', name: 'Sarays', slug: 'sarays', lang: 'es', dark: true });
+  await openIdentityAndCapture({ id: 'owner-2', name: 'Julio Pablo', slug: 'julio', lang: 'en', dark: false });
+  await openIdentityAndCapture({ id: 'ops-1', name: 'Sarays', slug: 'sarays', lang: 'es', dark: true });
   if (errors.length) throw new Error(`browser errors: ${errors.join(' | ')}`);
   console.log('VISUAL PROOF COMPLETE');
 } finally {
