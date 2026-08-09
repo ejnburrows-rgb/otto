@@ -1,0 +1,323 @@
+/* OTTO CRM — minimal wallpaper-first home.
+   Loaded by the build patch; the public plumbing site is intentionally untouched. */
+
+body.theme-app {
+  background: transparent;
+  color: var(--text);
+  font-family: 'Hanken Grotesk', Inter, system-ui, sans-serif;
+  --glass-bg: rgba(255, 255, 255, 0.90);
+  --glass-border: rgba(203, 213, 225, 0.94);
+}
+
+[data-theme="dark"] body.theme-app {
+  --glass-bg: rgba(11, 19, 38, 0.90);
+  --glass-border: rgba(67, 70, 85, 0.94);
+}
+
+#app {
+  position: relative;
+  min-height: 100dvh;
+}
+
+.wallpaper-container {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+#main {
+  position: relative;
+  z-index: 1;
+}
+
+body.admin-home .wrap {
+  max-width: 980px;
+  min-height: calc(100dvh - 64px);
+  padding-bottom: 28px;
+}
+
+body.admin-home .fab,
+.bottomnav.home-minimal {
+  display: none !important;
+}
+
+.wallpaper-home-shell {
+  min-height: calc(100dvh - 124px);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 14px;
+}
+
+.wallpaper-home-header {
+  align-self: flex-start;
+  max-width: min(92vw, 420px);
+  padding: 10px 12px;
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.wallpaper-home-header .greet,
+.wallpaper-home-header .muted {
+  color: var(--text);
+}
+
+.wallpaper-home-header .muted {
+  opacity: 0.72;
+}
+
+.home-panels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: auto;
+  align-items: stretch;
+}
+
+.home-panel {
+  position: relative;
+  min-width: 0;
+  min-height: 132px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  background: var(--glass-bg);
+  color: var(--text);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.10);
+  transition: min-height 180ms ease, transform 180ms ease, opacity 180ms ease;
+}
+
+[data-theme="dark"] .home-panel {
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28);
+}
+
+.home-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.home-panel-icon {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--action);
+  color: #fff;
+  font-size: 15px;
+}
+
+.home-panel-title {
+  flex: 1;
+  min-width: 0;
+  font-weight: 750;
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.home-panel-count {
+  flex: 0 0 auto;
+  min-width: 28px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--action);
+  color: #fff;
+  text-align: center;
+  font: 700 11px/1.4 'JetBrains Mono', monospace;
+}
+
+.home-panel-preview,
+.home-panel-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.home-panel-item {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 9px;
+  border: 1px solid color-mix(in srgb, var(--glass-border) 72%, transparent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--card) 68%, transparent);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.home-panel-item i {
+  width: 16px;
+  flex: 0 0 auto;
+  color: var(--accent);
+  text-align: center;
+}
+
+.home-panel-item-main {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-panel-item-meta {
+  flex: 0 0 auto;
+  color: var(--text2);
+  font-size: 11px;
+}
+
+.home-panel-empty {
+  padding: 12px 4px;
+  color: var(--text2);
+  font-size: 13px;
+}
+
+.panel-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: auto;
+}
+
+.panel-state-btn,
+.panel-primary {
+  min-height: 40px;
+  border: 1px solid var(--glass-border);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--card) 72%, transparent);
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 680;
+  cursor: pointer;
+}
+
+.panel-state-btn:hover,
+.panel-primary:hover {
+  border-color: var(--accent);
+}
+
+.panel-primary {
+  width: 100%;
+  background: var(--action);
+  border-color: var(--action);
+  color: #fff;
+}
+
+.home-panel[data-state="collapsed"] {
+  min-height: 60px;
+  padding: 10px 12px;
+}
+
+.home-panel[data-state="collapsed"] .home-panel-preview,
+.home-panel[data-state="collapsed"] .home-panel-detail,
+.home-panel[data-state="collapsed"] .panel-primary {
+  display: none;
+}
+
+.home-panel[data-state="compact"] .home-panel-detail {
+  display: none;
+}
+
+.home-panel[data-state="expanded"] {
+  grid-column: 1 / -1;
+  min-height: 330px;
+}
+
+.home-panel[data-state="fullscreen"] {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  min-height: 100dvh;
+  margin: 0;
+  padding: max(18px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+  border: 0;
+  border-radius: 0;
+  overflow-y: auto;
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+body.panel-fullscreen-open {
+  overflow: hidden;
+}
+
+body.panel-fullscreen-open .topbar,
+body.panel-fullscreen-open .bottomnav,
+body.panel-fullscreen-open .fab {
+  visibility: hidden;
+}
+
+.attention-strip {
+  margin: 0 0 14px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--card);
+}
+
+.attention-strip-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-weight: 750;
+}
+
+.attention-strip .attention-item {
+  width: 100%;
+  min-height: 44px;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+@media (max-width: 700px) {
+  body.admin-home .wrap {
+    padding: 14px 12px 22px;
+  }
+
+  .wallpaper-home-shell {
+    min-height: calc(100dvh - 96px);
+  }
+
+  .home-panels {
+    grid-template-columns: 1fr;
+  }
+
+  .home-panel {
+    min-height: 120px;
+  }
+
+  .panel-state-btn {
+    flex: 1 1 calc(50% - 6px);
+  }
+}
