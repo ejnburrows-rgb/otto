@@ -30,16 +30,15 @@ const browser = await chromium.launch({
   executablePath,
   args: [...chromiumLambda.args, '--no-sandbox', '--disable-dev-shm-usage']
 });
+const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+const page = await ctx.newPage();
 const errors = [];
+page.on('pageerror', err => errors.push(err.message));
+
+await page.goto(`http://127.0.0.1:${port}/index.html?demo=1`, { waitUntil: 'networkidle', timeout: 60000 });
+await page.waitForFunction(() => typeof window.__db === 'function', null, { timeout: 15000 });
 
 async function openIdentityAndCapture({ id, name, slug, lang, dark }) {
-  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
-  const page = await ctx.newPage();
-  page.on('pageerror', err => errors.push(`${slug}: ${err.message}`));
-
-  await page.goto(`http://127.0.0.1:${port}/index.html?demo=1`, { waitUntil: 'networkidle', timeout: 60000 });
-  await page.waitForFunction(() => typeof window.__db === 'function', null, { timeout: 15000 });
-
   // This is an isolated visual harness, not a sign-in bypass shipped to users.
   // It selects an already seeded role in an ephemeral browser profile so the
   // requested per-user home can be rendered without storing or inventing a PIN.
@@ -52,14 +51,12 @@ async function openIdentityAndCapture({ id, name, slug, lang, dark }) {
   }, id);
   await page.waitForSelector('#app:not(.hidden)', { timeout: 15000 });
   await page.waitForSelector('.home-panels', { timeout: 15000 });
-  await page.waitForTimeout(1800);
+  await page.waitForTimeout(900);
 
-  if (lang === 'es') await page.evaluate(() => setLang('es'));
-  if (dark) {
-    const isDark = await page.evaluate(() => document.documentElement.getAttribute('data-theme') === 'dark');
-    if (!isDark) await page.evaluate(() => toggleTheme());
-  }
-  await page.waitForTimeout(700);
+  await page.evaluate((wantedLang) => setLang(wantedLang), lang);
+  const isDark = await page.evaluate(() => document.documentElement.getAttribute('data-theme') === 'dark');
+  if (isDark !== dark) await page.evaluate(() => toggleTheme());
+  await page.waitForTimeout(500);
 
   const state = await page.evaluate(() => ({
     displayedName: document.querySelector('.wallpaper-home-header .greet')?.textContent?.trim() || '',
@@ -76,7 +73,7 @@ async function openIdentityAndCapture({ id, name, slug, lang, dark }) {
 
   async function shot(label, width, height) {
     await page.setViewportSize({ width, height });
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(350);
     const buffer = await page.screenshot({ type: 'jpeg', quality: 52, fullPage: false });
     fs.writeFileSync(`proof-${slug}-${label}.b64`, buffer.toString('base64'));
     fs.writeFileSync(`proof-${slug}-${label}.jpg`, buffer);
@@ -86,7 +83,7 @@ async function openIdentityAndCapture({ id, name, slug, lang, dark }) {
   await shot('mobile', 390, 844);
   await shot('desktop', 1280, 800);
   fs.writeFileSync(`proof-${slug}-state.json`, JSON.stringify(state, null, 2));
-  await ctx.close();
+  await page.setViewportSize({ width: 390, height: 844 });
 }
 
 try {
@@ -95,6 +92,7 @@ try {
   if (errors.length) throw new Error(`browser errors: ${errors.join(' | ')}`);
   console.log('VISUAL PROOF COMPLETE');
 } finally {
-  await browser.close();
+  await ctx.close().catch(() => {});
+  await browser.close().catch(() => {});
   await new Promise(resolve => server.close(resolve));
 }
