@@ -17,7 +17,7 @@
 //                                  → { ok: true, path: '<storage path>' }
 //   DELETE /api/photos?fileId=<id>  → { ok: true }
 
-import { hasServerAuth, denyUnauthenticated } from './_lib/serverAuth.js';
+import { requireCaller } from './_lib/serverAuth.js';
 
 const BUCKET = 'job-photos';
 
@@ -25,7 +25,9 @@ const BUCKET = 'job-photos';
 // request is refused before it can reach Supabase Storage. See
 // api/_lib/serverAuth.js.
 export default async function handler(req, res) {
-  if (!hasServerAuth(req)) { denyUnauthenticated(res); return; }
+  // Crew take the photos; office and owner review them.
+  const caller = await requireCaller(req, res, ['owner', 'office', 'field']);
+  if (!caller) return;
   return photosHandler(req, res);
 }
 

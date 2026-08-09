@@ -83,23 +83,24 @@ async function runTests() {
     check('POST status returns 200', res.statusCode, 200);
     check('POST status returns configured: true', res.jsonData.configured, true);
 
-    // Test 6: POST sync is refused before it can reach QuickBooks — no real
-    // server-side sign-in exists yet, so the gate denies every sync call
-    // regardless of configuration or refresh token.
+    // Test 6: POST sync is refused before it can reach QuickBooks unless the
+    // caller is a signed-in owner or office manager. Accounting is not the
+    // field crew's business, and a refresh token being present does not make
+    // an anonymous caller welcome.
     ({ req, res } = createMocks('POST', {}, { action: 'sync', records: [{ id: 1 }] }));
     await handler(req, res);
     check('POST sync without auth returns 403', res.statusCode, 403);
-    check('POST sync without auth gives server_auth_not_configured error', res.jsonData.error, 'server_auth_not_configured');
+    check('POST sync without auth gives not_authorized error', res.jsonData.error, 'not_authorized');
     check('POST sync without auth reveals no records', res.jsonData.synced, undefined);
 
     process.env.QB_REFRESH_TOKEN = 'token123';
     ({ req, res } = createMocks('POST', {}, { action: 'sync', records: [{ id: 1 }, { id: 2 }] }));
     await handler(req, res);
     check('POST sync with token is still refused (no server auth)', res.statusCode, 403);
-    check('POST sync with token still gives server_auth_not_configured error', res.jsonData.error, 'server_auth_not_configured');
+    check('POST sync with token still gives not_authorized error', res.jsonData.error, 'not_authorized');
 
-    // Test 7: the real sync logic (runSync) stays covered directly, since the
-    // handler's gate makes it unreachable through a live request today.
+    // Test 7: the real sync logic (runSync) stays covered directly. Role
+    // enforcement on the handler is proven in scripts/test-server-auth.mjs.
     delete process.env.QB_REFRESH_TOKEN;
     let result = runSync(true, { records: [{ id: 1 }] });
     check('runSync without token returns 503', result.status, 503);

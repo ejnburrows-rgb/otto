@@ -2,13 +2,15 @@
 // Env: TWILIO_SID, TWILIO_AUTH, TWILIO_FROM, SENDGRID_API_KEY (or SMTP_* later).
 // POST { channel: 'sms'|'email', to, subject?, body, trigger?, customerId?, jobId? }
 
-import { hasServerAuth, denyUnauthenticated } from './_lib/serverAuth.js';
+import { requireCaller } from './_lib/serverAuth.js';
 
 // Fail-closed gate first: no real server-side sign-in exists yet, so every
 // request is refused before it can reach Twilio/SendGrid, and no destination
 // or message content is ever echoed back. See api/_lib/serverAuth.js.
 export default async function handler(req, res) {
-  if (!hasServerAuth(req)) { denyUnauthenticated(res); return; }
+  // Only the office may send a message to a customer.
+  const caller = await requireCaller(req, res, ['owner', 'office']);
+  if (!caller) return;
   return notifyHandler(req, res);
 }
 

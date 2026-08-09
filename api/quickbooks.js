@@ -6,7 +6,7 @@
 // fail-closed until real server-side sign-in exists (see api/_lib/serverAuth.js).
 // status/auth_url only report non-sensitive configuration state and stay open.
 
-import { hasServerAuth, denyUnauthenticated } from './_lib/serverAuth.js';
+import { requireCaller } from './_lib/serverAuth.js';
 
 const QB_AUTH = 'https://appcenter.intuit.com/connect/oauth2';
 const QB_TOKEN = 'https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer';
@@ -47,7 +47,9 @@ export default async function handler(req, res) {
   }
 
   if (action === 'sync') {
-    if (!hasServerAuth(req)) { denyUnauthenticated(res); return; }
+    // Accounting is the office's business, not the field's.
+    const caller = await requireCaller(req, res, ['owner', 'office']);
+    if (!caller) return;
     const { status, body: out } = runSync(configured, body);
     return res.status(status).json(out);
   }

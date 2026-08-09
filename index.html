@@ -832,16 +832,119 @@
   const todayISO = () => new Date().toISOString().slice(0, 10);
   const nowISO = () => new Date().toISOString();
   
-  /* Single place every /api/ call goes through, so when real server-side
-     sign-in ships there is exactly one function to add the credential to.
-     It attaches nothing today: the server gate refuses every request by
-     design (api/_lib/serverAuth.js), and the session token it briefly sent
-     came from a sign-in route that handed out owner sessions to anyone.
-     Any stale token from that period is cleared here rather than left to
-     sit in the browser. */
-  try { localStorage.removeItem('otto_jwt'); } catch (e) { }
+  /* ---------- Supabase session ----------------------------------------------
+     How somebody gets in: an owner taps "Send sign-in link" next to a person on
+     the Team screen and shares the link over WhatsApp. The worker opens it on
+     their phone, picks a 4-digit PIN, and is in. They never see an email or a
+     password. From then on the phone holds a Supabase refresh token and the PIN
+     is a local quick-unlock, exactly as it has always been.
+
+     The key below is the *publishable* key. It is designed to sit in a page —
+     row-level security denies it everything, and no customer data is ever read
+     with it. Real data goes through /api/data, which uses a secret key that
+     exists only in Vercel's settings. The Firebase key that leaked in this
+     project's history was the opposite: a key that could read the whole
+     database, published in the page.
+
+     We hold tokens; we never mint or verify them. That is Supabase's job, and
+     hand-rolling it is what caused the 2026-07-31 bypass. */
+  const SUPABASE = {
+    url: 'https://huaehartegjbihyygqgb.supabase.co',
+    key: 'sb_publishable_xOJK14-CGJWKdy7W_bulEQ_hciST-Bb',
+  };
+  const SB_STORE = 'otto_sb';
+
+  try { localStorage.removeItem('otto_jwt'); } catch (e) { }   // stale token from the bypass
+
+  function sbStored() {
+    try { return JSON.parse(localStorage.getItem(SB_STORE) || 'null'); } catch (e) { return null; }
+  }
+  function sbStore(tokens) {
+    if (!tokens) { localStorage.removeItem(SB_STORE); return; }
+    localStorage.setItem(SB_STORE, JSON.stringify({
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+      // A minute of slack so a request never leaves with a token about to die.
+      expires_at: Date.now() + (Number(tokens.expires_in || 3600) - 60) * 1000,
+    }));
+  }
+  let _refreshing = null;
+  async function sbRefresh() {
+    const cur = sbStored();
+    if (!cur || !cur.refresh_token) return null;
+    if (_refreshing) return _refreshing;                 // one refresh at a time
+    _refreshing = (async () => {
+      try {
+        const r = await fetch(`${SUPABASE.url}/auth/v1/token?grant_type=refresh_token`, {
+          method: 'POST',
+          headers: { apikey: SUPABASE.key, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh_token: cur.refresh_token }),
+        });
+        if (!r.ok) { sbStore(null); return null; }       // revoked or expired
+        const tok = await r.json();
+        sbStore(tok);
+        return tok.access_token;
+      } catch (e) {
+        return null;                                     // offline: keep what we have
+      } finally { _refreshing = null; }
+    })();
+    return _refreshing;
+  }
+  /** A usable access token, or null. Never throws — offline is normal here. */
+  async function sbToken() {
+    const cur = sbStored();
+    if (!cur) return null;
+    if (cur.expires_at && cur.expires_at > Date.now()) return cur.access_token;
+    return await sbRefresh();
+  }
+  function sbSignedIn() { return !!sbStored(); }
+
+  /* Single place every /api/ call goes through, which is why the credential
+     only has to be added here. A 401/403 gets one retry with a fresh token
+     before giving up, so a session that expired while the phone was in a
+     pocket recovers without the user noticing. */
   async function serverFetch(url, options = {}) {
-    return fetch(url, options);
+    const send = async (token) => {
+      const headers = { ...(options.headers || {}) };
+      if (token) headers.Authorization = `Bearer ${token}`;
+      return fetch(url, { ...options, headers });
+    };
+    let res = await send(await sbToken());
+    if (res && (res.status === 401 || res.status === 403)) {
+      const fresh = await sbRefresh();
+      if (fresh) res = await send(fresh);
+    }
+    return res;
+  }
+
+  /* The link the owner sent arrives as #access_token=...&refresh_token=...
+     Capture it, then scrub it out of the address bar so it is not left in
+     history or shoulder-surfed. Returns true if this load was a sign-in link. */
+  function sbCaptureLinkTokens() {
+    const hash = String(location.hash || '').replace(/^#/, '');
+    if (!hash.includes('access_token=')) return false;
+    const p = new URLSearchParams(hash);
+    const access_token = p.get('access_token'), refresh_token = p.get('refresh_token');
+    if (!access_token || !refresh_token) return false;
+    sbStore({ access_token, refresh_token, expires_in: p.get('expires_in') || 3600 });
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { }
+    return true;
+  }
+  /** Who does this session belong to? Asked of Supabase, not of the page. */
+  async function sbWhoAmI() {
+    const token = await sbToken();
+    if (!token) return null;
+    try {
+      const r = await fetch(`${SUPABASE.url}/auth/v1/user`, {
+        headers: { apikey: SUPABASE.key, Authorization: `Bearer ${token}` },
+      });
+      if (!r.ok) return null;
+      const u = await r.json();
+      // field-3@otto.local -> field-3. The address is an internal identifier
+      // that nothing is ever sent to; it exists so Supabase has a key.
+      const local = String(u.email || '').split('@')[0];
+      return local ? { uid: u.id, userId: local } : null;
+    } catch (e) { return null; }
   }
   /* `numberToWords()` used to sit here, unused and unusable: it declared
      `const dollars` and then reassigned it, so any amount of $1,000 or more
@@ -899,6 +1002,13 @@
       createEstimate: 'Create estimate from this', aiNotReady: 'AI is not set up yet — the file was saved. You can type the estimate.',
       couldntRead: "Couldn't read much from this file — you can still type the estimate below.",
       showInLang: 'Show in this language', drawingHint: 'Upload a drawing or PDF and I will read it and draft a materials list.',
+      photoNotSentYet: 'A photo has not reached the office yet. It is safe on this phone and will keep trying.',
+      pickYourPin: 'Choose a 4-digit code you will use to open OTTO',
+      sendSignInLink: 'Send sign-in link',
+      sendSignInLinkHint: 'Share this over WhatsApp. They tap it, choose a PIN, and they are in. It works once.',
+      shareWhatsApp: 'Share on WhatsApp', link: 'Link', copy: 'Copy', copied: 'Copied',
+      linkFailed: 'Could not make a link. Check your connection and try again.',
+      linkExpired: 'That link has already been used or has expired. Ask for a new one.',
       emails: 'Email log', inbox: 'Inbox', payroll: 'Payroll', addEmail: 'Add email', importEmail: 'Import email file',
       all: 'All', escalations: 'Escalations', approvalHistory: 'Approval history',
       from: 'From', subject: 'Subject', message: 'Message', attachments: 'Attachments', matchedTo: 'Matched to',
@@ -983,6 +1093,13 @@
       createEstimate: 'Crear presupuesto con esto', aiNotReady: 'La IA aún no está configurada — el archivo se guardó. Puedes escribir el estimado.',
       couldntRead: 'No se pudo leer mucho de este archivo — puedes escribir el estimado abajo.',
       showInLang: 'Mostrar en este idioma', drawingHint: 'Sube un plano o PDF y lo leeré para hacer una lista de materiales.',
+      photoNotSentYet: 'Una foto todavía no llegó a la oficina. Está guardada en este teléfono y se seguirá intentando.',
+      pickYourPin: 'Elija un código de 4 dígitos para abrir OTTO',
+      sendSignInLink: 'Enviar enlace de acceso',
+      sendSignInLinkHint: 'Compártalo por WhatsApp. Lo tocan, eligen un PIN y ya están dentro. Sirve una sola vez.',
+      shareWhatsApp: 'Compartir por WhatsApp', link: 'Enlace', copy: 'Copiar', copied: 'Copiado',
+      linkFailed: 'No se pudo crear el enlace. Revise su conexión e inténtelo de nuevo.',
+      linkExpired: 'Ese enlace ya se usó o venció. Pida uno nuevo.',
       emails: 'Registro de correos', inbox: 'Bandeja', payroll: 'Nómina', addEmail: 'Agregar correo', importEmail: 'Importar archivo de correo',
       all: 'Todos', approvalHistory: 'Historial de aprobaciones',
       from: 'De', subject: 'Asunto', message: 'Mensaje', attachments: 'Adjuntos', matchedTo: 'Vinculado a',
@@ -1356,6 +1473,8 @@
         });
         if (r.ok) {
           await idbDel('photo_upload_queue', fileId);
+          const rec = (db.photos || []).find((p) => p.fileId === fileId);
+          if (rec && rec.uploadPending) { delete rec.uploadPending; rec.updated = nowISO(); save(); }
         } else {
           await _bumpPhotoRetry(fileId, entry);
         }
@@ -1365,13 +1484,24 @@
     }
   }
 
+  /* WHAT THIS USED TO DO, and why it was dangerous: after 20 failed attempts
+     (~10 minutes) it deleted the queue entry and said nothing. The photo went on
+     displaying from local storage, so a crew member had every reason to believe
+     it was filed with the job — while nothing had left the phone, and nothing
+     ever would. A photo of a burst pipe that only exists on one phone is the
+     evidence for an invoice that nobody else can see.
+
+     It now keeps trying — a van is out of signal for hours, not minutes — and
+     after enough failures it marks the photo so the app can say plainly that it
+     has not been sent yet. Nothing is ever silently dropped. */
+  const PHOTO_RETRY_WARN_AFTER = 20;
   async function _bumpPhotoRetry(fileId, entry) {
-    // Give up after 20 attempts (~10 min). Leave the blob so it is still
-    // visible locally; remove from queue to stop retrying.
-    if (entry.retries >= 20) {
-      await idbDel('photo_upload_queue', fileId);
-    } else {
-      await idbPut('photo_upload_queue', fileId, { ...entry, retries: entry.retries + 1 });
+    const retries = (entry.retries || 0) + 1;
+    await idbPut('photo_upload_queue', fileId, { ...entry, retries, lastTry: nowISO() });
+    if (retries === PHOTO_RETRY_WARN_AFTER) {
+      const rec = (db.photos || []).find((p) => p.fileId === fileId);
+      if (rec) { rec.uploadPending = true; rec.updated = nowISO(); save(); }
+      toast(t('photoNotSentYet'), 'error');
     }
   }
 
@@ -1944,8 +2074,50 @@
     }
     draw();
   }
+  /* What a worker sees after tapping the link their manager sent. They are
+     already signed in at this point — this only sets the 4-digit code they will
+     use to unlock the phone from tomorrow on. No email, no password, and no way
+     to reach this screen without a valid one-time link. */
+  function showSetPinForLink(person) {
+    $('#app').classList.add('hidden');
+    const lg = $('#login'); lg.classList.remove('hidden');
+    let code = '';
+    const draw = () => {
+      lg.innerHTML = `
+        <div style="text-align:center;margin-bottom:20px;">
+          <img src="./logo.jpg" alt="OTTO Plumbing" style="width:150px;border-radius:12px" />
+        </div>
+        <h1>${esc(person.name || '')}</h1>
+        <p>${esc(t('pickYourPin'))}</p>
+        <div class="card-login">
+          <div class="pindots">${[0,1,2,3].map(i => `<span class="${i < code.length ? 'f' : ''}"></span>`).join('')}</div>
+          <div class="pinpad">${[1,2,3,4,5,6,7,8,9].map(n => `<button onclick="window.__newPin('${n}')">${n}</button>`).join('')}
+            <button aria-hidden="true" disabled style="visibility:hidden"></button>
+            <button onclick="window.__newPin('0')">0</button>
+            <button aria-label="${esc(t('delete'))}" onclick="window.__newPinDel()"><i class="fas fa-delete-left"></i></button></div>
+        </div>`;
+    };
+    window.__newPinDel = () => { code = code.slice(0, -1); draw(); };
+    window.__newPin = async (n) => {
+      code += n; draw();
+      if (code.length < 4) return;
+      const chosen = code; code = '';
+      await setUserPin(person, chosen);
+      clearFailedPins(person.id);
+      person.updated = nowISO();
+      save();
+      toast(t('codeSaved'), 'success');
+      finishLogin(person, chosen);
+    };
+    draw();
+  }
+
   function signOut() { 
-    session = null; localStorage.removeItem('otto_session'); 
+    session = null; localStorage.removeItem('otto_session');
+    // End the server session as well. Leaving the refresh token behind would
+    // mean "signed out" only hid the screen while the phone could still read
+    // and write company data.
+    sbStore(null);
     const f = document.getElementById('ai-float-btn'); if (f) f.remove();
     const p = document.getElementById('ai-chat-popup'); if (p) p.remove();
     showLogin(); 
@@ -3025,8 +3197,46 @@
       <div class="row2"><div class="field"><label for="u-pin">${id ? (lang === 'es' ? 'Nuevo PIN (opcional)' : 'Set a new PIN (optional)') : 'PIN'}</label><input id="u-pin" type="password" inputmode="numeric" maxlength="4" value="" placeholder="${id ? (lang === 'es' ? 'Dejar vacío para no cambiar' : 'Leave empty to keep current') : '••••'}"></div>
       <div class="field"><label for="u-lang">${lang === 'es' ? 'Idioma' : 'Language'}</label><select id="u-lang"><option value="en" ${u.lang === 'en' ? 'selected' : ''}>English</option><option value="es" ${u.lang === 'es' ? 'selected' : ''}>Español</option></select></div></div>
       <button class="btn block" onclick="saveUser('${id || ''}')"><i class="fas fa-check"></i> ${t('save')}</button>
+      ${id && can('team') ? `<button class="btn ghost block" style="margin-top:10px" onclick="sendSignInLink('${id}')"><i class="fab fa-whatsapp"></i> ${t('sendSignInLink')}</button>` : ''}
       ${id && db.users.length > 1 ? `<button class="btn red block" style="margin-top:10px" onclick="confirmDel(()=>{remove('users','${id}');closeModal();render()})"><i class="fas fa-trash"></i> ${t('delete')}</button>` : ''}`);
   }
+  /* Hands the owner a one-time link to share over WhatsApp. The link is made by
+     Supabase, not here, and only an owner's own session can ask for one. */
+  async function sendSignInLink(userId) {
+    const person = get('users', userId);
+    if (!person) return;
+    toast('…');
+    try {
+      const res = await serverFetch('/api/invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, redirectTo: location.origin + location.pathname }),
+      });
+      if (!res || !res.ok) { toast(t('linkFailed'), 'error'); return; }
+      const { url, name } = await res.json();
+      const message = (lang === 'es'
+        ? `Hola ${name || ''}: abre OTTO con este enlace y elige tu PIN de 4 dígitos. El enlace sirve una sola vez.`
+        : `Hi ${name || ''} — open OTTO with this link and choose your 4-digit PIN. The link works once.`) + `\n\n${url}`;
+      closeModal();
+      modal(`<h2><i class="fab fa-whatsapp"></i> ${esc(t('sendSignInLink'))}</h2>
+        <div class="sheet-sub">${esc(t('sendSignInLinkHint'))}</div>
+        <div class="field"><label for="invite-url">${esc(t('link'))}</label>
+          <textarea id="invite-url" rows="4" readonly>${esc(message)}</textarea></div>
+        <div class="btnrow">
+          <a class="btn" href="https://wa.me/?text=${encodeURIComponent(message)}" target="_blank" rel="noopener">
+            <i class="fab fa-whatsapp"></i> ${esc(t('shareWhatsApp'))}</a>
+          <button class="btn ghost" onclick="copyInviteLink()"><i class="fas fa-copy"></i> ${esc(t('copy'))}</button>
+        </div>`);
+    } catch (e) {
+      toast(t('linkFailed'), 'error');
+    }
+  }
+  function copyInviteLink() {
+    const el = $('#invite-url'); if (!el) return;
+    el.select();
+    navigator.clipboard.writeText(el.value).then(() => toast(t('copied'), 'success'), () => toast(t('linkFailed'), 'error'));
+  }
+
   async function saveUser(id) {
     const name = $('#u-name').value.trim(); if (!name) return toast(t('name') + '?', 'error');
     const pin = $('#u-pin').value.trim();
@@ -4979,6 +5189,27 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
 
     startCloudPolling();
     startPhotoQueueDrainer();
+    /* Did this load come from a sign-in link the owner sent over WhatsApp?
+       If so the worker is now signed in on the server; all that is left is a
+       PIN so they can unlock the phone quickly tomorrow. */
+    const arrivedFromLink = sbCaptureLinkTokens();
+    if (arrivedFromLink) {
+      const who = await sbWhoAmI();
+      if (who) {
+        // Pull the company's data down before showing anything, so a new phone
+        // opens with real work on it rather than an empty app.
+        try { await cloudPull(); } catch (e) { }
+        const person = get('users', who.userId);
+        if (person) {
+          showSetPinForLink(person);
+          if ('serviceWorker' in navigator) { try { navigator.serviceWorker.register('./sw.js'); } catch (e) { } }
+          return;
+        }
+      }
+      toast(t('linkExpired'), 'error');
+      sbStore(null);
+    }
+
     const sid = localStorage.getItem('otto_session');
     if (sid) { session = get('users', sid); }
     if (session) startApp(); else showLogin();
@@ -5566,6 +5797,7 @@ Return ONLY valid JSON: { "fixtures": [], "pipes": [], "fittings": [], "notes": 
   }
 
   Object.assign(window, { __db: () => db, setSearch, saveAIKey, saveMfa, clearMfa, t, toast, closeModal, modal,
+    sendSignInLink, copyInviteLink,
     setLang, nav, signOut, deletePayment, quickAdd, openMore, get, remove, update, confirmDel, render,
     newCall, saveCall, jobFromCall, openCallView, openCustomerForm, saveCustomer, openJobForm, saveJob, changeJobStatus, setJobStatus,
     openNoteForm, saveNote, quickPhoto, chooseJob, runJobAction, uploadDoc, openDoc, quickVoiceNote, voiceInto,

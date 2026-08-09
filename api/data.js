@@ -19,7 +19,7 @@
 //   GET  /api/data                  -> returns every collection as one object
 //   POST /api/data { collection, records } -> saves records for one collection
 
-import { hasServerAuth, denyUnauthenticated } from './_lib/serverAuth.js';
+import { requireCaller } from './_lib/serverAuth.js';
 
 const COLLECTIONS = ['customers', 'jobs', 'calls', 'notes', 'photos', 'documents', 'estimates',
   'invoices', 'payments', 'checks', 'followups', 'workflows', 'sops', 'users', 'locations', 'folders',
@@ -30,16 +30,35 @@ const COLLECTIONS = ['customers', 'jobs', 'calls', 'notes', 'photos', 'documents
   'rate_cards', 'estimate_projects', 'estimate_records', 'verification_logs', 'pricing_exceptions',
   'companyProfile'];
 
-// Fail-closed gate first: no real server-side sign-in exists yet, so every
-// request is refused before it can reach Supabase. See api/_lib/serverAuth.js.
+// Collections a field worker has no business reading or writing. Wages, the
+// audit trail and the company's accounting are the office's, and the check is
+// here on the server rather than only in the app's navigation — a role hidden
+// in the interface is a suggestion, not a rule.
+const OFFICE_ONLY = new Set([
+  'payroll', 'rate_cards', 'audit_log', 'login_history', 'backups',
+  'contracts', 'proposals', 'pricing_exceptions', 'companyProfile',
+  'verification_logs', 'estimate_records', 'estimate_projects',
+]);
+
+/** What this caller may see. Owner and office see everything. */
+function collectionsFor(role) {
+  if (role === 'owner' || role === 'office') return COLLECTIONS;
+  return COLLECTIONS.filter((c) => !OFFICE_ONLY.has(c));
+}
+
 export default async function handler(req, res) {
-  if (!hasServerAuth(req)) { denyUnauthenticated(res); return; }
-  return dataHandler(req, res);
+  const caller = await requireCaller(req, res);
+  if (!caller) return;
+  return dataHandler(req, res, caller);
 }
 
 // The real proxy logic, kept separate so it stays fully covered by tests even
 // while the gate above refuses every live request.
-export async function dataHandler(req, res) {
+export async function dataHandler(req, res, caller) {
+  // Tests call this directly to exercise the proxy logic; a missing caller
+  // there means "no restriction", never "no check" — the gate above is the
+  // only way a live request reaches this function.
+  const allowed = collectionsFor(caller ? caller.role : 'owner');
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) {
@@ -57,12 +76,17 @@ export async function dataHandler(req, res) {
 
   try {
     if (req.method === 'GET') {
-      const result = await readEveryCollection(url, headers);
+      const result = await readEveryCollection(url, headers, allowed);
       res.status(200).json(result);
       return;
     }
     if (req.method === 'POST') {
-      const { status, body } = await saveOneCollection(url, headers, await parseBody(req));
+      const payload = await parseBody(req);
+      if (payload && payload.collection && !allowed.includes(payload.collection)) {
+        res.status(403).json({ error: 'not_authorized', message: 'Your account cannot change this.' });
+        return;
+      }
+      const { status, body } = await saveOneCollection(url, headers, payload);
       res.status(status).json(body);
       return;
     }
@@ -77,9 +101,9 @@ export async function dataHandler(req, res) {
 // A collection that fails comes back as null, which the app treats as "skip
 // this one" rather than "this collection is empty" — important, because
 // treating a failed read as empty would wipe good data off the device.
-async function readEveryCollection(url, headers) {
+async function readEveryCollection(url, headers, collections = COLLECTIONS) {
   const out = {};
-  await Promise.all(COLLECTIONS.map(async (col) => {
+  await Promise.all(collections.map(async (col) => {
     const r = await fetch(`${url}/rest/v1/${encodeURIComponent(col)}?select=data`, { headers });
     if (!r.ok) {
       console.warn(`read failed for ${col}: HTTP ${r.status}`);

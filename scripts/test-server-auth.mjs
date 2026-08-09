@@ -1,10 +1,17 @@
-// Regression tests for the fail-closed containment gate (api/_lib/serverAuth.js).
+// Regression tests for the sign-in gate (api/_lib/serverAuth.js).
 //
-// Proves: an unauthenticated request to every sensitive route is refused
-// with the same machine-readable error, before it ever reaches Supabase,
-// Anthropic, NVIDIA, Twilio, SendGrid, or QuickBooks — even when the
-// server-side provider keys ARE configured. No customer data, signed photo
-// URL, provider response, or notification preview is ever returned.
+// This file used to prove the gate refused EVERY request, because there was no
+// sign-in system and the routes were bolted shut. Real sign-in exists now, so
+// what has to be proven changed. What must still hold:
+//
+//   · no token, a forged token, an expired one, or one from another project
+//     -> 403, before any call to Supabase/Anthropic/NVIDIA/Twilio/SendGrid,
+//     and with no customer data, signed URL, provider reply or message
+//     preview in the response;
+//   · a valid token from somebody who is in our users table -> allowed;
+//   · role is enforced on the server, not just hidden in the app's navigation;
+//   · the gate still signs nothing, verifies nothing itself, and has no
+//     development bypass — the three things that caused the 2026-07-31 bypass.
 //
 // Run with: node scripts/test-server-auth.mjs
 
@@ -85,7 +92,7 @@ async function runTests() {
     const res = createRes();
     await handler(req, res);
     check(`${name} returns 403`, res.statusCode, 403);
-    check(`${name} returns server_auth_not_configured`, res.body && res.body.error, 'server_auth_not_configured');
+    check(`${name} returns not_authorized`, res.body && res.body.error, 'not_authorized');
     check(`${name} reveals no customer/provider data`, JSON.stringify(res.body).toLowerCase().includes('secret'), false);
     check(`${name} never calls the upstream provider`, calledUpstream, false);
   }
@@ -135,11 +142,100 @@ async function runTests() {
     const apiFiles = readdirSync(apiDir).filter((f) => f.endsWith('.js'));
     check('api/login.js no longer exists', apiFiles.includes('login.js'), false);
 
-    // hasServerAuth must be unconditional until a real provider check replaces
-    // it. If you are legitimately wiring one up, update this test deliberately.
+    // The three rules that caused the incident, pinned.
     const gate = readFileSync(new URL('_lib/serverAuth.js', apiDir), 'utf8');
-    check('the gate does not sign or verify its own tokens', /jsonwebtoken|jwt\.(sign|verify)/.test(gate), false);
-    check('the gate fails closed', /return false;/.test(gate), true);
+    check('the gate does not sign or verify its own tokens',
+      /jsonwebtoken|jwt\.(sign|verify)|createHmac/.test(gate), false);
+    check('the gate asks Supabase who the caller is',
+      /\/auth\/v1\/user/.test(gate), true);
+    check('the gate reads the role from our own table, not from the token',
+      /auth_uid=eq\./.test(gate), true);
+    // Comments stripped: this file explains the bypass it is banning, and the
+    // explanation must not be what trips the check.
+    const gateCode = gate.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+    check('the gate has no development bypass',
+      /NODE_ENV|ALLOW_INSECURE|SKIP_AUTH|bypass/i.test(gateCode), false);
+    // Misconfiguration must lock the door, never open it.
+    check('a missing service key refuses rather than allows',
+      /if \(!url \|\| !key\) return null;/.test(gateCode), true);
+  }
+
+  /* ── A caller who really is signed in gets through, and only to what their
+     role allows. Supabase is stood in for here: the point is that the gate
+     believes Supabase and nothing else. ── */
+  {
+    const asRole = (role, userId) => {
+      global.fetch = async (url) => {
+        const u = String(url);
+        if (u.includes('/auth/v1/user')) {
+          return { ok: true, json: async () => ({ id: 'uid-' + userId, email: userId + '@otto.local' }) };
+        }
+        if (u.includes('/rest/v1/users?auth_uid=eq.')) {
+          return { ok: true, json: async () => [{ id: userId, data: { name: 'Test', role } }] };
+        }
+        // Any other upstream call: record it and answer emptily.
+        calledUpstream = true;
+        return { ok: true, json: async () => [], text: async () => '' };
+      };
+      return noopReq({ method: 'GET', headers: { authorization: 'Bearer real-looking-token' } });
+    };
+
+    // An owner reaches the data route.
+    let res = createRes();
+    await dataHandler(asRole('owner', 'owner-1'), res);
+    check('a signed-in owner is allowed through to /api/data', res.statusCode, 200);
+
+    // A field worker reaches it too — they need their jobs.
+    res = createRes();
+    await dataHandler(asRole('field', 'field-3'), res);
+    check('a signed-in field worker is allowed through to /api/data', res.statusCode, 200);
+    check('a field worker is not handed payroll',
+      Object.keys(res.body || {}).includes('payroll'), false);
+    check('a field worker is still handed their jobs',
+      Object.keys(res.body || {}).includes('jobs'), true);
+
+    // ...but cannot write to a collection that is not theirs.
+    res = createRes();
+    {
+      const req = asRole('field', 'field-3');
+      req.method = 'POST';
+      req.body = { collection: 'payroll', records: [{ id: '1' }] };
+      await dataHandler(req, res);
+    }
+    check('a field worker cannot write to payroll', res.statusCode, 403);
+
+    // Routes that spend money or message customers are office-and-above.
+    res = createRes();
+    await notifyHandler(Object.assign(asRole('field', 'field-3'), { method: 'POST', body: { channel: 'sms', to: '+15551234567', body: 'secret' } }), res);
+    check('a field worker cannot send a customer notification', res.statusCode, 403);
+
+    res = createRes();
+    await nvidiaHandler(Object.assign(asRole('field', 'field-3'), { method: 'POST', body: { messages: [] } }), res);
+    check('a field worker cannot spend drawing-takeoff credit', res.statusCode, 403);
+
+    // A Supabase account with no row in our users table is nobody.
+    global.fetch = async (url) => {
+      const u = String(url);
+      if (u.includes('/auth/v1/user')) return { ok: true, json: async () => ({ id: 'uid-x', email: 'ghost@otto.local' }) };
+      if (u.includes('/rest/v1/users?auth_uid=eq.')) return { ok: true, json: async () => [] };
+      calledUpstream = true;
+      return { ok: true, json: async () => [] };
+    };
+    res = createRes();
+    await dataHandler(noopReq({ method: 'GET', headers: { authorization: 'Bearer real-looking-token' } }), res);
+    check('a Supabase account with no staff record is refused', res.statusCode, 403);
+
+    // A user whose row was soft-deleted loses access immediately.
+    global.fetch = async (url) => {
+      const u = String(url);
+      if (u.includes('/auth/v1/user')) return { ok: true, json: async () => ({ id: 'uid-y', email: 'field-9@otto.local' }) };
+      if (u.includes('/rest/v1/users?auth_uid=eq.')) return { ok: true, json: async () => [{ id: 'field-9', data: { name: 'Gone', role: 'field', deleted: true } }] };
+      calledUpstream = true;
+      return { ok: true, json: async () => [] };
+    };
+    res = createRes();
+    await dataHandler(noopReq({ method: 'GET', headers: { authorization: 'Bearer real-looking-token' } }), res);
+    check('a removed member of staff is refused', res.statusCode, 403);
   }
 
   console.log(`\n${passed} passed, ${failed} failed\n`);
