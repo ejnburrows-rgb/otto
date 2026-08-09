@@ -981,7 +981,7 @@
     <div class="card" style="width:100%;max-width:520px;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,0.6);display:flex;flex-direction:column;overflow:hidden;">
       <div style="padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;">
         <div style="display:flex;align-items:center;gap:12px;">
-          <i class="fas fa-robot" style="font-size:26px;color:var(--accent)"></i>
+          <i class="fas fa-sparkles" style="font-size:26px;color:var(--accent)"></i>
           <div>
             <h3 style="font-size:16px;font-weight:700;color:var(--text);margin:0;">PlumbBot AI Assistant</h3>
             <p style="font-size:12px;color:var(--green);font-weight:600;margin:0;"><i class="fas fa-circle" style="font-size:8px;"></i> Online · Boss-Level Intelligence</p>
@@ -2211,14 +2211,14 @@
   function renderNav() {
     const bn = $('#bottomnav');
     const items = (session.role === 'field' ? NAVBAR.field : ['home', 'jobs', 'inbox', 'more']);
-    const icons = { home: 'fa-house', jobs: 'fa-screwdriver-wrench', customers: 'fa-users', calls: 'fa-phone', inbox: 'fa-inbox', followups: 'fa-bell', assistant: 'fa-robot', more: 'fa-ellipsis' };
+    const icons = { home: 'fa-house', jobs: 'fa-screwdriver-wrench', customers: 'fa-users', calls: 'fa-phone', inbox: 'fa-inbox', followups: 'fa-bell', assistant: 'fa-sparkles', more: 'fa-ellipsis' };
     bn.innerHTML = items.map(v => `<button class="${route.view === v ? 'on' : ''}" onclick="${v === 'more' ? 'openMore()' : `nav('${v}')`}">
       <i class="fas ${icons[v]}"></i><span>${t(v)}</span></button>`).join('');
   }
   function openMore() {
     const items = ['team', 'urgent', 'alerts', 'calls', 'kpis', 'reports', 'backups', 'audit', 'assistant', 'settings']
       .filter(v => can(v));
-    const icons = { team: 'fa-user-gear', urgent: 'fa-bolt', alerts: 'fa-triangle-exclamation', calls: 'fa-phone', kpis: 'fa-chart-pie', reports: 'fa-chart-line', backups: 'fa-database', audit: 'fa-clipboard-list', assistant: 'fa-robot', settings: 'fa-gear' };
+    const icons = { team: 'fa-user-gear', urgent: 'fa-bolt', alerts: 'fa-triangle-exclamation', calls: 'fa-phone', kpis: 'fa-chart-pie', reports: 'fa-chart-line', backups: 'fa-database', audit: 'fa-clipboard-list', assistant: 'fa-sparkles', settings: 'fa-gear' };
     modal(`<h2>${t('more')}</h2><div class="card" style="margin-top:12px">
       ${items.map(v => `<div class="list-item" onclick="closeModal();nav('${v}')"><div class="avatar" style="background:${colorFor(v)}"><i class="fas ${icons[v]}"></i></div><div class="li-main"><div class="li-title">${t(v)}</div></div><i class="fas fa-chevron-right chev"></i></div>`).join('')}
     </div>`);
@@ -2339,7 +2339,7 @@
       const tiles = [
         { icon: 'fa-camera', color: 'var(--green-fill)', lbl: t('addPhoto'), action: 'quickPhoto()' },
         { icon: 'fa-location-dot', color: 'var(--accent-fill)', lbl: t('clockIn'), action: 'shareLocation()' },
-        { icon: 'fa-robot', color: 'var(--accent-fill)', lbl: t('ask'), action: "nav('assistant')" }
+        { icon: 'fa-sparkles', color: 'var(--accent-fill)', lbl: t('ask'), action: "nav('assistant')" }
       ];
       html += `<div class="tiles" style="margin-top:20px">${tiles.map(x => `<div class="tile" onclick="${x.action}"><div class="ic" style="background:${x.color}"><i class="fas ${x.icon}"></i></div><div class="lbl">${esc(x.lbl)}</div></div>`).join('')}</div>`;
       $('#main').innerHTML = html;
@@ -3266,7 +3266,7 @@
       save();
     }
 
-    html += `<div class="section-title"><i class="fas fa-robot"></i> ${t('assistant')} & AI</div>
+    html += `<div class="section-title"><i class="fas fa-sparkles"></i> Ask OTTO</div>
       <div class="card" style="padding:14px">
         <div class="muted" style="margin-bottom:10px">${lang === 'es' ? 'Clave de Anthropic Claude y NVIDIA para usar el asistente y OCR.' : 'Anthropic Claude & NVIDIA keys for assistant & OCR.'}</div>
         <div class="field"><label for="set-aikey">${lang === 'es' ? 'Clave Anthropic (opcional, este dispositivo)' : 'Anthropic API Key (optional, this device)'}</label><input id="set-aikey" type="password" value="${esc(localStorage.getItem('otto_ai_key') || '')}" placeholder="sk-ant-..."></div>
@@ -3976,7 +3976,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
       <div class="btnrow" style="margin-top:10px">
         <button class="btn" onclick="relinkEmail('${id}')"><i class="fas fa-link"></i> ${t('matchCustomer')}</button>
         ${e.jobId ? `<button class="btn ghost" onclick="emailToNote('${id}')"><i class="fas fa-pen"></i> ${t('makeNote')}</button>` : ''}
-        ${!e.summary ? `<button class="btn ghost" onclick="summarizeEmail('${id}')"><i class="fas fa-robot"></i> ${t('summarize')}</button>` : ''}
+        ${!e.summary ? `<button class="btn ghost" onclick="summarizeEmail('${id}')"><i class="fas fa-sparkles"></i> ${t('summarize')}</button>` : ''}
       </div>
       <button class="btn red block" style="margin-top:10px" onclick="confirmDel(()=>{remove('emails','${id}');closeModal();render()})"><i class="fas fa-trash"></i> ${t('delete')}</button>`);
   }
@@ -4058,7 +4058,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     html += `<div class="btnrow"><button class="btn block" onclick="importPayroll()"><i class="fas fa-file-import"></i> ${t('importPayroll')}</button></div>`;
     html += `<div class="muted" style="margin:8px 0;font-size:13px"><i class="fas fa-file-excel"></i> ${t('importExcelHint')}</div>`;
     if (list.length) html += `<div class="card" style="padding:14px;margin-bottom:10px">${kv('Total Hours', '<b>' + totalHours + '</b>')}${kv(t('totalGross'), '<b>' + money(total) + '</b>')}
-      <div class="btnrow" style="margin-top:8px"><button class="btn ghost sm" onclick="exportCSV('payroll')"><i class="fas fa-file-export"></i> CSV</button><button class="btn ghost sm" onclick="summarizePayrollAll()"><i class="fas fa-robot"></i> ${t('summarize')}</button></div></div>`;
+      <div class="btnrow" style="margin-top:8px"><button class="btn ghost sm" onclick="exportCSV('payroll')"><i class="fas fa-file-export"></i> CSV</button><button class="btn ghost sm" onclick="summarizePayrollAll()"><i class="fas fa-sparkles"></i> ${t('summarize')}</button></div></div>`;
     html += `<div class="card">${list.length ? list.map(payrollRow).join('') : emptyState()}</div>`;
     $('#main').innerHTML = html; bindSearch('pay2');
   }
@@ -4174,7 +4174,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     if (chatHistory.length) {
       html += chatHistory.map((m, i) => {
         const time = m.ts ? new Date(m.ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
-        const avatar = m.role === 'bot' ? '<span class="avatar"><i class="fas fa-robot"></i></span>' : '<span class="avatar"><i class="fas fa-user"></i></span>';
+        const avatar = m.role === 'bot' ? '<span class="avatar"><i class="fas fa-sparkles"></i></span>' : '<span class="avatar"><i class="fas fa-user"></i></span>';
         let content = esc(m.text);
         if (m.src) content += `<span class="src"><i class="fas fa-link"></i> ${esc(m.src)}</span>`;
         return `<div class="bubble ${m.role} chat-message" data-idx="${i}">
@@ -4237,7 +4237,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
       const typing = document.createElement('div');
       typing.className = 'bubble bot chat-message';
       typing.id = 'typing-indicator';
-      typing.innerHTML = `<span class="avatar"><i class="fas fa-robot"></i></span><span class="typing-dots"><span></span><span></span><span></span></span> <span style="font-size:13px;color:var(--text3);margin-left:6px">${t('typing')}</span>`;
+      typing.innerHTML = `<span class="avatar"><i class="fas fa-sparkles"></i></span><span class="typing-dots"><span></span><span></span><span></span></span> <span style="font-size:13px;color:var(--text3);margin-left:6px">${t('typing')}</span>`;
       log.appendChild(typing);
       log.scrollTop = log.scrollHeight;
     }
@@ -4267,7 +4267,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     floatBtn.id = 'ai-float-btn';
     floatBtn.className = 'glass';
     floatBtn.style.cssText = `position:fixed;bottom:92px;right:22px;width:54px;height:54px;border-radius:999px;background:var(--action);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:var(--shadow2);cursor:pointer;z-index:55;transition:transform .2s cubic-bezier(0.23,1,0.32,1),box-shadow .2s;`;
-    floatBtn.innerHTML = `<i class="fas fa-robot"></i>`;
+    floatBtn.innerHTML = `<i class="fas fa-sparkles"></i>`;
     floatBtn.title = t('openAiChat');
     floatBtn.onclick = toggleFloatingChat;
     document.body.appendChild(floatBtn);
@@ -4279,7 +4279,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     popup.style.cssText = `position:fixed;bottom:18px;right:18px;width:380px;max-width:94vw;height:480px;max-height:65vh;border-radius:20px;box-shadow:var(--shadow2);display:none;flex-direction:column;overflow:hidden;z-index:120;border:1px solid var(--line);`;
     popup.innerHTML = `
       <div style="padding:12px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.03)">
-        <div style="font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px"><i class="fas fa-robot"></i> ${t('chatTitle')}</div>
+        <div style="font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px"><i class="fas fa-sparkles"></i> Ask OTTO</div>
         <div>
           <button onclick="toggleFloatingChat()" style="background:none;border:none;font-size:18px;color:var(--text2);cursor:pointer;padding:4px 8px">×</button>
         </div>
@@ -4312,7 +4312,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     const welcome = lang === 'es' ? '¡Hola! ¿En qué puedo ayudarte hoy?' : 'Hi! How can I help you today?';
     log.innerHTML = chatHistory.length ? chatHistory.map((m, i) => {
       const time = m.ts ? new Date(m.ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
-      const av = m.role === 'bot' ? '<span class="avatar" style="width:18px;height:18px;font-size:10px"><i class="fas fa-robot"></i></span>' : '<span class="avatar" style="width:18px;height:18px;font-size:10px"><i class="fas fa-user"></i></span>';
+      const av = m.role === 'bot' ? '<span class="avatar" style="width:18px;height:18px;font-size:10px"><i class="fas fa-sparkles"></i></span>' : '<span class="avatar" style="width:18px;height:18px;font-size:10px"><i class="fas fa-user"></i></span>';
       return `<div class="bubble ${m.role}" style="font-size:14.5px;margin-bottom:8px;max-width:82%">${m.role==='bot'?av:''}${esc(m.text)}${m.role==='me'?av:''}<div class="bubble-meta" style="font-size:10px">${time}</div></div>`;
     }).join('') : `<div class="bubble bot" style="font-size:14.5px">${welcome}</div>`;
     log.scrollTop = log.scrollHeight;
@@ -4330,7 +4330,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     if (log) {
       const tdiv = document.createElement('div');
       tdiv.className = 'bubble bot';
-      tdiv.innerHTML = `<span class="avatar" style="width:18px;height:18px;font-size:10px"><i class="fas fa-robot"></i></span><span class="typing-dots"><span></span><span></span><span></span></span>`;
+      tdiv.innerHTML = `<span class="avatar" style="width:18px;height:18px;font-size:10px"><i class="fas fa-sparkles"></i></span><span class="typing-dots"><span></span><span></span><span></span></span>`;
       log.appendChild(tdiv);
       log.scrollTop = log.scrollHeight;
     }
@@ -5572,7 +5572,7 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
                 <div style="font-size:13px; font-weight:600; margin-bottom:8px"><i class="fas fa-file-pdf" style="color:var(--red)"></i> ${esc(a.name)}</div>
                 <div class="btnrow" style="margin:0">
                   <button class="btn ghost sm" onclick="previewPDF('${e.id}', ${i})"><i class="fas fa-eye"></i> ${t('preview')}</button>
-                  <button class="btn sm" onclick="analyzePdfAI('${e.id}', ${i})"><i class="fas fa-robot"></i> ${t('analyzeAI')}</button>
+                  <button class="btn sm" onclick="analyzePdfAI('${e.id}', ${i})"><i class="fas fa-sparkles"></i> ${t('analyzeAI')}</button>
                 </div>
               </div>`;
             } else {
@@ -5596,7 +5596,7 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
       <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:var(--action); color:white">
         <div style="font-weight:bold">${esc(att.name)}</div>
         <div>
-          <button class="btn sm" onclick="analyzePdfAI('${e.id}', ${attIdx})"><i class="fas fa-robot"></i> ${t('analyzeAI')}</button>
+          <button class="btn sm" onclick="analyzePdfAI('${e.id}', ${attIdx})"><i class="fas fa-sparkles"></i> ${t('analyzeAI')}</button>
           <button class="btn ghost sm" style="color:white; margin-left:8px; border:none;" onclick="this.closest('.modal-overlay').remove()"><i class="fas fa-xmark"></i></button>
         </div>
       </div>
