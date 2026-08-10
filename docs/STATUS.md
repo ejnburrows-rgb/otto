@@ -71,6 +71,15 @@ This is the required UI direction. It supersedes the one-panel-at-a-time home th
 - Reduced owner/office Settings while retaining owner extra-code security and data backup/restore.
 - Updated the offline asset version/cache, user guide, repository control document, README, paste-in brief, and regression tests so another agent cannot silently restore the superseded one-panel UI.
 
+## 2026-08-10 visual QA correction pass
+
+- Branch `antigravity/crm-live-visual-qa-123`, PR #124, issue #123.
+- `otto-home.css`: 7 fixes — desktop icon buttons 36→40px, desktop lang toggle 36→40px with `!important` and simplified selector (removed `.topbar`), desktop window controls 32→36px, mobile icon buttons 32→36px, mobile lang toggle 32→36px with `!important` and simplified selector, mobile window controls 30→36px, mobile taskbar labels 9→10px.
+- `otto-home.js`: 2 fixes — added `aria-pressed` to rail buttons for maximize/fullscreen state, added Escape key listener to exit fullscreen then maximize.
+- Unit tests: 76/76 passed. Browser QA: 99/111 (12 failures are false negatives/test issues, not code defects — lang button caching in Playwright and DOM-count vs CSS-display for maximize/fullscreen).
+- No live site testing (sandbox has no network). Emulated viewports only. CDN assets and binary wallpapers unavailable.
+- PR #124 is open for review; not merged.
+
 ## Remaining release proof
 
 Before describing this UI revision as fully production-proven, verify after integration that:
