@@ -460,5 +460,38 @@ console.log('\nthe deployed build must be able to say which commit it is');
     stamper.includes('fail-closed'), true);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+console.log('\nseeded company profile — only confirmed facts reach a printed document');
+{
+  // WHAT HAPPENED: blankDB() seeded companyProfile with invented contact
+  // details — name "Otto Plumbing", phone "(800) OTTO-PLB", email
+  // "info@ottoplumbing.com", website "www.ottoplumbing.com". None of them are
+  // real. printDoc() renders that same record onto invoices and estimates, so
+  // a customer could receive an official-looking document carrying a phone
+  // number that does not belong to the business and an email nobody reads.
+  //
+  // The confirmed facts are: OTTO Plumbing Inc., (786) 344-2837,
+  // license CFC1429613. Fields that are not confirmed stay empty strings —
+  // printDoc omits empty fields, so blank is safe and invented is not.
+  const seed = html.slice(html.indexOf('d.companyProfile = {'));
+  const block = seed.slice(0, seed.indexOf('};') + 2);
+  const field = (name) => (block.match(new RegExp(`\\b${name}:\\s*'([^']*)'`)) || [])[1];
+
+  check('no invented phone number survives in the seed', /OTTO-PLB/.test(block), false);
+  check('no invented email or website survives in the seed',
+    /ottoplumbing\.com/.test(block), false);
+
+  check('the seeded business name is the confirmed legal name',
+    field('name'), 'OTTO Plumbing Inc.');
+  check('the seeded phone is the confirmed business number',
+    field('phone'), '(786) 344-2837');
+  check('the seeded license is the confirmed license number',
+    field('license'), 'CFC1429613');
+
+  // Unconfirmed contact details must be blank, never guessed.
+  check('email is left for the owner to fill', field('email'), '');
+  check('website is left for the owner to fill', field('website'), '');
+}
+
 console.log(`\n${passed} passed, ${failed} failed\n`);
 process.exit(failed ? 1 : 0);
