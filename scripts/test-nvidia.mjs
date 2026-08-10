@@ -1,5 +1,3 @@
-import { nvidiaHandler as handler } from '../api/nvidia.js';
-
 let passed = 0, failed = 0;
 function check(name, actual, expected) {
   const a = JSON.stringify(actual), e = JSON.stringify(expected);
@@ -20,10 +18,7 @@ function createRes() {
 }
 
 function createReq(opts = {}) {
-  const req = {
-    method: opts.method || 'POST',
-    body: opts.body
-  };
+  const req = { method: opts.method || 'POST', body: opts.body };
   req.on = (ev, cb) => {
     if (ev === 'data' && opts.rawBody) cb(opts.rawBody);
     if (ev === 'end') cb();
@@ -31,43 +26,39 @@ function createReq(opts = {}) {
   return req;
 }
 
-// Intercept global fetch
+const originalEnv = { ...process.env };
+// Production may deliberately configure NVIDIA_URL and NVIDIA_MODEL. This test
+// verifies the code's built-in defaults, so clear those values before importing
+// the module: NVIDIA_URL is captured once at module load time.
+delete process.env.NVIDIA_URL;
+delete process.env.NVIDIA_MODEL;
+const { nvidiaHandler: handler } = await import(`../api/nvidia.js?test=${Date.now()}`);
+
 let fetchCalls = [];
 global.fetch = async (url, options) => {
   fetchCalls.push({ url, options });
-  if (url === 'error') throw new Error('network failed');
-  return {
-    status: 200,
-    text: async () => '{"reply":"hello"}'
-  };
+  return { status: 200, text: async () => '{"reply":"hello"}' };
 };
 
 async function runTests() {
   console.log('\nNVIDIA API Proxy Tests');
-
-  const originalEnv = { ...process.env };
-
   try {
-    // Test 1: Non-POST
     let res = createRes();
     await handler(createReq({ method: 'GET' }), res);
     check('Non-POST returns 405', res.statusCode, 405);
     check('Non-POST returns method_not_allowed error', res.body, { error: 'method_not_allowed' });
 
-    // Test 2: Missing API key
     delete process.env.NVIDIA_API_KEY;
     res = createRes();
     await handler(createReq(), res);
     check('Missing key returns 503', res.statusCode, 503);
     check('Missing key returns no_server_key error', res.body, { error: 'no_server_key' });
 
-    // Test 3: Standard forward
     process.env.NVIDIA_API_KEY = 'test-key-123';
+    delete process.env.NVIDIA_MODEL;
     fetchCalls = [];
     res = createRes();
     await handler(createReq({ body: { messages: [{ role: 'user' }] } }), res);
-    // Since NVIDIA_URL is declared as a const reading from process.env ONCE at startup,
-    // we cannot override it in tests via process.env after the module is loaded.
     check('Forwards to NVIDIA URL', fetchCalls[0]?.url, 'https://integrate.api.nvidia.com/v1/chat/completions');
     check('Sets Authorization header', fetchCalls[0]?.options.headers.Authorization, 'Bearer test-key-123');
 
@@ -76,7 +67,6 @@ async function runTests() {
     check('Returns 200', res.statusCode, 200);
     check('Returns text body', res.body, '{"reply":"hello"}');
 
-    // Test 4: Custom model and stream override
     process.env.NVIDIA_MODEL = 'custom-model-456';
     fetchCalls = [];
     res = createRes();
@@ -85,40 +75,35 @@ async function runTests() {
     check('Respects passed model if provided', bodyOut.model, 'passed-model');
     check('Forces stream to false', bodyOut.stream, false);
 
-    // Test 5: Fallback to process.env.NVIDIA_MODEL if body.model is absent
     fetchCalls = [];
     res = createRes();
     await handler(createReq({ body: {} }), res);
     bodyOut = JSON.parse(fetchCalls[0]?.options.body || '{}');
     check('Uses NVIDIA_MODEL env if model not provided', bodyOut.model, 'custom-model-456');
 
-    // Test 6: body is a string
     fetchCalls = [];
     res = createRes();
     await handler(createReq({ body: '{"messages": [{"role":"user"}]}' }), res);
     bodyOut = JSON.parse(fetchCalls[0]?.options.body || '{}');
-    check('Parses string body correctly', bodyOut.messages, [{role: 'user'}]);
+    check('Parses string body correctly', bodyOut.messages, [{ role: 'user' }]);
 
-    // Test 7: req.body is undefined, reads raw body
     fetchCalls = [];
     res = createRes();
     await handler(createReq({ body: undefined, rawBody: '{"test":"raw"}' }), res);
     bodyOut = JSON.parse(fetchCalls[0]?.options.body || '{}');
     check('Reads from req stream when body is missing', bodyOut.test, 'raw');
 
-    // Test 8: Upstream error (by overriding fetch temporarily to throw an error)
     fetchCalls = [];
     res = createRes();
     const origFetch = global.fetch;
     global.fetch = async () => { throw new Error('network failed'); };
     await handler(createReq({ body: {} }), res);
-    global.fetch = origFetch; // restore
+    global.fetch = origFetch;
     check('Upstream error returns 502', res.statusCode, 502);
     check('Includes error detail', res.body.error, 'upstream_error');
-
   } finally {
-    // Restore env
-    process.env = originalEnv;
+    for (const key of Object.keys(process.env)) delete process.env[key];
+    Object.assign(process.env, originalEnv);
   }
 
   console.log(`\n${passed} passed, ${failed} failed\n`);
