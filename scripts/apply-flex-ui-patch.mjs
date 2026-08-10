@@ -5,18 +5,20 @@ const INDEX = new URL('../index.html', import.meta.url);
 export const FLEX_ASSET_VERSION = '1';
 
 const STYLE = `<link rel="stylesheet" href="./otto-flex-ui.css?v=${FLEX_ASSET_VERSION}" data-otto-flex-ui-styles />`;
-const BRIDGE = `<script data-otto-flex-bridge>\nwindow.__ottoFlexBridge = {\n  getDb: () => db,\n  getSession: () => session,\n  getLang: () => lang,\n  getRoute: () => route,\n  add: (col, obj) => add(col, obj),\n  update: (col, id, patch) => update(col, id, patch),\n  save: () => save(),\n  render: () => render(),\n  nav: (view, id) => nav(view, id),\n  can: (view) => can(view)\n};\n</script>`;
+const COMPAT_STYLE = `<style data-otto-flex-compat>\n/* The flexible shell supplies real minimize + maximize. Hide the older one-off expand control only while this layer is active. */\n.otto-panel [data-otto-action="toggle-panel-size"] { display: none !important; }\n</style>`;
+const BRIDGE = `<script data-otto-flex-bridge>\nwindow.__ottoFlexBridge = {\n  getDb: () => db,\n  getSession: () => session,\n  getLang: () => lang,\n  getRoute: () => route,\n  /* Bulk spreadsheet import is intentionally FIELD-WORKER ONLY. This bridge is used only by the additive importer. */\n  add: (col, obj) => add(col, col === 'users' ? { ...obj, role: 'field' } : obj),\n  update: (col, id, patch) => update(col, id, col === 'users' ? { ...patch, role: 'field' } : patch),\n  save: () => save(),\n  render: () => render(),\n  nav: (view, id) => nav(view, id),\n  can: (view) => can(view)\n};\n</script>`;
 const SCRIPT = `<script src="./otto-flex-ui.js?v=${FLEX_ASSET_VERSION}" data-otto-flex-ui-runtime></script>`;
 
 export function patchFlexSource(source) {
   let out = source;
   out = out.replace(/\s*<link\b[^>]*\bdata-otto-flex-ui-styles\b[^>]*>\s*/g, '\n');
+  out = out.replace(/\s*<style\b[^>]*\bdata-otto-flex-compat\b[^>]*>[\s\S]*?<\/style>\s*/g, '\n');
   out = out.replace(/\s*<script\b[^>]*\bdata-otto-flex-bridge\b[^>]*>[\s\S]*?<\/script>\s*/g, '\n');
   out = out.replace(/\s*<script\b[^>]*\bdata-otto-flex-ui-runtime\b[^>]*><\/script>\s*/g, '\n');
 
   if (!out.includes('</head>')) throw new Error('index.html is missing </head>');
   if (!out.includes('</body>')) throw new Error('index.html is missing </body>');
-  out = out.replace('</head>', `  ${STYLE}\n</head>`);
+  out = out.replace('</head>', `  ${STYLE}\n  ${COMPAT_STYLE}\n</head>`);
   out = out.replace('</body>', `  ${BRIDGE}\n  ${SCRIPT}\n</body>`);
   return out;
 }
@@ -27,7 +29,10 @@ export function validateFlexSource(source) {
     ['flex runtime wired', source.includes('data-otto-flex-ui-runtime') && source.includes(`otto-flex-ui.js?v=${FLEX_ASSET_VERSION}`)],
     ['bridge wired before runtime', source.indexOf('data-otto-flex-bridge') > -1 && source.indexOf('data-otto-flex-bridge') < source.indexOf('data-otto-flex-ui-runtime')],
     ['bridge exposes existing db safely', source.includes('getDb: () => db')],
-    ['bridge exposes existing attendance events', source.includes('add: (col, obj) => add(col, obj)')],
+    ['spreadsheet user adds are forced to field role', source.includes("col === 'users' ? { ...obj, role: 'field' } : obj")],
+    ['spreadsheet user updates are forced to field role', source.includes("col === 'users' ? { ...patch, role: 'field' } : patch")],
+    ['legacy one-off expand control hidden when flex shell is active', source.includes('data-otto-flex-compat') && source.includes('data-otto-action="toggle-panel-size"')],
+    ['bridge exposes existing attendance events', source.includes('add: (col, obj) => add(col')],
     ['bridge exposes current route and language', source.includes('getRoute: () => route') && source.includes('getLang: () => lang')]
   ];
 }
