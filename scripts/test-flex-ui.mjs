@@ -3,12 +3,13 @@ import { patchFlexSource, validateFlexSource, FLEX_ASSET_VERSION } from './apply
 
 const index = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const js = fs.readFileSync(new URL('../otto-flex-ui.js', import.meta.url), 'utf8');
+const translation = fs.readFileSync(new URL('../otto-flex-translation-fixes.js', import.meta.url), 'utf8');
 const css = fs.readFileSync(new URL('../otto-flex-ui.css', import.meta.url), 'utf8');
 const patched = patchFlexSource(index);
 
 const checks = [
   ...validateFlexSource(patched),
-  ['same flex asset version used by both assets', patched.includes(`otto-flex-ui.css?v=${FLEX_ASSET_VERSION}`) && patched.includes(`otto-flex-ui.js?v=${FLEX_ASSET_VERSION}`)],
+  ['same flex asset version used by both core assets', patched.includes(`otto-flex-ui.css?v=${FLEX_ASSET_VERSION}`) && patched.includes(`otto-flex-ui.js?v=${FLEX_ASSET_VERSION}`)],
 
   ['company logo routes home', js.includes("logo.classList.add('otto-logo-home')") && js.includes('goHome();')],
   ['explicit home tabs exist', js.includes('PANEL_TABS') && js.includes('otto-flex-tabs')],
@@ -26,12 +27,15 @@ const checks = [
   ['company logo is not recolored', css.includes('.crystal-logo { filter: none !important; }')],
 
   ['leftover translation sweep exists', js.includes('translateLeftovers') && js.includes('ES_EXACT')],
-  ['team hard-coded headings translated', js.includes("['OWNERS', 'DUEÑOS']") && js.includes("['FIELD', 'CAMPO']")],
+  ['team hard-coded headings translated', translation.includes("['OWNERS', 'DUEÑOS']") && translation.includes("['OPS & IT', 'OPERACIONES Y TI']") && translation.includes("['FIELD TEAM', 'EQUIPO DE CAMPO']")],
+  ['dynamic field-team count translated', translation.includes('EQUIPO DE CAMPO (${m[1]})')],
+  ['dynamic record counts translated', translation.includes("Number(m[1]) === 1 ? 'registro' : 'registros'")],
   ['new controls are bilingual', js.includes("'Minimize', 'Minimizar'") && js.includes("'Maximize', 'Maximizar'") && js.includes("'Attendance', 'Asistencia'")],
 
   ['employee import accepts Excel and CSV', js.includes("input.accept='.xlsx,.xls,.csv")],
   ['employee import reuses SheetJS', js.includes('xlsx.full.min.js')],
   ['employee rows map to real users', js.includes("b.add('users',fields)")],
+  ['bulk import bridge forces every imported user to field role', patched.includes("col === 'users' ? { ...obj, role: 'field' } : obj") && patched.includes("col === 'users' ? { ...patch, role: 'field' } : patch")],
   ['duplicate employees update instead of blindly duplicating', js.includes('existingMatch') && js.includes("b.update('users',user.id,fields)")],
   ['PINs are never imported', js.includes('PINs are never imported')],
   ['field workers join existing attendance event store', js.includes("type:'attendance_roster'") && js.includes("b.add('job_events'")],
