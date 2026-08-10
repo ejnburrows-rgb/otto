@@ -351,7 +351,7 @@
     const tabs = WINDOWS.map(meta => {
       const state = windowStates[meta.id];
       const built = buildWindow(meta.id);
-      return `<button type="button" class="otto-task${state === 'minimized' ? ' is-minimized' : ''}${state === 'maximized' || state === 'fullscreen' ? ' is-active' : ''}" data-otto-action="restore-window" data-otto-panel="${meta.id}" aria-label="${esc(state === 'minimized' ? words(`Restore ${t(meta.key)}`, `Restaurar ${t(meta.key)}`) : t(meta.key))}">
+      return `<button type="button" class="otto-task${state === 'minimized' ? ' is-minimized' : ''}${state === 'maximized' || state === 'fullscreen' ? ' is-active' : ''}" data-otto-action="restore-window" data-otto-panel="${meta.id}" aria-pressed="${state === 'maximized' || state === 'fullscreen' ? 'true' : 'false'}" aria-label="${esc(state === 'minimized' ? words(`Restore ${t(meta.key)}`, `Restaurar ${t(meta.key)}`) : t(meta.key))}">
         <span class="otto-task-icon" aria-hidden="true"><i class="fas ${meta.icon}"></i></span>
         <span class="otto-task-label">${esc(t(meta.key))}</span>
         <span class="otto-task-count">${Number(built.count) || 0}</span>
@@ -725,6 +725,21 @@
     } else if (action === 'sign-out') {
       event.preventDefault();
       signOut();
+    }
+  });
+
+  document.addEventListener('keydown', function (event) {
+    if (event.key !== 'Escape') return;
+    const fullscreenId = WINDOW_IDS.find(id => windowStates[id] === 'fullscreen');
+    if (fullscreenId) {
+      event.preventDefault();
+      setWindowState(fullscreenId, 'normal', true);
+      return;
+    }
+    const maximizedId = WINDOW_IDS.find(id => windowStates[id] === 'maximized');
+    if (maximizedId) {
+      event.preventDefault();
+      setWindowState(maximizedId, 'normal', true);
     }
   });
 
