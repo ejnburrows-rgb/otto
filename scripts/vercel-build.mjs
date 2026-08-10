@@ -1,33 +1,23 @@
 import fs from 'node:fs';
 import { spawnSync } from 'node:child_process';
 
-const steps = [
-  ['--check', 'otto-home.js'],
-  ['--check', 'sw.js'],
-  ['scripts/test-photo-retry-patch.mjs'],
-  ['scripts/test-otto-home.mjs'],
-  ['scripts/apply-photo-retry-patch.mjs'],
-  ['scripts/apply-otto-home-patch.mjs'],
-  ['scripts/stamp-version.mjs']
-];
-
-for (const args of steps) {
-  const result = spawnSync(process.execPath, args, { stdio: 'inherit' });
+function run(command, args) {
+  const result = spawnSync(command, args, { stdio: 'inherit' });
   if (result.error) throw result.error;
   if (result.status !== 0) process.exit(result.status || 1);
 }
 
-// These files are needed only to build/verify the deployment. Remove them from
-// the output directory so the public site cannot serve internal tooling.
-for (const path of [
-  'scripts/apply-photo-retry-patch.mjs',
-  'scripts/test-photo-retry-patch.mjs',
-  'scripts/apply-otto-home-patch.mjs',
-  'scripts/test-otto-home.mjs',
-  'scripts/stamp-version.mjs',
-  'scripts/vercel-build.mjs'
-]) {
-  try { fs.rmSync(path); } catch (error) {
-    if (error?.code !== 'ENOENT') throw error;
-  }
-}
+// Vercel is the reliable push-triggered runner for this repository while
+// GitHub Actions is still failing before a runner is assigned. Run the complete
+// current source/unit suite here instead of a hand-picked subset.
+run('npm', ['test']);
+run(process.execPath, ['scripts/qa-check.mjs']);
+
+// Only after the source checks pass do we materialize the deployment patches.
+run(process.execPath, ['scripts/apply-photo-retry-patch.mjs']);
+run(process.execPath, ['scripts/apply-otto-home-patch.mjs']);
+run(process.execPath, ['scripts/stamp-version.mjs']);
+
+// Test/tooling source is needed to build and verify, not to serve publicly.
+// Remove the entire directory after the checks and patches are complete.
+fs.rmSync('scripts', { recursive: true, force: true });
