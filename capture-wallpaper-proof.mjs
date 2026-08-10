@@ -30,15 +30,16 @@ const browser = await chromium.launch({
   executablePath,
   args: [...chromiumLambda.args, '--no-sandbox', '--disable-dev-shm-usage']
 });
+const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+const page = await ctx.newPage();
+const pageErrors = [];
+page.on('pageerror', err => pageErrors.push(err.message));
+
+await page.goto(`http://127.0.0.1:${port}/index.html?demo=1`, { waitUntil: 'networkidle', timeout: 60000 });
+await page.waitForFunction(() => typeof window.__db === 'function', null, { timeout: 15000 });
 
 async function capture({ id, name, slug, lang, dark }) {
-  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
-  const page = await ctx.newPage();
-  const pageErrors = [];
-  page.on('pageerror', err => pageErrors.push(err.message));
-
-  await page.goto(`http://127.0.0.1:${port}/index.html?demo=1`, { waitUntil: 'networkidle', timeout: 60000 });
-  await page.waitForFunction(() => typeof window.__db === 'function', null, { timeout: 15000 });
+  pageErrors.length = 0;
   await page.evaluate((userId) => {
     const u = window.__db().users.find(x => x.id === userId);
     if (!u) throw new Error(`user ${userId} missing`);
@@ -57,10 +58,8 @@ async function capture({ id, name, slug, lang, dark }) {
       const r = el.getBoundingClientRect();
       return { id: el.id, state: el.dataset.state, x: r.x, y: r.y, width: r.width, height: r.height };
     });
-    const topbarEl = document.querySelector('.topbar');
-    const topbarRect = topbarEl?.getBoundingClientRect();
-    const headerEl = document.querySelector('.wallpaper-home-header');
-    const headerRect = headerEl?.getBoundingClientRect();
+    const topbarRect = document.querySelector('.topbar')?.getBoundingClientRect();
+    const headerRect = document.querySelector('.wallpaper-home-header')?.getBoundingClientRect();
     const vp = { width: innerWidth, height: innerHeight };
     const safe = { left: vp.width * 0.62, top: 0, right: vp.width, bottom: vp.height * 0.42 };
     const overlaps = (r) => r && r.right > safe.left && r.left < safe.right && r.bottom > safe.top && r.top < safe.bottom;
@@ -97,7 +96,6 @@ async function capture({ id, name, slug, lang, dark }) {
   fs.writeFileSync(`wallpaper-proof-${slug}-mobile.jpg`, image);
   fs.writeFileSync(`wallpaper-proof-${slug}-state.json`, JSON.stringify(state, null, 2));
   console.log(`PROOF ${slug}: ${image.length} bytes; safe zone clear; four tabs <= 60px`);
-  await ctx.close();
 }
 
 try {
@@ -105,6 +103,7 @@ try {
   await capture({ id: 'ops-1', name: 'Sarays', slug: 'sarays', lang: 'es', dark: true });
   console.log('WALLPAPER PROOF COMPLETE');
 } finally {
+  await ctx.close().catch(() => {});
   await browser.close().catch(() => {});
   await new Promise(resolve => server.close(resolve));
 }
