@@ -16,31 +16,36 @@ No other Markdown file may silently become a competing source of truth. Historic
 
 Finish OTTO as a dependable, demo-ready and production-ready plumbing CRM without redoing completed work.
 
-The work is organized around one outcome: the app must truthfully show what works, clearly show what is blocked, protect customer data, and support a clean built-in demo.
+The current UI objective is now explicit and must not be simplified away again: owner and office users use a wallpaper-first desktop workspace with **three primary windows open together** — Today, Field Workers, and Inbox. Each window may minimize to the left side panel, maximize inside the workspace, enter full screen, and restore. Drag/reorder is intentionally excluded because the earlier drag implementation interfered with normal scrolling.
 
 ## Current product truth
 
-- The final owner/office home redesign is merged into `main`: a permanent left rail for Today, Field Workers, Inbox, and Tools, with one active panel at a time and explicit Back controls.
+- The owner/office UI contract is the three-window workspace described above. A previous one-panel-at-a-time left-rail redesign is superseded and must not be restored as the default.
+- Julio (`owner-2`) uses green interface accents and his committed wallpaper. Saray (`ops-1`) uses pink interface accents and her committed wallpaper. Otto keeps the blue OTTO identity. These accents follow the signed-in person; the workflow and permissions do not change by colour.
+- The supplied OTTO Plumbing wordmark (`logo.jpg`) remains the CRM logo. Do not substitute the wrench/person app icon as the top-bar brand.
+- Worker information is intentionally operational and compact: current job, next job, actual hours recorded from job check-in/check-out, and time-off status. Do not restore random heatmaps, fabricated KPI hours, vanity location counts, login-history cards, or fake charts as worker performance information.
+- The whole field crew has a Crew Hours view showing real recorded hours today, real recorded hours this week, and how many workers are currently clocked in.
+- Plans & AutoCAD is a first-class work entry point. It accepts PDF, DWG, DXF, DWF and DGN through the existing job-document/drawing pipeline; do not bury this capability only inside a job tab.
+- Tools stays a restrained launcher for the core daily modules. Secondary technical screens must not be promoted merely because they exist in code.
+- Admin Settings is intentionally simplified. Keep appearance, team access, owner security, data safety and sign-out visible. Provider keys and unfinished setup stubs do not belong in the normal owner/office settings experience.
 - The local/offline CRM and built-in demo are present.
 - Sensitive server features remain intentionally blocked by the fail-closed security gate. This is the safe production state until issue #70 ships a fresh, verified server-authorization implementation from current `main`.
 - The older auth attempt in PR #103 was reviewed and closed unmerged; it must not be resurrected wholesale.
-- Photo upload currently gives up after repeated failures by deleting its retry-queue entry while leaving the local photo visible. That can make a field user believe a photo reached the office when it did not.
-- Live Supabase still contains ten later duplicate/demo job rows plus seeded activity. Reconciliation is tracked in issue #111 and requires backup, dependency review, and explicit approval before any live deletion.
+- Photo upload must never silently abandon a locally stored job photo; pending uploads stay queued and visibly pending until they succeed or the user takes an explicit action.
+- Live Supabase contains later duplicate/demo rows tracked in issue #111. Reconciliation requires backup, dependency review, and explicit approval before live deletion.
 - QuickBooks is explicitly out of scope. `docs/NO-QUICKBOOKS.md` is authoritative; do not restore Intuit routes, UI, credentials, tests, or deployment requirements without a new explicit requirement.
-- The public OTTO website is live on its cleaned delivery build. Its remaining infrastructure issue is automatic GitHub `main` → Vercel deployment, tracked in issue #110.
-- GitHub Actions cannot be trusted as release evidence until a successful current run is proven.
+- GitHub Actions cannot be trusted as release evidence until a successful current run is proven. If Actions is unable to start because of an account/billing condition, record that as an external verification blocker rather than calling the code failed.
 
 ## Priority order
 
-1. **Repository governance cleanup** — keep one current control system, retire contradictory handoffs, and reduce stale branch/PR/issue clutter using current GitHub evidence.
+1. **Finish and prove the owner/office workspace** — three simultaneous windows, minimize/restore/maximize/full-screen behavior, correct Julio/Saray/Otto identity, visible Plans & AutoCAD, real Crew Hours, simplified worker information, responsive layouts, bilingual parity and accessibility.
 2. **Photo-upload reliability** — never silently abandon a locally stored job photo; keep retrying and show a clear pending/not-sent state.
 3. **Server authorization (#70)** — build fresh from current `main` using provider-backed identity plus explicit role and record-level authorization. Preserve offline PIN unlock.
 4. **Cross-device proof** — prove authorized records and photo bytes reach the correct owner/office/field users without exposing unrelated records.
 5. **Duplicate live-data reconciliation (#111)** — back up first, remove only verified duplicate/demo rows and their linked seeded activity, and prove no genuine business data was lost. No delete is authorized until the exact rows and dependent records are approved.
-6. **OCR reliability and error clarity.**
+6. **OCR/drawing reliability and error clarity.**
 7. **Notifications only after authenticated server access is proven.** QuickBooks is not part of this product scope.
-8. **Vercel Git integration (#110)** — restore automatic website production deployments from current GitHub `main` and prove the trigger with an exact commit.
-9. **Final production readiness** — fresh tests, real-browser verification, demo verification, deployment proof, and director sign-off.
+8. **Final production readiness** — fresh tests, real-browser verification, demo verification, deployment proof, and director sign-off.
 
 Do not jump to a later item while an earlier item is unresolved unless the earlier item is genuinely blocked and the next item is independent.
 
@@ -56,7 +61,22 @@ The director approves:
 - client-facing commitments,
 - and irreversible cleanup.
 
-Agents may investigate, recommend, implement approved work on branches, verify it, open pull requests, and merge only under the rules in `AGENTS.md`.
+Agents may investigate, recommend, implement approved work on branches, verify it, open pull requests, and integrate approved work under the rules in `AGENTS.md`.
+
+## UI non-regression rules
+
+The following are product requirements, not optional design suggestions:
+
+1. Do not replace the three-window owner/office home with a single active panel.
+2. Do not remove minimize, restore, maximize, or full-screen behavior unless the owner explicitly changes the requirement.
+3. Do not reintroduce generic drag/reorder behavior on scrollable cards or lists.
+4. Do not change Julio away from green accents or Saray away from pink accents.
+5. Do not invent an Otto wallpaper; Otto may use the finished base surface unless a real approved asset is supplied.
+6. Do not hide Plans & AutoCAD solely inside a job detail screen.
+7. Do not calculate hours from placeholder formulas. Crew hours come from recorded check-in/check-out time.
+8. Do not present random/demo chart values as worker performance.
+9. Do not replace the supplied OTTO Plumbing logo with the app icon.
+10. Do not expose technical integration setup simply to make Settings look fuller.
 
 ## Definition of done
 
@@ -66,9 +86,14 @@ A task is complete only when all applicable evidence exists:
 - `node scripts/qa-check.mjs` reports a passing result,
 - the real app is opened and exercised in a browser,
 - no new JavaScript errors, broken images, or mobile overflow appear,
+- UI work is checked at desktop and phone widths,
+- Julio, Saray and Otto are each checked for correct identity treatment,
+- minimize/restore/maximize/full-screen is exercised for all three home windows,
+- Plans & AutoCAD upload is opened through the dedicated hub and linked to a job,
+- Crew Hours is checked against known check-in/check-out records,
 - a screenshot or equivalent direct evidence proves the visible result,
 - the pull request is reviewed against the stated acceptance criteria,
-- and `docs/STATUS.md` is updated with one factual dated line.
+- and `docs/STATUS.md` receives one factual dated update.
 
 Never hardcode a test count into permanent instructions. Report the actual count from the run.
 
