@@ -33,8 +33,9 @@ const curl = (args) => {
   try { return execFileSync('curl', ['-sS', '--max-time', '25', ...args], { encoding: 'utf8' }); }
   catch { return null; }
 };
+const nullDevice = process.platform === 'win32' ? 'NUL' : '/dev/null';
 const status = (url, method = 'GET') => {
-  const out = curl(['-o', '/dev/null', '-w', '%{http_code}', '-L', ...(method === 'POST' ? ['-X', 'POST'] : []), url]);
+  const out = curl(['-o', nullDevice, '-w', '%{http_code}', '-L', ...(method === 'POST' ? ['-X', 'POST'] : []), url]);
   return out ? out.trim() : '000';
 };
 

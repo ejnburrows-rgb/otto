@@ -116,10 +116,24 @@ const certDir = path.join(WORK, 'cert');
 fs.mkdirSync(certDir, { recursive: true });
 const KEY = path.join(certDir, 'key.pem'), CRT = path.join(certDir, 'cert.pem');
 if (!fs.existsSync(KEY) || !fs.existsSync(CRT)) {
+  const opensslBin = (() => {
+    if (process.env.OPENSSL_BIN) return process.env.OPENSSL_BIN;
+    if (process.platform === 'win32') {
+      for (const p of ['C:\\Program Files\\OpenVPN\\bin\\openssl.exe', 'C:\\Program Files\\Git\\usr\\bin\\openssl.exe']) {
+        if (fs.existsSync(p)) return p;
+      }
+    }
+    return 'openssl';
+  })();
+  const cnfPath = path.join(certDir, 'openssl.cnf');
+  if (!fs.existsSync(cnfPath)) {
+    fs.writeFileSync(cnfPath, '[req]\ndistinguished_name=req_dn\n[req_dn]\n');
+  }
+  const env = { ...process.env, OPENSSL_CONF: process.env.OPENSSL_CONF || cnfPath };
   try {
-    execFileSync('openssl', ['req', '-x509', '-newkey', 'rsa:2048', '-keyout', KEY, '-out', CRT,
-      '-days', '2', '-nodes', '-subj', '/CN=cdn-stand-in'], { stdio: 'pipe' });
-  } catch { stop('openssl is not available, and the offline test needs a local https server.'); }
+    execFileSync(opensslBin, ['req', '-x509', '-newkey', 'rsa:2048', '-keyout', KEY, '-out', CRT,
+      '-days', '2', '-nodes', '-subj', '/CN=cdn-stand-in'], { stdio: 'pipe', env });
+  } catch (err) { stop('openssl is not available, and the offline test needs a local https server.'); }
 }
 
 const server = https.createServer({ key: fs.readFileSync(KEY), cert: fs.readFileSync(CRT) }, (req, res) => {
