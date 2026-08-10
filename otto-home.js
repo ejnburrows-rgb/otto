@@ -364,7 +364,10 @@
         <p class="otto-taskbar-date">${esc(fmtDate(todayISO()))}</p>
       </div>
       <div class="otto-task-list">${tabs}</div>
-      <button type="button" class="otto-tools-launch" data-otto-action="tools"><span class="otto-task-icon"><i class="fas fa-toolbox"></i></span><span>${esc(t('tools'))}</span></button>
+      <div class="otto-task-utilities">
+        <button type="button" class="otto-tools-launch otto-plans-launch" data-otto-action="plans-hub"><span class="otto-task-icon"><i class="fas fa-drafting-compass"></i></span><span>${esc(words('Plans & AutoCAD', 'Planos y AutoCAD'))}</span></button>
+        <button type="button" class="otto-tools-launch" data-otto-action="tools"><span class="otto-task-icon"><i class="fas fa-toolbox"></i></span><span>${esc(t('tools'))}</span></button>
+      </div>
     </aside>`;
   }
 
@@ -555,6 +558,15 @@
     const dark = document.documentElement.getAttribute('data-theme') === 'dark';
     const main = document.getElementById('main');
     if (!main) return;
+    const ownerSecurity = session.role === 'owner' ? `
+      <div class="section-title">${esc(words('Owner security', 'Seguridad del dueño'))}</div>
+      <div class="card otto-settings-card" style="padding:14px">
+        <div class="field"><label for="set-mfa">${esc(t('mfaOwner'))}</label><input id="set-mfa" type="password" inputmode="numeric" maxlength="4" placeholder="${hasPin(session, 'mfaPin') ? esc(words('Set — type to change', 'Configurado — escriba para cambiar')) : '••••'}"></div>
+        <div class="btnrow">
+          <button class="btn" type="button" onclick="saveMfa()"><i class="fas fa-shield-halved"></i> ${esc(t('save'))}</button>
+          ${hasPin(session, 'mfaPin') ? `<button class="btn ghost" type="button" onclick="clearMfa()"><i class="fas fa-xmark"></i> ${esc(words('Remove extra code', 'Quitar código extra'))}</button>` : ''}
+        </div>
+      </div>` : '';
     main.innerHTML = `${pageHead(t('settings'), '')}
       <div class="card otto-settings-card">
         <div class="list-item" style="cursor:default"><div class="avatar" style="background:var(--action)">${esc(initials(session.name))}</div><div class="li-main"><div class="li-title">${esc(session.name)}</div><div class="li-sub">${esc(t(session.role))}</div></div></div>
@@ -562,6 +574,7 @@
       <div class="section-title">${esc(words('Appearance', 'Apariencia'))}</div>
       <div class="card otto-settings-card"><button class="otto-settings-row" type="button" data-otto-action="theme"><i class="fas fa-${dark ? 'sun' : 'moon'}"></i><span>${esc(dark ? words('Light mode', 'Modo claro') : words('Dark mode', 'Modo oscuro'))}</span></button></div>
       ${can('team') ? `<div class="section-title">${esc(words('Team access', 'Acceso del equipo'))}</div><div class="card otto-settings-card"><button class="otto-settings-row" type="button"${navAttrs('team')}><i class="fas fa-user-gear"></i><span>${esc(t('team'))}</span></button></div>` : ''}
+      ${ownerSecurity}
       <div class="section-title">${esc(words('Data safety', 'Seguridad de datos'))}</div>
       <div class="card otto-settings-card">
         <button class="otto-settings-row" type="button" data-otto-action="backup"><i class="fas fa-download"></i><span>${esc(words('Download backup', 'Descargar respaldo'))}</span></button>
@@ -659,8 +672,12 @@
     } else if (action === 'restore-window') {
       event.preventDefault();
       const id = target.getAttribute('data-otto-panel');
-      if (windowStates[id] === 'minimized') setWindowState(id, 'normal', true);
-      else {
+      if (!WINDOW_IDS.includes(id)) return;
+      if (windowStates[id] === 'minimized') {
+        setWindowState(id, 'normal', true);
+      } else if ((anyWindowState('maximized') || anyWindowState('fullscreen')) && windowStates[id] === 'normal') {
+        setWindowState(id, 'maximized', true);
+      } else {
         const panel = document.getElementById(id);
         if (panel) panel.focus({ preventScroll: true });
       }
