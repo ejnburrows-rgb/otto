@@ -413,3 +413,283 @@ body.panel-fullscreen-open .otto-utility-nav {
     min-width: 0;
   }
 }
+
+/* ===== WALLPAPER-FIRST HOME DOCK =====
+   Julio Pablo and Sarays use artwork as the home-screen focal point. The CRM
+   controls therefore stay as a thin dock at the bottom until the user asks to
+   open one. The top-right sky remains free so Sarays's Little Prince artwork is
+   never covered by navigation chrome. */
+body.admin-home .topbar {
+  position: fixed;
+  top: max(8px, env(safe-area-inset-top));
+  left: max(8px, env(safe-area-inset-left));
+  right: auto;
+  z-index: 42;
+  width: auto;
+  min-height: 0;
+  padding: 5px 7px;
+  gap: 6px;
+  border: 1px solid color-mix(in srgb, var(--glass-border) 76%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--card) 72%, transparent);
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.12);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+body.admin-home .topbar .brand {
+  gap: 0;
+}
+
+body.admin-home .topbar .brand span {
+  display: none;
+}
+
+body.admin-home .topbar .spacer {
+  display: none;
+}
+
+body.admin-home .crystal-logo {
+  width: 32px;
+  height: 32px;
+}
+
+body.admin-home .topbar .iconbtn {
+  width: 32px;
+  height: 32px;
+  font-size: 14px;
+  border-radius: 8px;
+}
+
+body.admin-home .topbar .langtoggle button {
+  min-height: 32px;
+  padding: 3px 7px;
+  font-size: 11px;
+}
+
+body.admin-home .wrap {
+  max-width: none;
+  width: 100%;
+  min-height: 100dvh;
+  padding: 0;
+}
+
+body.admin-home .wallpaper-home-shell {
+  min-height: 100dvh;
+  padding: 62px max(8px, env(safe-area-inset-right)) 74px max(8px, env(safe-area-inset-left));
+  gap: 0;
+}
+
+body.admin-home .wallpaper-home-header {
+  position: fixed;
+  left: max(8px, env(safe-area-inset-left));
+  bottom: calc(max(8px, env(safe-area-inset-bottom)) + 58px);
+  z-index: 34;
+  max-width: min(58vw, 260px);
+  padding: 5px 8px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--card) 66%, transparent);
+  box-shadow: 0 7px 18px rgba(15, 23, 42, 0.10);
+}
+
+body.admin-home .wallpaper-home-header .greet {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+body.admin-home .wallpaper-home-header .muted {
+  margin-top: 2px;
+  font-size: 10px;
+  line-height: 1.15;
+}
+
+body.admin-home .home-panels {
+  position: fixed;
+  left: max(8px, env(safe-area-inset-left));
+  right: max(8px, env(safe-area-inset-right));
+  bottom: max(8px, env(safe-area-inset-bottom));
+  z-index: 35;
+  width: auto;
+  max-width: 980px;
+  margin: 0 auto;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  align-items: end;
+}
+
+body.admin-home .home-panel[data-state="compact"],
+body.admin-home .home-panel[data-state="collapsed"] {
+  min-height: 50px;
+  height: 50px;
+  padding: 6px 7px;
+  gap: 0;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--card) 70%, transparent);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+  overflow: hidden;
+}
+
+body.admin-home .home-panel[data-state="compact"] .home-panel-preview,
+body.admin-home .home-panel[data-state="compact"] .home-panel-detail,
+body.admin-home .home-panel[data-state="compact"] .panel-primary,
+body.admin-home .home-panel[data-state="collapsed"] .home-panel-preview,
+body.admin-home .home-panel[data-state="collapsed"] .home-panel-detail,
+body.admin-home .home-panel[data-state="collapsed"] .panel-primary {
+  display: none;
+}
+
+body.admin-home .home-panel[data-state="compact"] .home-panel-header,
+body.admin-home .home-panel[data-state="collapsed"] .home-panel-header {
+  min-height: 38px;
+  gap: 6px;
+  padding-right: 28px;
+}
+
+body.admin-home .home-panel[data-state="compact"] .home-panel-icon,
+body.admin-home .home-panel[data-state="collapsed"] .home-panel-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  font-size: 12px;
+}
+
+body.admin-home .home-panel[data-state="compact"] .home-panel-title,
+body.admin-home .home-panel[data-state="collapsed"] .home-panel-title {
+  font-size: 11px;
+  line-height: 1.05;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+body.admin-home .home-panel[data-state="compact"] .home-panel-count,
+body.admin-home .home-panel[data-state="collapsed"] .home-panel-count {
+  min-width: 19px;
+  padding: 2px 5px;
+  font-size: 9px;
+}
+
+body.admin-home .home-panel[data-state="compact"] .panel-controls,
+body.admin-home .home-panel[data-state="collapsed"] .panel-controls {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  display: block;
+  margin: 0;
+}
+
+body.admin-home .home-panel[data-state="compact"] .panel-state-btn,
+body.admin-home .home-panel[data-state="collapsed"] .panel-state-btn {
+  display: none;
+}
+
+/* Compact tabs expose one tiny Open control. Once opened, the full set of
+   minimize / compact / expand / full-screen controls is available again. */
+body.admin-home .home-panel[data-state="compact"] .panel-state-btn:nth-child(3),
+body.admin-home .home-panel[data-state="collapsed"] .panel-state-btn:nth-child(2) {
+  display: inline-flex;
+  width: 26px;
+  height: 26px;
+  min-height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+}
+
+body.admin-home .home-panel[data-state="compact"] .panel-state-btn:nth-child(3) span,
+body.admin-home .home-panel[data-state="collapsed"] .panel-state-btn:nth-child(2) span {
+  display: none;
+}
+
+body.admin-home .home-panel[data-state="expanded"] {
+  grid-column: 1 / -1;
+  min-height: min(48dvh, 390px);
+  max-height: 62dvh;
+  overflow-y: auto;
+  background: color-mix(in srgb, var(--card) 94%, transparent);
+}
+
+body.admin-home .home-panel[data-state="fullscreen"] {
+  background: color-mix(in srgb, var(--card) 97%, transparent);
+}
+
+/* Explicit safe zone for Sarays: no home chrome is placed in the upper-right
+   quadrant where the Little Prince sits on the rock in the supplied artwork. */
+body.admin-home .wallpaper-container[data-user="ops-1"] {
+  background-position: center center;
+}
+
+@media (max-width: 700px) {
+  body.admin-home .topbar {
+    max-width: 220px;
+  }
+
+  body.admin-home .wallpaper-home-shell {
+    min-height: 100dvh;
+    padding: 58px 6px 66px;
+  }
+
+  body.admin-home .wallpaper-home-header {
+    left: max(6px, env(safe-area-inset-left));
+    bottom: calc(max(6px, env(safe-area-inset-bottom)) + 54px);
+    max-width: 52vw;
+    padding: 4px 7px;
+  }
+
+  body.admin-home .home-panels {
+    left: max(5px, env(safe-area-inset-left));
+    right: max(5px, env(safe-area-inset-right));
+    bottom: max(5px, env(safe-area-inset-bottom));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  body.admin-home .home-panel[data-state="compact"],
+  body.admin-home .home-panel[data-state="collapsed"] {
+    min-height: 46px;
+    height: 46px;
+    padding: 5px;
+    border-radius: 9px;
+  }
+
+  body.admin-home .home-panel[data-state="compact"] .home-panel-header,
+  body.admin-home .home-panel[data-state="collapsed"] .home-panel-header {
+    min-height: 36px;
+    gap: 4px;
+    padding-right: 24px;
+  }
+
+  body.admin-home .home-panel[data-state="compact"] .home-panel-icon,
+  body.admin-home .home-panel[data-state="collapsed"] .home-panel-icon {
+    width: 24px;
+    height: 24px;
+    font-size: 10px;
+  }
+
+  body.admin-home .home-panel[data-state="compact"] .home-panel-title,
+  body.admin-home .home-panel[data-state="collapsed"] .home-panel-title {
+    font-size: 9.5px;
+    line-height: 1;
+  }
+
+  body.admin-home .home-panel[data-state="compact"] .home-panel-count,
+  body.admin-home .home-panel[data-state="collapsed"] .home-panel-count {
+    display: none;
+  }
+
+  body.admin-home .home-panel[data-state="compact"] .panel-state-btn:nth-child(3),
+  body.admin-home .home-panel[data-state="collapsed"] .panel-state-btn:nth-child(2) {
+    width: 22px;
+    height: 22px;
+    min-height: 22px;
+    font-size: 10px;
+  }
+
+  body.admin-home .home-panel[data-state="expanded"] {
+    grid-column: 1 / -1;
+    min-height: 44dvh;
+    max-height: 68dvh;
+  }
+}
