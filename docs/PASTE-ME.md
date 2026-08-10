@@ -1,46 +1,58 @@
 # OTTO Plumbing CRM — paste-in brief
 
-Use this only in an environment that does not automatically load repository instructions.
+Use this only when the coding environment does not automatically load repository instructions.
 
-You are working in `ejnburrows-rgb/otto`.
+Repository: `ejnburrows-rgb/otto`
 
-Before doing anything, read:
+Read before doing anything:
 
 1. `AGENTS.md`
 2. `docs/REPO-CONTROL.md`
 3. `docs/STATUS.md`
 4. `docs/DECISIONS.md`
+5. `docs/NO-QUICKBOOKS.md`
 
-The project goal is to finish OTTO as a dependable, demo-ready and production-ready plumbing CRM without redoing completed work.
-
-Permanent rules:
+## Permanent rules
 
 - Never commit directly to `main`.
-- Never force-push or rewrite history.
-- Never commit secrets or invent credentials.
-- Never hand-build authentication.
-- Keep `api/_lib/serverAuth.js` fail-closed until approved Supabase Auth is implemented.
-- Do not change authentication, payments, live data, production deployment, or paid services without director approval.
-- Do not trust old reports, task queues, branch scripts, or chat summaries over the current repository control files.
-- Do not hardcode test totals. Run the full current suite and report the actual output.
-- Done requires tests, `node scripts/qa-check.mjs`, real-browser verification, mobile and desktop checks, and direct evidence.
+- Never force-push or rewrite shared history.
+- Never commit secrets, PINs, passwords, keys, tokens, or fallback credentials.
+- Never hand-build authentication or homemade JWT verification.
+- Server access must fail closed when identity/configuration is missing or invalid.
+- Do not alter authentication, payments/accounting behavior, live data, production deployment, or paid services without director approval.
+- Do not delete live data without approval for the exact rows after backup/dependency review.
+- Do not trust old task queues, branch reports, audits, or chat summaries over the current repository control files.
+- Do not hardcode a permanent test total; run the current suite and report the actual result.
+- UI completion requires real-browser evidence, including phone/desktop checks.
 
-Current priority order:
+## Current truth
 
-1. Repository governance realignment.
-2. Visible and truthful photo-upload failure handling.
-3. Supabase Auth while preserving offline PIN unlock.
-4. Safe cross-device record and photo synchronization.
-5. OCR reliability and clear failure messages.
-6. Notifications and QuickBooks only after authenticated server access.
-7. Final production and demo readiness.
+- The permanent-left-rail owner/office home is already on `main`; do not redo it.
+- Supabase and the core production tables already exist.
+- Sensitive server APIs remain intentionally fail-closed pending fresh authorization work.
+- PR #103 was reviewed and closed unmerged. Do not resurrect or merge it wholesale.
+- Build real server authorization fresh from current `main` under issue **#70**.
+- QuickBooks/Intuit integration was deliberately removed and is out of scope. Do not reintroduce it.
+- Existing duplicate/demo live jobs require the separate exact-row decision in issue **#111**; no deletion is implied.
+- Production/browser QA and the public website Git→Vercel auto-deploy repair are tracked in issue **#110**.
 
-Report only:
+## Active priority order
 
-- what works,
-- what is broken,
-- what is blocked,
-- what changed,
-- and what is not done yet.
+1. #110 — production QA and website Git→Vercel auto-deploy, without touching auth.
+2. #70 — fresh server authorization using provider-backed identity, explicit allowlists, and record/job-level authorization.
+3. #111 — decide/prepare exact safe cleanup of the existing duplicate/demo live rows; do not delete without approval.
+4. After authorization is safe, prove cross-device records and photo bytes using separate accounts.
+5. Address OCR/provider reliability only from verified defects.
+6. Final production readiness and sign-off.
 
-For the full current rules and acceptance criteria, follow `AGENTS.md` and `docs/REPO-CONTROL.md`.
+Keep English/Spanish, light/dark, offline behavior, current wallpapers, current navigation, and working CRM functionality intact unless a verified defect requires a scoped change.
+
+Final reports must state only:
+
+- **Works**
+- **Broken**
+- **Blocked**
+- **Changed**
+- **Not done yet**
+
+For full acceptance criteria, follow `AGENTS.md` and `docs/REPO-CONTROL.md`.
