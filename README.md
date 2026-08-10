@@ -1,209 +1,87 @@
 # OTTO Plumbing CRM
 
-> **Status:** Production rollout in progress — the backend database is live, loaded, and verified locked to the public; the final connection step is two settings in Vercel (see `docs/STATUS.md` §3.1b). Until then the app runs fully on each device.
-> **Goal:** a production system the crew uses daily for real customer, job, and payroll data.
-> Live: https://otto-kohl.vercel.app · Landing Page: https://otto-kohl.vercel.app/landing.html · Guide: `/guide.html`
-> QA: static checks + full browser click-through. Run `node scripts/qa-check.mjs` and `node scripts/qa-browser.mjs` (or use `scripts/local-server.js`) to see current pass/fail counts — they vary with network access and seed data, so no fixed score is claimed here.
+OTTO is the internal bilingual CRM for **OTTO Plumbing Inc.** It is a mobile-first, offline-capable Progressive Web App for customers, jobs, field work, documents, estimates/invoices/payments, payroll intake, Inbox, reporting, job photos, work-only check-in/location, and Ask OTTO.
 
-The operating system for **OTTO Plumbing Inc.** — a bilingual
-(English / Spanish), mobile-first, minimal CRM built for a 15-person plumbing
-crew and a hands-on owner. Not a generic CRM: it is shaped around how a
-plumbing company actually runs a day.
+**Production CRM:** `https://otto-kohl.vercel.app`
 
-It is a single-file Progressive Web App (`index.html`) plus a manifest and a
-service worker. No build step, no server required. Open it, deploy it to any
-static host, or install it to a phone's home screen.
+The public plumbing website is maintained separately in `ejnburrows-rgb/otto-plumbing-site`.
 
-## Why it's built this way
-- **Non-technical first.** Big obvious buttons, one clear action per screen,
-  no deep menus, no jargon. Every screen reads in under 5 seconds.
-- **Bilingual from day one.** English default with a full Spanish toggle in the
-  top bar. Each user also has a default language, so a Spanish-speaking field
-  worker lands in Spanish automatically. Labels are native, not machine-literal.
-- **Works on the phone, in the field, offline.** Installable PWA, service-worker
-  shell cache, data stored locally in IndexedDB and mirrored to localStorage,
-  with optional cloud sync.
+## Start here
 
-## What it does (mapped to the brief)
-| Requirement | Where it lives |
-|---|---|
-| Customers, Jobs, Calls, Notes | Core records + job folders |
-| Photos auto-attached to the right job | Camera button on every job → stored in that job's folder |
-| Documents, scans, **AutoCAD** files | Job → Documents tab (upload / scan / CAD `.dwg .dxf`) |
-| Estimates, Invoices, Payments, **Checks** | Money tab + top-level lists |
-| Follow-ups & Workflows | Auto-created (e.g. completing a job schedules a 7‑day follow-up) |
-| SOP / Knowledge base | Knowledge section, bilingual entries, searchable |
-| **Voice input** (EN/ES) | Microphone button on every text field + standalone voice notes |
-| **OCR** for checks/invoices/receipts/paperwork | Scan buttons → reads the image → pre-fills a check/invoice |
-| **Internal chatbot** | "Ask OTTO" answers from jobs, customers, notes, invoices, and SOPs |
-| **GPS / location** | "Share my location" → team map with latest position per worker |
-| **QuickBooks** | One-tap CSV export of invoices and payments in QuickBooks import format |
-| **Role-based access** | Owner / Office / Field worker / Accounting, with tailored nav + permissions |
-| Replace Excel | Reports dashboard + CSV export of every record type |
-| **Inbox / email register** | Import forwarded `.eml` files (or auto-capture via webhook), matched to the right customer/job, searchable, AI-summarized |
-| **Payroll intake** | Import an Excel/CSV payroll file → each row becomes a structured, searchable payroll record |
-| **Drawing → estimate** | Upload AutoCAD/PDF → reads it → drafts a materials list & scope (NVIDIA) → owner reviews & confirms |
-| **AI search** | "Ask OTTO" now also searches emails, documents, and payroll |
-| **Worker accountability** | Check-in/out (work-only GPS), before/after photos, short checklist, consent |
-| **Owner hub** | 4 tiles + 5 exception tags + daily summary + AI activity + consent + audit |
-| **Per-project AI** | Each job has its own AI context; answers from job data, clarifies once, escalates |
-| **Versioned documents** | Contracts / proposals / plans with version + approval history |
-| **Alerts & audit** | Typed alerts (severity/status/source/owner) + full audit trail |
-| **Backups** | Verified, versioned snapshots + scheduled restore tests + log |
+For current instructions and product truth, read in this order:
 
-## Workflows wired in
-- **New call → customer + job.** Logging a call matches an existing customer
-  (or creates one), optionally spins up a job, and runs the "New Service Call"
-  workflow.
-- **Photo / voice note → job.** Field workers pick a job once, then snap photos
-  or dictate notes straight into that job's folder.
-- **Scan a check → payment.** OCR reads the check and offers to record it as a
-  check + payment against an invoice.
-- **Complete a job → follow-up + office notice.** Status changes notify the
-  office and auto-schedule a customer follow-up.
-- **Ask a question → answered from the record**, or pointed to the office/owner
-  when the data isn't there — turning repeat phone calls into searchable knowledge.
+1. `AGENTS.md`
+2. `docs/REPO-CONTROL.md`
+3. `docs/STATUS.md`
+4. `docs/DECISIONS.md`
+5. `docs/NO-QUICKBOOKS.md`
 
-## Roles & sign-in
-19 seeded demo users (2 owners, 2 office, 15 field), each with their own
-4-digit PIN — change them in **Team**. Four roles are supported:
-- **Owner** — everything.
-- **Office** — everything except team management.
-- **Field worker** — jobs, customers, follow-ups, knowledge, assistant. Simplest screen.
-- **Accounting** — customers, estimates, invoices, payments, checks, payroll, reports, knowledge, assistant. (Supported role; no demo user is seeded by default — create one in **Team**.)
+Old task queues, branch handoffs, historical audits, and chat summaries are not active instructions unless `docs/REPO-CONTROL.md` explicitly activates them.
 
-## AI features (one key, all devices)
-Voice-to-text uses the browser's speech recognition and needs no key. OCR
-(reading checks/invoices) and the smartest assistant answers use the Anthropic
-API through a small serverless proxy (`api/claude.js`), so the key lives on the
-server and never in the browser.
+## Current state
 
-The **drawing / PDF estimating assistant** uses the **NVIDIA** API through its
-own serverless proxy (`api/nvidia.js`), again with the key on the server.
+- The current owner/office home is already merged to `main` and uses the permanent left rail: **Today / Field Workers / Inbox / Tools**.
+- Current wallpapers and the OTTO wordmark are committed assets.
+- English/Spanish, light/dark, and local/offline behavior must be preserved.
+- The Supabase project and core production tables already exist. This is **not** waiting on initial database creation or merely two Vercel variables.
+- Sensitive server routes remain intentionally fail-closed until the fresh server-authorization work in issue **#70** is implemented and proven from current `main`.
+- The older Supabase Auth attempt, PR **#103**, was reviewed and closed unmerged. Do not resurrect or merge that branch wholesale.
+- Read-only verification on 2026-08-10 found 19 users, 3 customers, 13 jobs, 1 invoice, and 0 Supabase Auth users. The ten later duplicate/demo job rows are tracked separately in issue **#111**; no live deletion is authorized by this README.
+- Production/browser QA and the public website GitHub→Vercel automatic-deployment repair are tracked in issue **#110**.
 
-**Recommended setup (one time):** add your keys as environment variables in
-Vercel, then redeploy.
-1. Vercel → the project → **Settings → Environment Variables**
-2. Add `ANTHROPIC_API_KEY` = `sk-ant-…` (Production + Preview) for OCR + assistant.
-3. Add `NVIDIA_API_KEY` = `nvapi-…` (Production + Preview) for the drawing
-   estimator. Optionally set `NVIDIA_MODEL` (defaults to `meta/llama-3.3-70b-instruct`).
-4. Redeploy (or push). AI now works on every worker's device with nothing to
-   paste in the app.
+## Authentication and shared sync
 
-### Drawing → estimate (upload, review, confirm)
-Open a job → **Documents** → upload an AutoCAD drawing (`.dwg .dxf .dwf .dgn`)
-or a **PDF**. OTTO reads the title block, notes, callouts, dimensions, labels and
-tables, turns them into structured data, and asks the NVIDIA model to draft a
-plain-language **job summary, scope, and materials list** with quantity counts.
-If something is genuinely unclear it asks **one** simple question instead of
-guessing. The owner reviews and edits the draft, confirms it (saved inside the
-job's folder), and can turn it into a real Estimate in one tap. The result is
-shown in whichever language the toggle is set to. DXF and PDF are read in the
-browser; binary DWG falls back to readable-text scraping.
+A local PIN is a convenient device unlock; it is not sufficient server authorization.
 
-The client falls back gracefully: server proxy → a personal key entered in
-**Settings → Artificial Intelligence** (device-only) → local keyword search over
-your records. Without any key, scanning simply lets you type the details in.
+The replacement server authorization must be built fresh from current `main` under issue #70 using provider-backed identity, explicit role allowlists, record/job-level authorization, fail-closed defaults, and deployed multi-account proof.
 
-> Self-hosting elsewhere? Any platform that runs the `api/claude.js` function
-> works, or set a personal key in Settings. Opening `index.html` directly (no
-> server) still runs everything except the AI calls.
+Until that work is complete, do not describe shared server data, cross-device photo access, notifications, or server AI as safely production-enabled simply because backend code or environment variables exist.
 
-## Inbox, documents & payroll (enter it once)
-The CRM is the single place correspondence, paperwork, and payroll live — no
-re-keying into spreadsheets.
+## QuickBooks
 
-- **Inbox.** Open **Inbox** → **Import email file** to drop in forwarded/saved
-  `.eml` files. OTTO reads the sender, subject, body and attachments, matches the
-  message to the right customer and job, summarizes it in plain language, and
-  makes it searchable. You can re-link it or save it as a job note in one tap.
-  For **fully automatic capture**, point your email provider's inbound webhook
-  (SendGrid Inbound Parse, Mailgun, Postmark, …) at `/api/inbound-email` and set
-  `INBOUND_WEBHOOK_TOKEN` in Vercel — forwarded mail then appears in the Inbox
-  on its own (the webhook rejects any request without that token; see Cloud sync
-  below).
-- **Documents.** Uploading or scanning a file in a job saves the original, OCRs
-  it (checks/invoices/receipts) or estimates it (drawings/PDFs), and creates a
-  searchable record in that job's folder.
-- **Payroll.** Open **Payroll** → **Import payroll file** and pick an Excel
-  (`.xlsx`) or CSV file. Columns (employee, hours, rate, gross, period) are
-  detected automatically; you get a preview, then every row becomes a structured
-  payroll record with a running total, CSV export, and an AI summary. (`.xlsx`
-  parsing loads SheetJS from the CDN on first use; `.csv` works fully offline.)
+**QuickBooks/Intuit integration is deliberately out of scope.** `docs/NO-QUICKBOOKS.md` is authoritative.
 
-All of the above feed **Ask OTTO**, so the owner can ask questions across any
-saved email, document, or payroll record.
+Keep OTTO's native invoices/payments, generic CSV export, payroll import, jobs, customers, documents, reports, Inbox, and Ask OTTO. Do not restore `/api/quickbooks`, Intuit OAuth, QuickBooks credentials, QuickBooks-specific UI, or QuickBooks-specific tests without a new explicit requirement.
 
-## Accountability layer (workers, owner hub, AI, safety)
-A field-service layer that keeps workers accountable without adding friction.
+## Main capabilities
 
-- **Worker app.** PIN login; field workers get a **Spanish-first consent screen**
-  on first login (work-only GPS, photos, checklists — no personal tracking).
-  Inside a job: **Check in / Check out** (GPS captured only between the two),
-  **before/after photos**, and a **short checklist**. Off-site check-ins, missing
-  photos, missing checklists and late check-outs raise alerts automatically.
-- **Owner hub** (owner/office home). Four tiles only — **jobs today, workers on
-  site, exceptions, ready to close** — and five exception tags — **off-site,
-  missing photo, missing checklist, late check-out, AI escalated**. Everything
-  else is drill-down. Plus a one-tap **daily summary**, an **AI activity** panel,
-  **consent status** per worker, and the **audit trail**.
-- **Project AI.** Every job has its own AI context (overview, goal, phase, rules,
-  FAQ) on the job's **🤖 Project AI** tab. It answers *as the owner would, from
-  that job's data first*; if unsure it asks **one** clarifying question, and the
-  worker can escalate to the owner in one tap (logged + alerted).
-- **Documents.** Contracts, proposals and plans are first-class, **versioned**
-  records — uploading the same name creates a new version (never overwrites),
-  with an **approval history**; updates raise an alert.
-- **Alerts.** Typed, with severity / status / source / timestamp / assigned
-  owner; in-app first (email/SMS for critical items needs a provider — see notes).
-- **Backups.** Automatic + manual snapshots kept as multiple **versioned** copies
-  (offsite via cloud sync when configured), each **verified** by checksum, with
-  **scheduled restore tests** and a full backup/restore log. Contracts/proposals/
-  plans are never overwritten.
-- **Security.** Role-based access; optional **extra owner/admin code (MFA)** at
-  login; audit logging of key actions; work-only (not continuous) location.
+- Customers, jobs, calls, notes, follow-ups, and workflows
+- Job photos and documents
+- Estimates, invoices, payments, and checks inside OTTO
+- Payroll spreadsheet/CSV intake
+- Inbox/email register
+- Work-only field check-in/out and location records
+- Reports, audit/history, backups, JSON/CSV export
+- Project/job context and Ask OTTO
+- English and Spanish
+- Light and dark modes
+- Offline-first PWA behavior
 
-> Honest scope: this is a client-side PWA. True email/SMS delivery, real
-> server-side MFA, and immutable offsite storage need a backend/provider — the
-> app implements the in-app equivalents and the data model + hooks to wire them
-> up. Automatic email capture already has a webhook (`api/inbound-email.js`).
+Some provider/server-backed capabilities remain blocked until issue #70 is complete. Code presence alone is not proof that a feature is live.
 
-## Cloud sync
-Data is shared across devices through the project's own **Supabase** backend via
-`api/data.js` (the secret key stays on the server, never in the browser). To
-switch it on, set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` in Vercel →
-Settings → Environment Variables and redeploy — `docs/STATUS.md` §3.1b has the
-exact values and the verification steps. Without these settings the app still
-works fully on each device; nothing syncs between devices.
+## Development and verification
 
-> The previous Firebase-based sync was retired on 2026-07-21 (that project was
-> deleted after a data exposure — see `docs/STATUS.md` §3.1). Do not reintroduce
-> Firebase project IDs, API keys, or Firestore settings anywhere in this app.
+Before changing anything, start from current `main` on a focused branch and follow the repository control files above.
 
-## Run / deploy
+Run the current applicable commands from `package.json`. The normal verification baseline includes:
+
 ```bash
-# locally
-python3 -m http.server 8000   # then open http://localhost:8000
-
-# or just open index.html, or deploy the folder to Vercel / Netlify / any static host
+npm test
+node scripts/qa-check.mjs
+npm run qa:visual
 ```
 
-## Data model
-`customers · jobs · calls · notes · photos · documents · estimates · invoices ·
-payments · checks · followups · workflows · sops · users · locations · folders ·
-emails · payroll · projects · job_events · job_checklists · ai_conversations ·
-ai_escalations · consent_records · contracts · proposals · plans · alerts ·
-backups · daily_summaries · audit_log`
+For UI or behavior changes, browser verification is mandatory. Check phone and desktop widths, English/Spanish, light/dark where applicable, JavaScript errors, broken images, navigation, and unintended overflow.
 
-Photos and files are stored as blobs in IndexedDB and linked to their job;
-everything else is JSON, backed up to localStorage and exportable to JSON/CSV.
+Do not put a permanent fixed test count in this README; report the actual result of the current run.
 
-## Files
-- `index.html` — the entire application.
-- `api/claude.js` — Vercel serverless proxy to the Anthropic API (keeps the key server-side).
-- `api/nvidia.js` — Vercel serverless proxy to the NVIDIA API for the drawing estimator (key server-side).
-- `api/data.js` — server-side access to the Supabase backend (keeps the key server-side).
-- `api/inbound-email.js` — optional inbound-email webhook for automatic Inbox capture (requires `INBOUND_WEBHOOK_TOKEN`).
-- `manifest.json`, `sw.js` — PWA install + offline shell.
-- `legacy/dream-cooling-crm.html` — the previous Dream Cooling (HVAC) app this
-  branch replaced, kept for reference.
+## Safety
+
+- Never commit secrets, API keys, PINs, passwords, tokens, or fallback credentials.
+- Never hand-build authentication or homemade JWT verification.
+- Never make the server authorization boundary permissive as a shortcut.
+- Never delete live data without explicit approval for the exact rows after backup and dependency review.
+- Never reintroduce retired Firebase or QuickBooks configuration.
+- Never claim production/deployment success without direct evidence.
+
+For full rules and the active priority order, use `AGENTS.md` and `docs/REPO-CONTROL.md`.
