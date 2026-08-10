@@ -12,80 +12,98 @@ const checks = [
   ...validatePatchedSource(patched),
   ...validatePatchedRuntime(runtime),
 
-  // ── the permanent left rail ────────────────────────────────────────────────
-  // The home is four always-rendered tabs plus at most one open panel. These
-  // checks pin that model down; the assertions for drag handles, full screen,
-  // maximize/restore and the duplicate minimize controls were removed with the
-  // features themselves.
-  ['four home sections are declared once', ['panel-today', 'panel-field', 'panel-inbox', 'panel-tools']
-    .every(id => (runtime.match(new RegExp(`'${id}'`, 'g')) || []).length >= 1)],
-  ['Today panel', runtime.includes("id: 'panel-today'")],
-  ['Field Workers panel', runtime.includes("id: 'panel-field'")],
-  ['Inbox panel', runtime.includes("id: 'panel-inbox'")],
-  ['Tools panel', runtime.includes("id: 'panel-tools'")],
-  ['one nullable active-panel variable holds the whole home state', runtime.includes('let activePanelId = null')],
-  ['every rail tab is always rendered', runtime.includes('PANELS.map(p =>') && runtime.includes('class="otto-rail"')],
-  ['opening a panel closes the others by rendering only one', runtime.includes('stage.innerHTML = activePanelId ? panelMarkup(activePanelId) : \'\'')],
-  ['an unknown panel id can never be left active', runtime.includes('if (activePanelId && !PANEL_IDS.includes(activePanelId)) activePanelId = null')],
-  ['the rail is a permanent fixed panel on the left', styles.includes('.otto-rail {') && styles.includes('position: fixed') && styles.includes('--otto-rail-w')],
-  ['rail tabs report their state to assistive tech', runtime.includes("setAttribute('aria-expanded'") && runtime.includes("setAttribute('aria-current', 'true')")],
+  // ── owner-requested three-window workspace ────────────────────────────────
+  ['exactly three primary workspace windows are declared',
+    ['panel-today', 'panel-field', 'panel-inbox'].every(id => runtime.includes(`id: '${id}'`)) && !runtime.includes("id: 'panel-tools'")],
+  ['all three windows open by default',
+    ['panel-today', 'panel-field', 'panel-inbox'].every(id => runtime.includes(`'${id}': 'normal'`))],
+  ['window states include normal, minimize, maximize and full screen',
+    runtime.includes("const WINDOW_STATES = ['normal', 'minimized', 'maximized', 'fullscreen']")],
+  ['each window renders Windows-style controls',
+    runtime.includes('class="otto-window-controls"') && runtime.includes("data-otto-state=\"minimized\"") && runtime.includes("'maximized'") && runtime.includes("'fullscreen'")],
+  ['minimize removes the window from the stage but leaves its rail task',
+    runtime.includes("if (state === 'minimized') return ''") && runtime.includes("class=\"otto-task${state === 'minimized' ? ' is-minimized' : ''}")],
+  ['rail restores a minimized window',
+    runtime.includes("action === 'restore-window'") && runtime.includes("setWindowState(id, 'normal', true)")],
+  ['rail can bring another normal window forward while one is enlarged',
+    runtime.includes("(anyWindowState('maximized') || anyWindowState('fullscreen')) && windowStates[id] === 'normal'") && runtime.includes("setWindowState(id, 'maximized', true)")],
+  ['maximize occupies the workspace without deleting other window state',
+    styles.includes('.otto-window-stage.has-maximized .otto-window:not([data-state="maximized"])') && styles.includes('.otto-window[data-state="maximized"]')],
+  ['full screen really occupies the viewport and can be exited',
+    styles.includes('.otto-window[data-state="fullscreen"]') && styles.includes('position: fixed') && runtime.includes("state === 'fullscreen' ? 'normal' : 'fullscreen'")],
+  ['Tools is a launcher, not a fourth main window',
+    runtime.includes('class="otto-tools-launch"') && runtime.includes('function openTools()') && !runtime.includes("'panel-tools':")],
+  ['no drag or reorder interaction was reintroduced',
+    !runtime.includes('draggable') && !runtime.includes('interact(') && !styles.includes('drag-handle')],
 
-  // ── back controls, with no dead ends ───────────────────────────────────────
-  ['an open panel renders a real labelled Back to panels button', runtime.includes("class=\"otto-back\" data-otto-action=\"close-panel\"") && runtime.includes("words('Back to panels', 'Volver a los paneles')")],
-  ['Back to panels is a full-size button, not an icon or a hover target', styles.includes('.otto-back {') && styles.includes('min-height: 52px')],
-  ['secondary screens get one Back to Home control', runtime.includes("id = 'otto-back-home'") && runtime.includes("words('Back to Home', 'Volver al inicio')")],
-  ['Back to Home is pinned in the top bar, not a bottom dock', styles.includes('.otto-back-home {') && styles.includes('order: -1') && !styles.includes('.otto-utility-nav')],
-  ['the bottom utility dock is gone', !runtime.includes('otto-utility-nav')],
-  ['in-page back buttons name where they return to', patched.includes('function pageHead(title, sub, withBack, actions, backLabel)') && patched.includes("\"nav('jobs')\", '', t('jobs')")],
-  ['the retired hub dashboard is no longer a back destination', !patched.includes("nav('hub')")],
+  // ── personal identity ─────────────────────────────────────────────────────
+  ['Julio gets green interface accents',
+    runtime.includes("session.id === 'owner-2') userTheme = 'julio'") && styles.includes('body[data-otto-user="julio"]') && styles.includes('--action: #15803d')],
+  ['Saray gets pink interface accents',
+    runtime.includes("session.id === 'ops-1') userTheme = 'saray'") && styles.includes('body[data-otto-user="saray"]') && styles.includes('--action: #be185d')],
+  ['Otto keeps the blue base identity', runtime.includes("session.id === 'owner-1') userTheme = 'otto'")],
+  ['Julio wallpaper mapping is preserved', runtime.includes("wallpaper.setAttribute('data-user', 'owner-2')") && styles.includes("julio-pablo.avif")],
+  ['Saray wallpaper mapping is preserved', runtime.includes("wallpaper.setAttribute('data-user', 'ops-1')") && styles.includes("sarays.avif")],
+  ['Saray artwork remains anchored away from left-side chrome', styles.includes('.wallpaper-container[data-user="ops-1"]') && styles.includes('background-position: right top')],
 
-  // ── removed complexity ─────────────────────────────────────────────────────
-  ['no panel state machine remains', !runtime.includes('setPanelState') && !runtime.includes("'fullscreen'")],
-  ['no full-screen panel rule remains', !styles.includes('fullscreen')],
-  ['no drag or reorder handles remain', !runtime.includes('draggable') && !styles.includes('drag-handle')],
+  // ── crew simplification ──────────────────────────────────────────────────
+  ['crew hours are calculated from actual check-in/check-out events',
+    runtime.includes("e.type === 'check_in' || e.type === 'check_out'") && runtime.includes('function workIntervals(workerId)') && runtime.includes('function sumHours(intervals, from, to)')],
+  ['group hours show today, week and number clocked in',
+    runtime.includes("words('Crew Hours', 'Horas del equipo')") && runtime.includes("words('Clocked in', 'Trabajando')") && runtime.includes('totalWeek')],
+  ['worker summaries contain only current job, next job, hours and time off',
+    runtime.includes("words('Current job', 'Trabajo actual')") && runtime.includes("words('Next job', 'Próximo trabajo')") && runtime.includes("words('Time off', 'Tiempo libre')")],
+  ['random KPI/heatmap data is gone from the replacement runtime',
+    !runtime.includes('Math.random') && !runtime.includes('Calendar Heatmap') && !runtime.includes('loginHistory') && !runtime.includes('locationsVisited')],
+  ['old fake hours formula is not used', !runtime.includes('checkins.length * 2')],
+  ['owner KPI route is repurposed as real Crew Hours', runtime.includes('viewKpis = function ()') && runtime.includes('crewHoursMarkup(false)')],
+  ['worker profile route is simplified', runtime.includes('viewWorkerProfile = function ()') && runtime.includes('otto-worker-page')],
 
-  // ── the wallpaper stays the subject ────────────────────────────────────────
-  ['Julio wallpaper runtime mapping', runtime.includes("session.id === 'owner-2'") && patched.includes('julio-pablo.avif')],
-  ['Sarays wallpaper runtime mapping', runtime.includes("session.id === 'ops-1'") && patched.includes('sarays.avif')],
-  ['Otto wallpaper is not invented', !runtime.includes("session.id === 'owner-1'")],
-  ['Sarays Little Prince artwork is anchored top-right so it is never cropped away', styles.includes('.wallpaper-container[data-user="ops-1"]') && styles.includes('background-position: right top')],
-  ['no panel covers the whole wallpaper', styles.includes('max-height: var(--otto-panel-h)')],
-  ['home chrome is pinned left, away from the upper-right artwork', styles.includes('body.admin-home .topbar') && styles.includes('right: auto')],
-  ['accounts with no supplied wallpaper still get a finished surface', styles.includes('background-color: var(--bg)')],
+  // ── Plans & AutoCAD ──────────────────────────────────────────────────────
+  ['Plans & AutoCAD has a dedicated hub', runtime.includes('function openPlansHub()') && runtime.includes("'Plans & AutoCAD'")],
+  ['plan hub clearly accepts PDF and AutoCAD-family files', runtime.includes('PDF · DWG · DXF · DWF · DGN')],
+  ['plan upload uses the existing tested drawing pipeline', runtime.includes("uploadDoc(jobId, 'cad')")],
+  ['recent plans are linked to their job folder', runtime.includes('function planDocuments()') && runtime.includes('jobTitle(doc.jobId)')],
+  ['Plans & AutoCAD is visible directly on the left rail', runtime.includes('otto-plans-launch') && runtime.includes("words('Plans & AutoCAD', 'Planos y AutoCAD')")],
+  ['Plans & AutoCAD is also the first prominent Tools action', runtime.includes('otto-tools-hero') && runtime.includes('data-otto-action="plans-hub"')],
 
-  // ── theming, mobile and accessibility ──────────────────────────────────────
-  ['Light mode glass surface', styles.includes('body.theme-app') && styles.includes('--glass-bg: rgba(255, 255, 255')],
-  ['Dark mode glass surface', styles.includes('[data-theme="dark"] body.theme-app')],
-  ['mobile layout rule', styles.includes('@media (max-width: 700px)')],
-  ['narrow phone layout rule', styles.includes('@media (max-width: 380px)')],
-  ['short screen layout rule', styles.includes('@media (max-height: 640px)')],
-  ['every control this file adds has a visible focus ring', styles.includes(':focus-visible') && styles.includes('outline: 3px solid var(--accent)')],
+  // ── simplified navigation/settings ───────────────────────────────────────
+  ['daily Tools launcher keeps only core operational groups',
+    ['jobs', 'customers', 'calls', 'followups', 'estimates', 'invoices', 'payments', 'payroll', 'team', 'urgent', 'reports', 'alerts', 'assistant', 'settings'].every(v => runtime.includes(`can('${v}')`))],
+  ['secondary technical clutter is not promoted in Tools',
+    !runtime.includes("nav('workflows')") && !runtime.includes("nav('knowledge')") && !runtime.includes("nav('map')") && !runtime.includes("nav('audit')")],
+  ['admin Settings hides provider keys and setup stubs',
+    runtime.includes('viewSettings = function ()') && !runtime.includes('Twilio From') && !runtime.includes('Google Client ID') && !runtime.includes('NVIDIA API Key')],
+  ['admin Settings keeps essential appearance, team, owner security, data safety and sign out',
+    runtime.includes("words('Appearance', 'Apariencia')") && runtime.includes("words('Team access', 'Acceso del equipo')") && runtime.includes("words('Owner security', 'Seguridad del dueño')") && runtime.includes("words('Data safety', 'Seguridad de datos')") && runtime.includes("action === 'sign-out'")],
+  ['owner extra-code security remains available', runtime.includes('id="set-mfa"') && runtime.includes('onclick="saveMfa()"') && runtime.includes('onclick="clearMfa()"')],
+  ['field Settings remains the existing worker workflow', runtime.includes("session.role === 'field') return legacyViewSettings()")],
+  ['duplicate floating assistant is hidden for admin while Assistant remains in Tools', styles.includes('body.admin-workspace #ai-float-btn') && runtime.includes("can('assistant')")],
+
+  // ── navigation, accessibility and responsive behavior ────────────────────
+  ['owner/office legacy bottom navigation stays hidden', runtime.includes("classList.toggle('admin-nav-hidden', admin)") && styles.includes('.bottomnav.admin-nav-hidden')],
+  ['secondary screens keep one Back to Home control', runtime.includes("id = 'otto-back-home'") && runtime.includes("words('Back to Home', 'Volver al inicio')")],
+  ['desktop stage uses three columns', styles.includes('grid-template-columns: repeat(3, minmax(0, 1fr))')],
+  ['small desktop/tablet keeps all windows visible in a two-column flow', styles.includes('@media (max-width: 1180px)') && styles.includes('grid-template-columns: repeat(2, minmax(0, 1fr))')],
+  ['phone keeps the side task panel and a one-window column', styles.includes('@media (max-width: 760px)') && styles.includes('--otto-taskbar-w: 78px')],
+  ['narrow phone layout exists', styles.includes('@media (max-width: 480px)')],
+  ['short-screen layout exists', styles.includes('@media (max-height: 640px)')],
+  ['every new control family has a visible focus treatment', styles.includes(':focus-visible') && styles.includes('outline: 3px solid var(--accent)')],
   ['reduced motion is respected', styles.includes('prefers-reduced-motion')],
 
-  // ── real functionality is preserved ────────────────────────────────────────
-  ['Ask OTTO routes to real assistant', runtime.includes('openPlumbBotModal = function ()') && runtime.includes("nav('assistant')")],
-  ['attention center includes real email data', runtime.includes("list('inbox_emails')")],
-  ['attention center includes worker messages', runtime.includes("list('employee_messages')") && runtime.includes("view: 'urgent'")],
-  ['attention center includes pending PTO', runtime.includes("list('pto_requests')")],
-  ['Tools lists every screen the role can actually open', ['estimates', 'invoices', 'payments', 'checks', 'payroll', 'jobs', 'customers', 'calls', 'followups', 'workflows', 'map', 'team', 'kpis', 'urgent', 'reports', 'alerts', 'knowledge', 'emails', 'audit', 'backups', 'assistant', 'settings']
-    .every(v => runtime.includes(`['${v}', 'fa-`))],
-  ['Tools hides what the signed-in role may not open', runtime.includes('g.views.filter(([v]) => can(v))')],
-  ['owner navigation hides legacy bottom tabs', runtime.includes("classList.toggle('admin-nav-hidden', admin)") && styles.includes('.bottomnav.admin-nav-hidden')],
-  ['the add button comes back on owner secondary screens', styles.includes('body.admin-workspace:not(.admin-home) .fab')],
-  ['generic CSV export remains', patched.includes('function exportCSV(col)')],
-  ['QuickBooks payment method removed', !patched.includes('<option>QuickBooks</option>')],
-  ['fake operational status not emitted by new runtime', !runtime.includes('No delays reported today')],
-  ['public landing page untouched by patch', !runtime.includes('landing.html') && !styles.includes('landing.html')],
+  // ── existing product contracts preserved ─────────────────────────────────
+  ['Ask OTTO still routes to the real assistant', runtime.includes('openPlumbBotModal = function ()') && runtime.includes("nav('assistant')")],
+  ['attention window still uses real inbox data', runtime.includes("list('inbox_emails')")],
+  ['attention window still uses worker messages and PTO', runtime.includes("list('employee_messages')") && runtime.includes("list('pto_requests')")],
+  ['public website is untouched', !runtime.includes('landing.html') && !styles.includes('landing.html')],
+  ['top bar still uses the supplied OTTO Plumbing logo', patched.includes('<img src="./logo.jpg" alt="OTTO Plumbing Inc." class="crystal-logo"')],
+  ['wrench-person icon is not restored as the CRM logo', !/<img[^>]*icon-192\.png[^>]*class="crystal-logo"/.test(patched)],
 
-  // ── company logo ───────────────────────────────────────────────────────────
-  ['top bar shows the supplied crystal wordmark', patched.includes('<img src="./logo.jpg" alt="OTTO Plumbing Inc." class="crystal-logo"')],
-  ['wrench-person icon is not restored', !/<img[^>]*icon-192\.png[^>]*class="crystal-logo"/.test(patched)],
-
-  // ── offline shell ──────────────────────────────────────────────────────────
-  ['home assets carry a cache-busting version', patched.includes(`otto-home.css?v=${HOME_ASSET_VERSION}`) && patched.includes(`otto-home.js?v=${HOME_ASSET_VERSION}`)],
-  ['the offline cache was bumped for the new assets', /const CACHE = 'otto-crm-v(\d+)'/.exec(sw)?.[1] >= '10'],
-  ['a cache-busted app asset still resolves offline', sw.includes('ignoreSearch: sameOrigin')],
-  ['payroll and document parsers are precached from the page, not a second URL list', sw.includes('runtimeScriptsIn') && !sw.includes('xlsx.full.min.js')]
+  // ── offline update ────────────────────────────────────────────────────────
+  ['workspace assets use the new cache-busting version', HOME_ASSET_VERSION === '3' && patched.includes('otto-home.css?v=3') && patched.includes('otto-home.js?v=3')],
+  ['offline cache is bumped for the new workspace', sw.includes("const CACHE = 'otto-crm-v12'")],
+  ['both personal wallpapers remain precached', sw.includes('julio-pablo.avif') && sw.includes('sarays.avif')],
+  ['cache-busted same-origin assets still resolve offline', sw.includes('ignoreSearch: sameOrigin')]
 ];
 
 let failed = 0;

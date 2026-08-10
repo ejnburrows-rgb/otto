@@ -1,6 +1,6 @@
 # OTTO Plumbing CRM
 
-OTTO is the internal bilingual CRM for **OTTO Plumbing Inc.** It is a mobile-first, offline-capable Progressive Web App for customers, jobs, field work, documents, estimates/invoices/payments, payroll intake, Inbox, reporting, job photos, work-only check-in/location, and Ask OTTO.
+OTTO is the internal bilingual CRM for **OTTO Plumbing Inc.** It is a mobile-first, offline-capable Progressive Web App for customers, jobs, field work, documents, estimates/invoices/payments, payroll intake, Inbox, reporting, job photos, work-only check-in/location, drawing takeoff, and Ask OTTO.
 
 **Production CRM:** `https://otto-kohl.vercel.app`
 
@@ -18,16 +18,33 @@ For current instructions and product truth, read in this order:
 
 Old task queues, branch handoffs, historical audits, and chat summaries are not active instructions unless `docs/REPO-CONTROL.md` explicitly activates them.
 
+## Current owner / office workspace
+
+The approved owner/office direction is a wallpaper-first desktop workspace, not a one-panel dashboard:
+
+- **Three primary windows are open together:** Today, Field Workers, and Inbox.
+- Every primary window can **minimize to the left side panel, restore, maximize inside the workspace, and use full screen**.
+- Generic drag/reorder behavior is intentionally excluded because the earlier drag implementation interfered with normal scrolling.
+- **Julio** uses green interface accents and his committed wallpaper.
+- **Saray** uses pink interface accents and her committed wallpaper.
+- **Otto** keeps the blue OTTO identity; no wallpaper is invented for him.
+- The supplied `logo.jpg` OTTO Plumbing wordmark remains the CRM logo.
+- **Plans & AutoCAD** is visible directly from the left panel and accepts PDF, DWG, DXF, DWF, and DGN through the existing job-document/drawing workflow.
+- **Crew Hours** shows actual recorded hours for the whole field crew from job check-in/check-out records. Worker detail is intentionally limited to current job, next job, today/week hours, and time-off status.
+- Random worker heatmaps, fake KPI hours, vanity location counts, login-history presentation, and mock performance charts are not part of the approved worker UI.
+- Owner/office Settings is deliberately restrained: appearance, team access, owner security, data safety, and sign out. Provider keys and unfinished setup stubs are not normal owner-facing controls.
+
+These are product requirements. Do not simplify the workspace back to one active panel or change Julio/Saray accent identities without a new explicit owner decision.
+
 ## Current state
 
-- The current owner/office home is already merged to `main` and uses the permanent left rail: **Today / Field Workers / Inbox / Tools**.
-- Current wallpapers and the OTTO wordmark are committed assets.
-- English/Spanish, light/dark, and local/offline behavior must be preserved.
+- The local/offline CRM and built-in demo are present.
+- English/Spanish, light/dark, personal identity treatment, and offline behavior must be preserved.
 - The Supabase project and core production tables already exist. This is **not** waiting on initial database creation or merely two Vercel variables.
 - Sensitive server routes remain intentionally fail-closed until the fresh server-authorization work in issue **#70** is implemented and proven from current `main`.
 - The older Supabase Auth attempt, PR **#103**, was reviewed and closed unmerged. Do not resurrect or merge that branch wholesale.
-- Read-only verification on 2026-08-10 found 19 users, 3 customers, 13 jobs, 1 invoice, and 0 Supabase Auth users. The ten later duplicate/demo job rows are tracked separately in issue **#111**; no live deletion is authorized by this README.
-- Production/browser QA and the public website GitHub→Vercel automatic-deployment repair are tracked in issue **#110**.
+- Duplicate/demo live records are tracked separately in issue **#111**; no live deletion is authorized by this README.
+- Failed photo uploads must remain queued and visibly pending instead of being silently abandoned.
 
 ## Authentication and shared sync
 
@@ -47,8 +64,10 @@ Keep OTTO's native invoices/payments, generic CSV export, payroll import, jobs, 
 
 - Customers, jobs, calls, notes, follow-ups, and workflows
 - Job photos and documents
+- Plans & AutoCAD / drawing upload and takeoff workflow
 - Estimates, invoices, payments, and checks inside OTTO
 - Payroll spreadsheet/CSV intake
+- Whole-crew recorded hours plus simplified worker detail
 - Inbox/email register
 - Work-only field check-in/out and location records
 - Reports, audit/history, backups, JSON/CSV export
@@ -71,7 +90,7 @@ node scripts/qa-check.mjs
 npm run qa:visual
 ```
 
-For UI or behavior changes, browser verification is mandatory. Check phone and desktop widths, English/Spanish, light/dark where applicable, JavaScript errors, broken images, navigation, and unintended overflow.
+For UI or behavior changes, browser verification is mandatory. Check phone and desktop widths, English/Spanish, light/dark where applicable, JavaScript errors, broken images, navigation, and unintended overflow. For the owner/office home specifically, exercise all three windows through minimize, restore, maximize and full screen, then verify Julio, Saray and Otto separately.
 
 Do not put a permanent fixed test count in this README; report the actual result of the current run.
 
