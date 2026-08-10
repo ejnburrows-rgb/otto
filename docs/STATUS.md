@@ -1015,3 +1015,45 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   claimed: a real phone, and everything behind #70** — cloud sync, cross-device
   photos, customer notifications and QuickBooks remain off, which also means the
   website still cannot deliver a lead to an inbox.
+
+- 2026-08-10 — Rebuilt the owner/office home around one interaction model: a
+  permanent left rail of four tabs (Today, Field Workers, Inbox, Tools) that is
+  always on screen, and at most one open panel, each carrying a large
+  `← Back to panels` button. `activePanelId` is a single nullable value and the
+  panel area is rewritten in one assignment, so opening a second panel closes
+  the first and rapid clicking cannot leave two panels, stale content, or a
+  half-updated one behind. Panel drag/reorder, full screen, maximize/restore and
+  the duplicate minimize/collapse buttons are gone — the rail is the minimized
+  state — as is the bottom Home/Tools dock. Every owner/office secondary screen
+  now carries one `← Back to Home` button pinned in the sticky top bar; the
+  in-page back on Customer, Job and Worker profile now names its destination
+  ("← Jobs"), and Team KPIs no longer pointed back at the retired `hub`
+  dashboard. Tools lists every screen the signed-in role can actually open, so
+  nothing is reachable only by a hidden path. The top bar shows the supplied
+  crystal OTTO Plumbing Inc. wordmark; the wrench-person app icon it replaced is
+  not restored and the duplicate "OTTO CRM" text stays out. Fixed along the way:
+  the top-bar icons and language toggle were near-white on the light home glass
+  and invisible in light mode; `fa-sparkles` is not in Font Awesome 6 Free, so
+  "Ask OTTO" rendered as a blank square in 16 places; `.pill.blue` was 4.17:1 in
+  light mode, under WCAG AA; a toast could land on top of the open panel; the
+  local preview server served `.avif` and `.jpg` as `application/octet-stream`;
+  and two assertions in `test-ui-regressions.mjs` were wrong rather than the code
+  — the cache-name check compared version numbers as strings (so `'10' < '5'`)
+  and the `.vercelignore` check named one allowed build script after the build
+  had grown to three. Working screens dim the wallpaper behind them so records
+  read cleanly; the home screen leaves it dominant, and Sarays's upper-right
+  Little Prince is kept clear of chrome at every viewport, including a crop
+  adjustment on phones where `cover` would otherwise drag him under the rail.
+  **Evidence:** `npm test` **453 checks, 0 failed**; `node scripts/qa-check.mjs`
+  `pass: true`, 0 broken buttons, 0 missing Spanish keys. Exercised in Chromium
+  as Julio Pablo and Sarays at 1920x1080, 1440x900, 1024x768, 740x360, 390x844,
+  360x640 and 320x568, in English and Spanish, light and dark: every panel opened
+  and closed, all 20-22 secondary screens reached and returned from, keyboard
+  operation and focus return checked, and axe-core WCAG 2.0/2.1 A+AA reported
+  **0 violations** across the home, all four panels and four secondary screens.
+  Screenshots in `outputs/`. **Not verified here:** `npm run qa:visual` (5 of 14)
+  and `npm run qa:site` (2 of 21) fail in this sandbox only because the browser
+  cannot reach cdnjs and fonts.googleapis.com — the same files download fine over
+  Node, and every product assertion in those runs (25 owner screens at three
+  widths, no broken images, no sideways scroll, zero JavaScript errors, axe 0 on
+  landing and guide) passed. Both need a re-run where the CDN is reachable.

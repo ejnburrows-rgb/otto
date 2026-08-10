@@ -1,6 +1,6 @@
 /* OTTO Plumbing CRM — service worker
    Offline-first shell cache. App data lives in IndexedDB, not here. */
-const CACHE = 'otto-crm-v9';
+const CACHE = 'otto-crm-v10';
 // landing.html and guide.html ship too. Without them here, an installed phone
 // with no signal that opened /guide.html was served the CRM instead, because the
 // navigate handler below falls back to index.html for anything it cannot fetch.
@@ -11,12 +11,17 @@ const SHELL = [
 ];
 
 // Runtime libraries that are loaded only when a user invokes a specialized
-// workflow. Payroll Excel import uses SheetJS on demand, so cache it at install
-// time instead of letting the first no-signal import fail simply because that
-// screen had never been opened online before.
-const DYNAMIC_CDN = [
-  'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'
-];
+// workflow — payroll Excel import (SheetJS) and document import (pdf.js). They
+// are cached at install time instead of letting the first no-signal import fail
+// simply because that screen had never been opened online before.
+//
+// The URL list used to be written out here. That is the same two-copies-of-one-
+// URL shape that cost the app its webfonts, so these are read off the page too:
+// the page assigns them to `.src` / `.workerSrc` when it injects the script.
+function runtimeScriptsIn(html) {
+  return [...html.matchAll(/\.(?:src|workerSrc)\s*=\s*['"](https:\/\/[^'"]+)['"]/g)]
+    .map((m) => m[1]);
+}
 
 // The icon font and the webfonts, fetched at install rather than waiting for a
 // second visit. On the very first load the service worker is not controlling the
@@ -82,7 +87,7 @@ self.addEventListener('install', (e) => {
       } catch (err) { /* keep going */ }
     }
 
-    const runtimeScripts = [...new Set([...cdnScriptsIn(html), ...DYNAMIC_CDN])];
+    const runtimeScripts = [...new Set([...cdnScriptsIn(html), ...runtimeScriptsIn(html)])];
     for (const url of runtimeScripts) {
       try { await c.add(new Request(url, { mode: 'cors' })); } catch (err) { /* keep going */ }
     }
@@ -137,8 +142,14 @@ self.addEventListener('fetch', (e) => {
     return;
   }
   // Cache-first for static CDN assets and app assets.
+  //
+  // Same-origin lookups ignore the query string: otto-home.css and otto-home.js
+  // are requested with a cache-busting `?v=` that changes whenever they change,
+  // and an exact-match lookup would miss the precached copy and leave an
+  // offline phone with an unstyled home screen.
+  const sameOrigin = url.origin === self.location.origin;
   e.respondWith(
-    caches.match(req).then((m) => m || fetch(req).then((res) => {
+    caches.match(req, { ignoreSearch: sameOrigin }).then((m) => m || fetch(req).then((res) => {
       if (res && res.status === 200 && (url.hostname.includes('cdnjs') || url.hostname.includes('fonts') || url.hostname.includes('cdn-icons') || url.hostname.includes('jsdelivr'))) {
         const copy = res.clone();
         caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});

@@ -4,6 +4,13 @@ import { fileURLToPath } from 'node:url';
 const ROOT_INDEX = new URL('../index.html', import.meta.url);
 const HOME_RUNTIME = new URL('../otto-home.js', import.meta.url);
 
+/* Bump this whenever otto-home.css or otto-home.js changes. It is the cache
+   -busting query string on both tags, and it lives here — one place — so the
+   page cannot end up asking for one version of the stylesheet and another of
+   the runtime. The service worker resolves same-origin hits with the query
+   ignored, so a bump never costs an offline device its home screen. */
+export const HOME_ASSET_VERSION = '2';
+
 export function patchSource(source) {
   let out = source;
 
@@ -23,7 +30,12 @@ export function patchSource(source) {
     ["for (const p of db.time_off) {", "for (const p of [...(db.pto_requests || []), ...(db.time_off || [])]) {"],
     ["function approvePTO(id) { update('time_off', id, {status: 'approved'}); toast(t('ptoApproved'), 'success'); render(); }", "function approvePTO(id) { const col = get('pto_requests', id) ? 'pto_requests' : 'time_off'; update(col, id, {status: 'approved', readByWorker: false}); toast(t('ptoApproved'), 'success'); render(); }"],
     ["function denyPTO(id) { update('time_off', id, {status: 'denied'}); toast(t('ptoDenied'), 'error'); render(); }", "function denyPTO(id) { const col = get('pto_requests', id) ? 'pto_requests' : 'time_off'; update(col, id, {status: 'denied', readByWorker: false}); toast(t('ptoDenied'), 'error'); render(); }"],
-    ['<img src="./icon-192.png" alt="" class="crystal-logo" />', '<img src="./icon-192.png" alt="OTTO CRM" class="crystal-logo" data-otto-logo-slot="replaceable" />'],
+    // The top bar carries the supplied crystal OTTO Plumbing Inc. wordmark. The
+    // wrench-person app icon that used to sit here must not come back, and the
+    // wordmark already says the company name, so the "OTTO CRM" text that stood
+    // beside it was a duplicate and stays out.
+    ['<img src="./icon-192.png" alt="" class="crystal-logo" />', '<img src="./logo.jpg" alt="OTTO Plumbing Inc." class="crystal-logo" data-otto-logo-slot="replaceable" />'],
+    ['<img src="./icon-192.png" alt="OTTO CRM" class="crystal-logo" data-otto-logo-slot="replaceable" />', '<img src="./logo.jpg" alt="OTTO Plumbing Inc." class="crystal-logo" data-otto-logo-slot="replaceable" />'],
 
     // QuickBooks is deliberately out of scope. OTTO keeps its own invoices,
     // payments and generic CSV exports; there is no Intuit account/API setup.
@@ -85,16 +97,21 @@ export function patchSource(source) {
     '\n'
   );
 
-  if (!out.includes('data-otto-home-styles')) {
-    const link = '  <link rel="stylesheet" href="./otto-home.css" data-otto-home-styles />\n';
+  const link = `<link rel="stylesheet" href="./otto-home.css?v=${HOME_ASSET_VERSION}" data-otto-home-styles />`;
+  const script = `<script src="./otto-home.js?v=${HOME_ASSET_VERSION}" data-otto-home-runtime></script>`;
+
+  if (out.includes('data-otto-home-styles')) {
+    out = out.replace(/<link\b[^>]*\bdata-otto-home-styles\b[^>]*>/, link);
+  } else {
     if (!out.includes('</head>')) throw new Error('index.html is missing </head>');
-    out = out.replace('</head>', `${link}</head>`);
+    out = out.replace('</head>', `  ${link}\n</head>`);
   }
 
-  if (!out.includes('data-otto-home-runtime')) {
-    const script = '  <script src="./otto-home.js" data-otto-home-runtime></script>\n';
+  if (out.includes('data-otto-home-runtime')) {
+    out = out.replace(/<script\b[^>]*\bdata-otto-home-runtime\b[^>]*><\/script>/, script);
+  } else {
     if (!out.includes('</body>')) throw new Error('index.html is missing </body>');
-    out = out.replace('</body>', `${script}</body>`);
+    out = out.replace('</body>', `  ${script}\n</body>`);
   }
 
   return out;
@@ -112,11 +129,15 @@ export function validatePatchedSource(source) {
     ['Sarays canonical seed', source.includes("id: 'ops-1', name: 'Sarays'")],
     ['Julio Pablo migration', source.includes("fixUser('owner-2', 'Julio Pablo');")],
     ['Sarays migration', source.includes("fixUser('ops-1', 'Sarays');")],
-    ['minimal home stylesheet wired', source.includes('data-otto-home-styles')],
-    ['minimal home runtime wired', source.includes('data-otto-home-runtime')],
+    ['minimal home stylesheet wired', source.includes(`href="./otto-home.css?v=${HOME_ASSET_VERSION}" data-otto-home-styles`)],
+    ['minimal home runtime wired', source.includes(`src="./otto-home.js?v=${HOME_ASSET_VERSION}" data-otto-home-runtime`)],
+    ['home assets share one cache-busting version', (source.match(/otto-home\.(?:css|js)\?v=/g) || []).length === 2],
     ['PTO dashboard reads current requests', source.includes("...(db.pto_requests || [])") && source.includes("const pendingPTO = [")],
     ['PTO approval updates current requests', source.includes("get('pto_requests', id) ? 'pto_requests' : 'time_off'")],
     ['replaceable OTTO logo slot', source.includes('data-otto-logo-slot="replaceable"')],
+    ['top bar carries the crystal wordmark', /<img src="\.\/logo\.jpg"[^>]*class="crystal-logo"/.test(source)],
+    ['wrench-person icon is not the top-bar logo', !/<img[^>]*icon-192\.png[^>]*class="crystal-logo"/.test(source)],
+    ['duplicate OTTO CRM text stays out of the top bar', !/<div class="brand">[\s\S]{0,400}?<span>OTTO CRM<\/span>/.test(source)],
     ['legacy Boss-Level copy removed', !source.includes('Boss-Level Intelligence')],
     ['legacy PlumbBot heading removed', !source.includes('PlumbBot AI Assistant')],
     ['QuickBooks API calls removed', !source.includes('/api/quickbooks')],
