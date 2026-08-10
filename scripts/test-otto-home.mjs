@@ -25,6 +25,8 @@ const checks = [
     runtime.includes("if (state === 'minimized') return ''") && runtime.includes("class=\"otto-task${state === 'minimized' ? ' is-minimized' : ''}")],
   ['rail restores a minimized window',
     runtime.includes("action === 'restore-window'") && runtime.includes("setWindowState(id, 'normal', true)")],
+  ['rail can bring another normal window forward while one is enlarged',
+    runtime.includes("(anyWindowState('maximized') || anyWindowState('fullscreen')) && windowStates[id] === 'normal'") && runtime.includes("setWindowState(id, 'maximized', true)")],
   ['maximize occupies the workspace without deleting other window state',
     styles.includes('.otto-window-stage.has-maximized .otto-window:not([data-state="maximized"])') && styles.includes('.otto-window[data-state="maximized"]')],
   ['full screen really occupies the viewport and can be exited',
@@ -62,7 +64,8 @@ const checks = [
   ['plan hub clearly accepts PDF and AutoCAD-family files', runtime.includes('PDF · DWG · DXF · DWF · DGN')],
   ['plan upload uses the existing tested drawing pipeline', runtime.includes("uploadDoc(jobId, 'cad')")],
   ['recent plans are linked to their job folder', runtime.includes('function planDocuments()') && runtime.includes('jobTitle(doc.jobId)')],
-  ['Plans & AutoCAD is the first prominent Tools action', runtime.includes('otto-tools-hero') && runtime.includes('data-otto-action="plans-hub"')],
+  ['Plans & AutoCAD is visible directly on the left rail', runtime.includes('otto-plans-launch') && runtime.includes("words('Plans & AutoCAD', 'Planos y AutoCAD')")],
+  ['Plans & AutoCAD is also the first prominent Tools action', runtime.includes('otto-tools-hero') && runtime.includes('data-otto-action="plans-hub"')],
 
   // ── simplified navigation/settings ───────────────────────────────────────
   ['daily Tools launcher keeps only core operational groups',
@@ -71,8 +74,9 @@ const checks = [
     !runtime.includes("nav('workflows')") && !runtime.includes("nav('knowledge')") && !runtime.includes("nav('map')") && !runtime.includes("nav('audit')")],
   ['admin Settings hides provider keys and setup stubs',
     runtime.includes('viewSettings = function ()') && !runtime.includes('Twilio From') && !runtime.includes('Google Client ID') && !runtime.includes('NVIDIA API Key')],
-  ['admin Settings keeps only appearance, team access, data safety and sign out',
-    runtime.includes("words('Appearance', 'Apariencia')") && runtime.includes("words('Team access', 'Acceso del equipo')") && runtime.includes("words('Data safety', 'Seguridad de datos')") && runtime.includes("action === 'sign-out'")],
+  ['admin Settings keeps essential appearance, team, owner security, data safety and sign out',
+    runtime.includes("words('Appearance', 'Apariencia')") && runtime.includes("words('Team access', 'Acceso del equipo')") && runtime.includes("words('Owner security', 'Seguridad del dueño')") && runtime.includes("words('Data safety', 'Seguridad de datos')") && runtime.includes("action === 'sign-out'")],
+  ['owner extra-code security remains available', runtime.includes('id="set-mfa"') && runtime.includes('onclick="saveMfa()"') && runtime.includes('onclick="clearMfa()"')],
   ['field Settings remains the existing worker workflow', runtime.includes("session.role === 'field') return legacyViewSettings()")],
   ['duplicate floating assistant is hidden for admin while Assistant remains in Tools', styles.includes('body.admin-workspace #ai-float-btn') && runtime.includes("can('assistant')")],
 
