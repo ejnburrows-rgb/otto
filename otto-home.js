@@ -9,9 +9,14 @@
    - Every open panel carries one large "Back to panels" button; every secondary
      owner/office screen carries one "Back to Home" button in the top bar.
 
-   Panel drag/reorder, full screen, maximize/restore and the duplicate
+   Panel drag/reorder, floating "full screen" windows and the duplicate
    minimize/collapse controls were removed: the permanent rail *is* the
-   minimized state, so none of them had a job left to do.
+   minimized state, so none of them had a job left to do. One expand control
+   survives, on the panel itself, because the panel is deliberately capped at a
+   little over half the screen and Tools alone lists twenty-odd screens — that
+   cap is a real constraint on a real list, not decoration. Expanding grows the
+   panel to the space between the top bar and the bottom edge and never further;
+   the rail stays on screen and Escape steps back out one level at a time.
 
    This file intentionally does not touch the public plumbing website. */
 (function () {
@@ -33,8 +38,11 @@
   ];
   const PANEL_IDS = PANELS.map(p => p.id);
 
-  /* The whole home state. Null means "no panel open — wallpaper only". */
+  /* The whole home state. Null means "no panel open — wallpaper only".
+     `panelMaximized` only ever applies to the one open panel and is dropped the
+     moment it closes, so there is no hidden state to come back to later. */
   let activePanelId = null;
+  let panelMaximized = false;
 
   function words(en, es) {
     return lang === 'es' ? es : en;
@@ -355,7 +363,10 @@
     /* A list with no links of its own is a scroll region a keyboard user cannot
        reach, so it takes a tab stop only in that case — adding one when the
        rows are already buttons would just be an extra stop on the way in. */
-    return `<section class="otto-panel" id="${id}" tabindex="-1" role="region" aria-labelledby="${id}-title">
+    const expandLabel = panelMaximized
+      ? words('Shrink this list', 'Reducir esta lista')
+      : words('Expand this list', 'Ampliar esta lista');
+    return `<section class="otto-panel${panelMaximized ? ' is-max' : ''}" id="${id}" tabindex="-1" role="region" aria-labelledby="${id}-title">
       <button type="button" class="otto-back" data-otto-action="close-panel">
         <span class="otto-back-arrow" aria-hidden="true">←</span>
         <span>${esc(words('Back to panels', 'Volver a los paneles'))}</span>
@@ -364,6 +375,11 @@
         <span class="otto-panel-icon" aria-hidden="true"><i class="fas ${meta.icon}"></i></span>
         <h2 class="otto-panel-title" id="${id}-title">${esc(t(meta.key))}</h2>
         ${meta.counted ? `<span class="otto-panel-count">${Number(built.count) || 0}</span>` : ''}
+        <button type="button" class="otto-expand" id="${id}-expand"
+          data-otto-action="toggle-max" aria-pressed="${panelMaximized ? 'true' : 'false'}"
+          aria-controls="${id}" aria-label="${esc(expandLabel)}" title="${esc(expandLabel)}">
+          <i class="fas ${panelMaximized ? 'fa-compress' : 'fa-expand'}" aria-hidden="true"></i>
+        </button>
       </header>
       <div class="otto-panel-body"${/otto-row-link/.test(built.body) ? '' : ' tabindex="0"'}>${built.body}</div>
       ${built.actions.length ? `<div class="otto-panel-actions">${built.actions.join('')}</div>` : ''}
@@ -395,8 +411,10 @@
     if (activePanelId && !PANEL_IDS.includes(activePanelId)) activePanelId = null;
     /* One write of the whole stage, so two fast clicks can never leave two
        panels on screen or a half-updated one behind. */
+    if (!activePanelId) panelMaximized = false;
     stage.innerHTML = activePanelId ? panelMarkup(activePanelId) : '';
     document.body.classList.toggle('otto-panel-open', Boolean(activePanelId));
+    document.body.classList.toggle('otto-panel-max', Boolean(activePanelId) && panelMaximized);
     syncTabs();
     if (focusPanel && activePanelId) {
       const panel = document.getElementById(activePanelId);
@@ -407,6 +425,9 @@
   function openPanel(id, focusPanel) {
     if (!PANEL_IDS.includes(id)) return;
     activePanelId = activePanelId === id ? null : id;
+    /* Switching sections is a fresh start: a panel never inherits the previous
+       one's expanded state, so what opens is always what the tab promises. */
+    panelMaximized = false;
     if (!onHome()) {
       nav('home');
       return;
@@ -417,13 +438,26 @@
   function closePanel() {
     const previous = activePanelId;
     activePanelId = null;
+    panelMaximized = false;
     renderStage(false);
     const tab = previous && document.getElementById(`tab-${previous}`);
     if (tab) tab.focus({ preventScroll: true });
   }
 
+  /* Expand / shrink the one open panel. Focus stays on the control that did it,
+     so the keyboard does not jump anywhere unexpected. */
+  function toggleMaximize() {
+    if (!activePanelId) return;
+    panelMaximized = !panelMaximized;
+    const id = activePanelId;
+    renderStage(false);
+    const btn = document.getElementById(`${id}-expand`);
+    if (btn) btn.focus({ preventScroll: true });
+  }
+
   function goHome() {
     activePanelId = null;
+    panelMaximized = false;
     nav('home');
   }
 
@@ -431,8 +465,9 @@
     if (!session) return;
 
     if (session.role === 'field') {
-      document.body.classList.remove('admin-home', 'admin-workspace', 'otto-panel-open', 'otto-secondary');
+      document.body.classList.remove('admin-home', 'admin-workspace', 'otto-panel-open', 'otto-panel-max', 'otto-secondary');
       activePanelId = null;
+      panelMaximized = false;
       return legacyViewHome();
     }
 
@@ -481,7 +516,8 @@
     document.body.classList.toggle('admin-home', minimalHome);
     if (!minimalHome) {
       if (!admin) activePanelId = null;
-      document.body.classList.remove('otto-panel-open');
+      panelMaximized = false;
+      document.body.classList.remove('otto-panel-open', 'otto-panel-max');
     }
     const bn = document.getElementById('bottomnav');
     if (bn) bn.classList.toggle('admin-nav-hidden', admin);
@@ -498,6 +534,7 @@
      name working so anything that still calls it lands in the right place. */
   expandTools = function () {
     activePanelId = 'panel-tools';
+    panelMaximized = false;
     if (!onHome()) nav('home');
     else renderStage(false);
   };
@@ -550,6 +587,9 @@
     } else if (action === 'close-panel') {
       e.preventDefault();
       closePanel();
+    } else if (action === 'toggle-max') {
+      e.preventDefault();
+      toggleMaximize();
     } else if (action === 'go-home') {
       e.preventDefault();
       goHome();
@@ -559,6 +599,24 @@
       if (!view) return;
       nav(view, el.getAttribute('data-otto-id') || null);
     }
+  });
+
+  /* Escape steps back out of the transient layers, one level at a time: an
+     expanded panel shrinks, then an open panel closes. A record sheet sits above
+     both and is handled by the shared modal code in the page, so it gets Escape
+     first and this listener stands down while one is open.
+
+     Deliberately NOT wired to secondary screens: those are working screens full
+     of search boxes and form fields, and Escape in a text box means "clear what
+     I typed" to most people, not "leave the screen". Back to Home is the way
+     out of those, and it is always on screen. */
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape' || e.defaultPrevented) return;
+    if (document.getElementById('overlay')) return;
+    if (!isAdmin() || !onHome() || !activePanelId) return;
+    e.preventDefault();
+    if (panelMaximized) toggleMaximize();
+    else closePanel();
   });
 
   window.expandTools = expandTools;

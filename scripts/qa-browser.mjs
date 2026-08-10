@@ -103,7 +103,7 @@ try {
   const urgent = await page.locator('#main').innerText();
   log('Urgent hub screen', urgent.toLowerCase().includes('urgent') || urgent.toLowerCase().includes('asunto'));
 
-  await page.evaluate(() => { if (typeof nav === 'function') nav('hub'); });
+  await page.evaluate(() => { if (typeof nav === 'function') nav('home'); });
   await page.waitForTimeout(400);
   log('Owner hub screen', (await page.locator('#main').innerText()).length > 10);
 

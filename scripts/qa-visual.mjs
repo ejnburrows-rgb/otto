@@ -248,7 +248,7 @@ try {
   }
 
   // ── 3. every screen, three widths ──────────────────────────────────────────
-  const views = ['home', 'hub', 'kpis', 'urgent', 'customers', 'jobs', 'calls', 'inbox', 'emails',
+  const views = ['home', 'kpis', 'urgent', 'customers', 'jobs', 'calls', 'inbox', 'emails',
     'estimates', 'invoices', 'payments', 'checks', 'payroll', 'alerts', 'followups', 'workflows',
     'knowledge', 'map', 'reports', 'backups', 'audit', 'team', 'settings', 'assistant'];
   const problems = [];

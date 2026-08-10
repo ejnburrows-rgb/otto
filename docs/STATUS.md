@@ -1057,3 +1057,68 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   Node, and every product assertion in those runs (25 owner screens at three
   widths, no broken images, no sideways scroll, zero JavaScript errors, axe 0 on
   landing and guide) passed. Both need a re-run where the CDN is reachable.
+
+- 2026-08-10 — Interaction completion pass over the owner/office CRM. The rail
+  home from earlier today held up under a real click-through, so this pass fixed
+  what was still broken around it rather than redesigning anything.
+  **Truthfulness first:** Settings printed "SMS/Email: SMS ready" for every
+  answer except one exact error string — the fail-closed gate returns
+  `403 server_auth_not_configured`, which is not that string, so the owner was
+  told customer texts and emails were ready to send when nothing could send. The
+  Cloud Sync card likewise asserted that sync was set up. Both now report what
+  the route actually answered, in English and Spanish, and say "ready" only on a
+  genuinely ok response; the Cloud Sync copy states plainly that records stay on
+  the device until server sign-in ships. Nothing under `api/` was touched and
+  `hasServerAuth()` still returns `false`.
+  **Escape and dialogs:** every record form in this app is one `modal()` sheet,
+  and opening one left a keyboard or screen-reader user standing on the page
+  underneath — no dialog role, focus never moved, Tab wandered onto the screen
+  behind, Escape did nothing, the page kept scrolling, and the only way out was
+  the small ×. Sheets are now `role="dialog" aria-modal="true"`, named from
+  their own heading, focus moves to the first field and returns to whatever
+  opened them, Tab cycles inside, Escape closes, and the page behind locks.
+  On the home, Escape steps back one level at a time; it is deliberately not
+  wired to secondary screens, where Escape in a search box means "clear that",
+  not "leave".
+  **One expand control, where the cap is real:** the panel is capped at a little
+  over half the screen while Tools lists twenty-odd entries, so the panel header
+  gained a single expand/shrink button. It grows the panel to the space between
+  the top bar and the bottom edge and no further, keeps the rail on screen,
+  keeps focus on the control, resets when the panel closes or another opens, and
+  Escape shrinks before it closes. The rail is still the minimized state and
+  nothing else gained a maximize control.
+  **Mobile:** the `.tabs` strips were horizontal scrollers, so four of the seven
+  Jobs status filters and three of the six job folders sat off the right edge at
+  390px with nothing on screen to say so — and one still did at 768px in
+  Spanish. They wrap now, at every width. The two emoji mixed into the job folder
+  labels are gone. The EN/ES toggle was 27px tall everywhere except the home
+  pill; it is 40px.
+  **Dead ends removed:** the retired `hub` dashboard was still in the router and
+  in `ROLE_VIEWS` with nothing linking to it — a second competing home — so it,
+  its route and its dead `.hub-*` styles are gone, and an unknown view name is
+  now corrected to Home instead of drawing the home screen while the router still
+  believed it was elsewhere. The owner stylesheet forced the add button back on
+  with `display: flex !important`, defeating the `.hidden` the page sets per
+  screen, so Settings, Reports, Backups, the audit trail, a job and a worker
+  profile all carried a large blue "+" whose fallback action was "log a new phone
+  call"; the button now appears only where it has something to add, and one list
+  decides both that and what it does.
+  **Evidence:** `npm test` **530 checks, 0 failed**; `node scripts/qa-check.mjs`
+  `pass: true`, 0 broken buttons, 0 missing Spanish keys; `npm run build` passes.
+  Exercised in Chromium as Julio Pablo and Sarays at 390, 430, 768 and 1440px, in
+  English and Spanish, light and dark: the home and all four panels opened,
+  expanded, shrank and closed; all 20–22 secondary screens per role and the
+  customer, job and worker detail screens were reached and returned from; zero
+  horizontal overflow, zero controls off screen, zero broken images and zero
+  JavaScript errors across the whole matrix. axe-core WCAG 2.0/2.1 A + AA over
+  **136 states** — home, every panel collapsed and expanded, seven secondary
+  screens and an open record sheet, at two widths × two languages × two themes —
+  reported **0 violations**. Icons were verified as real glyphs by serving Font
+  Awesome from the local server, since this sandbox's browser cannot reach cdnjs.
+  Screenshots in `outputs/`. **Not verified here:** `npm run qa:visual` still
+  fails 5 of 14 for the same sandbox reason as the previous entry — the browser
+  cannot reach cdnjs or fonts.googleapis.com — while every product assertion in
+  it passed (24 owner screens at 390/768/1280px, no broken images, no sideways
+  scroll, zero JavaScript errors). `npm run qa:site` is 19/20; the one failure,
+  landing.html's contact section reading as unstyled at 1280px, is on the public
+  marketing site, predates this branch and was not touched here.

@@ -39,6 +39,22 @@ const checks = [
   ['in-page back buttons name where they return to', patched.includes('function pageHead(title, sub, withBack, actions, backLabel)') && patched.includes("\"nav('jobs')\", '', t('jobs')")],
   ['the retired hub dashboard is no longer a back destination', !patched.includes("nav('hub')")],
 
+  // ── expand / shrink, and Escape ────────────────────────────────────────────
+  // The panel is capped at a little over half the screen while Tools alone
+  // lists twenty-odd entries, so one expand control earns its place. It is the
+  // only one: the rail is still the minimized state.
+  ['the open panel carries exactly one expand control', (runtime.match(/data-otto-action="toggle-max"/g) || []).length === 1],
+  ['the expand control is labelled in both languages', runtime.includes("words('Expand this list', 'Ampliar esta lista')") && runtime.includes("words('Shrink this list', 'Reducir esta lista')")],
+  ['the expand control reports its state to assistive tech', runtime.includes('aria-pressed="${panelMaximized')],
+  ['expanding is bounded by the viewport, never a floating window', styles.includes('body.otto-panel-max .otto-stage') && styles.includes('top: var(--otto-top)')],
+  ['expanding cannot outgrow the space between the top bar and the bottom edge', styles.includes('.otto-panel.is-max') && styles.includes('height: 100%')],
+  ['closing a panel drops any expanded state', runtime.includes('if (!activePanelId) panelMaximized = false;')],
+  ['switching sections opens the next panel collapsed', /function openPanel[\s\S]{0,400}?panelMaximized = false;/.test(runtime)],
+  ['Escape steps back one level: expanded shrinks, open closes', runtime.includes('if (panelMaximized) toggleMaximize();') && runtime.includes('else closePanel();')],
+  ['Escape stands down while a record sheet is open', runtime.includes("if (document.getElementById('overlay')) return;")],
+  ['Escape does not hijack a working screen full of text boxes', runtime.includes('!onHome() || !activePanelId) return;')],
+  ['a toast still has somewhere to go when the panel is expanded', styles.includes('body.admin-home.otto-panel-open.otto-panel-max .toast')],
+
   // ── removed complexity ─────────────────────────────────────────────────────
   ['no panel state machine remains', !runtime.includes('setPanelState') && !runtime.includes("'fullscreen'")],
   ['no full-screen panel rule remains', !styles.includes('fullscreen')],
@@ -83,7 +99,7 @@ const checks = [
 
   // ── offline shell ──────────────────────────────────────────────────────────
   ['home assets carry a cache-busting version', patched.includes(`otto-home.css?v=${HOME_ASSET_VERSION}`) && patched.includes(`otto-home.js?v=${HOME_ASSET_VERSION}`)],
-  ['the offline cache was bumped for the new assets', /const CACHE = 'otto-crm-v(\d+)'/.exec(sw)?.[1] >= '10'],
+  ['the offline cache was bumped for the new assets', Number(/const CACHE = 'otto-crm-v(\d+)'/.exec(sw)?.[1]) >= 12],
   ['a cache-busted app asset still resolves offline', sw.includes('ignoreSearch: sameOrigin')],
   ['payroll and document parsers are precached from the page, not a second URL list', sw.includes('runtimeScriptsIn') && !sw.includes('xlsx.full.min.js')]
 ];

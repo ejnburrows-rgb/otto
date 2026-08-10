@@ -9,7 +9,7 @@ const HOME_RUNTIME = new URL('../otto-home.js', import.meta.url);
    page cannot end up asking for one version of the stylesheet and another of
    the runtime. The service worker resolves same-origin hits with the query
    ignored, so a bump never costs an offline device its home screen. */
-export const HOME_ASSET_VERSION = '2';
+export const HOME_ASSET_VERSION = '3';
 
 export function patchSource(source) {
   let out = source;

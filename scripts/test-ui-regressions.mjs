@@ -222,25 +222,112 @@ console.log('\noffline-first — the icons and fonts must survive losing signal'
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-console.log('\napproved Stitch dashboard structure must stay intact');
+/* The `hub` dashboard these checks used to guard was a second home screen,
+   built before the permanent rail replaced it. Nothing has linked to it since
+   that rebuild, so the assertions were protecting markup no owner could reach —
+   and `qa-visual` was still walking it as if it were a live screen, which
+   inflated the "every owner screen" evidence by one screen that was not one.
+   It is gone, and these checks now hold it gone. The design-system assertions
+   that were mixed in with them are real and stay, under their own heading. */
+console.log('\nthere is exactly one owner/office home');
 {
-  check('dashboard uses the approved four-card summary',
-    ['jobsToday', 'newCustomers', 'pendingInvoices', 'openEstimates']
-      .every(key => html.includes(`t('${key}')`)), true);
-  check('dashboard includes the weekly schedule strip',
-    html.includes('class="hub-week"'), true);
-  check('dashboard includes recent job cards',
-    html.includes('class="hub-jobs"'), true);
-  check('dashboard uses the approved deep navy surface',
+  check('the retired hub dashboard has no renderer', html.includes('function viewHub('), false);
+  check('the retired hub dashboard has no route', /\bhub:\s*viewHub\b/.test(html), false);
+  check('no role can still be granted the hub view', /ROLE_VIEWS[\s\S]{0,900}?'hub'/.test(html), false);
+  check('its dead styles went with it', html.includes('.hub-dashboard'), false);
+  check('an unknown view name is corrected to home rather than half-rendered',
+    html.includes("if (!views[route.view]) route = { view: 'home', id: null, tab: null };"), true);
+  check('the permanent rail is still the only home',
+    readFileSync(new URL('../otto-home.js', import.meta.url), 'utf8').includes('const PANELS = ['), true);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+console.log('\nthe approved visual language must stay intact');
+{
+  check('the approved deep navy surface',
     html.includes('--bg: #0B1326;'), true);
-  check('dashboard uses the approved electric blue action colour',
+  check('the approved electric blue action colour',
     html.includes('--blue: #2F6BFF;'), true);
-  check('dashboard uses Hanken Grotesk headings',
+  check('Hanken Grotesk headings',
     html.includes("'Hanken Grotesk'"), true);
-  check('duplicate floating assistant does not cover dashboard cards',
+  check('no duplicate floating assistant is installed on top of a screen',
     /^\s*ensureFloatingAI\(\);/m.test(html), false);
-  check('phone job footer leaves room for the add button',
-    html.includes('.hub-job-foot { padding-right:62px; }'), true);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Every record form in this app is one `modal()` sheet. Before this, opening one
+// left a keyboard or screen-reader user standing on the page underneath: nothing
+// announced a dialog, focus never moved, Tab wandered onto the screen behind,
+// Escape did nothing, and the only way out was finding the small × with a mouse.
+console.log('\nan open record sheet behaves like a dialog');
+{
+  check('the sheet announces itself as a modal dialog',
+    html.includes('role="dialog" aria-modal="true"'), true);
+  check('the sheet takes its name from its own heading',
+    html.includes("sheet.setAttribute('aria-labelledby', heading.id)"), true);
+  check('the close button has a translated accessible name',
+    html.includes(`aria-label="${'${'}esc(t('close'))}"`), true);
+  check('focus moves into the dialog on open',
+    html.includes("(first || sheet).focus({ preventScroll: true })"), true);
+  check('focus returns to whatever opened it on close',
+    html.includes('if (back && document.contains(back)'), true);
+  check('Tab cycles inside the dialog instead of the page behind',
+    html.includes("if (e.key !== 'Tab') return;") && html.includes('FOCUSABLE'), true);
+  check('Escape closes the dialog',
+    /addEventListener\('keydown'[\s\S]{0,320}?closeModal\(\);/.test(html), true);
+  check('the page behind the dialog stops scrolling',
+    html.includes('body.modal-open { overflow: hidden; }'), true);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// A phone showed two and a half of the seven Jobs filters and three of the six
+// job folders, with the rest off the right edge and nothing on screen saying so.
+console.log('\nevery filter and folder tab is reachable on a phone');
+{
+  check('the tab strips wrap instead of scrolling sideways',
+    /\.tabs \{ display: flex; flex-wrap: wrap;/.test(html), true);
+  check('no tab strip hides its own controls behind a sideways scroll',
+    /\.tabs \{[^}]*overflow-x: auto/.test(html), false);
+  check('the language toggle is a full-size tap target everywhere',
+    /\.langtoggle button \{[\s\S]{0,200}?min-height: 40px/.test(html), true);
+
+  // The owner stylesheet forced the add button back on for every secondary
+  // screen with `display: flex !important`, defeating the `.hidden` class the
+  // page sets per screen — so Settings, Reports, Backups, the audit trail, a job
+  // and a worker profile all carried a large blue "+" whose action fell through
+  // to "log a new phone call".
+  check('the owner add button respects the screen that hid it',
+    readFileSync(new URL('../otto-home.css', import.meta.url), 'utf8')
+      .includes('body.admin-workspace:not(.admin-home) .fab:not(.hidden)'), true);
+  check('the add button has no invented fallback action',
+    /\(map\[v\] \|\| \(\(\) => newCall\(\)\)\)\(\)/.test(html), false);
+  check('one list decides both which screens get an add button and what it does',
+    html.includes('const QUICK_ADD = {') && html.includes("fab.classList.toggle('hidden', !QUICK_ADD[v])"), true);
+  check('no emoji is mixed into the job folder labels',
+    /\u{1F916}|\u{1F4B5}/u.test(html), false);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// The server routes are fail-closed (api/_lib/serverAuth.js returns false), so
+// any screen that reports on them must say so. Settings used to print
+// "SMS/Email: SMS ready" for every answer except one exact error string — a 403
+// is not that string, so the owner was told customer texts were ready to send.
+console.log('\nno screen claims a blocked server feature is working');
+{
+  check('the gate is still shut',
+    readFileSync(new URL('../api/_lib/serverAuth.js', import.meta.url), 'utf8').includes('return false'), true);
+  check('notification status names the block instead of reporting ready',
+    html.includes("body.error === 'server_auth_not_configured') nEl.textContent = label(t('serverBlocked'))"), true);
+  check('notification status only says ready on a genuinely ok response',
+    html.includes("else if (res.ok) nEl.textContent = label(t('smsReady'))"), true);
+  check('cloud sync no longer claims to be configured',
+    /configured on the server|se configura en el servidor/.test(html), false);
+  check('cloud sync reports what the server actually answered',
+    html.includes('async function refreshCloudStatus()') && html.includes("id=\"cloud-status\""), true);
+  check('the blocked wording exists in both languages',
+    html.includes("serverBlocked: 'Unavailable") && html.includes("serverBlocked: 'No disponible"), true);
+  check('the offline-only reality is stated in both languages',
+    html.includes('cloudSyncBody:') && (html.match(/cloudSyncBody:/g) || []).length === 2, true);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

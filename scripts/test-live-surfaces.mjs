@@ -41,7 +41,11 @@ check('guide documents photo retry truthfully', guide.includes('Failed cloud upl
 
 check('PWA metadata has no retired marketing claim', !String(manifest.description || '').includes("Miami's Elite"));
 check('PWA metadata describes the actual CRM', manifest.description === 'Bilingual offline-first plumbing CRM for OTTO Plumbing Inc.');
-check('offline cache was bumped for corrected public surfaces', /const CACHE = 'otto-crm-v(\d+)'/.exec(sw)?.[1] === '11');
+// Pinned to an exact version, this failed the next time the cache legitimately
+// needed bumping. What matters is that it never goes backwards past the bump
+// these surfaces needed — and that it is compared as a number, since '9' > '10'
+// as strings and that mistake has already been made once in this suite.
+check('offline cache is at or past the bump these surfaces needed', Number(/const CACHE = 'otto-crm-v(\d+)'/.exec(sw)?.[1]) >= 11);
 
 console.log(`Live surface checks: ${passed} passed, ${failed} failed`);
 if (failed) process.exit(1);

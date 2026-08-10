@@ -2,13 +2,17 @@
 
    Layout contract, in one place so nothing has to be guessed at:
 
-   - The personal wallpaper is the dominant surface and is never covered by a
-     full-screen panel.
+   - The personal wallpaper is the dominant surface. Nothing covers it unless
+     the person asks: at rest the panel is capped at a little over half the
+     screen, and only the expand control — one tap, one tap back — grows it.
    - All home chrome lives on the left: a compact top-left bar, then a permanent
      rail of four tabs directly beneath it.
    - An open panel sits in the lower-left/centre safe area. The right side and,
      above all, Sarays's upper-right Little Prince artwork stay clear at every
-     supported viewport.
+     supported viewport. An expanded panel is bounded by the top bar and the
+     bottom edge, so it always fits the screen and never hides the rail; on a
+     phone it does take the space the artwork was using, which is the trade the
+     person made by expanding it.
 
    The public plumbing website is intentionally untouched by this file. */
 
@@ -106,7 +110,14 @@ body.admin-workspace:not(.admin-home) .wrap {
   padding-bottom: 104px;
 }
 
-body.admin-workspace:not(.admin-home) .fab {
+/* `.hidden` is how the page decides, screen by screen, whether an add button
+   means anything here. This rule used to force the button back on for every
+   owner secondary screen regardless — so Settings, Reports, Backups, the audit
+   trail, a job and a worker profile all carried a large blue "+" whose fallback
+   action was "log a new phone call". `:not(.hidden)` hands that decision back to
+   the screen; the ones with a real add action keep their button, and the ones
+   with their own add button in the page (a customer's "New job") are unaffected. */
+body.admin-workspace:not(.admin-home) .fab:not(.hidden) {
   display: flex !important;
   bottom: calc(24px + env(safe-area-inset-bottom));
 }
@@ -244,6 +255,13 @@ body.admin-home .topbar .langtoggle button.on {
    band keeps the two apart whatever the panel currently contains. */
 body.admin-home.otto-panel-open .toast {
   bottom: calc(var(--otto-panel-h) + var(--otto-edge) + 4px);
+}
+
+/* An expanded panel reaches the top bar, so there is no band above it to lift a
+   toast into. Put it back at the bottom, where it sits over the panel rather
+   than off the top of the screen. */
+body.admin-home.otto-panel-open.otto-panel-max .toast {
+  bottom: calc(100px + env(safe-area-inset-bottom));
 }
 
 .otto-home {
@@ -402,6 +420,12 @@ body.admin-home.otto-panel-open .toast {
   pointer-events: auto;
 }
 
+/* The expanded stage is bounded top and bottom, so the panel inside it can only
+   ever be as tall as the screen allows. */
+body.otto-panel-max .otto-stage {
+  top: var(--otto-top);
+}
+
 .otto-panel {
   display: flex;
   flex-direction: column;
@@ -502,6 +526,45 @@ body.admin-home.otto-panel-open .toast {
   color: #fff;
   font: 700 12px/1.35 'JetBrains Mono', monospace;
   text-align: center;
+}
+
+/* Expand / shrink the open panel. One control, always in the same place, always
+   the same size — quiet enough that it does not compete with Back to panels,
+   which is still the main way out. */
+.otto-expand {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--otto-hairline);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--card) 60%, transparent);
+  color: var(--text2);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.otto-expand:hover {
+  background: color-mix(in srgb, var(--action) 12%, transparent);
+  border-color: color-mix(in srgb, var(--action) 45%, transparent);
+  color: var(--accent);
+}
+
+.otto-expand[aria-pressed="true"] {
+  border-color: var(--action);
+  background: var(--action);
+  color: #fff;
+}
+
+/* Expanded: the panel takes the space between the top bar and the bottom edge
+   and no more, so it always fits the viewport and never covers the rail. */
+.otto-panel.is-max {
+  max-height: none;
+  height: 100%;
 }
 
 .otto-panel-body {
@@ -637,6 +700,7 @@ body.admin-home.otto-panel-open .toast {
 /* One visible focus treatment for every control this file adds. */
 .otto-tab:focus-visible,
 .otto-back:focus-visible,
+.otto-expand:focus-visible,
 .otto-back-home:focus-visible,
 .otto-row-link:focus-visible,
 .otto-action:focus-visible,
@@ -805,6 +869,12 @@ body.admin-home.otto-panel-open .toast {
     font-size: 17px;
   }
 
+  .otto-expand {
+    width: 36px;
+    height: 36px;
+    font-size: 13px;
+  }
+
   .otto-row {
     font-size: 13px;
   }
@@ -910,6 +980,11 @@ body.admin-home.otto-panel-open .toast {
     width: 30px;
     height: 30px;
     font-size: 13px;
+  }
+
+  .otto-expand {
+    width: 34px;
+    height: 34px;
   }
 
   .otto-panel-title {

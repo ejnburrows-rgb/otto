@@ -188,8 +188,11 @@
     .langtoggle {
       display: flex; background: rgba(255, 255, 255, 0.08); border-radius: var(--radius-sm); overflow: hidden;
     }
+    /* 40px minimum. These two were 27px tall on every screen except the home
+       pill, which already overrode them — and for a bilingual crew this is one
+       of the most-tapped controls in the app. */
     .langtoggle button {
-      border: none; background: transparent; color: #CBD5E1; padding: 6px 12px;
+      border: none; background: transparent; color: #CBD5E1; padding: 6px 12px; min-height: 40px;
       font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.2s ease;
     }
     .langtoggle button.on { background: #FFFFFF; color: var(--blue); }
@@ -364,6 +367,9 @@
       opacity: 0; animation: fadeIn 0.2s forwards;
     }
     [data-theme="dark"] .overlay { background: rgba(3, 6, 14, 0.72); }
+    /* The page behind an open sheet used to keep scrolling under the finger,
+       which on a phone reads as the form sliding away while you fill it in. */
+    body.modal-open { overflow: hidden; }
     @keyframes fadeIn { to { opacity: 1; } }
     
     @media (min-width: 600px) { .overlay { align-items: center; padding: 24px; } }
@@ -420,8 +426,12 @@
     .photos-grid img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--radius-sm); cursor: pointer; background: var(--bg); transition: transform 0.2s ease; }
     .photos-grid img:hover { transform: scale(1.02); box-shadow: var(--shadow); }
 
-    .tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 16px; scrollbar-width: none; }
-    .tabs::-webkit-scrollbar { display: none; }
+    /* Wraps rather than scrolls sideways. As a scroller, four of the seven
+       Jobs status filters and three of the six job folders sat off the right
+       edge of a phone with nothing on screen to say so, and one still did at
+       tablet width in Spanish. Wrapping means every choice is visible at
+       every width; on a wide screen they still sit on one line anyway. */
+    .tabs { display: flex; flex-wrap: wrap; gap: 8px; padding-bottom: 8px; margin-bottom: 16px; }
     .tabs button { 
       white-space: nowrap; border: 1px solid var(--line); background: var(--card); color: var(--text2); 
       padding: 10px 18px; border-radius: 999px; font-weight: 500; font-size: 14px; cursor: pointer; 
@@ -846,9 +856,20 @@
     .bottomnav { background: var(--card); backdrop-filter: none; padding-top: 10px; border-top: 1px solid var(--line); }
     .bottomnav button { min-height: 56px; font-weight: 650; }
     .bottomnav button.on, [data-theme="dark"] .bottomnav button.on { color: var(--accent); }
-    .tabs { padding: 2px 0 10px; scrollbar-width: thin; }
+    .tabs { padding: 2px 0 10px; }
     .tabs button { min-height: 44px; padding: 10px 16px; box-shadow:none; }
     .tabs button.on { box-shadow:none; }
+
+    /* On a phone these strips are the only way to change what a screen shows —
+       the Jobs status filter and the folder tabs on a job. Left as a horizontal
+       scroller, four of the seven Jobs filters and three of the six job folders
+       sat off the right edge at 390px with nothing on screen to say so, and the
+       longer Spanish labels made it worse. They wrap instead, so every choice is
+       visible and tappable without discovering a sideways swipe. */
+    @media (max-width: 700px) {
+      .tabs { gap: 6px; }
+      .tabs button { padding: 10px 14px; font-size: 13.5px; }
+    }
 
     /* ---- one surface, one corner radius ----
        Cards, inputs, the search box and the tiles were on four different radii
@@ -892,47 +913,7 @@
       .tile { min-height: 124px; }
     }
 
-    /* Dashboard composition reproduced from the approved Stitch screen. */
-    .hub-dashboard { display:flex; flex-direction:column; gap:28px; }
-    .hub-kpis { display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:14px; }
-    .hub-kpi { min-height:136px; padding:16px; border:1px solid var(--line); border-radius:4px; background:var(--card); color:var(--text); display:flex; flex-direction:column; justify-content:space-between; text-align:left; cursor:pointer; }
-    .hub-kpi:active { background:var(--card-hover); transform:scale(.985); }
-    .hub-kpi-label { color:var(--text2); font:500 12px/1.35 'JetBrains Mono', monospace; letter-spacing:.04em; text-transform:uppercase; }
-    .hub-kpi-bottom { display:flex; align-items:flex-end; justify-content:space-between; gap:10px; }
-    .hub-kpi-value { color:#B5C4FF; font:700 40px/1 'Hanken Grotesk', sans-serif; }
-    .hub-kpi-icon { color:#B5C4FF; font-size:21px; }
-    .hub-section-head { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:10px; }
-    .hub-section-head h2 { color:var(--text); font-size:22px; line-height:1.25; font-weight:700; }
-    .hub-section-action { border:0; background:transparent; color:#B5C4FF; min-width:44px; min-height:44px; padding:0 4px; font-weight:700; cursor:pointer; }
-    .hub-week { display:grid; grid-template-columns:repeat(5, minmax(58px, 1fr)); gap:10px; overflow-x:auto; padding-bottom:2px; scrollbar-width:none; }
-    .hub-week::-webkit-scrollbar { display:none; }
-    .hub-day { min-height:92px; border:1px solid var(--line); border-radius:4px; background:var(--card); color:var(--text); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; cursor:pointer; }
-    .hub-day.today { background:var(--action); border-color:#7EA6FF; color:#fff; }
-    .hub-day-name { font:500 11px/1.2 'JetBrains Mono', monospace; letter-spacing:.05em; text-transform:uppercase; }
-    .hub-day-number { font-size:22px; line-height:1.2; font-weight:700; }
-    .hub-day-count { min-height:14px; color:var(--text2); font-size:10px; }
-    .hub-day.today .hub-day-count { color:#fff; }
-    .hub-jobs { display:flex; flex-direction:column; gap:12px; }
-    .hub-job { width:100%; border:1px solid var(--line); border-radius:4px; background:var(--card); color:var(--text); padding:16px; text-align:left; cursor:pointer; }
-    .hub-job:active { background:var(--card-hover); }
-    .hub-job-top, .hub-job-foot { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
-    .hub-job-title { font-size:17px; line-height:1.25; font-weight:700; }
-    .hub-job-top > span:first-child { display:flex; flex-direction:column; min-width:0; }
-    .hub-job-title, .hub-job-meta { display:block; }
-    .hub-job-meta { color:var(--text2); font-size:13px; margin-top:4px; }
-    .hub-job-status { flex:0 0 auto; border-radius:999px; padding:5px 8px; color:#fff; background:var(--action); font:600 10px/1 'JetBrains Mono', monospace; text-transform:uppercase; }
-    .hub-job-status.completed { background:var(--status-done); }
-    .hub-job-foot { align-items:center; margin-top:14px; padding-top:12px; border-top:1px solid var(--line); }
-    .hub-tech { display:flex; align-items:center; gap:8px; font:500 12px/1.2 'JetBrains Mono', monospace; }
-    .hub-tech-avatar { width:30px; height:30px; border-radius:50%; border:1px solid var(--line); background:var(--card-elevated); display:flex; align-items:center; justify-content:center; color:#B5C4FF; font-size:11px; font-weight:700; }
-    .hub-job-amount { color:#B5C4FF; font:500 12px/1.2 'JetBrains Mono', monospace; }
-    @media (max-width:480px) {
-      .hub-kpi { min-height:124px; padding:14px; }
-      .hub-kpi-value { font-size:34px; }
-      .hub-week { grid-template-columns:repeat(5, 62px); }
-      .hub-job-top { flex-direction:column; }
-      .hub-job-foot { padding-right:62px; }
-    }
+    /* The `.hub-*` dashboard styles went with the dashboard they dressed. */
 
     /* ---- Printing (invoices, estimates) ----
        On screen the print area is hidden. When printing, everything else is
@@ -964,7 +945,7 @@
     }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" crossorigin="anonymous"></script>
-  <link rel="stylesheet" href="./otto-home.css?v=2" data-otto-home-styles />
+  <link rel="stylesheet" href="./otto-home.css?v=3" data-otto-home-styles />
 </head>
 
 <body>
@@ -1103,6 +1084,7 @@
       createEstimate: 'Create estimate from this', aiNotReady: 'AI is not set up yet — the file was saved. You can type the estimate.',
       couldntRead: "Couldn't read much from this file — you can still type the estimate below.",
       showInLang: 'Show in this language', drawingHint: 'Upload a drawing or PDF and I will read it and draft a materials list.',
+      photoNotSentYet: 'A photo has not reached the office yet. It is safe on this phone and will keep trying.',
       emails: 'Email log', inbox: 'Inbox', payroll: 'Payroll', addEmail: 'Add email', importEmail: 'Import email file',
       all: 'All', escalations: 'Escalations', approvalHistory: 'Approval history',
       from: 'From', subject: 'Subject', message: 'Message', attachments: 'Attachments', matchedTo: 'Matched to',
@@ -1131,6 +1113,8 @@
       urgentHub: 'Urgent Issues', urgentQuestion: 'Urgent question for owner', sendUrgent: 'Send to owner', urgentSent: 'Sent to owner', noUrgent: 'No urgent issues',
       photoNewCustomer: 'Photo → New Customer', scanningCustomer: 'Reading account photo…', customerCreated: 'Customer created from photo',
       notificationsSection: 'Customer Notifications', smsReady: 'SMS ready', emailReady: 'Email ready', notConfigured: 'Not configured yet',
+      serverBlocked: 'Unavailable — the server is not open to this app yet', checkingStatus: 'Checking…',
+      cloudSyncBody: 'Everything you enter is saved on this device. Sending it to the office server is switched off until server sign-in is finished, so nothing here leaves this device yet.',
       replyToWorker: 'Reply', markHandled: 'Mark handled',
       allWorkers: 'All Workers', thisWeek: 'This Week', lastWeek: 'Last Week', customDate: 'Custom', metrics: 'Metrics',
       dateRange: 'Date Range', arrival: 'Arrival', departure: 'Departure', timeSpent: 'Time Spent', missedItem: 'Missed Item', workerNote: 'Worker Note',
@@ -1188,6 +1172,7 @@
       createEstimate: 'Crear presupuesto con esto', aiNotReady: 'La IA aún no está configurada — el archivo se guardó. Puedes escribir el estimado.',
       couldntRead: 'No se pudo leer mucho de este archivo — puedes escribir el estimado abajo.',
       showInLang: 'Mostrar en este idioma', drawingHint: 'Sube un plano o PDF y lo leeré para hacer una lista de materiales.',
+      photoNotSentYet: 'Una foto todavía no ha llegado a la oficina. Está segura en este teléfono y seguirá intentando enviarse.',
       emails: 'Registro de correos', inbox: 'Bandeja', payroll: 'Nómina', addEmail: 'Agregar correo', importEmail: 'Importar archivo de correo',
       all: 'Todos', approvalHistory: 'Historial de aprobaciones',
       from: 'De', subject: 'Asunto', message: 'Mensaje', attachments: 'Adjuntos', matchedTo: 'Vinculado a',
@@ -1216,6 +1201,8 @@
       urgentHub: 'Asuntos Urgentes', urgentQuestion: 'Pregunta urgente al dueño', sendUrgent: 'Enviar al dueño', urgentSent: 'Enviado al dueño', noUrgent: 'Sin asuntos urgentes',
       photoNewCustomer: 'Foto → Nuevo Cliente', scanningCustomer: 'Leyendo foto de cuenta…', customerCreated: 'Cliente creado desde foto',
       notificationsSection: 'Notificaciones al Cliente', smsReady: 'SMS listo', emailReady: 'Correo listo', notConfigured: 'Sin configurar aún',
+      serverBlocked: 'No disponible — el servidor aún no está abierto a esta app', checkingStatus: 'Comprobando…',
+      cloudSyncBody: 'Todo lo que escribes se guarda en este dispositivo. El envío al servidor de la oficina está desactivado hasta que se termine el inicio de sesión en el servidor, así que por ahora nada sale de este dispositivo.',
       replyToWorker: 'Responder', markHandled: 'Marcar resuelto',
       allWorkers: 'Todos los Trabajadores', thisWeek: 'Esta Semana', lastWeek: 'Semana Pasada', customDate: 'Personalizado', metrics: 'Métricas', hours: 'Horas',
       dateRange: 'Rango de Fechas', arrival: 'Llegada', departure: 'Salida', timeSpent: 'Tiempo Invertido', missedItem: 'Elemento Faltante', workerNote: 'Nota del Trabajador',
@@ -1567,6 +1554,12 @@
         });
         if (r.ok) {
           await idbDel('photo_upload_queue', fileId);
+          const rec = (db.photos || []).find((p) => p.fileId === fileId);
+          if (rec && rec.uploadPending) {
+            delete rec.uploadPending;
+            rec.updated = nowISO();
+            save();
+          }
         } else {
           await _bumpPhotoRetry(fileId, entry);
         }
@@ -1576,13 +1569,24 @@
     }
   }
 
+  const PHOTO_RETRY_WARN_AFTER = 20;
   async function _bumpPhotoRetry(fileId, entry) {
-    // Give up after 20 attempts (~10 min). Leave the blob so it is still
-    // visible locally; remove from queue to stop retrying.
-    if (entry.retries >= 20) {
-      await idbDel('photo_upload_queue', fileId);
-    } else {
-      await idbPut('photo_upload_queue', fileId, { ...entry, retries: entry.retries + 1 });
+    // A field photo is evidence behind the job. Never silently abandon it just
+    // because the phone stayed offline or the server was unavailable for ten
+    // minutes. Keep the queue entry until an upload actually succeeds.
+    const retries = (entry.retries || 0) + 1;
+    await idbPut('photo_upload_queue', fileId, { ...entry, retries, lastTry: nowISO() });
+
+    // Warn once when this has been pending for a while, while making the state
+    // visible on the photo record for office/owner UI and later diagnostics.
+    if (retries === PHOTO_RETRY_WARN_AFTER) {
+      const rec = (db.photos || []).find((p) => p.fileId === fileId);
+      if (rec) {
+        rec.uploadPending = true;
+        rec.updated = nowISO();
+        save();
+      }
+      toast(t('photoNotSentYet'), 'error');
     }
   }
 
@@ -1957,23 +1961,72 @@
     el.className = 'toast ' + type; el.textContent = msg; document.body.appendChild(el);
     setTimeout(() => el.remove(), 2600);
   }
+  /* Every record form in this app is one of these sheets, so the dialog rules
+     live here once rather than in each caller:
+       - it announces itself as a dialog and takes its name from its own heading,
+       - focus moves into it on open and back to whatever opened it on close,
+       - Tab cycles inside it instead of wandering onto the page behind,
+       - Escape closes it, and
+       - the page behind it stops scrolling while it is open.
+     Before this, a keyboard or screen-reader user opening "Add customer" was
+     left standing on the page underneath with no announcement and no way out
+     except finding the small × with the mouse. */
+  const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+  let _modalReturnFocus = null;
   function modal(html) {
     closeModal();
+    _modalReturnFocus = document.activeElement;
     const ov = document.createElement('div'); ov.className = 'overlay'; ov.id = 'overlay';
-    ov.innerHTML = `<div class="sheet" onclick="event.stopPropagation()"><button class="sheet-close" onclick="closeModal()"><i class="fas fa-xmark"></i></button>${html}</div>`;
+    ov.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" tabindex="-1" onclick="event.stopPropagation()"><button class="sheet-close" aria-label="${esc(t('close'))}" onclick="closeModal()"><i class="fas fa-xmark" aria-hidden="true"></i></button>${html}</div>`;
     ov.onclick = closeModal; document.body.appendChild(ov);
+    document.body.classList.add('modal-open');
+
+    const sheet = ov.querySelector('.sheet');
+    const heading = sheet.querySelector('h2');
+    if (heading) { if (!heading.id) heading.id = 'overlay-title'; sheet.setAttribute('aria-labelledby', heading.id); }
+
+    /* Land on the first thing the person came here to fill in, not on the close
+       button — but never scroll the sheet, so the heading stays in view. */
+    const first = sheet.querySelector('input:not([type="hidden"]), select, textarea');
+    (first || sheet).focus({ preventScroll: true });
+
+    sheet.addEventListener('keydown', (e) => {
+      if (e.key !== 'Tab') return;
+      const items = [...sheet.querySelectorAll(FOCUSABLE)].filter(el => el.offsetParent !== null || el === document.activeElement);
+      if (!items.length) return;
+      const firstEl = items[0], lastEl = items[items.length - 1];
+      if (e.shiftKey && (document.activeElement === firstEl || document.activeElement === sheet)) { e.preventDefault(); lastEl.focus(); }
+      else if (!e.shiftKey && document.activeElement === lastEl) { e.preventDefault(); firstEl.focus(); }
+    });
   }
-  function closeModal() { const o = $('#overlay'); if (o) o.remove(); }
+  function closeModal() {
+    const o = $('#overlay'); if (!o) return;
+    o.remove();
+    document.body.classList.remove('modal-open');
+    const back = _modalReturnFocus;
+    _modalReturnFocus = null;
+    if (back && document.contains(back) && typeof back.focus === 'function') back.focus({ preventScroll: true });
+  }
+  /* Escape closes the sheet. Registered once on the document, in capture phase,
+     so it works no matter which field inside the sheet has focus. Anything else
+     that wants Escape (the home panel) checks for an open sheet first. */
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    if (!$('#overlay')) return;
+    e.preventDefault();
+    e.stopPropagation();
+    closeModal();
+  }, true);
   function confirmDel(fn) { if (confirm(t('confirmDelete'))) fn(); }
 
   /* ============================ AUTH / ROLES ============================ */
   const ROLE_VIEWS = {
-    owner: ['home', 'hub', 'kpis', 'worker_profile', 'urgent', 'customers', 'jobs', 'calls', 'inbox', 'emails', 'estimates', 'invoices', 'payments', 'checks', 'payroll', 'alerts', 'followups', 'workflows', 'knowledge', 'map', 'reports', 'backups', 'audit', 'team', 'settings', 'assistant'],
+    owner: ['home', 'kpis', 'worker_profile', 'urgent', 'customers', 'jobs', 'calls', 'inbox', 'emails', 'estimates', 'invoices', 'payments', 'checks', 'payroll', 'alerts', 'followups', 'workflows', 'knowledge', 'map', 'reports', 'backups', 'audit', 'team', 'settings', 'assistant'],
     // 'team' is here as well as under owner: the office manager and the IT
     // account both run day-to-day staff admin — adding a new hire, setting or
     // resetting a sign-in code — and routing that through an owner every time
     // was slowing the real work down.
-    office: ['home', 'hub', 'urgent', 'customers', 'jobs', 'calls', 'inbox', 'emails', 'estimates', 'invoices', 'payments', 'checks', 'payroll', 'alerts', 'followups', 'workflows', 'knowledge', 'map', 'reports', 'backups', 'team', 'settings', 'assistant'],
+    office: ['home', 'urgent', 'customers', 'jobs', 'calls', 'inbox', 'emails', 'estimates', 'invoices', 'payments', 'checks', 'payroll', 'alerts', 'followups', 'workflows', 'knowledge', 'map', 'reports', 'backups', 'team', 'settings', 'assistant'],
     field: ['home', 'jobs', 'customers', 'followups', 'knowledge', 'assistant', 'settings'],
     accounting: ['home', 'customers', 'inbox', 'emails', 'invoices', 'payments', 'checks', 'payroll', 'estimates', 'reports', 'knowledge', 'assistant', 'settings'],
   };
@@ -2253,6 +2306,19 @@
   /* ============================ MAIN RENDER ============================ */
   function render() {
     if (!session) return;
+    const views = {
+      home: viewHome, customers: viewCustomers, customer: viewCustomer, jobs: viewJobs, job: viewJob,
+      calls: viewCalls, inbox: viewInbox, emails: viewEmails, estimates: viewEstimates, invoices: viewInvoices, payments: viewPayments,
+      checks: viewChecks, payroll: viewPayroll, followups: viewFollowups, workflows: viewWorkflows, knowledge: viewKnowledge,
+      map: viewMap, reports: viewReports, team: viewTeam, settings: viewSettings, assistant: viewAssistant,
+      alerts: viewAlerts, backups: viewBackups, audit: viewAudit,
+      kpis: viewKpis, worker_profile: viewWorkerProfile, gps: viewGpsLogs, urgent: viewUrgentHub,
+    };
+    /* A view name with no screen behind it used to draw the home screen while
+       the router still believed it was somewhere else — so the home rail
+       appeared with a "Back to Home" button over it, and nothing on screen
+       agreed about where you were. Correct the route first, then render once. */
+    if (!views[route.view]) route = { view: 'home', id: null, tab: null };
     const main = $('#main');
     if (main) { main.style.transition = 'opacity .15s ease'; main.style.opacity = '0.6'; setTimeout(()=>{ main.style.opacity='1'; }, 10); }
     renderNav();
@@ -2260,17 +2326,9 @@
     $('#lang-es').classList.toggle('on', lang === 'es');
     const v = route.view;
     const fab = $('#fab');
-    fab.classList.toggle('hidden', !['home', 'customers', 'jobs', 'calls', 'emails', 'estimates', 'invoices', 'payments', 'checks', 'payroll', 'followups', 'workflows', 'knowledge', 'team'].includes(v));
+    fab.classList.toggle('hidden', !QUICK_ADD[v]);
     fab.setAttribute('aria-label', t('add'));
-    const views = {
-      home: viewHome, customers: viewCustomers, customer: viewCustomer, jobs: viewJobs, job: viewJob,
-      calls: viewCalls, inbox: viewInbox, emails: viewEmails, estimates: viewEstimates, invoices: viewInvoices, payments: viewPayments,
-      checks: viewChecks, payroll: viewPayroll, followups: viewFollowups, workflows: viewWorkflows, knowledge: viewKnowledge,
-      map: viewMap, reports: viewReports, team: viewTeam, settings: viewSettings, assistant: viewAssistant,
-      hub: viewHub, alerts: viewAlerts, backups: viewBackups, audit: viewAudit,
-      kpis: viewKpis, worker_profile: viewWorkerProfile, gps: viewGpsLogs, urgent: viewUrgentHub,
-    };
-    (views[v] || viewHome)();
+    views[v]();
 
     const existingBanner = $('#open-job-banner');
     if (existingBanner) existingBanner.remove();
@@ -2516,8 +2574,12 @@
     // Worker accountability: check-in / check-out (work-only GPS)
     html += workerActionsHTML(j);
     // Folder tabs
+    /* Plain labels. Two of these six used to carry a decorative emoji while the
+       other four did not, which is a third icon language on top of the Font
+       Awesome set the rest of the app uses — and it widened exactly the two
+       labels that were already the longest in Spanish. */
     const tabs = [['overview', t('overview')], ['photos', t('photos') + ` (${photos.length})`], ['notes', t('notes') + ` (${notes.length})`],
-      ['documents', t('documents') + ` (${docs.length})`], ['ai', '🤖 ' + t('projectAI')], ['money', '💵 ' + t('estimates') + '/' + t('invoices')]];
+      ['documents', t('documents') + ` (${docs.length})`], ['ai', t('projectAI')], ['money', t('estimates') + ' / ' + t('invoices')]];
     html += `<div class="tabs" style="margin-top:14px">${tabs.map(([k, l]) => `<button class="${tab === k ? 'on' : ''}" onclick="nav('job','${j.id}','${k}')">${esc(l)}</button>`).join('')}</div>`;
 
     if (tab === 'overview') {
@@ -3336,9 +3398,14 @@
         </div>`;
     }
 
+    /* This card used to assert that sync was set up and working. It is not:
+       every server route is fail-closed until server sign-in ships, so a Pull
+       can only fail. Say so plainly, and report what the route actually answers
+       rather than asserting anything. */
     html += `<div class="section-title"><i class="fas fa-cloud"></i> ${lang === 'es' ? 'Sincronización en la nube' : 'Cloud Sync'}</div>
       <div class="card" style="padding:14px">
-        <div class="muted" style="margin-bottom:10px">${lang === 'es' ? 'La sincronización se configura en el servidor. No hay claves que escribir aquí.' : 'Cloud sync is configured on the server. There are no keys to enter here.'}</div>
+        <div class="muted" style="margin-bottom:10px">${esc(t('cloudSyncBody'))}</div>
+        <div id="cloud-status" class="muted" style="margin-bottom:10px">${esc(t('checkingStatus'))}</div>
         <div class="btnrow">
           <button class="btn ghost" onclick="cloudPullNow()"><i class="fas fa-cloud-arrow-down"></i> ${lang === 'es' ? 'Bajar' : 'Pull'}</button>
         </div>
@@ -3355,12 +3422,36 @@
       <div class="muted" style="text-align:center;margin-top:18px">OTTO Plumbing CRM · v1 · ${db.customers.length} ${t('customers').toLowerCase()} · ${db.jobs.length} ${t('jobs').toLowerCase()}</div>`;
     $('#main').innerHTML = html;
     if (session.role === 'owner' || session.role === 'office') refreshIntegrationStatus();
+    refreshCloudStatus();
   }
-  async function refreshIntegrationStatus() {    const nEl = $('#notify-status');
+  /* Reports what the server actually answers. It never claims a working sync. */
+  async function refreshCloudStatus() {
+    const el = $('#cloud-status'); if (!el) return;
     try {
-      const test = await serverFetch('/api/notify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ channel: 'sms', to: '+10000000000', body: 'test' }) }).then(r => r.json()).catch(() => null);
-      if (nEl) nEl.textContent = test?.error === 'sms_not_configured' ? 'SMS/Email: ' + t('notConfigured') + ' (stubs ready)' : 'SMS/Email: ' + t('smsReady');
-    } catch (e) { if (nEl) nEl.textContent = t('notConfigured'); }
+      const res = await serverFetch('/api/data');
+      const body = await res.json().catch(() => null);
+      if (res.ok && body && body.ok) el.textContent = lang === 'es' ? 'Servidor: disponible' : 'Server: available';
+      else if (body && body.error === 'server_auth_not_configured') el.textContent = (lang === 'es' ? 'Servidor: ' : 'Server: ') + t('serverBlocked');
+      else el.textContent = (lang === 'es' ? 'Servidor: ' : 'Server: ') + t('notConfigured');
+    } catch (e) { el.textContent = (lang === 'es' ? 'Servidor: ' : 'Server: ') + t('notConfigured'); }
+  }
+  /* This line used to read "SMS/Email: SMS ready" for every answer except one
+     exact error string. The server routes are fail-closed and answer
+     403 server_auth_not_configured, which is not that string — so the owner was
+     told customer texts and emails were ready to send when nothing could send.
+     It now says "ready" only when the server itself says the channel is
+     configured, and names the reason in every other case. */
+  async function refreshIntegrationStatus() {
+    const nEl = $('#notify-status'); if (!nEl) return;
+    const label = (state) => 'SMS/Email: ' + state;
+    try {
+      const res = await serverFetch('/api/notify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ channel: 'sms', to: '+10000000000', body: 'test' }) });
+      const body = await res.json().catch(() => null);
+      if (body && body.error === 'server_auth_not_configured') nEl.textContent = label(t('serverBlocked'));
+      else if (body && body.error === 'sms_not_configured') nEl.textContent = label(t('notConfigured'));
+      else if (res.ok) nEl.textContent = label(t('smsReady'));
+      else nEl.textContent = label(t('notConfigured'));
+    } catch (e) { nEl.textContent = label(t('notConfigured')); }
   }
   function saveNotifyPrefs() {
     if (!db.meta) db.meta = {};
@@ -4377,18 +4468,25 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     $('#main').innerHTML = html; bindSearch(sk);
   }
   // The big + button adapts to the current screen.
+  /* What the add button does, per screen. This is also the list of screens that
+     get an add button at all — `render()` used to keep a second copy of that
+     list, and the two had drifted: `customer` was in the map but not the list,
+     and the map's fallback quietly turned the button into "log a phone call" on
+     any screen that reached it. One list, so they cannot disagree again.
+     A customer's screen is deliberately absent: it carries its own "New job"
+     button in the page, and two controls for one action is one too many. */
+  const QUICK_ADD = {
+    home: () => session.role === 'field' ? chooseJob('photo') : newCall(),
+    customers: () => openCustomerForm(),
+    jobs: () => openJobForm(), calls: () => newCall(), emails: () => openEmailForm(), payroll: () => importPayroll(),
+    estimates: () => openEstimateForm(),
+    invoices: () => openInvoiceForm(), payments: () => openPaymentForm(), checks: () => openCheckForm({}),
+    followups: () => openFollowForm(), workflows: () => openWorkflowForm(), knowledge: () => openSopForm(),
+    team: () => openUserForm(),
+  };
   function quickAdd() {
-    const v = route.view;
-    const map = {
-      home: () => session.role === 'field' ? chooseJob('photo') : newCall(),
-      customers: () => openCustomerForm(), customer: () => openJobForm(null, route.id),
-      jobs: () => openJobForm(), calls: () => newCall(), emails: () => openEmailForm(), payroll: () => importPayroll(),
-      estimates: () => openEstimateForm(),
-      invoices: () => openInvoiceForm(), payments: () => openPaymentForm(), checks: () => openCheckForm({}),
-      followups: () => openFollowForm(), workflows: () => openWorkflowForm(), knowledge: () => openSopForm(),
-      team: () => openUserForm(),
-    };
-    (map[v] || (() => newCall()))();
+    const add = QUICK_ADD[route.view];
+    if (add) add();
   }
 
   /* ==================== ACCOUNTABILITY: audit · alerts · exceptions ==================== */
@@ -4681,55 +4779,10 @@ Rules: Never invent precise counts you cannot support from the data — instead 
   }
   function jobsTodayList() { return db.jobs.filter(j => isToday(j.scheduledDate) || j.activeCheckIn || db.job_events.some(e => e.jobId === j.id && isToday(e.ts))); }
   function readyToCloseList() { return db.jobs.filter(j => !['completed', 'canceled'].includes(j.status) && !j.activeCheckIn && db.photos.some(p => p.jobId === j.id && p.phase === 'before') && db.photos.some(p => p.jobId === j.id && p.phase === 'after') && checklistComplete(j.id)); }
-  function viewHub() {
-    const today = jobsTodayList();
-    const newCustomers = db.customers.filter(c => isToday(c.created));
-    const pendingInvoices = db.invoices.filter(i => invStatus(i) !== 'paid');
-    const openEstimates = db.estimates.filter(e => !['approved', 'canceled'].includes(e.status));
-    const kpis = [
-      ['fa-user-gear', t('jobsToday'), today.length, "nav('jobs')"],
-      ['fa-user-plus', t('newCustomers'), newCustomers.length, "nav('customers')"],
-      ['fa-file-invoice', t('pendingInvoices'), pendingInvoices.length, "nav('invoices')"],
-      ['fa-file-circle-check', t('openEstimates'), openEstimates.length, "nav('estimates')"],
-    ];
-
-    const now = new Date();
-    const dayOfWeek = now.getDay() || 7;
-    const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek + 1);
-    const week = Array.from({ length: 5 }, (_, index) => {
-      const date = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + index);
-      const iso = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-      return { date, iso, jobs: db.jobs.filter(j => (j.scheduledDate || '').slice(0, 10) === iso) };
-    });
-
-    const recentJobs = [...db.jobs]
-      .sort((a, b) => new Date(b.updated || b.created || 0) - new Date(a.updated || a.created || 0))
-      .slice(0, 2);
-    const recentJobCard = j => {
-      const worker = get('users', j.assignedTo);
-      const invoice = db.invoices.find(i => i.jobId === j.id);
-      const estimate = db.estimates.find(e => e.jobId === j.id);
-      const amount = invoice ? invoice.amount : (estimate ? estimate.amount : 0);
-      const workerName = worker ? worker.name : (lang === 'es' ? 'Sin asignar' : 'Unassigned');
-      return `<button class="hub-job" onclick="nav('job','${j.id}')">
-        <span class="hub-job-top"><span><span class="hub-job-title">${esc(j.title || t('untitled'))}</span><span class="hub-job-meta">${esc(customerName(j.customerId))}${j.address ? ` · ${esc(j.address)}` : ''}</span></span><span class="hub-job-status ${j.status === 'completed' ? 'completed' : ''}">${esc(t(j.status))}</span></span>
-        <span class="hub-job-foot"><span class="hub-tech"><span class="hub-tech-avatar">${esc(initials(workerName))}</span>${esc(workerName)}</span><span class="hub-job-amount">${amount ? money(amount) : '—'}</span></span>
-      </button>`;
-    };
-
-    const html = `<div class="hub-dashboard">
-      <section class="hub-kpis" aria-label="${esc(lang === 'es' ? 'Resumen del panel' : 'Dashboard summary')}">
-        ${kpis.map(([icon, label, value, action]) => `<button class="hub-kpi" onclick="${action}"><span class="hub-kpi-label">${esc(label)}</span><span class="hub-kpi-bottom"><span class="hub-kpi-value">${String(value).padStart(2, '0')}</span><i class="fas ${icon} hub-kpi-icon"></i></span></button>`).join('')}
-      </section>
-      <section><div class="hub-section-head"><h2>${esc(t('weeklySchedule'))}</h2><button class="hub-section-action" onclick="nav('jobs')">${esc(t('viewCalendar'))}</button></div>
-        <div class="hub-week">${week.map(day => `<button class="hub-day ${day.iso === todayISO() ? 'today' : ''}" onclick="nav('jobs')"><span class="hub-day-name">${esc(day.date.toLocaleDateString(lang === 'es' ? 'es-US' : 'en-US', { weekday: 'short' }))}</span><span class="hub-day-number">${day.date.getDate()}</span><span class="hub-day-count">${day.iso === todayISO() ? '•' : `${day.jobs.length} ${esc(day.jobs.length === 1 ? t('jobCountOne') : t('jobCount'))}`}</span></button>`).join('')}</div>
-      </section>
-      <section><div class="hub-section-head"><h2>${esc(t('recentJobs'))}</h2><button class="hub-section-action" aria-label="${esc(t('viewAll'))}" onclick="nav('jobs')"><i class="fas fa-filter"></i></button></div>
-        <div class="hub-jobs">${recentJobs.length ? recentJobs.map(recentJobCard).join('') : emptyState(t('noResults'))}</div>
-      </section>
-    </div>`;
-    $('#main').innerHTML = html;
-  }
+  /* The `hub` dashboard was retired when the owner/office home was rebuilt
+     around the permanent rail. Nothing linked to it any more, so it was a
+     second competing home that only the router still knew about — removed
+     with its route so it cannot come back as one. */
 
   /* ============================ GPS LOGS (Owner View) ============================ */
   async function viewGpsLogs() {
@@ -5788,7 +5841,7 @@ Return ONLY valid JSON: { "fixtures": [], "pipes": [], "fittings": [], "notes": 
   
   boot().then(() => { setTimeout(seedMockKPIs, 500); render(); });
   </script>
-  <script src="./otto-home.js?v=2" data-otto-home-runtime></script>
+  <script src="./otto-home.js?v=3" data-otto-home-runtime></script>
 </body>
 </html>
 
