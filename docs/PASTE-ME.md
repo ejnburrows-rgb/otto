@@ -33,7 +33,7 @@ Current priority order:
 2. Photo-upload reliability: never silently abandon a locally stored photo; keep retrying and show its pending/not-sent state.
 3. Safe server authorization from current `main` under issue #70, preserving offline PIN unlock.
 4. Cross-device record/photo proof with role and record-level isolation.
-5. Reconcile the verified duplicate/demo live rows under issue #28 only after backup and explicit destructive-action approval.
+5. Reconcile the verified duplicate/demo live rows under issue #111 only after backup, dependency review, and explicit destructive-action approval.
 6. OCR reliability and clear failure messages.
 7. Notifications only after authenticated server access is proven.
 8. Restore and prove the website GitHub `main` → Vercel automatic deployment path under issue #110.
