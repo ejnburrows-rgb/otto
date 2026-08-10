@@ -195,10 +195,10 @@ body.admin-home .crystal-logo {
 }
 
 body.admin-home .topbar .iconbtn {
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  min-height: 36px;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
   border: 1px solid var(--otto-hairline);
   border-radius: 9px;
   background: color-mix(in srgb, var(--card) 58%, transparent);
@@ -212,8 +212,8 @@ body.admin-home .topbar .langtoggle {
   overflow: hidden;
 }
 
-body.admin-home .topbar .langtoggle button {
-  min-height: 36px;
+body.admin-home .langtoggle button {
+  min-height: 40px !important;
   padding: 4px 10px;
   color: var(--text2);
   font-size: 11px;
@@ -469,10 +469,10 @@ body.admin-home .topbar .langtoggle button.on {
 }
 
 .otto-window-control {
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
-  min-height: 32px;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1040,14 +1040,14 @@ body.otto-fullscreen-window .otto-taskbar {
   }
 
   body.admin-home .topbar .iconbtn {
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
-    min-height: 32px;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
   }
 
-  body.admin-home .topbar .langtoggle button {
-    min-height: 32px;
+  body.admin-home .langtoggle button {
+    min-height: 36px !important;
     padding: 3px 7px;
     font-size: 10px;
   }
@@ -1073,7 +1073,7 @@ body.otto-fullscreen-window .otto-taskbar {
     min-height: 68px;
     padding: 7px 2px;
     text-align: center;
-    font-size: 9px;
+    font-size: 10px;
     line-height: 1.05;
   }
 
@@ -1126,10 +1126,10 @@ body.otto-fullscreen-window .otto-taskbar {
   }
 
   .otto-window-control {
-    width: 30px;
-    height: 30px;
-    min-width: 30px;
-    min-height: 30px;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
   }
 
   .otto-row-meta {
