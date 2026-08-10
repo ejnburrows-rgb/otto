@@ -1,0 +1,286 @@
+/* OTTO CRM — flexible interaction shell.
+   User-requested additions: real window controls, complete menu sidebar,
+   wallpaper fit/zoom/pan controls, per-user pink/green window tinting,
+   employee import / attendance / OCR overlays. The OTTO logo itself is unchanged. */
+
+:root {
+  --otto-flex-surface: rgba(255,255,255,.90);
+  --otto-flex-surface-2: rgba(248,250,252,.94);
+  --otto-flex-border: rgba(15,23,42,.14);
+  --otto-flex-accent: var(--action, #2C67F8);
+  --otto-flex-accent-soft: rgba(44,103,248,.13);
+  --otto-flex-shadow: 0 18px 48px rgba(15,23,42,.22);
+  --otto-wallpaper-size: contain;
+  --otto-wallpaper-x: 50%;
+  --otto-wallpaper-y: 50%;
+}
+
+[data-theme="dark"] {
+  --otto-flex-surface: rgba(15,23,42,.90);
+  --otto-flex-surface-2: rgba(21,30,50,.94);
+  --otto-flex-border: rgba(148,163,184,.24);
+  --otto-flex-accent-soft: rgba(126,166,255,.15);
+  --otto-flex-shadow: 0 22px 52px rgba(0,0,0,.48);
+}
+
+/* Sarai/Sarays: pink-tinted working windows that harmonize with her wallpaper. */
+body[data-otto-user-theme="sarai"] {
+  --otto-flex-surface: rgba(255,238,248,.90);
+  --otto-flex-surface-2: rgba(255,226,242,.94);
+  --otto-flex-border: rgba(160,54,112,.25);
+  --otto-flex-accent: #A93670;
+  --otto-flex-accent-soft: rgba(214,88,153,.15);
+}
+[data-theme="dark"] body[data-otto-user-theme="sarai"] {
+  --otto-flex-surface: rgba(63,25,49,.90);
+  --otto-flex-surface-2: rgba(76,31,59,.95);
+  --otto-flex-border: rgba(246,167,207,.28);
+  --otto-flex-accent: #F2A4CE;
+  --otto-flex-accent-soft: rgba(242,164,206,.15);
+}
+
+/* Julio Pablo: restrained green-tinted working windows to match his landscape. */
+body[data-otto-user-theme="julio"] {
+  --otto-flex-surface: rgba(239,250,241,.90);
+  --otto-flex-surface-2: rgba(226,246,231,.94);
+  --otto-flex-border: rgba(32,110,66,.24);
+  --otto-flex-accent: #236B42;
+  --otto-flex-accent-soft: rgba(53,134,82,.14);
+}
+[data-theme="dark"] body[data-otto-user-theme="julio"] {
+  --otto-flex-surface: rgba(20,52,37,.90);
+  --otto-flex-surface-2: rgba(25,65,45,.95);
+  --otto-flex-border: rgba(132,205,156,.27);
+  --otto-flex-accent: #8FD2A5;
+  --otto-flex-accent-soft: rgba(143,210,165,.14);
+}
+
+/* Apply personal tint to working chrome; never recolor the company logo. */
+body[data-otto-user-theme] .otto-rail,
+body[data-otto-user-theme] .otto-panel,
+body[data-otto-user-theme] .otto-flex-sidebar,
+body[data-otto-user-theme] .otto-flex-dialog,
+body[data-otto-user-theme] .otto-wallpaper-controls,
+body[data-otto-user-theme].admin-home .topbar {
+  background: var(--otto-flex-surface) !important;
+  border-color: var(--otto-flex-border) !important;
+}
+body[data-otto-user-theme] .otto-tab:hover,
+body[data-otto-user-theme] .otto-flex-menu-item:hover,
+body[data-otto-user-theme] .otto-flex-tab:hover {
+  background: var(--otto-flex-accent-soft) !important;
+}
+body[data-otto-user-theme] .otto-tab.is-open,
+body[data-otto-user-theme] .otto-flex-primary,
+body[data-otto-user-theme] .otto-flex-tab.is-active {
+  background: var(--otto-flex-accent) !important;
+  border-color: var(--otto-flex-accent) !important;
+  color: #fff !important;
+}
+body[data-otto-user-theme] .crystal-logo { filter: none !important; }
+
+/* Full wallpaper composition by default. User can opt into Fill/Zoom from controls. */
+.wallpaper-container {
+  background-size: var(--otto-wallpaper-size, contain) !important;
+  background-position: var(--otto-wallpaper-x, 50%) var(--otto-wallpaper-y, 50%) !important;
+  background-repeat: no-repeat !important;
+}
+
+.otto-logo-home {
+  cursor: pointer;
+  outline-offset: 3px;
+}
+.otto-logo-home:focus-visible { outline: 3px solid var(--otto-flex-accent); }
+
+/* Menu button beside company logo. */
+.otto-flex-menu-trigger {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border: 1px solid var(--otto-flex-border);
+  border-radius: 10px;
+  background: var(--otto-flex-surface-2);
+  color: var(--text);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.otto-flex-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 120;
+  width: min(340px, 88vw);
+  display: flex;
+  flex-direction: column;
+  background: var(--otto-flex-surface);
+  border-right: 1px solid var(--otto-flex-border);
+  box-shadow: var(--otto-flex-shadow);
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+  transform: translateX(-105%);
+  transition: transform .18s ease;
+}
+.otto-flex-sidebar.is-open { transform: translateX(0); }
+.otto-flex-sidebar-head {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding: max(16px, env(safe-area-inset-top)) 16px 14px;
+  border-bottom:1px solid var(--otto-flex-border);
+}
+.otto-flex-sidebar-title { flex:1; font-size:17px; font-weight:800; }
+.otto-flex-iconbtn {
+  width:40px;height:40px;border:1px solid var(--otto-flex-border);border-radius:10px;
+  background:var(--otto-flex-surface-2);color:var(--text);cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;
+}
+.otto-flex-menu-scroll { overflow-y:auto; padding:12px; }
+.otto-flex-menu-group + .otto-flex-menu-group { margin-top:14px; }
+.otto-flex-menu-title {
+  margin:0 8px 6px;color:var(--text2);font-size:10px;font-weight:800;
+  letter-spacing:.09em;text-transform:uppercase;
+}
+.otto-flex-menu-item {
+  width:100%;min-height:46px;border:0;border-radius:10px;background:transparent;color:var(--text);
+  display:flex;align-items:center;gap:11px;padding:8px 10px;text-align:left;cursor:pointer;font:inherit;
+}
+.otto-flex-menu-item i { width:20px;text-align:center;color:var(--otto-flex-accent); }
+.otto-flex-sidebar-backdrop {
+  position:fixed;inset:0;z-index:119;background:rgba(2,6,23,.38);opacity:0;pointer-events:none;transition:opacity .18s ease;
+}
+.otto-flex-sidebar-backdrop.is-open { opacity:1;pointer-events:auto; }
+
+/* Explicit home tabs stay available regardless of panel state. */
+.otto-flex-tabs {
+  position:fixed;
+  left:calc(max(var(--otto-edge, 18px), env(safe-area-inset-left)) + var(--otto-rail-w, 226px) + 14px);
+  top:max(18px, env(safe-area-inset-top));
+  z-index:37;
+  display:flex;
+  gap:6px;
+  max-width:calc(100vw - var(--otto-rail-w, 226px) - 70px);
+  overflow-x:auto;
+  padding:6px;
+  border:1px solid var(--otto-flex-border);
+  border-radius:13px;
+  background:var(--otto-flex-surface);
+  box-shadow:0 8px 24px rgba(15,23,42,.12);
+  backdrop-filter:blur(18px);
+}
+.otto-flex-tab {
+  min-height:38px;white-space:nowrap;border:1px solid transparent;border-radius:9px;background:transparent;
+  color:var(--text);padding:6px 11px;display:flex;align-items:center;gap:7px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;
+}
+
+/* Real minimize / maximize controls for home panels. */
+.otto-window-controls {
+  display:flex;
+  align-items:center;
+  gap:6px;
+  margin-left:auto;
+}
+.otto-window-control {
+  width:36px;height:36px;border:1px solid var(--otto-flex-border);border-radius:9px;
+  background:var(--otto-flex-surface-2);color:var(--text);cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;
+}
+.otto-panel.is-minimized {
+  width:min(340px, calc(100vw - 20px)) !important;
+  min-height:58px !important;
+  max-height:58px !important;
+  overflow:hidden !important;
+  padding:10px 12px !important;
+}
+.otto-panel.is-minimized > :not(.otto-panel-head) { display:none !important; }
+.otto-panel.is-minimized .otto-panel-head { margin:0; min-height:36px; }
+.otto-panel.is-maximized {
+  position:fixed !important;
+  inset:max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left)) !important;
+  z-index:145 !important;
+  width:auto !important;
+  max-width:none !important;
+  height:auto !important;
+  max-height:none !important;
+  border-radius:18px !important;
+}
+body.otto-window-maximized .otto-stage { z-index:145 !important; }
+body.otto-window-maximized .otto-rail,
+body.otto-window-maximized .otto-flex-tabs { opacity:.2; pointer-events:none; }
+
+/* Wallpaper crop / fit controls. */
+.otto-wallpaper-controls {
+  position:fixed;right:max(14px, env(safe-area-inset-right));bottom:max(14px, env(safe-area-inset-bottom));z-index:80;
+  width:min(360px, calc(100vw - 28px));padding:11px;border:1px solid var(--otto-flex-border);border-radius:14px;
+  background:var(--otto-flex-surface);box-shadow:var(--otto-flex-shadow);backdrop-filter:blur(20px);
+  display:none;
+}
+.otto-wallpaper-controls.is-open { display:block; }
+.otto-wallpaper-head { display:flex;align-items:center;gap:8px;margin-bottom:10px; }
+.otto-wallpaper-head strong { flex:1; }
+.otto-wallpaper-row { display:flex;align-items:center;gap:8px;margin-top:8px; }
+.otto-wallpaper-row label { min-width:68px;color:var(--text2);font-size:12px;font-weight:700; }
+.otto-wallpaper-row input[type="range"] { flex:1; }
+.otto-wallpaper-buttons { display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:9px; }
+.otto-wallpaper-buttons button,
+.otto-wallpaper-mode {
+  min-height:38px;border:1px solid var(--otto-flex-border);border-radius:9px;background:var(--otto-flex-surface-2);color:var(--text);cursor:pointer;
+}
+
+/* Generic polished dialog used by OCR, employee import and attendance. */
+.otto-flex-overlay {
+  position:fixed;inset:0;z-index:160;background:rgba(2,6,23,.52);display:flex;align-items:center;justify-content:center;padding:18px;
+}
+.otto-flex-dialog {
+  width:min(900px, 100%);max-height:min(88dvh, 900px);overflow:auto;
+  background:var(--otto-flex-surface);color:var(--text);border:1px solid var(--otto-flex-border);border-radius:18px;
+  box-shadow:var(--otto-flex-shadow);padding:18px;backdrop-filter:blur(24px);
+}
+.otto-flex-dialog-head { display:flex;align-items:center;gap:12px;margin-bottom:16px; }
+.otto-flex-dialog-head h2 { flex:1;margin:0;font-size:21px; }
+.otto-flex-actions { display:flex;flex-wrap:wrap;gap:8px;margin-top:14px; }
+.otto-flex-btn {
+  min-height:44px;border:1px solid var(--otto-flex-border);border-radius:10px;background:var(--otto-flex-surface-2);color:var(--text);
+  padding:8px 14px;font:inherit;font-weight:700;cursor:pointer;
+}
+.otto-flex-primary { background:var(--otto-flex-accent);border-color:var(--otto-flex-accent);color:#fff; }
+.otto-flex-field { margin-top:12px; }
+.otto-flex-field label { display:block;margin-bottom:5px;color:var(--text2);font-size:12px;font-weight:700; }
+.otto-flex-field input,.otto-flex-field select,.otto-flex-field textarea {
+  width:100%;min-height:44px;border:1px solid var(--otto-flex-border);border-radius:10px;background:var(--otto-flex-surface-2);color:var(--text);padding:9px 11px;
+}
+.otto-flex-field textarea { min-height:180px;resize:vertical; }
+.otto-flex-table-wrap { overflow:auto;border:1px solid var(--otto-flex-border);border-radius:12px;margin-top:12px; }
+.otto-flex-table { width:100%;border-collapse:collapse;font-size:13px; }
+.otto-flex-table th,.otto-flex-table td { padding:9px 10px;border-bottom:1px solid var(--otto-flex-border);text-align:left;white-space:nowrap; }
+.otto-flex-table th { position:sticky;top:0;background:var(--otto-flex-surface-2);z-index:1;font-size:11px;text-transform:uppercase;letter-spacing:.05em; }
+.otto-status { display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;background:var(--otto-flex-accent-soft);font-size:11px;font-weight:800; }
+.otto-status.is-in { background:rgba(5,150,105,.14);color:#047857; }
+.otto-status.is-out { background:rgba(71,85,105,.14);color:var(--text2); }
+.otto-status.is-none { background:rgba(180,83,9,.12);color:#92400e; }
+.otto-import-duplicate { opacity:.62; }
+.otto-ocr-progress { margin-top:10px;color:var(--text2);font-size:13px; }
+
+/* Additive Team controls. */
+.otto-team-import-bar { display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px; }
+
+@media (max-width: 700px) {
+  .otto-flex-tabs {
+    left:calc(var(--otto-rail-w, 84px) + 16px);
+    top:8px;
+    max-width:calc(100vw - var(--otto-rail-w, 84px) - 24px);
+  }
+  .otto-flex-tab span { display:none; }
+  .otto-flex-tab { min-width:38px;justify-content:center;padding:6px 9px; }
+  .otto-panel.is-maximized { inset:6px !important;border-radius:14px !important; }
+  .otto-flex-dialog { padding:14px;border-radius:14px; }
+  .otto-wallpaper-controls { bottom:8px;right:8px;width:calc(100vw - 16px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .otto-flex-sidebar,.otto-flex-sidebar-backdrop { transition:none; }
+}
