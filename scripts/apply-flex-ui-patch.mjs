@@ -9,6 +9,7 @@ const COMPAT_STYLE = `<style data-otto-flex-compat>\n/* The flexible shell suppl
 const BRIDGE = `<script data-otto-flex-bridge>\nwindow.__ottoFlexBridge = {\n  getDb: () => db,\n  getSession: () => session,\n  getLang: () => lang,\n  getRoute: () => route,\n  /* Bulk spreadsheet import is intentionally FIELD-WORKER ONLY. This bridge is used only by the additive importer. */\n  add: (col, obj) => add(col, col === 'users' ? { ...obj, role: 'field' } : obj),\n  update: (col, id, patch) => update(col, id, col === 'users' ? { ...patch, role: 'field' } : patch),\n  save: () => save(),\n  render: () => render(),\n  nav: (view, id) => nav(view, id),\n  can: (view) => can(view)\n};\n</script>`;
 const SCRIPT = `<script src="./otto-flex-ui.js?v=${FLEX_ASSET_VERSION}" data-otto-flex-ui-runtime></script>`;
 const TRANSLATION_SCRIPT = `<script src="./otto-flex-translation-fixes.js?v=${FLEX_ASSET_VERSION}" data-otto-flex-translation-runtime></script>`;
+const OCR_SCRIPT = `<script src="./otto-flex-ocr-v2.js?v=${FLEX_ASSET_VERSION}" data-otto-flex-ocr-runtime></script>`;
 
 export function patchFlexSource(source) {
   let out = source;
@@ -17,11 +18,12 @@ export function patchFlexSource(source) {
   out = out.replace(/\s*<script\b[^>]*\bdata-otto-flex-bridge\b[^>]*>[\s\S]*?<\/script>\s*/g, '\n');
   out = out.replace(/\s*<script\b[^>]*\bdata-otto-flex-ui-runtime\b[^>]*><\/script>\s*/g, '\n');
   out = out.replace(/\s*<script\b[^>]*\bdata-otto-flex-translation-runtime\b[^>]*><\/script>\s*/g, '\n');
+  out = out.replace(/\s*<script\b[^>]*\bdata-otto-flex-ocr-runtime\b[^>]*><\/script>\s*/g, '\n');
 
   if (!out.includes('</head>')) throw new Error('index.html is missing </head>');
   if (!out.includes('</body>')) throw new Error('index.html is missing </body>');
   out = out.replace('</head>', `  ${STYLE}\n  ${COMPAT_STYLE}\n</head>`);
-  out = out.replace('</body>', `  ${BRIDGE}\n  ${SCRIPT}\n  ${TRANSLATION_SCRIPT}\n</body>`);
+  out = out.replace('</body>', `  ${BRIDGE}\n  ${SCRIPT}\n  ${TRANSLATION_SCRIPT}\n  ${OCR_SCRIPT}\n</body>`);
   return out;
 }
 
@@ -30,8 +32,10 @@ export function validateFlexSource(source) {
     ['flex stylesheet wired', source.includes('data-otto-flex-ui-styles') && source.includes(`otto-flex-ui.css?v=${FLEX_ASSET_VERSION}`)],
     ['flex runtime wired', source.includes('data-otto-flex-ui-runtime') && source.includes(`otto-flex-ui.js?v=${FLEX_ASSET_VERSION}`)],
     ['hard-coded translation runtime wired', source.includes('data-otto-flex-translation-runtime') && source.includes(`otto-flex-translation-fixes.js?v=${FLEX_ASSET_VERSION}`)],
+    ['supported OCR runtime wired', source.includes('data-otto-flex-ocr-runtime') && source.includes(`otto-flex-ocr-v2.js?v=${FLEX_ASSET_VERSION}`)],
     ['bridge wired before runtime', source.indexOf('data-otto-flex-bridge') > -1 && source.indexOf('data-otto-flex-bridge') < source.indexOf('data-otto-flex-ui-runtime')],
     ['translation cleanup runs after flex runtime', source.indexOf('data-otto-flex-translation-runtime') > source.indexOf('data-otto-flex-ui-runtime')],
+    ['OCR v2 runs after the base flexible runtime', source.indexOf('data-otto-flex-ocr-runtime') > source.indexOf('data-otto-flex-ui-runtime')],
     ['bridge exposes existing db safely', source.includes('getDb: () => db')],
     ['spreadsheet user adds are forced to field role', source.includes("col === 'users' ? { ...obj, role: 'field' } : obj")],
     ['spreadsheet user updates are forced to field role', source.includes("col === 'users' ? { ...patch, role: 'field' } : patch")],

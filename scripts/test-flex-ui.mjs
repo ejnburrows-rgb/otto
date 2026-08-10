@@ -4,6 +4,7 @@ import { patchFlexSource, validateFlexSource, FLEX_ASSET_VERSION } from './apply
 const index = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const js = fs.readFileSync(new URL('../otto-flex-ui.js', import.meta.url), 'utf8');
 const translation = fs.readFileSync(new URL('../otto-flex-translation-fixes.js', import.meta.url), 'utf8');
+const ocr = fs.readFileSync(new URL('../otto-flex-ocr-v2.js', import.meta.url), 'utf8');
 const css = fs.readFileSync(new URL('../otto-flex-ui.css', import.meta.url), 'utf8');
 const patched = patchFlexSource(index);
 
@@ -42,10 +43,12 @@ const checks = [
   ['attendance uses real check-in and check-out events', js.includes("e.type==='check_in'||e.type==='check_out'")],
   ['attendance does not fabricate a check-in on import', !js.includes("source:'employee_spreadsheet',type:'check_in'")],
 
-  ['OCR tool exists', js.includes('openOCR') && js.includes('Document OCR')],
-  ['OCR supports image and PDF', js.includes('accept="image/*,.pdf,application/pdf"') && js.includes('renderPdfPages')],
-  ['OCR supports English and Spanish recognition', js.includes("T.recognize(sources[i],'eng+spa'")],
-  ['OCR output can be copied and downloaded', js.includes('data-ocr-copy') && js.includes('data-ocr-download')]
+  ['OCR v2 uses Tesseract createWorker', ocr.includes("Tesseract.createWorker(['eng', 'spa']")],
+  ['OCR v2 recognizes each source through one worker', ocr.includes('await worker.recognize(sources[i])')],
+  ['OCR v2 terminates its worker', ocr.includes('await worker.terminate()')],
+  ['OCR v2 supports image and PDF', ocr.includes('accept="image/*,.pdf,application/pdf"') && ocr.includes('renderPdf(file)')],
+  ['OCR v2 takes over the sidebar OCR action', ocr.includes('[data-flex-nav="__ocr"]') && ocr.includes('stopImmediatePropagation()')],
+  ['OCR output can be copied and downloaded', ocr.includes('data-ocr-copy') && ocr.includes('data-ocr-download')]
 ];
 
 let failed = 0;
