@@ -20,24 +20,27 @@ The work is organized around one outcome: the app must truthfully show what work
 
 ## Current product truth
 
-- The current dashboard redesign is already merged into `main`.
+- The final owner/office home redesign is merged into `main`: a permanent left rail for Today, Field Workers, Inbox, and Tools, with one active panel at a time and explicit Back controls.
 - The local/offline CRM and built-in demo are present.
-- Sensitive server features remain intentionally blocked by the fail-closed security gate.
-- Real server authentication is the main architecture blocker for shared cloud data, cross-device photos, server AI, notifications, and QuickBooks.
-- Photo upload failure is not communicated clearly enough to field users.
-- OCR failure modes are not distinguished clearly.
-- Live duplicate database rows require explicit owner approval before deletion.
-- GitHub Actions cannot be trusted until a successful run is proven.
+- Sensitive server features remain intentionally blocked by the fail-closed security gate. This is the safe production state until issue #70 ships a fresh, verified server-authorization implementation from current `main`.
+- The older auth attempt in PR #103 was reviewed and closed unmerged; it must not be resurrected wholesale.
+- Photo upload currently gives up after repeated failures by deleting its retry-queue entry while leaving the local photo visible. That can make a field user believe a photo reached the office when it did not.
+- Live Supabase still contains ten later duplicate/demo job rows plus seeded job events; reconciliation is tracked in issue #28 and requires deliberate live-data cleanup.
+- QuickBooks is explicitly out of scope. `docs/NO-QUICKBOOKS.md` is authoritative; do not restore Intuit routes, UI, credentials, tests, or deployment requirements without a new explicit requirement.
+- The public OTTO website is live on its cleaned delivery build. Its remaining infrastructure issue is automatic GitHub `main` → Vercel deployment, tracked in issue #110.
+- GitHub Actions cannot be trusted as release evidence until a successful current run is proven.
 
 ## Priority order
 
-1. **Repository governance realignment** — make all agents read one current control system and retire contradictory instructions.
-2. **Truthful user experience** — visible photo-upload failure and accurate blocked-state messaging.
-3. **Server authentication plan and implementation** — Supabase Auth, preserving offline PIN unlock.
-4. **Cross-device proof** — records and photo bytes reach owner and office users safely.
-5. **OCR reliability and error clarity.**
-6. **Notifications and QuickBooks activation only after authenticated server access.**
-7. **Final production readiness** — fresh tests, real-browser verification, demo verification, deployment proof, and director sign-off.
+1. **Repository governance cleanup** — keep one current control system, retire contradictory handoffs, and reduce stale branch/PR/issue clutter using current GitHub evidence.
+2. **Photo-upload reliability** — never silently abandon a locally stored job photo; keep retrying and show a clear pending/not-sent state.
+3. **Server authorization (#70)** — build fresh from current `main` using provider-backed identity plus explicit role and record-level authorization. Preserve offline PIN unlock.
+4. **Cross-device proof** — prove authorized records and photo bytes reach the correct owner/office/field users without exposing unrelated records.
+5. **Duplicate live-data reconciliation (#28)** — back up first, remove only verified duplicate/demo rows and their seeded activity, and prove no genuine business data was lost.
+6. **OCR reliability and error clarity.**
+7. **Notifications only after authenticated server access is proven.** QuickBooks is not part of this product scope.
+8. **Vercel Git integration (#110)** — restore automatic website production deployments from current GitHub `main` and prove the trigger with an exact commit.
+9. **Final production readiness** — fresh tests, real-browser verification, demo verification, deployment proof, and director sign-off.
 
 Do not jump to a later item while an earlier item is unresolved unless the earlier item is genuinely blocked and the next item is independent.
 
@@ -100,7 +103,7 @@ Tool entry files such as `CLAUDE.md`, `GEMINI.md`, `.cursorrules`, and `.github/
 
 `docs/PASTE-ME.md` is for environments that do not load repository instructions. It must be regenerated whenever this control system changes materially.
 
-`LOOP-CLAUDE.md` and old autonomous task queues are historical unless explicitly reactivated here.
+`LOOP-CLAUDE.md` and old autonomous task queues are historical unless explicitly reactivated here. Obsolete tool-specific handoff files that contradict current product decisions should be removed rather than left looking actionable.
 
 ## Realignment completion standard
 
@@ -108,7 +111,7 @@ The repository is considered realigned when:
 
 - all agent entry files point to the same read order,
 - no active instruction file contains stale test totals or contradictory merge rules,
-- obsolete autonomous loops are clearly marked historical,
+- obsolete autonomous loops are clearly marked historical or removed,
 - the current objective and priority order are documented here,
 - branch cleanup uses a current evidence-based inventory,
 - and the reusable process in `docs/REALIGNMENT-TEMPLATE.md` can be applied to another repository.
