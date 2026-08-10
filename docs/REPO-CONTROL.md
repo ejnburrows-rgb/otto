@@ -25,7 +25,7 @@ The work is organized around one outcome: the app must truthfully show what work
 - Sensitive server features remain intentionally blocked by the fail-closed security gate. This is the safe production state until issue #70 ships a fresh, verified server-authorization implementation from current `main`.
 - The older auth attempt in PR #103 was reviewed and closed unmerged; it must not be resurrected wholesale.
 - Photo upload currently gives up after repeated failures by deleting its retry-queue entry while leaving the local photo visible. That can make a field user believe a photo reached the office when it did not.
-- Live Supabase still contains ten later duplicate/demo job rows plus seeded job events; reconciliation is tracked in issue #28 and requires deliberate live-data cleanup.
+- Live Supabase still contains ten later duplicate/demo job rows plus seeded activity. Reconciliation is tracked in issue #111 and requires backup, dependency review, and explicit approval before any live deletion.
 - QuickBooks is explicitly out of scope. `docs/NO-QUICKBOOKS.md` is authoritative; do not restore Intuit routes, UI, credentials, tests, or deployment requirements without a new explicit requirement.
 - The public OTTO website is live on its cleaned delivery build. Its remaining infrastructure issue is automatic GitHub `main` → Vercel deployment, tracked in issue #110.
 - GitHub Actions cannot be trusted as release evidence until a successful current run is proven.
@@ -36,7 +36,7 @@ The work is organized around one outcome: the app must truthfully show what work
 2. **Photo-upload reliability** — never silently abandon a locally stored job photo; keep retrying and show a clear pending/not-sent state.
 3. **Server authorization (#70)** — build fresh from current `main` using provider-backed identity plus explicit role and record-level authorization. Preserve offline PIN unlock.
 4. **Cross-device proof** — prove authorized records and photo bytes reach the correct owner/office/field users without exposing unrelated records.
-5. **Duplicate live-data reconciliation (#28)** — back up first, remove only verified duplicate/demo rows and their seeded activity, and prove no genuine business data was lost.
+5. **Duplicate live-data reconciliation (#111)** — back up first, remove only verified duplicate/demo rows and their linked seeded activity, and prove no genuine business data was lost. No delete is authorized until the exact rows and dependent records are approved.
 6. **OCR reliability and error clarity.**
 7. **Notifications only after authenticated server access is proven.** QuickBooks is not part of this product scope.
 8. **Vercel Git integration (#110)** — restore automatic website production deployments from current GitHub `main` and prove the trigger with an exact commit.
