@@ -15,9 +15,12 @@ docs/
 .cursorrules
 .mcp.json
 
-# Test and tooling source. Only the three build-time scripts below are sent to
-# Vercel; vercel.json removes them again before deployment output is published.
+# Test and tooling source. Only the build-time scripts explicitly used by
+# vercel.json are sent to Vercel; vercel.json removes them again before the
+# deployment output is published.
 scripts/*
+!scripts/apply-photo-retry-patch.mjs
+!scripts/test-photo-retry-patch.mjs
 !scripts/apply-otto-home-patch.mjs
 !scripts/test-otto-home.mjs
 !scripts/stamp-version.mjs
