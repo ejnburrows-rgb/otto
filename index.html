@@ -1297,16 +1297,22 @@
       ]
     }];
     
-    // Seed company profile for proposal generation
+    // Seed company profile for proposal generation.
+    //
+    // These values print on real customer invoices and estimates (see printDoc).
+    // Only confirmed business facts belong here — an invented phone number or
+    // email address reaches a paying customer on a document that looks official.
+    // Anything not confirmed stays empty so the owner fills it in Settings; an
+    // empty field is simply left off the printed document.
     d.companyProfile = {
       id: 'company-otto-001',
-      name: 'Otto Plumbing',
+      name: 'OTTO Plumbing Inc.',
       logo: null, // Stored as file reference
-      license: '',
-      phone: '(800) OTTO-PLB',
-      email: 'info@ottoplumbing.com',
+      license: 'CFC1429613',
+      phone: '(786) 344-2837',
+      email: '',
       address: '',
-      website: 'www.ottoplumbing.com',
+      website: '',
       defaultTerms: 'Payment due upon completion unless otherwise specified.',
       defaultExclusions: 'Gas piping excluded unless explicitly enabled. Permit fees not included unless listed.',
       proposalTemplate: 'default',
