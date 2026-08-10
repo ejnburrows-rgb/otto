@@ -16,9 +16,10 @@ docs/
 .mcp.json
 
 # Test and tooling source. Only the build-time scripts explicitly used by
-# vercel.json are sent to Vercel; vercel.json removes them again before the
-# deployment output is published.
+# vercel.json are sent to Vercel; the build wrapper removes them again before
+# the deployment output is published.
 scripts/*
+!scripts/vercel-build.mjs
 !scripts/apply-photo-retry-patch.mjs
 !scripts/test-photo-retry-patch.mjs
 !scripts/apply-otto-home-patch.mjs
