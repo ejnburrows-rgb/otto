@@ -6,6 +6,8 @@ This file is the current factual snapshot. Historical incident detail remains in
 
 **Production CRM:** `https://otto-kohl.vercel.app`
 
+**Production redeploy requested:** 2026-08-10 after the final owner-workspace revision reached `main`, because the public production domain was still serving the superseded one-panel UI.
+
 ## Works
 
 - Core offline-first CRM records and workflows remain present: customers, jobs, calls, notes, estimates, invoices, payments, checks, follow-ups, payroll intake, documents, reports, backups, Inbox, field check-in/out, work-only location records, and Ask OTTO.
