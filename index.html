@@ -126,10 +126,18 @@
        bar has not been the approved #0B1326 since the dashboard landed. One
        theme, defined once, in the design-system block below. */
 
+    /* The supplied wordmark is a 1024x1024 file with the artwork sitting in a
+       centred band about 2.35:1 wide. Cropping to that band with object-fit
+       rather than shipping a re-cut file keeps the approved asset untouched,
+       and the light plate behind it keeps the mark legible in dark mode. */
     .crystal-logo {
-      height: 42px;
-      object-fit: contain;
-      border-radius: 8px;
+      height: 44px;
+      width: auto;
+      aspect-ratio: 2.35 / 1;
+      object-fit: cover;
+      object-position: 50% 49%;
+      border-radius: 9px;
+      background: #FFFFFF;
       transition: transform 0.25s ease;
     }
 
@@ -192,12 +200,16 @@
     .pagehead { display: flex; align-items: center; gap: 16px; margin: 0 0 24px; }
     .pagehead h1 { font-family: 'Newsreader', serif; font-size: 32px; font-weight: 600; letter-spacing: -0.01em; color: var(--text); }
     .pagehead .sub { color: var(--text2); font-size: 15px; margin-top: 2px; }
-    .back { 
-      background: var(--card); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid var(--line); border-radius: var(--radius-sm); 
-      width: 40px; height: 40px; cursor: pointer; box-shadow: var(--shadow-sm);
+    /* The in-page back control always names where it goes ("← Jobs"), so it can
+       never be mistaken for the single "Back to Home" button in the top bar. */
+    .back {
+      background: var(--card); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid var(--line); border-radius: var(--radius-sm);
+      min-width: 44px; min-height: 44px; padding: 0 14px; gap: 8px; cursor: pointer; box-shadow: var(--shadow-sm);
       display: inline-flex; align-items: center; justify-content: center; color: var(--text2);
+      font: inherit; font-size: 14px; font-weight: 650; white-space: nowrap;
       transition: all 0.2s ease;
     }
+    .back .back-arrow { font-size: 17px; line-height: 1; }
     .back:hover { background: var(--card-hover); color: var(--text); }
     .back:active { transform: scale(0.96); }
 
@@ -376,7 +388,9 @@
     /* ===== MISC / UTILS ===== */
     .pill { display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
     .pill.gray { background: #F1F5F9; color: var(--text2); }
-    .pill.blue { background: #EFF6FF; color: var(--accent); }
+    /* --accent on this tint measures 4.17:1 and misses WCAG AA. --accent-fill
+       is the same blue family at 6.10:1 and reads identically at pill size. */
+    .pill.blue { background: #EFF6FF; color: var(--accent-fill); }
     .pill.green { background: #ECFDF5; color: var(--green); }
     .pill.amber { background: #FFFBEB; color: var(--amber); }
     .pill.red { background: #FEF2F2; color: var(--red); }
@@ -781,7 +795,7 @@
       box-shadow: none;
     }
     .topbar .brand { display:flex; align-items:center; gap:10px; font-family:'Hanken Grotesk', sans-serif; font-size:17px; font-weight:800; color:#B5C4FF; white-space:nowrap; }
-    .crystal-logo { width:40px; height:40px; border-radius:50%; object-fit:cover; filter:none; border:1px solid #434655; }
+    .crystal-logo { height:42px; width:auto; aspect-ratio:2.35 / 1; border-radius:9px; object-fit:cover; object-position:50% 49%; background:#FFFFFF; filter:none; border:1px solid rgba(255,255,255,0.65); }
     .topbar .iconbtn, .langtoggle { background:transparent; border:1px solid #434655; }
     .langtoggle button.on { background:var(--action); color:#fff; }
     .wrap { max-width:780px; padding:32px 16px 176px; }
@@ -874,7 +888,7 @@
     @media (max-width: 480px) {
       .wrap { padding: 20px 16px 176px; }
       .topbar { min-height:64px; padding-inline:14px; }
-      .crystal-logo { height: 40px; }
+      .crystal-logo { height: 36px; }
       .tile { min-height: 124px; }
     }
 
@@ -950,6 +964,7 @@
     }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" crossorigin="anonymous"></script>
+  <link rel="stylesheet" href="./otto-home.css?v=2" data-otto-home-styles />
 </head>
 
 <body>
@@ -959,9 +974,12 @@
   <div id="app" class="hidden">
     <div id="wallpaper-bg" class="wallpaper-container" aria-hidden="true"></div>
     <header class="topbar">
+      <!-- The supplied crystal OTTO Plumbing Inc. wordmark. It replaced the
+           wrench-person icon, which must not come back, and it carries the
+           company name itself — so the old "OTTO CRM" text that sat beside it
+           was a duplicate and stays removed. -->
       <div class="brand">
-        <img src="./icon-192.png" alt="" class="crystal-logo" />
-        <span>OTTO CRM</span>
+        <img src="./logo.jpg" alt="OTTO Plumbing Inc." class="crystal-logo" data-otto-logo-slot="replaceable" />
       </div>
       <div class="spacer"></div>
       <div class="langtoggle">
@@ -981,21 +999,21 @@
     <div class="card" style="width:100%;max-width:520px;background:var(--glass-bg);border:1px solid var(--glass-border);border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,0.6);display:flex;flex-direction:column;overflow:hidden;">
       <div style="padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;">
         <div style="display:flex;align-items:center;gap:12px;">
-          <i class="fas fa-sparkles" style="font-size:26px;color:var(--accent)"></i>
+          <i class="fas fa-wand-magic-sparkles" style="font-size:26px;color:var(--accent)"></i>
           <div>
-            <h3 style="font-size:16px;font-weight:700;color:var(--text);margin:0;">PlumbBot AI Assistant</h3>
-            <p style="font-size:12px;color:var(--green);font-weight:600;margin:0;"><i class="fas fa-circle" style="font-size:8px;"></i> Online · Boss-Level Intelligence</p>
+            <h3 style="font-size:16px;font-weight:700;color:var(--text);margin:0;">Ask OTTO</h3>
+            <p style="font-size:12px;color:var(--green);font-weight:600;margin:0;"><i class="fas fa-circle" style="font-size:8px;"></i> Assistant</p>
           </div>
         </div>
         <button class="iconbtn" onclick="closePlumbBotModal()"><i class="fas fa-xmark"></i></button>
       </div>
       <div id="plumbbot-chat-history" style="height:320px;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;background:rgba(0,0,0,0.25);">
         <div style="align-self:flex-start;max-width:88%;background:var(--card-elevated);border:1px solid var(--line);border-radius:14px 14px 14px 2px;padding:12px 16px;font-size:14px;color:var(--text);box-shadow:var(--shadow-sm);">
-          Hello Boss! I'm PlumbBot. How can I assist you with estimates, crew dispatch, margin calculation, or job analytics today?
+          Hi. Ask OTTO about today's work, jobs, estimates, payroll, or company records.
         </div>
       </div>
       <div style="padding:12px 16px;border-top:1px solid var(--line);display:flex;gap:8px;background:var(--card-elevated);">
-        <input type="text" id="plumbbot-input" placeholder="Ask PlumbBot anything..." style="flex:1;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 14px;color:var(--text);" onkeydown="if(event.key==='Enter')sendPlumbBotMsg()" />
+        <input type="text" id="plumbbot-input" placeholder="Ask OTTO…" style="flex:1;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 14px;color:var(--text);" onkeydown="if(event.key==='Enter')sendPlumbBotMsg()" />
         <button class="btn sm" onclick="sendPlumbBotMsg()" style="padding:10px 16px;"><i class="fas fa-paper-plane"></i></button>
       </div>
     </div>
@@ -1006,7 +1024,7 @@
   /* ============================================================================
      OTTO PLUMBING CRM — single-file application
      Sections: i18n · storage (IndexedDB + optional Supabase cloud sync) · auth/roles ·
-     router · views · workflows · voice · OCR · chatbot · QuickBooks · reports
+     router · views · workflows · voice · OCR · chatbot · reports
      ========================================================================== */
 
   /* ---------- tiny DOM helpers ---------- */
@@ -1064,7 +1082,7 @@
       followUp: 'Follow-up', dueDate: 'Due date', assignedTo: 'Assigned to', priority: 'Priority',
       high: 'High', normal: 'Normal', low: 'Low', complete: 'Complete', reopen: 'Reopen',
       addCustomer: 'Add Customer', addJob: 'Add Job', linkCustomer: 'Customer', jobFolder: 'Job Folder',
-      activity: 'Activity', overview: 'Overview', exportQB: 'Export for QuickBooks', cadFile: 'CAD / AutoCAD file',
+      activity: 'Activity', overview: 'Overview', cadFile: 'CAD / AutoCAD file',
       sop: 'SOP / How-to', question: 'Question', answer: 'Answer', escalate: 'Ask the owner',
       noKey: 'Add an AI key in Settings to use voice text, scanning, and the assistant fully.',
       saved: 'Saved', deleted: 'Deleted', confirmDelete: 'Delete this? This cannot be undone.',
@@ -1112,7 +1130,7 @@
       totalTeamHours: 'Total Team Hours', jobsCompletedVsAssigned: 'Jobs Completed vs Assigned', escalationRate: 'Escalation Rate', overtimeHours: 'Overtime Hours', chartsUnavailable: 'Charts appear here once connected.',
       urgentHub: 'Urgent Issues', urgentQuestion: 'Urgent question for owner', sendUrgent: 'Send to owner', urgentSent: 'Sent to owner', noUrgent: 'No urgent issues',
       photoNewCustomer: 'Photo → New Customer', scanningCustomer: 'Reading account photo…', customerCreated: 'Customer created from photo',
-      connectQuickBooks: 'Connect QuickBooks', quickBooksSection: 'QuickBooks', notificationsSection: 'Customer Notifications', smsReady: 'SMS ready', emailReady: 'Email ready', notConfigured: 'Not configured yet',
+      notificationsSection: 'Customer Notifications', smsReady: 'SMS ready', emailReady: 'Email ready', notConfigured: 'Not configured yet',
       replyToWorker: 'Reply', markHandled: 'Mark handled',
       allWorkers: 'All Workers', thisWeek: 'This Week', lastWeek: 'Last Week', customDate: 'Custom', metrics: 'Metrics',
       dateRange: 'Date Range', arrival: 'Arrival', departure: 'Departure', timeSpent: 'Time Spent', missedItem: 'Missed Item', workerNote: 'Worker Note',
@@ -1149,7 +1167,7 @@
       followUp: 'Seguimiento', dueDate: 'Fecha límite', assignedTo: 'Asignado a', priority: 'Prioridad',
       high: 'Alta', normal: 'Normal', low: 'Baja', complete: 'Completar', reopen: 'Reabrir',
       addCustomer: 'Agregar Cliente', addJob: 'Agregar Trabajo', linkCustomer: 'Cliente', jobFolder: 'Carpeta del Trabajo',
-      activity: 'Actividad', overview: 'Resumen', exportQB: 'Exportar a QuickBooks', cadFile: 'Archivo CAD / AutoCAD',
+      activity: 'Actividad', overview: 'Resumen', cadFile: 'Archivo CAD / AutoCAD',
       sop: 'Guía / Cómo hacer', question: 'Pregunta', answer: 'Respuesta', escalate: 'Preguntar al dueño',
       noKey: 'Agrega una clave de IA en Ajustes para usar voz a texto, escaneo y el asistente completos.',
       saved: 'Guardado', deleted: 'Eliminado', confirmDelete: '¿Eliminar esto? No se puede deshacer.',
@@ -1197,7 +1215,7 @@
       totalTeamHours: 'Horas Totales del Equipo', jobsCompletedVsAssigned: 'Trabajos Completados vs Asignados', escalationRate: 'Tasa de Escalaciones', overtimeHours: 'Horas Extras', chartsUnavailable: 'Las gráficas aparecen aquí al conectarse.',
       urgentHub: 'Asuntos Urgentes', urgentQuestion: 'Pregunta urgente al dueño', sendUrgent: 'Enviar al dueño', urgentSent: 'Enviado al dueño', noUrgent: 'Sin asuntos urgentes',
       photoNewCustomer: 'Foto → Nuevo Cliente', scanningCustomer: 'Leyendo foto de cuenta…', customerCreated: 'Cliente creado desde foto',
-      connectQuickBooks: 'Conectar QuickBooks', quickBooksSection: 'QuickBooks', notificationsSection: 'Notificaciones al Cliente', smsReady: 'SMS listo', emailReady: 'Correo listo', notConfigured: 'Sin configurar aún',
+      notificationsSection: 'Notificaciones al Cliente', smsReady: 'SMS listo', emailReady: 'Correo listo', notConfigured: 'Sin configurar aún',
       replyToWorker: 'Responder', markHandled: 'Marcar resuelto',
       allWorkers: 'Todos los Trabajadores', thisWeek: 'Esta Semana', lastWeek: 'Semana Pasada', customDate: 'Personalizado', metrics: 'Métricas', hours: 'Horas',
       dateRange: 'Rango de Fechas', arrival: 'Llegada', departure: 'Salida', timeSpent: 'Tiempo Invertido', missedItem: 'Elemento Faltante', workerNote: 'Nota del Trabajador',
@@ -1239,8 +1257,8 @@
     // Non-tech/ADHD friendly: realistic names, clear roles. Use 'office' internally for managers (full non-field access).
     d.users = [
       { id: 'owner-1', name: 'Otto', role: 'owner', lang: 'en', created: nowISO() },
-      { id: 'owner-2', name: 'Julio', role: 'owner', lang: 'es', created: nowISO() },
-      { id: 'ops-1', name: 'Saray', role: 'office', lang: 'en', created: nowISO() },
+      { id: 'owner-2', name: 'Julio Pablo', role: 'owner', lang: 'es', created: nowISO() },
+      { id: 'ops-1', name: 'Sarays', role: 'office', lang: 'en', created: nowISO() },
       { id: 'it-1', name: 'Taylor Kim - Logs/IT', role: 'office', lang: 'en', created: nowISO() },
       { id: 'field-1', name: 'Field Tech 1', role: 'field', hourlyRate: 22, lang: 'en', created: nowISO() },
       { id: 'field-2', name: 'Field Tech 2', role: 'field', hourlyRate: 23, lang: 'es', created: nowISO() },
@@ -2179,12 +2197,12 @@
     hist.scrollTop = hist.scrollHeight;
 
     setTimeout(() => {
-      let reply = `PlumbBot AI here! I analyzed "${txt}". All systems operational. Margins and dispatch are synchronized for maximum efficiency, Boss!`;
+      let reply = `OTTO received "${txt}". I will use the information available in OTTO and will not invent operational status.`;
       const lower = txt.toLowerCase();
       if (lower.includes('margin') || lower.includes('estimate') || lower.includes('price')) {
         reply = `For estimates, I recommend applying our +5% or +10% Quick Margin buttons to maintain optimal profit margins across jobs!`;
       } else if (lower.includes('job') || lower.includes('crew') || lower.includes('schedule') || lower.includes('dispatch')) {
-        reply = `Field crew status: All active jobs are mapped and tracked in real-time. No delays reported today!`;
+        reply = `Open Field Workers to see the current information OTTO actually has for the crew.`;
       }
       const botMsg = document.createElement('div');
       botMsg.style.cssText = 'align-self:flex-start;max-width:88%;background:var(--card-elevated);border:1px solid var(--line);border-radius:14px 14px 14px 2px;padding:12px 16px;font-size:14px;color:var(--text);box-shadow:var(--shadow-sm);';
@@ -2219,14 +2237,14 @@
   function renderNav() {
     const bn = $('#bottomnav');
     const items = (session.role === 'field' ? NAVBAR.field : ['home', 'jobs', 'inbox', 'more']);
-    const icons = { home: 'fa-house', jobs: 'fa-screwdriver-wrench', customers: 'fa-users', calls: 'fa-phone', inbox: 'fa-inbox', followups: 'fa-bell', assistant: 'fa-sparkles', more: 'fa-ellipsis' };
+    const icons = { home: 'fa-house', jobs: 'fa-screwdriver-wrench', customers: 'fa-users', calls: 'fa-phone', inbox: 'fa-inbox', followups: 'fa-bell', assistant: 'fa-wand-magic-sparkles', more: 'fa-ellipsis' };
     bn.innerHTML = items.map(v => `<button class="${route.view === v ? 'on' : ''}" onclick="${v === 'more' ? 'openMore()' : `nav('${v}')`}">
       <i class="fas ${icons[v]}"></i><span>${t(v)}</span></button>`).join('');
   }
   function openMore() {
     const items = ['team', 'urgent', 'alerts', 'calls', 'kpis', 'reports', 'backups', 'audit', 'assistant', 'settings']
       .filter(v => can(v));
-    const icons = { team: 'fa-user-gear', urgent: 'fa-bolt', alerts: 'fa-triangle-exclamation', calls: 'fa-phone', kpis: 'fa-chart-pie', reports: 'fa-chart-line', backups: 'fa-database', audit: 'fa-clipboard-list', assistant: 'fa-sparkles', settings: 'fa-gear' };
+    const icons = { team: 'fa-user-gear', urgent: 'fa-bolt', alerts: 'fa-triangle-exclamation', calls: 'fa-phone', kpis: 'fa-chart-pie', reports: 'fa-chart-line', backups: 'fa-database', audit: 'fa-clipboard-list', assistant: 'fa-wand-magic-sparkles', settings: 'fa-gear' };
     modal(`<h2>${t('more')}</h2><div class="card" style="margin-top:12px">
       ${items.map(v => `<div class="list-item" onclick="closeModal();nav('${v}')"><div class="avatar" style="background:${colorFor(v)}"><i class="fas ${icons[v]}"></i></div><div class="li-main"><div class="li-title">${t(v)}</div></div><i class="fas fa-chevron-right chev"></i></div>`).join('')}
     </div>`);
@@ -2273,8 +2291,15 @@
   }
 
   /* ---------- shared building blocks ---------- */
-  function pageHead(title, sub, withBack, actions) {
-    return `<div class="pagehead">${withBack ? `<button class="back" aria-label="${esc(t('goBack'))}" onclick="${withBack}"><i class="fas fa-arrow-left"></i></button>` : ''}
+  /* `backLabel` names the screen the back button returns to. The arrow is a
+     text character rather than an icon-font glyph so the control still reads as
+     a back button if the icon stylesheet ever fails to load. */
+  function pageHead(title, sub, withBack, actions, backLabel) {
+    const label = backLabel || '';
+    const back = withBack
+      ? `<button class="back" aria-label="${esc(label ? `${t('goBack')}: ${label}` : t('goBack'))}" onclick="${withBack}"><span class="back-arrow" aria-hidden="true">←</span>${label ? `<span>${esc(label)}</span>` : ''}</button>`
+      : '';
+    return `<div class="pagehead">${back}
       <div><h1>${esc(title)}</h1>${sub ? `<div class="sub">${esc(sub)}</div>` : ''}</div>${actions || ''}</div>`;
   }
   /* The count line under a list screen's title. Every list screen showed
@@ -2347,7 +2372,7 @@
       const tiles = [
         { icon: 'fa-camera', color: 'var(--green-fill)', lbl: t('addPhoto'), action: 'quickPhoto()' },
         { icon: 'fa-location-dot', color: 'var(--accent-fill)', lbl: t('clockIn'), action: 'shareLocation()' },
-        { icon: 'fa-sparkles', color: 'var(--accent-fill)', lbl: t('ask'), action: "nav('assistant')" }
+        { icon: 'fa-wand-magic-sparkles', color: 'var(--accent-fill)', lbl: t('ask'), action: "nav('assistant')" }
       ];
       html += `<div class="tiles" style="margin-top:20px">${tiles.map(x => `<div class="tile" onclick="${x.action}"><div class="ic" style="background:${x.color}"><i class="fas ${x.icon}"></i></div><div class="lbl">${esc(x.lbl)}</div></div>`).join('')}</div>`;
       $('#main').innerHTML = html;
@@ -2401,7 +2426,7 @@
     const calls = db.calls.filter(x => x.customerId === c.id);
     const invs = db.invoices.filter(x => x.customerId === c.id);
     const owed = invs.filter(i => i.status !== 'paid').reduce((s, i) => s + (i.balance != null ? i.balance : i.amount) - (i.balance != null ? 0 : (i.paid || 0)), 0);
-    let html = pageHead(c.name, c.phone || '', "nav('customers')");
+    let html = pageHead(c.name, c.phone || '', "nav('customers')", '', t('customers'));
     html += `<div class="card" style="padding:14px">
       ${kv(t('phone'), c.phone ? `<a href="tel:${esc(c.phone)}">${esc(c.phone)}</a>` : '—')}
       ${kv(t('email'), c.email ? `<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>` : '—')}
@@ -2474,7 +2499,7 @@
     const invs = db.invoices.filter(i => i.jobId === j.id);
     const checks = db.checks.filter(c => c.jobId === j.id);
     const follows = db.followups.filter(f => f.jobId === j.id);
-    let html = pageHead(j.title || t('untitled'), customerName(j.customerId), "nav('jobs')");
+    let html = pageHead(j.title || t('untitled'), customerName(j.customerId), "nav('jobs')", '', t('jobs'));
     html += `<div class="card" style="padding:14px">
       ${kv(t('customer'), `<a onclick="nav('customer','${j.customerId}')" style="cursor:pointer">${esc(customerName(j.customerId))}</a>`)}
       ${kv(t('status'), statusPill(j.status))}
@@ -2822,7 +2847,7 @@
     const list = db.invoices.filter(i => matches(i, q));
     const owed = list.reduce((s, i) => s + Math.max(0, (i.amount || 0) - (i.paid || 0)), 0);
     let html = pageHead(t('invoices'), countSub(list.length, 'invoices')) + searchBox('inv');
-    html += `<div class="btnrow"><button class="btn" onclick="openInvoiceForm()"><i class="fas fa-plus"></i> ${t('addInvoice')}</button><button class="btn ghost" onclick="exportQuickBooks('invoices')"><i class="fas fa-file-export"></i> QuickBooks</button></div>`;
+    html += `<div class="btnrow"><button class="btn" onclick="openInvoiceForm()"><i class="fas fa-plus"></i> ${t('addInvoice')}</button></div>`;
     html += `<div class="card" style="margin:12px 0;padding:14px">${kv(t('outstanding'), `<b>${money(owed)}</b>`)}</div>`;
     html += `<div class="card">${list.length ? list.map(invRow).join('') : emptyState()}</div>`;
     $('#main').innerHTML = html; bindSearch('inv');
@@ -2941,7 +2966,7 @@
     const list = db.payments.filter(p => matches(p, q));
     const total = list.reduce((s, p) => s + (p.amount || 0), 0);
     let html = pageHead(t('payments'), countSub(list.length, 'payments')) + searchBox('pay');
-    html += `<div class="btnrow"><button class="btn" onclick="openPaymentForm()"><i class="fas fa-plus"></i> ${t('addPayment')}</button><button class="btn ghost" onclick="exportQuickBooks('payments')"><i class="fas fa-file-export"></i> QuickBooks</button></div>`;
+    html += `<div class="btnrow"><button class="btn" onclick="openPaymentForm()"><i class="fas fa-plus"></i> ${t('addPayment')}</button></div>`;
     html += `<div class="card" style="margin:12px 0;padding:14px">${kv(t('total'), `<b>${money(total)}</b>`)}</div>`;
     html += `<div class="card">${list.length ? list.map(p => `<div class="list-item"><div class="avatar" style="background:var(--green-fill)"><i class="fas fa-money-bill-wave"></i></div><div class="li-main"><div class="li-title">${money(p.amount)} · ${esc(customerName(p.customerId))}</div><div class="li-sub">${esc(p.method || '')} · ${fmtDate(p.date)}</div></div><button class="btn red sm" aria-label="${esc(t('delete'))}" onclick="confirmDel(()=>deletePayment('${p.id}'))"><i class="fas fa-trash"></i></button></div>`).join('') : emptyState()}</div>`;
     $('#main').innerHTML = html; bindSearch('pay');
@@ -2965,7 +2990,7 @@
     modal(`<h2>${t('addPayment')}</h2>
       <div class="field"><label for="p-inv">${t('linkInvoice')}</label><select id="p-inv"><option value="">—</option>${invOpts}</select></div>
       <div class="row2"><div class="field"><label for="p-amount">${t('amount')}</label><input id="p-amount" type="number" step="0.01" value="${inv ? ((inv.amount || 0) - (inv.paid || 0)) : ''}"></div>
-      <div class="field"><label for="p-method">${lang === 'es' ? 'Método' : 'Method'}</label><select id="p-method"><option>Cash</option><option>Check</option><option>Card</option><option>Transfer</option><option>QuickBooks</option></select></div></div>
+      <div class="field"><label for="p-method">${lang === 'es' ? 'Método' : 'Method'}</label><select id="p-method"><option>Cash</option><option>Check</option><option>Card</option><option>Transfer</option></select></div></div>
       <button class="btn block" onclick="savePayment()"><i class="fas fa-check"></i> ${t('save')}</button>`);
   }
   function savePayment() {
@@ -3202,8 +3227,7 @@
         ${exportRow('invoices', t('invoices'))}
         ${exportRow('payments', t('payments'))}
         ${exportRow('checks', t('checks'))}
-      </div>
-      <div class="btnrow"><button class="btn ghost block" onclick="exportQuickBooks('invoices')"><i class="fas fa-file-export"></i> ${t('exportQB')}</button></div>`;
+      </div>`;
     $('#main').innerHTML = html;
   }
   function exportRow(col, label) { return `<div class="list-item" onclick="exportCSV('${col}')"><div class="avatar" style="background:var(--green-fill)"><i class="fas fa-file-csv"></i></div><div class="li-main"><div class="li-title">${esc(label)}</div><div class="li-sub">${db[col].length} ${lang === 'es' ? 'registros' : 'records'}</div></div><i class="fas fa-download chev"></i></div>`; }
@@ -3274,7 +3298,7 @@
       save();
     }
 
-    html += `<div class="section-title"><i class="fas fa-sparkles"></i> Ask OTTO</div>
+    html += `<div class="section-title"><i class="fas fa-wand-magic-sparkles"></i> Ask OTTO</div>
       <div class="card" style="padding:14px">
         <div class="muted" style="margin-bottom:10px">${lang === 'es' ? 'Clave de Anthropic Claude y NVIDIA para usar el asistente y OCR.' : 'Anthropic Claude & NVIDIA keys for assistant & OCR.'}</div>
         <div class="field"><label for="set-aikey">${lang === 'es' ? 'Clave Anthropic (opcional, este dispositivo)' : 'Anthropic API Key (optional, this device)'}</label><input id="set-aikey" type="password" value="${esc(localStorage.getItem('otto_ai_key') || '')}" placeholder="sk-ant-..."></div>
@@ -3293,13 +3317,6 @@
     }
 
     if (session.role === 'owner' || session.role === 'office') {
-      html += `<div class="section-title"><i class="fas fa-file-invoice-dollar"></i> ${t('quickBooksSection')}</div>
-        <div class="card" style="padding:14px">
-          <div class="muted" style="margin-bottom:10px">${lang === 'es' ? 'Conecta QuickBooks cuando tengas las credenciales. Mientras tanto, exporta CSV desde Facturas/Pagos.' : 'Connect QuickBooks when you have credentials. Until then, export CSV from Invoices/Payments.'}</div>
-          <div id="qb-status" class="muted" style="margin-bottom:10px">…</div>
-          <div class="btnrow"><button class="btn" onclick="connectQuickBooks()"><i class="fas fa-link"></i> ${t('connectQuickBooks')}</button>
-          <button class="btn ghost" onclick="exportQuickBooks('invoices')"><i class="fas fa-file-export"></i> ${t('exportQB')}</button></div>
-        </div>`;
       html += `<div class="section-title"><i class="fas fa-bell"></i> ${t('notificationsSection')}</div>
         <div class="card" style="padding:14px">
           <div class="muted" style="margin-bottom:10px">${lang === 'es' ? 'SMS y correo al cliente (recordatorios, técnico en camino). Configura en Vercel cuando tengas Twilio/SendGrid.' : 'Customer SMS & email (reminders, tech on the way). Configure Twilio/SendGrid in Vercel when ready.'}</div>
@@ -3339,23 +3356,11 @@
     $('#main').innerHTML = html;
     if (session.role === 'owner' || session.role === 'office') refreshIntegrationStatus();
   }
-  async function refreshIntegrationStatus() {
-    const qbEl = $('#qb-status'); const nEl = $('#notify-status');
-    try {
-      const qb = await serverFetch('/api/quickbooks?action=status').then(r => r.json()).catch(() => null);
-      if (qbEl) qbEl.textContent = qb?.configured ? (qb.connected ? 'QuickBooks: connected' : 'QuickBooks: credentials on server — connect OAuth when ready') : t('notConfigured');
-    } catch (e) { if (qbEl) qbEl.textContent = t('notConfigured'); }
+  async function refreshIntegrationStatus() {    const nEl = $('#notify-status');
     try {
       const test = await serverFetch('/api/notify', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ channel: 'sms', to: '+10000000000', body: 'test' }) }).then(r => r.json()).catch(() => null);
       if (nEl) nEl.textContent = test?.error === 'sms_not_configured' ? 'SMS/Email: ' + t('notConfigured') + ' (stubs ready)' : 'SMS/Email: ' + t('smsReady');
     } catch (e) { if (nEl) nEl.textContent = t('notConfigured'); }
-  }
-  async function connectQuickBooks() {
-    try {
-      const d = await serverFetch('/api/quickbooks?action=auth_url').then(r => r.json());
-      if (d.authUrl) { window.open(d.authUrl, '_blank'); toast(lang === 'es' ? 'Abre QuickBooks para conectar' : 'Complete QuickBooks connect in the new tab', 'success'); }
-      else toast(d.message || t('notConfigured'), 'error');
-    } catch (e) { toast(t('notConfigured'), 'error'); }
   }
   function saveNotifyPrefs() {
     if (!db.meta) db.meta = {};
@@ -3533,22 +3538,6 @@
     const arr = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
     return new Blob([arr], { type: mime || 'application/octet-stream' });
-  }
-
-  /* ============================ QuickBooks export ============================ */
-  // Browser apps can't hold QuickBooks OAuth secrets safely, so we export the
-  // CSV format QuickBooks Online imports directly for invoices and payments.
-  function exportQuickBooks(kind) {
-    if (kind === 'invoices') {
-      const rows = [['Customer', 'InvoiceNo', 'InvoiceDate', 'DueDate', 'Item(Product/Service)', 'ItemAmount', 'Status', 'Balance']];
-      db.invoices.forEach(i => rows.push([customerName(i.customerId), i.number || '', (i.date || '').slice(0, 10), (i.dueDate || '').slice(0, 10), i.title || 'Plumbing service', (i.amount || 0).toFixed(2), invStatus(i), ((i.amount || 0) - (i.paid || 0)).toFixed(2)]));
-      downloadFile('quickbooks-invoices-' + todayISO() + '.csv', toCSV(rows), 'text/csv');
-    } else {
-      const rows = [['Customer', 'PaymentDate', 'PaymentMethod', 'Amount', 'InvoiceNo', 'RefNo']];
-      db.payments.forEach(p => { const inv = p.invoiceId ? get('invoices', p.invoiceId) : null; rows.push([customerName(p.customerId), (p.date || '').slice(0, 10), p.method || '', (p.amount || 0).toFixed(2), inv ? inv.number : '', p.id.slice(-6)]); });
-      downloadFile('quickbooks-payments-' + todayISO() + '.csv', toCSV(rows), 'text/csv');
-    }
-    toast(lang === 'es' ? 'Archivo listo para QuickBooks' : 'QuickBooks file ready', 'success');
   }
   function exportCSV(col) {
     const items = db[col]; if (!items.length) return toast(t('noResults'), 'error');
@@ -3984,7 +3973,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
       <div class="btnrow" style="margin-top:10px">
         <button class="btn" onclick="relinkEmail('${id}')"><i class="fas fa-link"></i> ${t('matchCustomer')}</button>
         ${e.jobId ? `<button class="btn ghost" onclick="emailToNote('${id}')"><i class="fas fa-pen"></i> ${t('makeNote')}</button>` : ''}
-        ${!e.summary ? `<button class="btn ghost" onclick="summarizeEmail('${id}')"><i class="fas fa-sparkles"></i> ${t('summarize')}</button>` : ''}
+        ${!e.summary ? `<button class="btn ghost" onclick="summarizeEmail('${id}')"><i class="fas fa-wand-magic-sparkles"></i> ${t('summarize')}</button>` : ''}
       </div>
       <button class="btn red block" style="margin-top:10px" onclick="confirmDel(()=>{remove('emails','${id}');closeModal();render()})"><i class="fas fa-trash"></i> ${t('delete')}</button>`);
   }
@@ -4066,7 +4055,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     html += `<div class="btnrow"><button class="btn block" onclick="importPayroll()"><i class="fas fa-file-import"></i> ${t('importPayroll')}</button></div>`;
     html += `<div class="muted" style="margin:8px 0;font-size:13px"><i class="fas fa-file-excel"></i> ${t('importExcelHint')}</div>`;
     if (list.length) html += `<div class="card" style="padding:14px;margin-bottom:10px">${kv('Total Hours', '<b>' + totalHours + '</b>')}${kv(t('totalGross'), '<b>' + money(total) + '</b>')}
-      <div class="btnrow" style="margin-top:8px"><button class="btn ghost sm" onclick="exportCSV('payroll')"><i class="fas fa-file-export"></i> CSV</button><button class="btn ghost sm" onclick="summarizePayrollAll()"><i class="fas fa-sparkles"></i> ${t('summarize')}</button></div></div>`;
+      <div class="btnrow" style="margin-top:8px"><button class="btn ghost sm" onclick="exportCSV('payroll')"><i class="fas fa-file-export"></i> CSV</button><button class="btn ghost sm" onclick="summarizePayrollAll()"><i class="fas fa-wand-magic-sparkles"></i> ${t('summarize')}</button></div></div>`;
     html += `<div class="card">${list.length ? list.map(payrollRow).join('') : emptyState()}</div>`;
     $('#main').innerHTML = html; bindSearch('pay2');
   }
@@ -4182,7 +4171,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     if (chatHistory.length) {
       html += chatHistory.map((m, i) => {
         const time = m.ts ? new Date(m.ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
-        const avatar = m.role === 'bot' ? '<span class="avatar"><i class="fas fa-sparkles"></i></span>' : '<span class="avatar"><i class="fas fa-user"></i></span>';
+        const avatar = m.role === 'bot' ? '<span class="avatar"><i class="fas fa-wand-magic-sparkles"></i></span>' : '<span class="avatar"><i class="fas fa-user"></i></span>';
         let content = esc(m.text);
         if (m.src) content += `<span class="src"><i class="fas fa-link"></i> ${esc(m.src)}</span>`;
         return `<div class="bubble ${m.role} chat-message" data-idx="${i}">
@@ -4245,7 +4234,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
       const typing = document.createElement('div');
       typing.className = 'bubble bot chat-message';
       typing.id = 'typing-indicator';
-      typing.innerHTML = `<span class="avatar"><i class="fas fa-sparkles"></i></span><span class="typing-dots"><span></span><span></span><span></span></span> <span style="font-size:13px;color:var(--text3);margin-left:6px">${t('typing')}</span>`;
+      typing.innerHTML = `<span class="avatar"><i class="fas fa-wand-magic-sparkles"></i></span><span class="typing-dots"><span></span><span></span><span></span></span> <span style="font-size:13px;color:var(--text3);margin-left:6px">${t('typing')}</span>`;
       log.appendChild(typing);
       log.scrollTop = log.scrollHeight;
     }
@@ -4275,7 +4264,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     floatBtn.id = 'ai-float-btn';
     floatBtn.className = 'glass';
     floatBtn.style.cssText = `position:fixed;bottom:92px;right:22px;width:54px;height:54px;border-radius:999px;background:var(--action);color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:var(--shadow2);cursor:pointer;z-index:55;transition:transform .2s cubic-bezier(0.23,1,0.32,1),box-shadow .2s;`;
-    floatBtn.innerHTML = `<i class="fas fa-sparkles"></i>`;
+    floatBtn.innerHTML = `<i class="fas fa-wand-magic-sparkles"></i>`;
     floatBtn.title = t('openAiChat');
     floatBtn.onclick = toggleFloatingChat;
     document.body.appendChild(floatBtn);
@@ -4287,7 +4276,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     popup.style.cssText = `position:fixed;bottom:18px;right:18px;width:380px;max-width:94vw;height:480px;max-height:65vh;border-radius:20px;box-shadow:var(--shadow2);display:none;flex-direction:column;overflow:hidden;z-index:120;border:1px solid var(--line);`;
     popup.innerHTML = `
       <div style="padding:12px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,0.03)">
-        <div style="font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px"><i class="fas fa-sparkles"></i> Ask OTTO</div>
+        <div style="font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px"><i class="fas fa-wand-magic-sparkles"></i> Ask OTTO</div>
         <div>
           <button onclick="toggleFloatingChat()" style="background:none;border:none;font-size:18px;color:var(--text2);cursor:pointer;padding:4px 8px">×</button>
         </div>
@@ -4320,7 +4309,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     const welcome = lang === 'es' ? '¡Hola! ¿En qué puedo ayudarte hoy?' : 'Hi! How can I help you today?';
     log.innerHTML = chatHistory.length ? chatHistory.map((m, i) => {
       const time = m.ts ? new Date(m.ts).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : '';
-      const av = m.role === 'bot' ? '<span class="avatar" style="width:18px;height:18px;font-size:10px"><i class="fas fa-sparkles"></i></span>' : '<span class="avatar" style="width:18px;height:18px;font-size:10px"><i class="fas fa-user"></i></span>';
+      const av = m.role === 'bot' ? '<span class="avatar" style="width:18px;height:18px;font-size:10px"><i class="fas fa-wand-magic-sparkles"></i></span>' : '<span class="avatar" style="width:18px;height:18px;font-size:10px"><i class="fas fa-user"></i></span>';
       return `<div class="bubble ${m.role}" style="font-size:14.5px;margin-bottom:8px;max-width:82%">${m.role==='bot'?av:''}${esc(m.text)}${m.role==='me'?av:''}<div class="bubble-meta" style="font-size:10px">${time}</div></div>`;
     }).join('') : `<div class="bubble bot" style="font-size:14.5px">${welcome}</div>`;
     log.scrollTop = log.scrollHeight;
@@ -4338,7 +4327,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     if (log) {
       const tdiv = document.createElement('div');
       tdiv.className = 'bubble bot';
-      tdiv.innerHTML = `<span class="avatar" style="width:18px;height:18px;font-size:10px"><i class="fas fa-sparkles"></i></span><span class="typing-dots"><span></span><span></span><span></span></span>`;
+      tdiv.innerHTML = `<span class="avatar" style="width:18px;height:18px;font-size:10px"><i class="fas fa-wand-magic-sparkles"></i></span><span class="typing-dots"><span></span><span></span><span></span></span>`;
       log.appendChild(tdiv);
       log.scrollTop = log.scrollHeight;
     }
@@ -5125,8 +5114,8 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
       }
     };
     fixUser('owner-1', 'Otto');
-    fixUser('owner-2', 'Julio');
-    fixUser('ops-1', 'Saray');
+    fixUser('owner-2', 'Julio Pablo');
+    fixUser('ops-1', 'Sarays');
     fixUser('it-1', 'Taylor Kim - Logs/IT');
     // Field workers keep whatever name blankDB() seeded or the owner later set
     // in Team — do not reset it to blank on every boot (that was the same
@@ -5265,10 +5254,10 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
   }
 
   function viewKpis() {
-    let html = pageHead(t('teamKpis'), t('metrics'), "nav('hub')");
+    let html = pageHead(t('teamKpis'), t('metrics'));
     
     // Check for pending PTO requests
-    const pendingPTO = db.time_off.filter(p => p.status === 'pending');
+    const pendingPTO = [...(db.pto_requests || []), ...(db.time_off || [])].filter(p => p.status === 'pending');
     if (pendingPTO.length > 0) {
       html += pendingPTO.map(p => {
         const u = get('users', p.workerId) || {};
@@ -5314,7 +5303,7 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
       }
 
       const ptoByWorker = {};
-      for (const p of db.time_off) {
+      for (const p of [...(db.pto_requests || []), ...(db.time_off || [])]) {
         if (!ptoByWorker[p.workerId]) ptoByWorker[p.workerId] = [];
         ptoByWorker[p.workerId].push(p);
       }
@@ -5382,8 +5371,8 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     $('#main').innerHTML = html;
   }
 
-  function approvePTO(id) { update('time_off', id, {status: 'approved'}); toast(t('ptoApproved'), 'success'); render(); }
-  function denyPTO(id) { update('time_off', id, {status: 'denied'}); toast(t('ptoDenied'), 'error'); render(); }
+  function approvePTO(id) { const col = get('pto_requests', id) ? 'pto_requests' : 'time_off'; update(col, id, {status: 'approved', readByWorker: false}); toast(t('ptoApproved'), 'success'); render(); }
+  function denyPTO(id) { const col = get('pto_requests', id) ? 'pto_requests' : 'time_off'; update(col, id, {status: 'denied', readByWorker: false}); toast(t('ptoDenied'), 'error'); render(); }
 
   function renderCharts() {
     if (!window.Chart) return;
@@ -5434,7 +5423,7 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     const w = get('users', route.id);
     if (!w) return nav('kpis');
     
-    let html = pageHead(w.name, t('workerProfile'), "nav('kpis')");
+    let html = pageHead(w.name, t('workerProfile'), "nav('kpis')", '', t('teamKpis'));
     
     // Calendar Heatmap
     html += `<div class="section-title">${t('daysWorked')}</div><div class="card" style="padding:16px;">`;
@@ -5580,7 +5569,7 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
                 <div style="font-size:13px; font-weight:600; margin-bottom:8px"><i class="fas fa-file-pdf" style="color:var(--red)"></i> ${esc(a.name)}</div>
                 <div class="btnrow" style="margin:0">
                   <button class="btn ghost sm" onclick="previewPDF('${e.id}', ${i})"><i class="fas fa-eye"></i> ${t('preview')}</button>
-                  <button class="btn sm" onclick="analyzePdfAI('${e.id}', ${i})"><i class="fas fa-sparkles"></i> ${t('analyzeAI')}</button>
+                  <button class="btn sm" onclick="analyzePdfAI('${e.id}', ${i})"><i class="fas fa-wand-magic-sparkles"></i> ${t('analyzeAI')}</button>
                 </div>
               </div>`;
             } else {
@@ -5604,7 +5593,7 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
       <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:var(--action); color:white">
         <div style="font-weight:bold">${esc(att.name)}</div>
         <div>
-          <button class="btn sm" onclick="analyzePdfAI('${e.id}', ${attIdx})"><i class="fas fa-sparkles"></i> ${t('analyzeAI')}</button>
+          <button class="btn sm" onclick="analyzePdfAI('${e.id}', ${attIdx})"><i class="fas fa-wand-magic-sparkles"></i> ${t('analyzeAI')}</button>
           <button class="btn ghost sm" style="color:white; margin-left:8px; border:none;" onclick="this.closest('.modal-overlay').remove()"><i class="fas fa-xmark"></i></button>
         </div>
       </div>
@@ -5772,7 +5761,7 @@ Return ONLY valid JSON: { "fixtures": [], "pipes": [], "fittings": [], "notes": 
     openNoteForm, saveNote, quickPhoto, chooseJob, runJobAction, uploadDoc, openDoc, quickVoiceNote, voiceInto,
     openEstimateForm, saveEstimate, estimateToInvoice, printDoc, openInvoiceForm, saveInvoice, openInvoiceView, openPaymentForm, savePayment,
     openCheckForm, saveCheck, quickScanCheck, openFollowForm, saveFollow, toggleFollow, openWorkflow, openWorkflowForm, saveWorkflow,
-    openSop, openSopForm, saveSop, shareLocation, exportCSV, exportQuickBooks, openUserForm, saveUser, toggleTheme,
+    openSop, openSopForm, saveSop, shareLocation, exportCSV, openUserForm, saveUser, toggleTheme,
     cloudPullNow, exportAll, importAll, askAssistant,
     analyzeDrawing, askDrawingQuestion, answerDrawingQ, skipDrawingQ, showDrawingReview, addMaterialRow, saveDrawingEstimate, estimateFromDrawing,
     viewEmails, openEmailForm, saveEmailForm, importEml, openEmail, relinkEmail, saveEmailLink, emailToNote, summarizeEmail,
@@ -5783,7 +5772,7 @@ Return ONLY valid JSON: { "fixtures": [], "pipes": [], "fittings": [], "notes": 
     viewKpis, viewWorkerProfile, approvePTO, denyPTO, renderCharts, seedMockKPIs,
     saveGoogleClient, connectGmail, fetchNewEmails, viewInbox, previewPDF, analyzePdfAI, selectJobForTakeoff, assignTakeoff,
     photoScanCreateCustomer, viewUrgentHub, openUrgentForm, submitUrgentMessage, replyUrgent, resolveUrgent, deletePhotoFile,
-    connectQuickBooks, saveNotifyPrefs, refreshIntegrationStatus,
+    saveNotifyPrefs, refreshIntegrationStatus,
     openPlumbBotModal, closePlumbBotModal, sendPlumbBotMsg, adjustEstimateMargin });
 
   /* Hooks used only by the automated tests in scripts/. They expose existing
@@ -5799,6 +5788,7 @@ Return ONLY valid JSON: { "fixtures": [], "pipes": [], "fittings": [], "notes": 
   
   boot().then(() => { setTimeout(seedMockKPIs, 500); render(); });
   </script>
+  <script src="./otto-home.js?v=2" data-otto-home-runtime></script>
 </body>
 </html>
 

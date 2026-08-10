@@ -22,6 +22,7 @@ scripts/*
 !scripts/test-otto-home.mjs
 !scripts/stamp-version.mjs
 evidence/
+outputs/
 
 # Database schema and migrations
 supabase/

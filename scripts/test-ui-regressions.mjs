@@ -214,8 +214,11 @@ console.log('\noffline-first — the icons and fonts must survive losing signal'
   // so this one is invisible unless you measure a glyph.
   check('the font files referenced by those stylesheets are precached too',
     /cacheFontsReferencedBy/.test(sw) && /\.woff2/.test(sw), true);
+  // Number(), not a string compare: the capture is text, and '10' < '5'
+  // lexicographically — so this check started failing the moment the cache
+  // reached double digits, which is exactly when it matters most.
   check('the cache name was bumped so devices pick the new rules up',
-    /const CACHE = 'otto-crm-v(\d+)'/.exec(sw)?.[1] >= '5', true);
+    Number(/const CACHE = 'otto-crm-v(\d+)'/.exec(sw)?.[1]) >= 5, true);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -393,12 +396,19 @@ console.log('\nthe install and the deploy must be what they claim to be');
   const mustNotPublish = ['docs/', 'supabase/', 'legacy/', '*.md'];
   check('the deploy still excludes the working documents',
     mustNotPublish.filter((entry) => !lines.includes(entry)), []);
-  // `scripts/*` rather than `scripts/`, so the one build-time file can be
+  // `scripts/*` rather than `scripts/`, so the build-time files can be
   // re-included — gitignore cannot re-include from an excluded directory.
   check('the deploy still excludes the test and tooling source',
     lines.includes('scripts/*') || lines.includes('scripts/'), true);
-  check('only the build stamper is re-included from scripts',
-    lines.filter((l) => l.startsWith('!scripts/')), ['!scripts/stamp-version.mjs']);
+  // The build needs more than one script now (the home patch and its checks run
+  // before the version stamp), so naming a single allowed file went stale the
+  // first time the build command grew. The invariant that actually matters is
+  // that every re-included script is one the build command runs — nothing gets
+  // uploaded "just in case".
+  const buildCommand = JSON.parse(readFileSync(new URL('../vercel.json', import.meta.url), 'utf8')).buildCommand || '';
+  const reIncludedScripts = lines.filter((l) => l.startsWith('!scripts/')).map((l) => l.slice(1));
+  check('every script re-included for the deploy is one the build actually runs',
+    reIncludedScripts.filter((s) => !buildCommand.includes(s)), []);
 
   // The pages, the worker and the icons must NOT be excluded, or the site ships
   // broken. Cheap sanity check on the same file.

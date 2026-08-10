@@ -16,6 +16,14 @@ const MIME_TYPES = {
   '.svg': 'image/svg+xml',
   '.ico': 'image/x-icon',
   '.txt': 'text/plain',
+  // The owner wallpapers ship as AVIF and the sign-in mark as JPEG. Served as
+  // application/octet-stream a browser is free to refuse them, which made the
+  // local preview look like the artwork was missing when it was not.
+  '.avif': 'image/avif',
+  '.webp': 'image/webp',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.woff2': 'font/woff2',
 };
 
 const server = http.createServer((req, res) => {
