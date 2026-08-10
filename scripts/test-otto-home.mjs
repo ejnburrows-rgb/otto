@@ -32,6 +32,10 @@ const checks = [
   ['payroll Excel parser cached for offline use', sw.includes('xlsx.full.min.js') && sw.includes("const CACHE = 'otto-crm-v9'")],
   ['generic CSV export remains', patched.includes('function exportCSV(col)')],
   ['QuickBooks payment method removed', !patched.includes('<option>QuickBooks</option>')],
+  ['wallpaper home defaults render as four thin tabs', styles.includes('grid-template-columns: repeat(4, minmax(0, 1fr))') && styles.includes('height: 46px')],
+  ['compact tabs hide preview content until opened', styles.includes('.home-panel[data-state="compact"] .home-panel-preview') && styles.includes('display: none')],
+  ['home chrome is pinned left instead of covering upper-right artwork', styles.includes('body.admin-home .topbar') && styles.includes('right: auto')],
+  ['Sarays Little Prince safe-zone rule exists', styles.includes('.wallpaper-container[data-user="ops-1"]') && styles.includes('upper-right')],
   ['fake operational status not emitted by new runtime', !runtime.includes('No delays reported today')],
   ['public landing page untouched by patch', !runtime.includes('landing.html') && !styles.includes('landing.html')]
 ];
