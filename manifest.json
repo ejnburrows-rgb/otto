@@ -1,7 +1,7 @@
 {
   "name": "OTTO PLUMBING INC.",
   "short_name": "OTTO Plumbing",
-  "description": "Miami's Elite Plumbing Services \u2014 Premium plumbing solutions across Miami-Dade and Broward.",
+  "description": "Bilingual offline-first plumbing CRM for OTTO Plumbing Inc.",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0b1220",
