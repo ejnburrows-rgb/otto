@@ -1,3 +1,4 @@
+// Regression guard: production may set NVIDIA_URL/NVIDIA_MODEL; clear them before importing the proxy so this test proves built-in defaults rather than Vercel project settings.
 let passed = 0, failed = 0;
 function check(name, actual, expected) {
   const a = JSON.stringify(actual), e = JSON.stringify(expected);
