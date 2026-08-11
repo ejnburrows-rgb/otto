@@ -3,11 +3,12 @@ import { fileURLToPath } from 'node:url';
 
 const INDEX = new URL('../index.html', import.meta.url);
 const SW = new URL('../sw.js', import.meta.url);
-export const UI_POLISH_VERSION = '1';
+export const UI_POLISH_VERSION = '2';
 
 export function patchIndex(source) {
   let out = source;
   const style = `<link rel="stylesheet" href="./otto-ui-polish.css?v=${UI_POLISH_VERSION}" data-otto-ui-polish-styles />`;
+  const finishStyle = `<link rel="stylesheet" href="./otto-client-visible-polish.css?v=${UI_POLISH_VERSION}" data-otto-client-visible-polish />`;
   const script = `<script src="./otto-ui-polish.js?v=${UI_POLISH_VERSION}" data-otto-ui-polish-runtime></script>`;
 
   if (out.includes('data-otto-ui-polish-styles')) {
@@ -15,6 +16,13 @@ export function patchIndex(source) {
   } else {
     if (!out.includes('</head>')) throw new Error('index.html is missing </head>');
     out = out.replace('</head>', `  ${style}\n</head>`);
+  }
+
+  if (out.includes('data-otto-client-visible-polish')) {
+    out = out.replace(/<link\b[^>]*\bdata-otto-client-visible-polish\b[^>]*>/, finishStyle);
+  } else {
+    if (!out.includes('</head>')) throw new Error('index.html is missing </head>');
+    out = out.replace('</head>', `  ${finishStyle}\n</head>`);
   }
 
   if (out.includes('data-otto-ui-polish-runtime')) {
@@ -28,17 +36,27 @@ export function patchIndex(source) {
 }
 
 export function patchServiceWorker(source) {
-  if (source.includes("'./otto-ui-polish.css'")) return source;
-  const needle = "'./otto-home.css', './otto-home.js',";
-  if (!source.includes(needle)) throw new Error('sw.js shell marker missing');
-  return source.replace(needle, `${needle}\n  './otto-ui-polish.css', './otto-ui-polish.js',`);
+  let out = source;
+  if (!out.includes("'./otto-ui-polish.css'")) {
+    const needle = "'./otto-home.css', './otto-home.js',";
+    if (!out.includes(needle)) throw new Error('sw.js shell marker missing');
+    out = out.replace(needle, `${needle}\n  './otto-ui-polish.css', './otto-ui-polish.js',`);
+  }
+  if (!out.includes("'./otto-client-visible-polish.css'")) {
+    const needle = "'./otto-ui-polish.css', './otto-ui-polish.js',";
+    if (!out.includes(needle)) throw new Error('ui polish shell marker missing');
+    out = out.replace(needle, `${needle}\n  './otto-client-visible-polish.css',`);
+  }
+  return out;
 }
 
 export function validate(index, sw) {
   return [
     ['polish stylesheet wired', index.includes(`href="./otto-ui-polish.css?v=${UI_POLISH_VERSION}" data-otto-ui-polish-styles`)],
+    ['client-visible stylesheet wired', index.includes(`href="./otto-client-visible-polish.css?v=${UI_POLISH_VERSION}" data-otto-client-visible-polish`)],
     ['polish runtime wired', index.includes(`src="./otto-ui-polish.js?v=${UI_POLISH_VERSION}" data-otto-ui-polish-runtime`)],
     ['polish CSS cached offline', sw.includes("'./otto-ui-polish.css'")],
+    ['client-visible CSS cached offline', sw.includes("'./otto-client-visible-polish.css'")],
     ['polish JS cached offline', sw.includes("'./otto-ui-polish.js'")]
   ];
 }
