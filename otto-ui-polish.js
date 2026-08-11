@@ -3,6 +3,7 @@
   'use strict';
 
   let lastDialogOpener = null;
+  let dialogSequence = 0;
 
   function isEditable(target) {
     if (!target) return false;
@@ -17,7 +18,7 @@
     sheet.setAttribute('aria-modal', 'true');
     const heading = sheet.querySelector('h1, h2, h3');
     if (heading) {
-      if (!heading.id) heading.id = `otto-dialog-${Math.random().toString(36).slice(2, 9)}`;
+      if (!heading.id) heading.id = `otto-dialog-${++dialogSequence}`;
       sheet.setAttribute('aria-labelledby', heading.id);
     }
   }
