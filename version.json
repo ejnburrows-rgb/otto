@@ -1,8 +1,9 @@
 {
   "project": "OTTO Plumbing CRM",
   "repository": "ejnburrows-rgb/otto",
-  "sourceBranch": "main",
-  "baselineCommit": "118ce8df7c201e3b39d3b504634ec7230a72cc96",
-  "securityContainmentCommit": "d7492d15cd5c336156f87413eb6c3f2f5974dba0",
-  "generatedAt": "2026-07-29T21:56:00Z"
+  "sourceBranch": "feat/production-completion",
+  "commit": "79b7b4b9ece2aa3320531c0b59b76f24fd759572",
+  "shortCommit": "79b7b4b",
+  "builtAt": "2026-08-11T17:09:51.136Z",
+  "serverAuth": "fail-closed"
 }

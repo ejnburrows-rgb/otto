@@ -7,6 +7,8 @@ const CACHE = 'otto-crm-v12';
 const SHELL = [
   './', './index.html', './landing.html', './guide.html', './manifest.json', './logo.jpg',
   './otto-home.css', './otto-home.js',
+  './otto-ui-polish.css', './otto-ui-polish.js',
+  './otto-client-visible-polish.css',
   './design-assets/wallpapers/julio-pablo.avif', './design-assets/wallpapers/sarays.avif'
 ];
 

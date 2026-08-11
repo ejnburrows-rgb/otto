@@ -18,6 +18,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous"></script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="https://apis.google.com/js/api.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
   <style>
     /* ===== TOKENS: Elegant Blue & Premium Spacing ===== */
     :root {
@@ -964,7 +965,9 @@
     }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" crossorigin="anonymous"></script>
-  <link rel="stylesheet" href="./otto-home.css?v=2" data-otto-home-styles />
+  <link rel="stylesheet" href="./otto-home.css?v=3" data-otto-home-styles />
+  <link rel="stylesheet" href="./otto-ui-polish.css?v=2" data-otto-ui-polish-styles />
+  <link rel="stylesheet" href="./otto-client-visible-polish.css?v=2" data-otto-client-visible-polish />
 </head>
 
 <body>
@@ -1035,16 +1038,37 @@
   const todayISO = () => new Date().toISOString().slice(0, 10);
   const nowISO = () => new Date().toISOString();
   
-  /* Single place every /api/ call goes through, so when real server-side
-     sign-in ships there is exactly one function to add the credential to.
-     It attaches nothing today: the server gate refuses every request by
-     design (api/_lib/serverAuth.js), and the session token it briefly sent
-     came from a sign-in route that handed out owner sessions to anyone.
-     Any stale token from that period is cleared here rather than left to
-     sit in the browser. */
+  /* Supabase provides the cloud identity. The publishable key identifies this
+     public app; it cannot bypass database security or reveal the server key. */
+  const SUPABASE_URL = 'https://huaehartegjbihyygqgb.supabase.co';
+  const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_xOJK14-CGJWKdy7W_bulEQ_hciST-Bb';
+  let cloudAuth = null;
+  let cloudAuthSession = null;
   try { localStorage.removeItem('otto_jwt'); } catch (e) { }
+
+  async function initCloudAuth() {
+    if (cloudAuth) return cloudAuth;
+    if (!window.supabase || !window.supabase.createClient) return null;
+    cloudAuth = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+    });
+    const result = await cloudAuth.auth.getSession();
+    cloudAuthSession = result.data && result.data.session;
+    cloudAuth.auth.onAuthStateChange((_event, nextSession) => { cloudAuthSession = nextSession; });
+    return cloudAuth;
+  }
+
   async function serverFetch(url, options = {}) {
-    return fetch(url, options);
+    await initCloudAuth();
+    if (cloudAuth) {
+      const result = await cloudAuth.auth.getSession();
+      cloudAuthSession = result.data && result.data.session;
+    }
+    const headers = new Headers(options.headers || {});
+    if (cloudAuthSession && cloudAuthSession.access_token) {
+      headers.set('Authorization', `Bearer ${cloudAuthSession.access_token}`);
+    }
+    return fetch(url, { ...options, headers });
   }
   /* `numberToWords()` used to sit here, unused and unusable: it declared
      `const dollars` and then reassigned it, so any amount of $1,000 or more
@@ -1058,7 +1082,7 @@
       home: 'Home', customers: 'Customers', jobs: 'Jobs', calls: 'Calls', more: 'More', urgent: 'Urgent', kpis: 'KPIs',
       newCall: 'New Call', newJob: 'New Job', myJobs: 'My Jobs', addPhoto: 'Add Photo',
       voiceNote: 'Voice Note', scanCheck: 'Scan Check', ask: 'Ask OTTO', estimates: 'Estimates',
-      invoices: 'Invoices', payments: 'Payments', checks: 'Checks', followups: 'Follow-ups',
+      invoices: 'Invoices', payments: 'Payments', checks: 'Checks', followups: 'Follow-ups', pricing: 'Material Pricing', contracts: 'Contracts',
       workflows: 'Workflows', knowledge: 'Knowledge', team: 'Team', fieldCrew: 'Field Crew', reports: 'Reports',
       settings: 'Settings', map: 'Map', documents: 'Documents', notes: 'Notes', photos: 'Photos',
       assistant: 'Assistant', search: 'Search…', save: 'Save', cancel: 'Cancel', delete: 'Delete',
@@ -1103,6 +1127,7 @@
       createEstimate: 'Create estimate from this', aiNotReady: 'AI is not set up yet — the file was saved. You can type the estimate.',
       couldntRead: "Couldn't read much from this file — you can still type the estimate below.",
       showInLang: 'Show in this language', drawingHint: 'Upload a drawing or PDF and I will read it and draft a materials list.',
+      photoNotSentYet: 'A photo has not reached the office yet. It is safe on this phone and will keep trying.',
       emails: 'Email log', inbox: 'Inbox', payroll: 'Payroll', addEmail: 'Add email', importEmail: 'Import email file',
       all: 'All', escalations: 'Escalations', approvalHistory: 'Approval history',
       from: 'From', subject: 'Subject', message: 'Message', attachments: 'Attachments', matchedTo: 'Matched to',
@@ -1142,7 +1167,7 @@
     es: {
       home: 'Inicio', customers: 'Clientes', jobs: 'Trabajos', calls: 'Llamadas', more: 'Más', urgent: 'Urgentes', kpis: 'KPIs',
       newCall: 'Nueva Llamada', newJob: 'Nuevo Trabajo', myJobs: 'Mis Trabajos', addPhoto: 'Agregar Foto',
-      voiceNote: 'Nota de Voz', scanCheck: 'Escanear Cheque', ask: 'Pregunta a OTTO', estimates: 'Presupuestos',
+      voiceNote: 'Nota de Voz', scanCheck: 'Escanear Cheque', ask: 'Pregunta a OTTO', estimates: 'Presupuestos', pricing: 'Precios de materiales', contracts: 'Contratos',
       invoices: 'Facturas', payments: 'Pagos', checks: 'Cheques', followups: 'Seguimientos',
       workflows: 'Flujos', knowledge: 'Guías', team: 'Equipo', fieldCrew: 'Cuadrilla de Campo', reports: 'Reportes',
       settings: 'Ajustes', map: 'Mapa', documents: 'Documentos', notes: 'Notas', photos: 'Fotos',
@@ -1188,6 +1213,7 @@
       createEstimate: 'Crear presupuesto con esto', aiNotReady: 'La IA aún no está configurada — el archivo se guardó. Puedes escribir el estimado.',
       couldntRead: 'No se pudo leer mucho de este archivo — puedes escribir el estimado abajo.',
       showInLang: 'Mostrar en este idioma', drawingHint: 'Sube un plano o PDF y lo leeré para hacer una lista de materiales.',
+      photoNotSentYet: 'Una foto todavía no ha llegado a la oficina. Está segura en este teléfono y seguirá intentando enviarse.',
       emails: 'Registro de correos', inbox: 'Bandeja', payroll: 'Nómina', addEmail: 'Agregar correo', importEmail: 'Importar archivo de correo',
       all: 'Todos', approvalHistory: 'Historial de aprobaciones',
       from: 'De', subject: 'Asunto', message: 'Mensaje', attachments: 'Adjuntos', matchedTo: 'Vinculado a',
@@ -1253,28 +1279,12 @@
   function blankDB() {
     const d = { meta: { created: nowISO(), version: 1 } };
     COLLECTIONS.forEach(c => d[c] = []);
-    // Seed exact team per business spec: 2 owners + 1 ops manager + 1 logging/IT + 15 field workers.
-    // Non-tech/ADHD friendly: realistic names, clear roles. Use 'office' internally for managers (full non-field access).
+    // Production begins with the three real administrators. Employees are
+    // created manually or imported; OTTO never invents a production crew.
     d.users = [
-      { id: 'owner-1', name: 'Otto', role: 'owner', lang: 'en', created: nowISO() },
-      { id: 'owner-2', name: 'Julio Pablo', role: 'owner', lang: 'es', created: nowISO() },
-      { id: 'ops-1', name: 'Sarays', role: 'office', lang: 'en', created: nowISO() },
-      { id: 'it-1', name: 'Taylor Kim - Logs/IT', role: 'office', lang: 'en', created: nowISO() },
-      { id: 'field-1', name: 'Field Tech 1', role: 'field', hourlyRate: 22, lang: 'en', created: nowISO() },
-      { id: 'field-2', name: 'Field Tech 2', role: 'field', hourlyRate: 23, lang: 'es', created: nowISO() },
-      { id: 'field-3', name: 'Field Tech 3', role: 'field', hourlyRate: 21, lang: 'en', created: nowISO() },
-      { id: 'field-4', name: 'Field Tech 4', role: 'field', hourlyRate: 24, lang: 'es', created: nowISO() },
-      { id: 'field-5', name: 'Field Tech 5', role: 'field', hourlyRate: 22, lang: 'en', created: nowISO() },
-      { id: 'field-6', name: 'Field Tech 6', role: 'field', hourlyRate: 20, lang: 'es', created: nowISO() },
-      { id: 'field-7', name: 'Field Tech 7', role: 'field', hourlyRate: 23, lang: 'en', created: nowISO() },
-      { id: 'field-8', name: 'Field Tech 8', role: 'field', hourlyRate: 22, lang: 'es', created: nowISO() },
-      { id: 'field-9', name: 'Field Tech 9', role: 'field', hourlyRate: 21, lang: 'en', created: nowISO() },
-      { id: 'field-10', name: 'Field Tech 10', role: 'field', hourlyRate: 24, lang: 'es', created: nowISO() },
-      { id: 'field-11', name: 'Field Tech 11', role: 'field', hourlyRate: 22, lang: 'en', created: nowISO() },
-      { id: 'field-12', name: 'Field Tech 12', role: 'field', hourlyRate: 23, lang: 'es', created: nowISO() },
-      { id: 'field-13', name: 'Field Tech 13', role: 'field', hourlyRate: 20, lang: 'en', created: nowISO() },
-      { id: 'field-14', name: 'Field Tech 14', role: 'field', hourlyRate: 25, lang: 'es', created: nowISO() },
-      { id: 'field-15', name: 'Field Tech 15', role: 'field', hourlyRate: 22, lang: 'en', created: nowISO() }
+      { id: 'owner-1', name: 'Otto', role: 'owner', lang: 'en', active: true, email: '', created: nowISO() },
+      { id: 'owner-2', name: 'Julio', role: 'owner', lang: 'es', active: true, email: '', created: nowISO() },
+      { id: 'ops-1', name: 'Sarays', role: 'office', lang: 'en', active: true, email: '', created: nowISO() }
     ];
     // A couple of genuinely useful plumbing SOPs and workflow templates.
     d.sops = [
@@ -1563,10 +1573,16 @@
         const r = await serverFetch('/api/photos', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ fileId, mime, data: b64 }),
+          body: JSON.stringify({ fileId, mime, data: b64, jobId: fileJobId(fileId) }),
         });
         if (r.ok) {
           await idbDel('photo_upload_queue', fileId);
+          const rec = (db.photos || []).find((p) => p.fileId === fileId);
+          if (rec && rec.uploadPending) {
+            delete rec.uploadPending;
+            rec.updated = nowISO();
+            save();
+          }
         } else {
           await _bumpPhotoRetry(fileId, entry);
         }
@@ -1576,13 +1592,37 @@
     }
   }
 
+  function fileJobId(fileId) {
+    for (const collection of ['photos', 'documents']) {
+      const direct = (db[collection] || []).find(record => record &&
+        (record.fileId === fileId || (record.attachments || []).some(item => item.fileId === fileId)));
+      if (direct) return direct.jobId || direct.associatedJobId || '';
+    }
+    for (const job of (db.jobs || [])) {
+      const items = [].concat(job.photos || [], job.documents || [], job.attachments || []);
+      if (items.some(item => item && item.fileId === fileId)) return job.id;
+    }
+    return '';
+  }
+
+  const PHOTO_RETRY_WARN_AFTER = 20;
   async function _bumpPhotoRetry(fileId, entry) {
-    // Give up after 20 attempts (~10 min). Leave the blob so it is still
-    // visible locally; remove from queue to stop retrying.
-    if (entry.retries >= 20) {
-      await idbDel('photo_upload_queue', fileId);
-    } else {
-      await idbPut('photo_upload_queue', fileId, { ...entry, retries: entry.retries + 1 });
+    // A field photo is evidence behind the job. Never silently abandon it just
+    // because the phone stayed offline or the server was unavailable for ten
+    // minutes. Keep the queue entry until an upload actually succeeds.
+    const retries = (entry.retries || 0) + 1;
+    await idbPut('photo_upload_queue', fileId, { ...entry, retries, lastTry: nowISO() });
+
+    // Warn once when this has been pending for a while, while making the state
+    // visible on the photo record for office/owner UI and later diagnostics.
+    if (retries === PHOTO_RETRY_WARN_AFTER) {
+      const rec = (db.photos || []).find((p) => p.fileId === fileId);
+      if (rec) {
+        rec.uploadPending = true;
+        rec.updated = nowISO();
+        save();
+      }
+      toast(t('photoNotSentYet'), 'error');
     }
   }
 
@@ -1898,6 +1938,13 @@
     }
     return null;
   }
+  function matchRateItem(label) {
+    const needle = String(label || '').trim().toLowerCase();
+    const card = getActiveRateCard();
+    if (!needle || !card) return null;
+    return card.items.find(item => item.active !== false && [item.itemName, item.category, ...(item.aliases || [])]
+      .some(value => needle.includes(String(value || '').toLowerCase()) || String(value || '').toLowerCase().includes(needle))) || null;
+  }
 
   function customerName(id) { const c = get('customers', id); return c ? c.name : '—'; }
   function jobTitle(id) { const j = get('jobs', id); return j ? j.title : '—'; }
@@ -1968,18 +2015,71 @@
 
   /* ============================ AUTH / ROLES ============================ */
   const ROLE_VIEWS = {
-    owner: ['home', 'hub', 'kpis', 'worker_profile', 'urgent', 'customers', 'jobs', 'calls', 'inbox', 'emails', 'estimates', 'invoices', 'payments', 'checks', 'payroll', 'alerts', 'followups', 'workflows', 'knowledge', 'map', 'reports', 'backups', 'audit', 'team', 'settings', 'assistant'],
+    owner: ['home', 'hub', 'kpis', 'worker_profile', 'urgent', 'customers', 'jobs', 'calls', 'inbox', 'emails', 'estimates', 'pricing', 'contracts', 'invoices', 'payments', 'checks', 'payroll', 'alerts', 'followups', 'workflows', 'knowledge', 'map', 'reports', 'backups', 'audit', 'team', 'settings', 'assistant'],
     // 'team' is here as well as under owner: the office manager and the IT
     // account both run day-to-day staff admin — adding a new hire, setting or
     // resetting a sign-in code — and routing that through an owner every time
     // was slowing the real work down.
-    office: ['home', 'hub', 'urgent', 'customers', 'jobs', 'calls', 'inbox', 'emails', 'estimates', 'invoices', 'payments', 'checks', 'payroll', 'alerts', 'followups', 'workflows', 'knowledge', 'map', 'reports', 'backups', 'team', 'settings', 'assistant'],
+    office: ['home', 'hub', 'urgent', 'customers', 'jobs', 'calls', 'inbox', 'emails', 'estimates', 'pricing', 'contracts', 'invoices', 'payments', 'checks', 'payroll', 'alerts', 'followups', 'workflows', 'knowledge', 'map', 'reports', 'backups', 'team', 'settings', 'assistant'],
     field: ['home', 'jobs', 'customers', 'followups', 'knowledge', 'assistant', 'settings'],
     accounting: ['home', 'customers', 'inbox', 'emails', 'invoices', 'payments', 'checks', 'payroll', 'estimates', 'reports', 'knowledge', 'assistant', 'settings'],
   };
   function can(view) { return session && (ROLE_VIEWS[session.role] || []).includes(view); }
 
+  async function establishCloudSession() {
+    await initCloudAuth();
+    if (!cloudAuthSession) return false;
+    try {
+      const response = await serverFetch('/api/data?session=1');
+      if (!response.ok) return false;
+      const result = await response.json();
+      if (!result.profile || !result.profile.id) return false;
+      session = result.profile;
+      localStorage.setItem('otto_session', session.id);
+      return true;
+    } catch (_) { return false; }
+  }
+
+  function showCloudLogin(message = '') {
+    $('#app').classList.add('hidden');
+    const login = $('#login');
+    login.classList.remove('hidden');
+    const es = lang === 'es';
+    login.innerHTML = `
+      <div style="text-align:center;margin-bottom:24px"><img src="./logo.jpg" alt="OTTO Plumbing" style="width:190px;border-radius:12px"></div>
+      <h2 style="margin-top:0">${es ? 'Iniciar sesión en OTTO' : 'Sign in to OTTO'}</h2>
+      <p class="muted">${es ? 'Use el correo autorizado de su cuenta. OTTO enviará un enlace seguro.' : 'Use the authorized email for your account. OTTO will send a secure sign-in link.'}</p>
+      <div class="field"><label for="cloud-email">${es ? 'Correo electrónico' : 'Email'}</label><input id="cloud-email" type="email" autocomplete="email" placeholder="name@company.com"></div>
+      <button class="btn block" onclick="sendCloudSignIn()"><i class="fas fa-envelope"></i> ${es ? 'Enviar enlace seguro' : 'Send secure link'}</button>
+      <div id="cloud-login-status" class="muted" style="margin-top:14px" role="status">${esc(message)}</div>
+      <div class="langtoggle"><button class="${lang === 'en' ? 'on' : ''}" onclick="setLang('en');showCloudLogin()">EN</button><button class="${lang === 'es' ? 'on' : ''}" onclick="setLang('es');showCloudLogin()">ES</button></div>`;
+  }
+
+  async function sendCloudSignIn() {
+    const email = ($('#cloud-email') && $('#cloud-email').value || '').trim().toLowerCase();
+    const status = $('#cloud-login-status');
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      if (status) status.textContent = lang === 'es' ? 'Escriba un correo válido.' : 'Enter a valid email.';
+      return;
+    }
+    const client = await initCloudAuth();
+    if (!client) {
+      if (status) status.textContent = lang === 'es' ? 'No hay conexión. Intente de nuevo.' : 'No connection. Try again.';
+      return;
+    }
+    if (status) status.textContent = lang === 'es' ? 'Enviando…' : 'Sending…';
+    const { error } = await client.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: location.origin + location.pathname, shouldCreateUser: true },
+    });
+    if (status) status.textContent = error
+      ? (lang === 'es' ? 'No se pudo enviar el enlace.' : 'The sign-in link could not be sent.')
+      : (lang === 'es' ? 'Revise su correo y abra el enlace de OTTO.' : 'Check your email and open the OTTO sign-in link.');
+  }
+
   function showLogin() {
+    showCloudLogin();
+    return;
     $('#app').classList.add('hidden');
     const lg = $('#login'); lg.classList.remove('hidden');
     let pin = '', selUser = null;
@@ -2164,7 +2264,9 @@
     }
     draw();
   }
-  function signOut() { 
+  async function signOut() {
+    if (cloudAuth) { try { await cloudAuth.auth.signOut(); } catch (_) { } }
+    cloudAuthSession = null;
     session = null; localStorage.removeItem('otto_session'); 
     const f = document.getElementById('ai-float-btn'); if (f) f.remove();
     const p = document.getElementById('ai-chat-popup'); if (p) p.remove();
@@ -2242,9 +2344,9 @@
       <i class="fas ${icons[v]}"></i><span>${t(v)}</span></button>`).join('');
   }
   function openMore() {
-    const items = ['team', 'urgent', 'alerts', 'calls', 'kpis', 'reports', 'backups', 'audit', 'assistant', 'settings']
+    const items = ['team', 'pricing', 'urgent', 'alerts', 'calls', 'kpis', 'reports', 'backups', 'audit', 'assistant', 'settings']
       .filter(v => can(v));
-    const icons = { team: 'fa-user-gear', urgent: 'fa-bolt', alerts: 'fa-triangle-exclamation', calls: 'fa-phone', kpis: 'fa-chart-pie', reports: 'fa-chart-line', backups: 'fa-database', audit: 'fa-clipboard-list', assistant: 'fa-wand-magic-sparkles', settings: 'fa-gear' };
+    const icons = { team: 'fa-user-gear', pricing: 'fa-tags', urgent: 'fa-bolt', alerts: 'fa-triangle-exclamation', calls: 'fa-phone', kpis: 'fa-chart-pie', reports: 'fa-chart-line', backups: 'fa-database', audit: 'fa-clipboard-list', assistant: 'fa-wand-magic-sparkles', settings: 'fa-gear' };
     modal(`<h2>${t('more')}</h2><div class="card" style="margin-top:12px">
       ${items.map(v => `<div class="list-item" onclick="closeModal();nav('${v}')"><div class="avatar" style="background:${colorFor(v)}"><i class="fas ${icons[v]}"></i></div><div class="li-main"><div class="li-title">${t(v)}</div></div><i class="fas fa-chevron-right chev"></i></div>`).join('')}
     </div>`);
@@ -2264,9 +2366,9 @@
     fab.setAttribute('aria-label', t('add'));
     const views = {
       home: viewHome, customers: viewCustomers, customer: viewCustomer, jobs: viewJobs, job: viewJob,
-      calls: viewCalls, inbox: viewInbox, emails: viewEmails, estimates: viewEstimates, invoices: viewInvoices, payments: viewPayments,
+      calls: viewCalls, inbox: viewInbox, emails: viewEmails, estimates: viewEstimates, contracts: viewContracts, invoices: viewInvoices, payments: viewPayments,
       checks: viewChecks, payroll: viewPayroll, followups: viewFollowups, workflows: viewWorkflows, knowledge: viewKnowledge,
-      map: viewMap, reports: viewReports, team: viewTeam, settings: viewSettings, assistant: viewAssistant,
+      map: viewMap, reports: viewReports, team: viewTeam, pricing: viewPriceBook, settings: viewSettings, assistant: viewAssistant,
       hub: viewHub, alerts: viewAlerts, backups: viewBackups, audit: viewAudit,
       kpis: viewKpis, worker_profile: viewWorkerProfile, gps: viewGpsLogs, urgent: viewUrgentHub,
     };
@@ -2804,36 +2906,63 @@
   /* ============================ ESTIMATES ============================ */
   function estRow(e) { return `<div class="list-item" onclick="openEstimateForm('${e.id}')"><div class="li-main"><div class="li-title">${esc(e.title || t('estimates'))}</div><div class="li-sub">${esc(customerName(e.customerId))}</div></div><div class="li-right">${money(e.amount)}<br>${statusPill(e.status)}</div></div>`; }
   function viewEstimates() { listView('estimates', t('estimates'), 'est', estRow, () => openEstimateForm()); }
-  function adjustEstimateMargin(pct) {
-    const el = $('#e-amount');
-    if (!el) return;
-    const cur = parseFloat(el.value) || 0;
-    const n = Math.round((cur * (1 + pct)) * 100) / 100;
-    el.value = n;
-    toast(`${lang === 'es' ? 'Margen ajustado' : 'Margin adjusted'} +${Math.round(pct * 100)}% (${money(n)})`, 'info');
+  let _estimateAdjustment = 0;
+  function estimateLineHTML(line = {}) {
+    return `<div class="estimate-line" style="display:grid;grid-template-columns:2fr 72px 92px 110px 40px;gap:8px;margin-bottom:8px">
+      <input class="el-desc" placeholder="${lang === 'es' ? 'Material / descripción' : 'Material / description'}" value="${esc(line.description || line.item || '')}" oninput="recalculateEstimateForm()">
+      <input class="el-qty" type="number" min="0" step="any" value="${line.quantity ?? line.qty ?? 1}" oninput="recalculateEstimateForm()">
+      <input class="el-unit" value="${esc(line.unit || 'Each')}">
+      <input class="el-price" type="number" min="0" step="0.01" value="${line.unitPrice ?? line.rate ?? 0}" oninput="recalculateEstimateForm()">
+      <button type="button" class="iconbtn" aria-label="${t('delete')}" onclick="this.closest('.estimate-line').remove();recalculateEstimateForm()"><i class="fas fa-xmark"></i></button>
+    </div>`;
+  }
+  function addEstimateLine(line) { $('#estimate-lines')?.insertAdjacentHTML('beforeend', estimateLineHTML(line || {})); recalculateEstimateForm(); }
+  function estimateLinesFromForm() {
+    return [...document.querySelectorAll('#estimate-lines .estimate-line')].map(row => {
+      const quantity = Number(row.querySelector('.el-qty').value || 0);
+      const unitPrice = Number(row.querySelector('.el-price').value || 0);
+      return { description: row.querySelector('.el-desc').value.trim(), quantity, unit: row.querySelector('.el-unit').value.trim(), unitPrice, lineTotal: Math.round(quantity * unitPrice * 100) / 100 };
+    }).filter(line => line.description);
+  }
+  function setEstimateAdjustment(pct) { _estimateAdjustment = Number(pct) || 0; recalculateEstimateForm(); }
+  function adjustEstimateMargin(pct) { setEstimateAdjustment(pct); }
+  function recalculateEstimateForm() {
+    const base = estimateLinesFromForm().reduce((sum, line) => sum + line.lineTotal, 0);
+    const adjustmentAmount = Math.round(base * _estimateAdjustment * 100) / 100;
+    const final = Math.round((base + adjustmentAmount) * 100) / 100;
+    if ($('#e-base')) $('#e-base').textContent = money(base);
+    if ($('#e-adjustment')) $('#e-adjustment').textContent = `${_estimateAdjustment > 0 ? '+' : ''}${Math.round(_estimateAdjustment * 100)}% (${money(adjustmentAmount)})`;
+    if ($('#e-final')) $('#e-final').textContent = money(final);
+    if ($('#e-amount')) $('#e-amount').value = final;
+    document.querySelectorAll('[data-adjustment]').forEach(button => button.classList.toggle('on', Number(button.dataset.adjustment) === _estimateAdjustment));
   }
   function openEstimateForm(id, jobId) {
     const e = id ? get('estimates', id) : { status: 'draft', jobId: jobId || '', date: todayISO() };
     const job = e.jobId ? get('jobs', e.jobId) : null;
+    _estimateAdjustment = Number(e.adjustmentPct || 0);
+    const lines = (e.lineItems && e.lineItems.length) ? e.lineItems : (e.amount ? [{ description: e.title || 'Estimate', quantity: 1, unit: 'Each', unitPrice: e.baseSubtotal || e.amount }] : [{ description: '', quantity: 1, unit: 'Each', unitPrice: 0 }]);
     modal(`<h2>${id ? t('edit') : t('addEstimate')}</h2>
       ${jobSelect('e-job', e.jobId)}
       <div class="field"><label for="e-title">${t('title')}</label><input id="e-title" value="${esc(e.title || (job ? job.title : ''))}"></div>
       <div class="field"><label for="e-desc">${t('description')}</label><div class="with-voice"><textarea id="e-desc">${esc(e.description || '')}</textarea>${voiceBtn('e-desc')}</div></div>
-      <div class="row2"><div class="field"><label for="e-amount">${t('amount')}</label><input id="e-amount" type="number" step="0.01" value="${e.amount || ''}"></div>
-      <div class="field"><label for="e-status">${t('status')}</label><select id="e-status">${['draft', 'sent', 'approved', 'canceled'].map(s => `<option value="${s}" ${e.status === s ? 'selected' : ''}>${t(s)}</option>`).join('')}</select></div></div>
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:8px;background:var(--bg2);border-radius:8px;">
-        <span style="font-size:13px;font-weight:600;color:var(--text2);"><i class="fas fa-chart-line"></i> Quick Margin:</span>
-        <button type="button" class="btn sm ghost" onclick="adjustEstimateMargin(0.05)">+5%</button>
-        <button type="button" class="btn sm ghost" onclick="adjustEstimateMargin(0.10)">+10%</button>
-      </div>
+      <div class="field"><label>${lang === 'es' ? 'Líneas del estimado' : 'Estimate line items'}</label><div id="estimate-lines">${lines.map(estimateLineHTML).join('')}</div><button type="button" class="btn ghost sm" onclick="addEstimateLine()"><i class="fas fa-plus"></i> ${t('addItem')}</button></div>
+      <div class="field"><label>${lang === 'es' ? 'Ajuste' : 'Adjustment'}</label><div class="tabs">${[[0,'Base'],[.05,'+5%'],[-.05,'-5%'],[.10,'+10%'],[-.10,'-10%']].map(([value,label]) => `<button type="button" data-adjustment="${value}" onclick="setEstimateAdjustment(${value})">${label}</button>`).join('')}</div></div>
+      <div class="card" style="padding:14px;margin-bottom:14px">${kv(lang === 'es' ? 'Subtotal original' : 'Original subtotal', '<b id="e-base">$0.00</b>')}${kv(lang === 'es' ? 'Ajuste seleccionado' : 'Selected adjustment', '<b id="e-adjustment">0%</b>')}${kv(lang === 'es' ? 'Total final' : 'Final total', '<b id="e-final">$0.00</b>')}</div>
+      <input id="e-amount" type="hidden" value="${e.amount || 0}">
+      <div class="field"><label for="e-status">${t('status')}</label><select id="e-status">${['draft', 'sent', 'approved', 'rejected'].map(s => `<option value="${s}" ${e.status === s ? 'selected' : ''}>${t(s) || s}</option>`).join('')}</select></div>
       <button class="btn block" onclick="saveEstimate('${id || ''}')"><i class="fas fa-check"></i> ${t('save')}</button>
       ${id ? `<button class="btn block" style="margin-top:10px" onclick="estimateToInvoice('${id}')"><i class="fas fa-file-invoice-dollar"></i> ${lang === 'es' ? 'Convertir a factura' : 'Convert to invoice'}</button>` : ''}
-      ${id ? `<button class="btn ghost block" style="margin-top:8px" onclick="printDoc('estimate','${id}')"><i class="fas fa-print"></i> ${t('print')}</button>` : ''}
+      ${id ? `<div class="btnrow"><button class="btn ghost" onclick="printDoc('estimate','${id}')"><i class="fas fa-file-pdf"></i> ${lang === 'es' ? 'Exportar PDF' : 'Export PDF'}</button><button class="btn ghost" onclick="shareEstimate('${id}')"><i class="fas fa-share-nodes"></i> ${lang === 'es' ? 'Compartir' : 'Share'}</button><button class="btn ghost" onclick="emailEstimate('${id}')"><i class="fas fa-envelope"></i> ${lang === 'es' ? 'Enviar por correo' : 'Send by Email'}</button></div>` : ''}
       ${id ? `<button class="btn red block" style="margin-top:8px" onclick="confirmDel(()=>{remove('estimates','${id}');closeModal();render()})"><i class="fas fa-trash"></i> ${t('delete')}</button>` : ''}`);
+    setTimeout(recalculateEstimateForm, 0);
   }
   function saveEstimate(id) {
     const jobId = $('#e-job').value; const job = jobId ? get('jobs', jobId) : null;
-    const data = { jobId, customerId: job ? job.customerId : '', title: $('#e-title').value.trim(), description: $('#e-desc').value.trim(), amount: parseFloat($('#e-amount').value) || 0, status: $('#e-status').value, date: todayISO() };
+    const lineItems = estimateLinesFromForm();
+    const baseSubtotal = lineItems.reduce((sum, line) => sum + line.lineTotal, 0);
+    const adjustmentAmount = Math.round(baseSubtotal * _estimateAdjustment * 100) / 100;
+    const status = $('#e-status').value;
+    const data = { jobId, customerId: job ? job.customerId : '', title: $('#e-title').value.trim(), description: $('#e-desc').value.trim(), lineItems, baseSubtotal, adjustmentPct: _estimateAdjustment, adjustmentAmount, amount: Math.round((baseSubtotal + adjustmentAmount) * 100) / 100, status, date: todayISO(), finalizedAt: status === 'draft' ? null : (id && get('estimates', id)?.finalizedAt) || nowISO() };
     if (id) update('estimates', id, data); else add('estimates', data);
     closeModal(); toast(t('saved'), 'success'); render();
   }
@@ -2936,17 +3065,13 @@
       </div>
 
       <table>
-        <thead><tr><th>${L('Description', 'Descripción')}</th><th class="num">${L('Amount', 'Monto')}</th></tr></thead>
-        <tbody>
-          <tr>
-            <td>${esc(rec.title || L('Plumbing services', 'Servicios de plomería'))}${rec.desc ? `<br><span style="font-size:10pt">${esc(rec.desc)}</span>` : ''}</td>
-            <td class="num">${money(rec.amount)}</td>
-          </tr>
-        </tbody>
+        <thead><tr><th>${L('Description', 'Descripción')}</th>${!isInv && rec.lineItems?.length ? `<th>${L('Qty', 'Cant.')}</th><th>${L('Unit', 'Unidad')}</th><th class="num">${L('Unit price', 'Precio')}</th>` : ''}<th class="num">${L('Amount', 'Monto')}</th></tr></thead>
+        <tbody>${!isInv && rec.lineItems?.length ? rec.lineItems.map(line => `<tr><td>${esc(line.description)}</td><td>${esc(line.quantity)}</td><td>${esc(line.unit)}</td><td class="num">${money(line.unitPrice)}</td><td class="num">${money(line.lineTotal)}</td></tr>`).join('') : `<tr><td>${esc(rec.title || L('Plumbing services', 'Servicios de plomería'))}${rec.description ? `<br><span style="font-size:10pt">${esc(rec.description)}</span>` : ''}</td><td class="num">${money(rec.amount)}</td></tr>`}</tbody>
       </table>
 
       <table class="totals">
-        ${row(L('Subtotal', 'Subtotal'), money(rec.amount))}
+        ${row(L('Subtotal', 'Subtotal'), money(!isInv && rec.baseSubtotal != null ? rec.baseSubtotal : rec.amount))}
+        ${!isInv && rec.adjustmentPct ? row(L(`Adjustment (${rec.adjustmentPct > 0 ? '+' : ''}${Math.round(rec.adjustmentPct * 100)}%)`, `Ajuste (${rec.adjustmentPct > 0 ? '+' : ''}${Math.round(rec.adjustmentPct * 100)}%)`), money(rec.adjustmentAmount || 0)) : ''}
         ${isInv && paid ? row(L('Paid', 'Pagado'), '-' + money(paid)) : ''}
         <tr class="grand"><td>${isInv ? L('Balance due', 'Saldo') : L('Total', 'Total')}</td><td class="num">${money(isInv ? balance : rec.amount)}</td></tr>
       </table>
@@ -2958,6 +3083,47 @@
     `;
     window.print();
   }
+  async function shareEstimate(id) {
+    const estimate = get('estimates', id); if (!estimate) return;
+    const text = `${estimate.title || 'OTTO Plumbing Estimate'}\n${customerName(estimate.customerId)}\n${money(estimate.amount)}`;
+    if (navigator.share) { try { await navigator.share({ title: estimate.title || 'OTTO Plumbing Estimate', text }); return; } catch (_) { } }
+    await navigator.clipboard?.writeText(text); toast(lang === 'es' ? 'Resumen copiado' : 'Estimate summary copied', 'success');
+  }
+  function emailEstimate(id) {
+    const estimate = get('estimates', id); if (!estimate) return;
+    const customer = get('customers', estimate.customerId);
+    const subject = `OTTO Plumbing — ${estimate.title || 'Estimate'}`;
+    const body = `${customer?.name || ''}\n\n${estimate.description || ''}\n\n${lang === 'es' ? 'Total' : 'Total'}: ${money(estimate.amount)}`;
+    add('emails', { direction: 'outgoing', to: customer?.email || '', subject, body, customerId: estimate.customerId, jobId: estimate.jobId, estimateId: estimate.id, status: 'prepared', date: nowISO() });
+    location.href = `mailto:${encodeURIComponent(customer?.email || '')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  }
+
+  /* ============================ CONTRACTS ============================ */
+  function viewContracts() {
+    const q = (_search.contract || '').toLowerCase();
+    const rows = db.contracts.filter(contract => !q || matches(contract, q));
+    let html = pageHead(t('contracts'), countSub(rows.length, 'contracts')) + searchBox('contract');
+    html += `<div class="btnrow"><button class="btn" onclick="openContractForm()"><i class="fas fa-plus"></i> ${lang === 'es' ? 'Agregar contrato' : 'Add Contract'}</button></div><div class="card">${rows.length ? rows.map(contract => `<div class="list-item" onclick="openContractForm('${contract.id}')"><div class="avatar" style="background:var(--accent-fill)"><i class="fas fa-file-contract"></i></div><div class="li-main"><div class="li-title">${esc(contract.title || customerName(contract.customerId))}</div><div class="li-sub">${esc(contract.status || 'Pending')} · ${money(contract.paid || 0)} ${t('paid')}</div></div><div class="li-right"><b>${money(contract.amount || 0)}</b><br><span class="muted">${money(Math.max(0, (contract.amount || 0) - (contract.paid || 0)))} ${lang === 'es' ? 'saldo' : 'remaining'}</span></div></div>`).join('') : emptyState()}</div>`;
+    $('#main').innerHTML = html; bindSearch('contract');
+  }
+  function openContractForm(id) {
+    const contract = id ? get('contracts', id) : { status: 'Pending', startDate: todayISO(), paid: 0 };
+    const customerOptions = db.customers.map(customer => `<option value="${customer.id}" ${contract.customerId === customer.id ? 'selected' : ''}>${esc(customer.name)}</option>`).join('');
+    modal(`<h2>${id ? t('edit') : (lang === 'es' ? 'Agregar contrato' : 'Add Contract')}</h2>
+      <div class="field"><label for="ct-title">${t('title')}</label><input id="ct-title" value="${esc(contract.title || '')}"></div>
+      <div class="row2"><div class="field"><label for="ct-customer">${t('customer')}</label><select id="ct-customer"><option value="">—</option>${customerOptions}</select></div>${jobSelect('ct-job', contract.jobId)}</div>
+      <div class="row2"><div class="field"><label for="ct-amount">${t('amount')}</label><input id="ct-amount" type="number" min="0" step="0.01" value="${contract.amount || ''}"></div><div class="field"><label for="ct-paid">${t('paid')}</label><input id="ct-paid" type="number" min="0" step="0.01" value="${contract.paid || ''}"></div></div>
+      <div class="row2"><div class="field"><label for="ct-start">${lang === 'es' ? 'Inicio' : 'Start date'}</label><input id="ct-start" type="date" value="${esc((contract.startDate || '').slice(0,10))}"></div><div class="field"><label for="ct-end">${lang === 'es' ? 'Fin' : 'End date'}</label><input id="ct-end" type="date" value="${esc((contract.endDate || '').slice(0,10))}"></div></div>
+      <div class="field"><label for="ct-status">${t('status')}</label><select id="ct-status">${['Pending','Awaiting Signature','Active','Payment Due','Past Due','Completed'].map(status => `<option ${contract.status === status ? 'selected' : ''}>${status}</option>`).join('')}</select></div>
+      <div class="field"><label for="ct-next">${lang === 'es' ? 'Próximo pago / hito' : 'Next payment milestone'}</label><input id="ct-next" value="${esc(contract.nextMilestone || '')}"></div>
+      <div class="field"><label for="ct-notes">${t('notes')}</label><textarea id="ct-notes">${esc(contract.notes || '')}</textarea></div>
+      <button class="btn block" onclick="saveContract('${id || ''}')"><i class="fas fa-check"></i> ${t('save')}</button>${id ? `<button class="btn red block" style="margin-top:10px" onclick="confirmDel(()=>{remove('contracts','${id}');closeModal();render()})"><i class="fas fa-trash"></i> ${t('delete')}</button>` : ''}`);
+  }
+  function saveContract(id) {
+    const data = { title: ($('#ct-title').value || '').trim(), customerId: $('#ct-customer').value, jobId: $('#ct-job').value, amount: Number($('#ct-amount').value || 0), paid: Number($('#ct-paid').value || 0), startDate: $('#ct-start').value, endDate: $('#ct-end').value, status: $('#ct-status').value, nextMilestone: ($('#ct-next').value || '').trim(), notes: ($('#ct-notes').value || '').trim() };
+    if (id) update('contracts', id, data); else add('contracts', data);
+    closeModal(); toast(t('saved'), 'success'); render();
+  }
 
   /* ============================ PAYMENTS ============================ */
   function payRow(p) { return `<div class="list-item"><div class="avatar" style="background:var(--green-fill)"><i class="fas fa-money-bill-wave"></i></div><div class="li-main"><div class="li-title">${money(p.amount)}</div><div class="li-sub">${esc(p.method || '')} · ${fmtDate(p.date)}</div></div></div>`; }
@@ -2965,11 +3131,28 @@
     const q = _search['pay'] || '';
     const list = db.payments.filter(p => matches(p, q));
     const total = list.reduce((s, p) => s + (p.amount || 0), 0);
-    let html = pageHead(t('payments'), countSub(list.length, 'payments')) + searchBox('pay');
-    html += `<div class="btnrow"><button class="btn" onclick="openPaymentForm()"><i class="fas fa-plus"></i> ${t('addPayment')}</button></div>`;
-    html += `<div class="card" style="margin:12px 0;padding:14px">${kv(t('total'), `<b>${money(total)}</b>`)}</div>`;
+    const today = new Date(todayISO() + 'T00:00:00');
+    const openInvoices = db.invoices.filter(invoice => (invoice.amount || 0) > (invoice.paid || 0));
+    const pastDue = openInvoices.filter(invoice => invoice.dueDate && new Date(invoice.dueDate + 'T00:00:00') < today);
+    const upcoming = openInvoices.filter(invoice => invoice.dueDate && new Date(invoice.dueDate + 'T00:00:00') >= today);
+    const paidInvoices = db.invoices.filter(invoice => (invoice.amount || 0) > 0 && (invoice.paid || 0) >= (invoice.amount || 0));
+    const moneyRow = invoice => { const balance = (invoice.amount || 0) - (invoice.paid || 0); const days = invoice.dueDate ? Math.max(0, Math.floor((today - new Date(invoice.dueDate + 'T00:00:00')) / 86400000)) : 0; return `<div class="list-item" onclick="openInvoiceView('${invoice.id}')"><div class="li-main"><div class="li-title">${esc(customerName(invoice.customerId))}</div><div class="li-sub">${esc(invoice.number || '')}${invoice.dueDate ? ` · ${fmtDate(invoice.dueDate)}` : ''}${days ? ` · ${days} ${lang === 'es' ? 'días vencido' : 'days overdue'}` : ''}</div></div><div class="li-right"><b>${money(balance)}</b></div></div>`; };
+    let html = pageHead(lang === 'es' ? 'Centro de pagos' : 'Money Control Center', countSub(list.length, 'payments')) + searchBox('pay');
+    html += `<div class="btnrow"><button class="btn" onclick="openPaymentForm()"><i class="fas fa-plus"></i> ${t('addPayment')}</button><button class="btn ghost" onclick="exportQuickBooksCSV()"><i class="fas fa-file-export"></i> ${lang === 'es' ? 'Exportar para QuickBooks' : 'Export for QuickBooks'}</button><button class="btn ghost" onclick="openQuickBooks()"><i class="fas fa-arrow-up-right-from-square"></i> ${lang === 'es' ? 'Abrir QuickBooks' : 'Open QuickBooks'}</button></div>`;
+    html += `<div class="tiles" style="margin:12px 0"><div class="tile"><div class="lbl">${lang === 'es' ? 'Vencido' : 'Past Due'}</div><div class="cnt" style="color:var(--red)">${pastDue.length}</div></div><div class="tile"><div class="lbl">${lang === 'es' ? 'Cobrar ahora' : 'Payment Needed'}</div><div class="cnt">${openInvoices.length}</div></div><div class="tile"><div class="lbl">${lang === 'es' ? 'Próximo' : 'Upcoming'}</div><div class="cnt">${upcoming.length}</div></div><div class="tile"><div class="lbl">${t('paid')}</div><div class="cnt">${paidInvoices.length}</div></div></div>`;
+    if (pastDue.length) html += `<div class="section-title" style="color:var(--red)">${lang === 'es' ? 'Vencido — requiere acción' : 'Past Due — action needed'}</div><div class="card">${pastDue.map(moneyRow).join('')}</div>`;
+    html += `<div class="section-title">${lang === 'es' ? 'Pagos requeridos' : 'Payment Needed'}</div><div class="card">${openInvoices.length ? openInvoices.map(moneyRow).join('') : emptyState()}</div>`;
+    if (upcoming.length) html += `<div class="section-title">${lang === 'es' ? 'Próximos' : 'Upcoming'}</div><div class="card">${upcoming.map(moneyRow).join('')}</div>`;
+    if (db.contracts.length) html += `<div class="section-title">${lang === 'es' ? 'Contratos' : 'Contracts'}</div><div class="card">${db.contracts.map(contract => `<div class="list-item"><div class="li-main"><div class="li-title">${esc(contract.title || customerName(contract.customerId))}</div><div class="li-sub">${esc(contract.status || 'Pending')} · ${money(contract.paid || 0)} ${t('paid')}</div></div><div class="li-right"><b>${money(Math.max(0, (contract.amount || 0) - (contract.paid || 0)))}</b><br><span class="muted">${lang === 'es' ? 'saldo' : 'remaining'}</span></div></div>`).join('')}</div>`;
+    html += `<div class="card" style="margin:12px 0;padding:14px">${kv(lang === 'es' ? 'Pagado registrado' : 'Recorded paid', `<b>${money(total)}</b>`)}</div>`;
     html += `<div class="card">${list.length ? list.map(p => `<div class="list-item"><div class="avatar" style="background:var(--green-fill)"><i class="fas fa-money-bill-wave"></i></div><div class="li-main"><div class="li-title">${money(p.amount)} · ${esc(customerName(p.customerId))}</div><div class="li-sub">${esc(p.method || '')} · ${fmtDate(p.date)}</div></div><button class="btn red sm" aria-label="${esc(t('delete'))}" onclick="confirmDel(()=>deletePayment('${p.id}'))"><i class="fas fa-trash"></i></button></div>`).join('') : emptyState()}</div>`;
     $('#main').innerHTML = html; bindSearch('pay');
+  }
+  function openQuickBooks() { window.open('https://qbo.intuit.com/', '_blank', 'noopener'); }
+  function exportQuickBooksCSV() {
+    const rows = [['Customer','Invoice','Job','Amount','Paid','Balance','Due Date']];
+    db.invoices.forEach(invoice => rows.push([customerName(invoice.customerId), invoice.number || '', jobTitle(invoice.jobId), invoice.amount || 0, invoice.paid || 0, Math.max(0, (invoice.amount || 0) - (invoice.paid || 0)), invoice.dueDate || '']));
+    downloadFile('otto-quickbooks-handoff-' + todayISO() + '.csv', toCSV(rows), 'text/csv');
   }
   /* Deleting a payment has to give the money back to the invoice it was paid
      against, otherwise the invoice keeps counting it and still reads PAID with
@@ -3196,7 +3379,7 @@
     if (!navigator.geolocation) return toast('No GPS', 'error');
     toast(lang === 'es' ? 'Obteniendo ubicación…' : 'Getting location…');
     navigator.geolocation.getCurrentPosition(pos => {
-      add('locations', { userId: session.id, lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy, jobId: jobId || null, ts: nowISO() });
+      add('locations', { userId: session.id, lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy, jobId: jobId || null, ts: nowISO(), consentGranted: true, permission: 'granted' });
       toast(t('located'), 'success'); if (route.view === 'map') render();
     }, err => toast(lang === 'es' ? 'No se pudo obtener ubicación' : 'Could not get location', 'error'), { enableHighAccuracy: true, timeout: 10000 });
   }
@@ -3232,12 +3415,52 @@
   }
   function exportRow(col, label) { return `<div class="list-item" onclick="exportCSV('${col}')"><div class="avatar" style="background:var(--green-fill)"><i class="fas fa-file-csv"></i></div><div class="li-main"><div class="li-title">${esc(label)}</div><div class="li-sub">${db[col].length} ${lang === 'es' ? 'registros' : 'records'}</div></div><i class="fas fa-download chev"></i></div>`; }
 
+  /* ============================ MATERIAL PRICE BOOK ============================ */
+  function viewPriceBook() {
+    const card = getActiveRateCard();
+    const q = (_search.pricebook || '').toLowerCase();
+    const items = (card?.items || []).filter(item => !q || [item.itemName, item.category, item.unit, item.notes].some(value => String(value || '').toLowerCase().includes(q)));
+    let html = pageHead(t('pricing'), lang === 'es' ? 'Los cambios aplican solamente a estimados nuevos.' : 'Changes apply to new estimates only.');
+    html += `<div class="btnrow"><button class="btn" onclick="openMaterialForm()"><i class="fas fa-plus"></i> ${lang === 'es' ? 'Agregar material' : 'Add Material'}</button></div>${searchBox('pricebook')}`;
+    html += `<div class="card">${items.length ? items.map(item => `<div class="list-item" onclick="openMaterialForm('${item.itemId}')" style="${item.active === false ? 'opacity:.55' : ''}"><div class="avatar" style="background:var(--accent-fill)"><i class="fas fa-tag"></i></div><div class="li-main"><div class="li-title">${esc(item.itemName)}</div><div class="li-sub">${esc(item.unit)} · ${esc(item.category || '')}${item.active === false ? ` · ${lang === 'es' ? 'Inactivo' : 'Inactive'}` : ''}</div></div><div class="li-right"><b>${money(item.rate || 0)}</b><br><span class="muted">${item.updatedAt ? fmtDate(item.updatedAt) : ''}</span></div></div>`).join('') : emptyState()}</div>`;
+    $('#main').innerHTML = html; bindSearch('pricebook');
+  }
+  function openMaterialForm(itemId) {
+    const card = getActiveRateCard();
+    const item = itemId ? card?.items.find(row => row.itemId === itemId) : { active: true, unit: 'Each' };
+    modal(`<h2>${itemId ? (lang === 'es' ? 'Editar material' : 'Edit Material') : (lang === 'es' ? 'Agregar material' : 'Add Material')}</h2>
+      <div class="field"><label for="mat-name">${lang === 'es' ? 'Material' : 'Material'}</label><input id="mat-name" value="${esc(item.itemName || '')}"></div>
+      <div class="row2"><div class="field"><label for="mat-unit">${lang === 'es' ? 'Unidad' : 'Unit'}</label><input id="mat-unit" value="${esc(item.unit || '')}"></div><div class="field"><label for="mat-rate">${lang === 'es' ? 'Precio predeterminado' : 'Default price'}</label><input id="mat-rate" type="number" min="0" step="0.01" value="${item.rate ?? ''}"></div></div>
+      <div class="field"><label for="mat-category">${lang === 'es' ? 'Categoría' : 'Category'}</label><input id="mat-category" value="${esc(item.category || '')}"></div>
+      <div class="field"><label for="mat-aliases">${lang === 'es' ? 'Otros nombres (separados por coma)' : 'Other names (comma separated)'}</label><input id="mat-aliases" value="${esc((item.aliases || []).join(', '))}"></div>
+      <div class="field"><label for="mat-notes">${t('notes')}</label><textarea id="mat-notes">${esc(item.notes || '')}</textarea></div>
+      <label style="display:flex;gap:10px;align-items:center;margin-bottom:14px"><input id="mat-active" type="checkbox" ${item.active !== false ? 'checked' : ''}> ${lang === 'es' ? 'Activo para estimados nuevos' : 'Active for new estimates'}</label>
+      <button class="btn block" onclick="saveMaterial('${itemId || ''}')"><i class="fas fa-check"></i> ${t('save')}</button>`);
+  }
+  function saveMaterial(itemId) {
+    const card = getActiveRateCard(); if (!card) return;
+    const item = itemId ? card.items.find(row => row.itemId === itemId) : { itemId: 'MAT-' + uid().toUpperCase(), createdAt: nowISO() };
+    item.itemName = ($('#mat-name').value || '').trim();
+    if (!item.itemName) return toast(t('name') + '?', 'error');
+    item.unit = ($('#mat-unit').value || '').trim() || 'Each';
+    item.rate = Number($('#mat-rate').value || 0);
+    item.category = ($('#mat-category').value || '').trim() || 'Custom';
+    item.aliases = ($('#mat-aliases').value || '').split(',').map(value => value.trim()).filter(Boolean);
+    item.notes = ($('#mat-notes').value || '').trim();
+    item.active = $('#mat-active').checked;
+    item.updatedAt = nowISO(); item.updatedBy = session.id;
+    if (!itemId) card.items.push(item);
+    card.modifiedDate = nowISO(); card.modifiedBy = session.id; card.updated = nowISO(); save();
+    closeModal(); toast(t('saved'), 'success'); viewPriceBook();
+  }
+
   /* ============================ TEAM ============================ */
   function viewTeam() {
     const owners = db.users.filter(u => u.role === 'owner');
     const mgrs = db.users.filter(u => u.role === 'office');
     const fields = db.users.filter(u => u.role === 'field');
     let html = pageHead(t('team'), `${db.users.length} · ${fields.length} ${t('fieldCrew')}`);
+    html += `<div class="btnrow"><button class="btn" onclick="openUserForm()"><i class="fas fa-user-plus"></i> ${lang === 'es' ? 'Agregar empleado' : 'Add Employee'}</button><button class="btn ghost" onclick="window.ottoUnifiedIntake && window.ottoUnifiedIntake.open()"><i class="fas fa-file-excel"></i> ${lang === 'es' ? 'Importar Excel / CSV' : 'Import Excel / CSV'}</button></div>`;
     const makeList = (title, arr) => arr.length ? `<div style="font-size:11px;color:var(--text2);padding:4px 8px">${title} (${arr.length})</div>` + arr.map(u => `<div class="list-item" onclick="openUserForm('${u.id}')"><div class="avatar" style="background:${colorFor(u.name)}">${initials(u.name)}</div><div class="li-main"><div class="li-title">${esc(u.name)}</div><div class="li-sub">${t(u.role)}</div></div><i class="fas fa-chevron-right chev"></i></div>`).join('') : '';
     html += `<div class="card">${makeList('OWNERS', owners)}${makeList('OPS & IT', mgrs)}${makeList('FIELD', fields)}</div>`;
     $('#main').innerHTML = html;
@@ -3246,28 +3469,30 @@
     const u = id ? get('users', id) : { role: 'field', lang: 'es' };
     modal(`<h2>${id ? t('edit') : t('addTeam')}</h2>
       <div class="field"><label for="u-name">${t('name')}</label><input id="u-name" value="${esc(u.name || '')}"></div>
+      <div class="row2"><div class="field"><label for="u-phone">${lang === 'es' ? 'Teléfono' : 'Phone'}</label><input id="u-phone" type="tel" value="${esc(u.phone || '')}"></div>
+      <div class="field"><label for="u-email">${lang === 'es' ? 'Correo de acceso' : 'Sign-in email'}</label><input id="u-email" type="email" value="${esc(u.email || '')}"></div></div>
       <div class="field"><label for="u-role">${t('role')}</label><select id="u-role">${['owner', 'office', 'field'].map(r => `<option value="${r}" ${u.role === r ? 'selected' : ''}>${t(r)}</option>`).join('')}</select></div>
-      <div class="row2"><div class="field"><label for="u-pin">${id ? (lang === 'es' ? 'Nuevo PIN (opcional)' : 'Set a new PIN (optional)') : 'PIN'}</label><input id="u-pin" type="password" inputmode="numeric" maxlength="4" value="" placeholder="${id ? (lang === 'es' ? 'Dejar vacío para no cambiar' : 'Leave empty to keep current') : '••••'}"></div>
+      <div class="row2"><div class="field"><label for="u-rate">${lang === 'es' ? 'Pago por hora' : 'Hourly pay'}</label><input id="u-rate" type="number" min="0" step="0.01" value="${esc(u.hourlyRate || '')}"></div>
       <div class="field"><label for="u-lang">${lang === 'es' ? 'Idioma' : 'Language'}</label><select id="u-lang"><option value="en" ${u.lang === 'en' ? 'selected' : ''}>English</option><option value="es" ${u.lang === 'es' ? 'selected' : ''}>Español</option></select></div></div>
+      <div class="field"><label for="u-status">${lang === 'es' ? 'Estado' : 'Status'}</label><select id="u-status"><option value="active" ${u.active !== false ? 'selected' : ''}>${lang === 'es' ? 'Activo' : 'Active'}</option><option value="inactive" ${u.active === false ? 'selected' : ''}>${lang === 'es' ? 'Inactivo' : 'Inactive'}</option></select></div>
+      <div class="field"><label for="u-notes">${t('notes')}</label><textarea id="u-notes">${esc(u.notes || '')}</textarea></div>
       <button class="btn block" onclick="saveUser('${id || ''}')"><i class="fas fa-check"></i> ${t('save')}</button>
       ${id && db.users.length > 1 ? `<button class="btn red block" style="margin-top:10px" onclick="confirmDel(()=>{remove('users','${id}');closeModal();render()})"><i class="fas fa-trash"></i> ${t('delete')}</button>` : ''}`);
   }
   async function saveUser(id) {
     const name = $('#u-name').value.trim(); if (!name) return toast(t('name') + '?', 'error');
-    const pin = $('#u-pin').value.trim();
-    // On an existing person, an empty box means "keep their current code".
-    if (!id && !/^\d{4}$/.test(pin)) return toast('PIN = 4 #', 'error');
-    if (pin && !/^\d{4}$/.test(pin)) return toast('PIN = 4 #', 'error');
-
-    const data = { name, role: $('#u-role').value, lang: $('#u-lang').value };
+    const email = ($('#u-email').value || '').trim().toLowerCase();
+    if (email && !/^\S+@\S+\.\S+$/.test(email)) return toast(lang === 'es' ? 'Correo inválido' : 'Invalid email', 'error');
+    const data = { name, phone: ($('#u-phone').value || '').trim(), email,
+      role: $('#u-role').value, lang: $('#u-lang').value,
+      hourlyRate: Number($('#u-rate').value || 0), active: $('#u-status').value === 'active',
+      notes: ($('#u-notes').value || '').trim() };
     const user = id ? update('users', id, data) : add('users', data);
-    if (pin) {
-      await setUserPin(user, pin);
-      clearFailedPins(user.id);          // a new code clears any lockout
-      user.updated = nowISO();
-      save();
+    if (email) {
+      const response = await serverFetch('/api/invite', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: user.id, email }) });
+      if (!response.ok) return toast(lang === 'es' ? 'Guardado; no se pudo enviar la invitación.' : 'Saved; invitation could not be sent.', 'error');
     }
-    closeModal(); toast(t('saved'), 'success'); render();
+    closeModal(); toast(email ? (lang === 'es' ? 'Guardado. Invitación enviada.' : 'Saved. Invitation sent.') : t('saved'), 'success'); render();
   }
 
   /* ============================ SETTINGS ============================ */
@@ -3842,10 +4067,13 @@ Rules: Never invent precise counts you cannot support from the data — instead 
   }
   function matRowHTML(m) {
     m = m || {};
-    return `<div class="mat-row row2" style="grid-template-columns:1fr 64px 70px;gap:8px;margin-bottom:8px;align-items:center">
+    const matched = m.itemId ? getRateCardItem(m.itemId) : matchRateItem(m.item);
+    const unitPrice = m.unitPrice ?? (matched && matched.rate) ?? 0;
+    return `<div class="mat-row" style="display:grid;grid-template-columns:1fr 64px 80px 104px;gap:8px;margin-bottom:8px;align-items:center">
       <input class="m-item" placeholder="${t('itemL')}" value="${esc(m.item || '')}">
       <input class="m-qty" type="number" step="any" placeholder="${t('qtyL')}" value="${m.qty != null ? esc(String(m.qty)) : ''}">
-      <input class="m-unit" placeholder="${t('unitL')}" value="${esc(m.unit || '')}">
+      <input class="m-unit" placeholder="${t('unitL')}" value="${esc(m.unit || (matched && matched.unit) || '')}">
+      <input class="m-price" type="number" step="0.01" placeholder="${lang === 'es' ? 'Precio' : 'Price'}" value="${unitPrice || ''}" data-item-id="${esc((matched && matched.itemId) || m.itemId || '')}">
     </div>`;
   }
   function addMaterialRow() { const c = $('#mat-rows'); if (!c) return; c.insertAdjacentHTML('beforeend', matRowHTML({})); }
@@ -3857,6 +4085,9 @@ Rules: Never invent precise counts you cannot support from the data — instead 
       item: (r.querySelector('.m-item').value || '').trim(),
       qty: parseFloat(r.querySelector('.m-qty').value) || 0,
       unit: (r.querySelector('.m-unit').value || '').trim(),
+      itemId: r.querySelector('.m-price').dataset.itemId || null,
+      unitPrice: parseFloat(r.querySelector('.m-price').value) || 0,
+      lineTotal: Math.round((parseFloat(r.querySelector('.m-qty').value) || 0) * (parseFloat(r.querySelector('.m-price').value) || 0) * 100) / 100,
     })).filter(m => m.item);
     const cur = d.estimate || {};
     update('documents', docId, { estimate: Object.assign({}, cur, { jobSummary: summary, scope, materials, finalized: true, lang }) });
@@ -3870,11 +4101,16 @@ Rules: Never invent precise counts you cannot support from the data — instead 
       (e.scope && e.scope.length) ? '\n' + e.scope.map(s => '• ' + s).join('\n') : '',
       (e.materials && e.materials.length) ? '\n' + t('materials') + ':\n' + e.materials.map(m => `- ${m.qty || ''} ${m.unit || ''} ${m.item}`.replace(/\s+/g, ' ').trim()).join('\n') : '',
     ].filter(Boolean).join('\n');
-    openEstimateForm(null, d.jobId);
-    setTimeout(() => {
-      const td = $('#e-desc'); if (td) td.value = desc;
-      const tt = $('#e-title'); if (tt && !tt.value) tt.value = (e.jobSummary || d.name || '').slice(0, 50);
-    }, 30);
+    const lineItems = (e.materials || []).map(material => {
+      const matched = material.itemId ? getRateCardItem(material.itemId) : matchRateItem(material.item);
+      const quantity = Number(material.qty || 0);
+      const unitPrice = Number(material.unitPrice ?? (matched && matched.rate) ?? 0);
+      return { itemId: (matched && matched.itemId) || material.itemId || null, description: material.item, quantity, unit: material.unit || (matched && matched.unit) || '', unitPrice, lineTotal: Math.round(quantity * unitPrice * 100) / 100, unmatched: !matched };
+    });
+    const estimate = add('estimates', { jobId: d.jobId, customerId: get('jobs', d.jobId)?.customerId || '', title: (e.jobSummary || d.name || '').slice(0, 80), description: desc, lineItems, baseSubtotal: lineItems.reduce((sum, line) => sum + line.lineTotal, 0), adjustmentPct: 0, adjustmentAmount: 0, amount: lineItems.reduce((sum, line) => sum + line.lineTotal, 0), status: 'draft', sourceDocumentId: docId, date: todayISO() });
+    closeModal();
+    openEstimateForm(estimate.id);
+    if (lineItems.some(line => line.unmatched)) toast(lang === 'es' ? 'Revise los materiales sin precio antes de finalizar.' : 'Review unmatched materials before finalizing.', 'error');
   }
 
   /* ==================== AI plain-language summaries ==================== */
@@ -4568,7 +4804,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     toast(lang === 'es' ? 'Obteniendo ubicación…' : 'Getting location…');
     let lat = null, lng = null, offSite = false;
     try { const p = await getPos(); lat = p.coords.latitude; lng = p.coords.longitude; } catch (e) { }
-    if (lat != null) add('locations', { userId: session.id, lat, lng, jobId, ts: nowISO(), kind: 'check_in' });
+    if (lat != null) add('locations', { userId: session.id, lat, lng, jobId, ts: nowISO(), kind: 'check_in', consentGranted: true, permission: 'granted' });
     if (lat != null && j.siteLat != null) offSite = geoDist(lat, lng, j.siteLat, j.siteLng) > OFFSITE_M;
     const ev = add('job_events', { type: 'check_in', jobId, userId: session.id, lat, lng, offSite, ts: nowISO() });
     update('jobs', jobId, { activeCheckIn: ev.id, status: j.status === 'scheduled' ? 'inProgress' : j.status });
@@ -4602,7 +4838,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     const j = get('jobs', jobId); if (!j) return;
     let lat = null, lng = null;
     try { const p = await getPos(); lat = p.coords.latitude; lng = p.coords.longitude; } catch (e) { }
-    if (lat != null) add('locations', { userId: session.id, lat, lng, jobId, ts: nowISO(), kind: 'check_out' });
+    if (lat != null) add('locations', { userId: session.id, lat, lng, jobId, ts: nowISO(), kind: 'check_out', consentGranted: true, permission: 'granted' });
     add('job_events', { type: 'check_out', jobId, userId: session.id, lat, lng, ts: nowISO() });
     const ci = db.job_events.filter(e => e.jobId === jobId && e.type === 'check_in').sort((a, b) => new Date(b.ts) - new Date(a.ts))[0];
     const co = db.job_events.filter(e => e.jobId === jobId && e.type === 'check_out').sort((a, b) => new Date(b.ts) - new Date(a.ts))[0];
@@ -5098,13 +5334,8 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     document.documentElement.setAttribute('data-theme', localStorage.getItem('otto_theme') || 'dark');
     await load();
     
-    /* Keep names and roles consistent for the fixed set of 19 people.
-       This used to reset everyone's PIN to a hardcoded value on EVERY startup,
-       which meant the owner could not actually change anybody's sign-in code —
-       it came back the next time the app opened. Those codes were also
-       published in the project's documentation and remain in its git history.
-       PIN setting now lives only in the Team screen, where the owner controls
-       it. Do not reintroduce codes here. */
+    /* Remove the retired fixed fake crew from older devices. Real employees
+       created by an administrator use their own ids and are never touched. */
     let _changed = false;
     const fixUser = (id, name, role) => {
       const u = get('users', id);
@@ -5114,25 +5345,11 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
       }
     };
     fixUser('owner-1', 'Otto');
-    fixUser('owner-2', 'Julio Pablo');
+    fixUser('owner-2', 'Julio');
     fixUser('ops-1', 'Sarays');
-    fixUser('it-1', 'Taylor Kim - Logs/IT');
-    // Field workers keep whatever name blankDB() seeded or the owner later set
-    // in Team — do not reset it to blank on every boot (that was the same
-    // reset-on-every-launch bug already fixed for PINs above, just for names).
-    // A one-time backfill fills in a placeholder ONLY where the name is still
-    // blank (from before this fix); it never overwrites a name already set.
-    for (let i = 1; i <= 15; i++) {
-      const fu = get('users', 'field-' + i);
-      if (fu) {
-        if (!fu.name) { fu.name = 'Field Tech ' + i; _changed = true; }
-        if (fu.role !== 'field') { fu.role = 'field'; _changed = true; }
-      }
-    }
-
-    // Clean up legacy duplicated users (keep only the exact 19)
-    const validIds = ['owner-1','owner-2','ops-1','it-1','field-1','field-2','field-3','field-4','field-5','field-6','field-7','field-8','field-9','field-10','field-11','field-12','field-13','field-14','field-15'];
-    const oldUsers = db.users.filter(u => !validIds.includes(u.id) || ['Owner', 'Office', 'Field Worker', 'Accounting', 'Employee Three', 'Employee Four', 'Employee Five'].includes(u.name));
+    const retiredIds = ['it-1', ...Array.from({ length: 15 }, (_, i) => 'field-' + (i + 1))];
+    const oldUsers = db.users.filter(u => retiredIds.includes(u.id) ||
+      ['Owner', 'Office', 'Field Worker', 'Accounting', 'Employee Three', 'Employee Four', 'Employee Five'].includes(u.name));
     if (oldUsers.length > 0) {
       db.users = db.users.filter(u => !oldUsers.includes(u));
       _changed = true;
@@ -5151,11 +5368,13 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     if (_changed) save();
 
     await calcAllWeeklyHours();
-    // Try cloud pull on boot (best-effort). If the server has no database
-    // configured it answers 503 and the app just runs from this device.
     backfillUpdatedStamps();
     await migratePlainPins();
-    try { _cloudAvailable = await cloudPull(); } catch (e) { }
+    await initCloudAuth();
+    const signedIn = await establishCloudSession();
+    if (signedIn) {
+      try { _cloudAvailable = await cloudPull(); } catch (e) { }
+    }
 
     /* Demo content is seeded HERE, after the cloud pull, and only in demo mode.
        Order matters: seeding first is what let a fresh device invent starter
@@ -5167,10 +5386,10 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
        it. isDemoMode() sets the flag above, hence the check after it. */
     else if (_demoJustDisabled && purgeDemoRecords(db)) save();
 
-    startCloudPolling();
-    startPhotoQueueDrainer();
-    const sid = localStorage.getItem('otto_session');
-    if (sid) { session = get('users', sid); }
+    if (signedIn) {
+      startCloudPolling();
+      startPhotoQueueDrainer();
+    }
     if (session) startApp(); else showLogin();
     if ('serviceWorker' in navigator) { try { navigator.serviceWorker.register('./sw.js'); } catch (e) { } }
   }
@@ -5773,7 +5992,9 @@ Return ONLY valid JSON: { "fixtures": [], "pipes": [], "fittings": [], "notes": 
     saveGoogleClient, connectGmail, fetchNewEmails, viewInbox, previewPDF, analyzePdfAI, selectJobForTakeoff, assignTakeoff,
     photoScanCreateCustomer, viewUrgentHub, openUrgentForm, submitUrgentMessage, replyUrgent, resolveUrgent, deletePhotoFile,
     saveNotifyPrefs, refreshIntegrationStatus,
-    openPlumbBotModal, closePlumbBotModal, sendPlumbBotMsg, adjustEstimateMargin });
+    openPlumbBotModal, closePlumbBotModal, sendPlumbBotMsg, adjustEstimateMargin, setEstimateAdjustment, recalculateEstimateForm, addEstimateLine,
+    viewPriceBook, openMaterialForm, saveMaterial, sendCloudSignIn, showCloudLogin, openQuickBooks, exportQuickBooksCSV, shareEstimate, emailEstimate,
+    viewContracts, openContractForm, saveContract });
 
   /* Hooks used only by the automated tests in scripts/. They expose existing
      behaviour so tests can check it; they add no new ability. Deliberately kept
@@ -5788,7 +6009,22 @@ Return ONLY valid JSON: { "fixtures": [], "pipes": [], "fittings": [], "notes": 
   
   boot().then(() => { setTimeout(seedMockKPIs, 500); render(); });
   </script>
-  <script src="./otto-home.js?v=2" data-otto-home-runtime></script>
+  <script src="./otto-home.js?v=3" data-otto-home-runtime></script>
+  <script data-otto-unified-intake-bridge>
+window.__ottoUnifiedIntakeBridge = {
+  getDb: () => db,
+  getSession: () => session,
+  getLang: () => lang,
+  add: (col, obj) => add(col, col === 'users' ? { ...obj, role: 'field' } : obj),
+  update: (col, id, patch) => update(col, id, col === 'users' ? { ...patch, role: 'field' } : patch),
+  save: () => save(),
+  render: () => render(),
+  storeFile: file => storeFile(file),
+  analyzeDrawing: id => analyzeDrawing(id)
+};
+</script>
+  <script src="./otto-unified-intake.js?v=1" data-otto-unified-intake></script>
+  <script src="./otto-unified-intake-redirects.js?v=1" data-otto-unified-intake-redirects></script>
+  <script src="./otto-ui-polish.js?v=2" data-otto-ui-polish-runtime></script>
 </body>
 </html>
-
