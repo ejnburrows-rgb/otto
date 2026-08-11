@@ -14,8 +14,11 @@ run('npm', ['test']);
 run(process.execPath, ['scripts/qa-check.mjs']);
 
 // Only after the source checks pass do we materialize the deployment patches.
+// Keep the flexible-shell patch last so its additive assets/bridge survive the
+// legacy home patch and are present in the static files Vercel actually serves.
 run(process.execPath, ['scripts/apply-photo-retry-patch.mjs']);
 run(process.execPath, ['scripts/apply-otto-home-patch.mjs']);
+run(process.execPath, ['scripts/apply-flex-ui-patch.mjs']);
 run(process.execPath, ['scripts/stamp-version.mjs']);
 
 // Test/tooling source is needed to build and verify, not to serve publicly.
