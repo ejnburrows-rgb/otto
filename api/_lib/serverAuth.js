@@ -1,50 +1,102 @@
-// Shared fail-closed gate for sensitive server endpoints.
-//
-// WHY THIS EXISTS: api/data.js, api/photos.js, api/claude.js, api/nvidia.js,
-// and api/notify.js run with secret server-side keys (Supabase service-role,
-// Anthropic, NVIDIA, Twilio/SendGrid) but have no server-side check of who is
-// calling. Anyone who can reach the URL could otherwise read or change real
-// customer data, pull signed photo links, spend AI credit, or send customer
-// notifications.
-//
-// A real fix needs a real server-side identity/session system with
-// authorization by role — that has not been selected or built yet (see
-// docs/STATUS.md, "MISSING FOR LAUNCH"). AGENTS.md also forbids hand-building
-// one. Until the real thing exists, this module is a closed gate, not a
-// login system: every sensitive route refuses every request and does it
-// before touching Supabase/Anthropic/NVIDIA/Twilio/SendGrid, so no request
-// reaches those services and no response ever carries customer data, signed
-// URLs, provider replies, or message previews.
-//
-// ---------------------------------------------------------------------------
-// 2026-07-31 — RESTORED after a live authentication bypass. Read this before
-// changing anything below.
-//
-// This gate was replaced with hand-rolled JWT verification whose signing secret
-// fell back to a hardcoded development placeholder committed to this
-// repository. That alone let anyone forge a token. Worse, the companion route
-// api/login.js issued a session by taking `userId` and `role` straight from the
-// request body, and returned the SMS code inside the very token it handed the
-// caller — a JWT payload is base64, not encrypted — so any caller could read
-// the code back out and mint themselves an owner session with no PIN, no SMS
-// and no credential of any kind. That token then satisfied this function and
-// unlocked the Supabase service-role key.
-//
-// Both are gone. api/login.js is deleted. If you are reintroducing sign-in: do
-// not hand-build it, do not sign your own tokens, and do not add a development
-// fallback secret. Use the provider's own verification, and replace the `false`
-// below with that check — nothing else about any route needs to change.
-// scripts/test-server-auth.mjs enforces both rules and fails the build if they
-// are broken again.
-// ---------------------------------------------------------------------------
+// Provider-backed identity gate for OTTO server routes.
+// Supabase Auth issues and verifies sessions. OTTO never signs its own tokens.
 
-export function hasServerAuth(_req) {
-  return false; // no real server-side identity/session system exists yet
+function config() {
+  return {
+    url: process.env.SUPABASE_URL,
+    key: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    ownerEmails: String(process.env.OWNER_EMAILS || '')
+      .split(',').map((e) => e.trim().toLowerCase()).filter(Boolean),
+  };
 }
 
-export function denyUnauthenticated(res) {
-  res.status(403).json({
-    error: 'server_auth_not_configured',
-    message: 'This server route is disabled until real server-side sign-in is built. No data was read or changed.',
+function bearerToken(req) {
+  const header = (req && req.headers && (req.headers.authorization || req.headers.Authorization)) || '';
+  const match = /^Bearer\s+(.+)$/i.exec(String(header).trim());
+  return match ? match[1].trim() : null;
+}
+
+async function supabaseUser(token) {
+  const { url, key } = config();
+  const res = await fetch(`${url}/auth/v1/user`, {
+    headers: { Authorization: `Bearer ${token}`, apikey: key },
   });
+  if (!res.ok) return null;
+  const user = await res.json();
+  return user && user.id ? user : null;
+}
+
+async function appUser(authUid) {
+  const { url, key } = config();
+  const res = await fetch(`${url}/rest/v1/users?auth_uid=eq.${encodeURIComponent(authUid)}&select=id,data&limit=1`, {
+    headers: { apikey: key, Authorization: `Bearer ${key}` },
+  });
+  if (!res.ok) return null;
+  const rows = await res.json();
+  const row = Array.isArray(rows) ? rows[0] : null;
+  const data = row && row.data;
+  if (!data || data.deleted || !['owner', 'office', 'field'].includes(data.role)) return null;
+  return { id: row.id, name: data.name, role: data.role };
+}
+
+async function bindBootstrapOwner(authed) {
+  const { url, key, ownerEmails } = config();
+  const email = String(authed.email || '').toLowerCase();
+  if (!email || !ownerEmails.includes(email)) return null;
+  if (!authed.email_confirmed_at && !authed.confirmed_at) return null;
+
+  const headers = { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' };
+  const res = await fetch(`${url}/rest/v1/users?select=id,data,auth_uid&limit=200`, { headers });
+  if (!res.ok) return null;
+  const rows = await res.json();
+  const owners = (Array.isArray(rows) ? rows : []).filter((r) => r.data && r.data.role === 'owner' && !r.data.deleted);
+  const target = owners.find((r) => String((r.data.email || '')).toLowerCase() === email)
+    || owners.find((r) => !r.auth_uid);
+  if (!target) return null;
+
+  const patch = await fetch(`${url}/rest/v1/users?id=eq.${encodeURIComponent(target.id)}`, {
+    method: 'PATCH',
+    headers,
+    body: JSON.stringify({ auth_uid: authed.id, data: { ...target.data, email } }),
+  });
+  if (!patch.ok) return null;
+  return { id: target.id, name: target.data.name, role: 'owner' };
+}
+
+export async function getCaller(req) {
+  try {
+    const { url, key } = config();
+    if (!url || !key) return null;
+    const token = bearerToken(req);
+    if (!token) return null;
+    const authed = await supabaseUser(token);
+    if (!authed) return null;
+    let row = await appUser(authed.id);
+    if (!row) row = await bindBootstrapOwner(authed);
+    if (!row) return null;
+    return { uid: authed.id, id: row.id, name: row.name, role: row.role };
+  } catch {
+    return null;
+  }
+}
+
+export async function hasServerAuth(req) {
+  return (await getCaller(req)) !== null;
+}
+
+export function denyUnauthenticated(res, message) {
+  res.status(403).json({
+    error: 'not_authorized',
+    message: message || 'Sign in again. No data was read or changed.',
+  });
+}
+
+export async function requireCaller(req, res, allowedRoles) {
+  const caller = await getCaller(req);
+  if (!caller) { denyUnauthenticated(res); return null; }
+  if (allowedRoles && !allowedRoles.includes(caller.role)) {
+    denyUnauthenticated(res, 'Your account does not have access to this.');
+    return null;
+  }
+  return caller;
 }
