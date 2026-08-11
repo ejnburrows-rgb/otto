@@ -10,6 +10,7 @@ Before doing anything, read:
 2. `docs/REPO-CONTROL.md`
 3. `docs/STATUS.md`
 4. `docs/DECISIONS.md`
+5. `docs/UNIFIED-FILE-INTAKE.md` for uploads, imports, OCR, or Plans & AutoCAD
 
 The project goal is to finish OTTO as a dependable, demo-ready and production-ready plumbing CRM without redoing completed work.
 
@@ -22,7 +23,7 @@ Permanent rules:
 - Keep `api/_lib/serverAuth.js` fail-closed until issue #70 has a fresh, approved and deployed server-authorization implementation from current `main`.
 - Do not change authentication, payments, live data, production deployment, or paid services without director approval.
 - Do not trust old reports, task queues, branch scripts, or chat summaries over the current repository control files.
-- QuickBooks is out of scope. `docs/NO-QUICKBOOKS.md` is authoritative.
+- QuickBooks is out of scope unless the owner explicitly changes that decision.
 - Do not hardcode test totals. Run the full current suite and report the actual output.
 - Done requires tests, `node scripts/qa-check.mjs`, real-browser verification, mobile and desktop checks, and direct evidence.
 
@@ -34,19 +35,30 @@ Current owner/office UI contract:
 - Do not reintroduce generic drag/reorder behavior.
 - **Julio = green accents. Saray = pink accents. Otto = blue OTTO identity.**
 - Keep the supplied OTTO Plumbing `logo.jpg` as the CRM logo.
-- **Plans & AutoCAD** must be clearly visible and use the existing PDF/DWG/DXF/DWF/DGN job-document workflow.
+- **Plans & AutoCAD** must be clearly visible and use the existing job-document/drawing workflow.
 - **Crew Hours** must show actual recorded hours from job check-in/check-out for the whole field crew.
 - Worker detail stays compact: current job, next job, today/week hours, time-off status. No random heatmaps, fake KPI hours, vanity location counts, or mock performance charts.
 - Owner/office Settings stays restrained: appearance, team access, owner security, data safety, sign out.
 
+Unified file intake:
+
+- Use one **Upload / Import** front door instead of separate competing spreadsheet/OCR/CAD upload experiences.
+- `.xlsx`, `.xls`, `.csv` are parsed directly as structured employee data; do not OCR spreadsheets.
+- Photos/scans use browser-side bilingual OCR with English + Spanish.
+- `.dwg`, `.dxf`, `.dwf`, `.dgn` require a job and reuse the existing drawing pipeline.
+- PDF asks one simple choice: **Read text / scanned document** or **Plan / drawing**.
+- All applicable flows end in review before save.
+- Employee imports are always **Field Worker**, never import PINs, and never fabricate attendance.
+- Do not restore the old provider-key/Claude OCR flow as the normal user experience.
+
 Current priority order:
 
 1. Finish and prove the owner/office workspace above.
-2. Photo-upload reliability: never silently abandon a locally stored photo; keep retrying and show its pending/not-sent state.
-3. Safe server authorization from current `main` under issue #70, preserving offline PIN unlock.
-4. Cross-device record/photo proof with role and record-level isolation.
-5. Reconcile verified duplicate/demo live rows under issue #111 only after backup, dependency review, and explicit destructive-action approval.
-6. OCR/drawing reliability and clear failure messages.
+2. Finish and prove unified file intake.
+3. Photo-upload reliability: never silently abandon a locally stored photo; keep retrying and show its pending/not-sent state.
+4. Safe server authorization from current `main` under issue #70, preserving offline PIN unlock.
+5. Cross-device record/photo proof with role and record-level isolation.
+6. Reconcile verified duplicate/demo live rows under issue #111 only after backup, dependency review, and explicit destructive-action approval.
 7. Notifications only after authenticated server access is proven.
 8. Final production and demo readiness.
 
