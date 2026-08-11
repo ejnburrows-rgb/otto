@@ -91,12 +91,12 @@ for (const f of mustBeHidden) {
   check(`${f} is not published`, code !== '200', `HTTP ${code}`);
 }
 
-// ── 4. The security gate is still shut ───────────────────────────────────────
-// From docs/DEPLOYMENT-VERIFY.md. Status codes only — never response bodies,
-// which would mean touching real customer data.
+// ── 4. Anonymous access is refused ───────────────────────────────────────────
+// Status codes only — never response bodies, which would mean touching real
+// customer data. Authenticated access is covered separately with test accounts.
 for (const [route, method] of [['data', 'GET'], ['claude', 'POST'], ['nvidia', 'POST'], ['notify', 'POST'], ['photos', 'GET']]) {
   const code = status(`${SITE}/api/${route}`, method);
-  check(`/api/${route} refuses an unauthenticated request`, code === '403', `HTTP ${code}`);
+  check(`/api/${route} refuses an unauthenticated request`, code === '401', `HTTP ${code}`);
 }
 
 console.log(`\n${passed} passed, ${failed} failed${skipped ? `, ${skipped} noted` : ''}\n`);

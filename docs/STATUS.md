@@ -8,14 +8,15 @@ This file is the current factual snapshot. Historical incident detail remains in
 
 ## Production now
 
-- Production is currently built from `main` after PR #125 merged the unified file-intake work.
+- The public production alias is still serving the older `79b7b4b` build. Current `main` is newer and must be promoted before the secure sign-in becomes live.
 - Core offline-first CRM records and workflows remain present: customers, jobs, calls, notes, estimates, invoices, payments, checks, follow-ups, payroll intake, documents, reports, backups, Inbox, field check-in/out, work-only location records, and Ask OTTO.
 - English/Spanish and light/dark modes are part of the app.
 - The supplied OTTO Plumbing wordmark is `logo.jpg` and is the approved CRM logo.
 - Julio and Saray have committed wallpaper assets.
 - Failed job-photo uploads remain in a persistent retry flow instead of being silently abandoned.
-- Local PINs are device-level convenience only; they are not server authorization.
-- QuickBooks is intentionally out of scope; OTTO keeps its own invoice/payment/payroll workflows and generic exports.
+- Current source uses Supabase email-link identity, persistent sessions, server-controlled OTTO roles, and record/job-level restrictions for field employees.
+- Current source treats employee location as optional: approve or deny, continue either way, and collect work location only after approval.
+- QuickBooks is a manual handoff only: copy/export details and open QuickBooks separately, with no OAuth or synchronization.
 
 ## Current owner / office UI contract
 
@@ -51,9 +52,9 @@ PR #125 replaced the competing spreadsheet/OCR/CAD entry patterns with one curre
 
 `docs/UNIFIED-FILE-INTAKE.md` is authoritative for this area.
 
-## UI premium refinement — PR #126
+## UI premium refinement — merged
 
-A focused refinement branch is in progress on top of current `main`. It does **not** redesign the workspace or change CRM business logic.
+The focused refinement is merged on current `main`. It does **not** redesign the workspace or change CRM business logic.
 
 Implemented on the branch:
 
@@ -69,28 +70,29 @@ Implemented on the branch:
 
 The Vercel build path was corrected so final QA runs **after** all deployment layers are materialized; this prevents a test from passing while the deployed page accidentally omits the polish assets.
 
-**PR #126 is not production-approved yet.** It remains gated on exact-head Vercel build/asset verification and an interactive browser pass of the actual preview at desktop and phone widths. Do not claim the visual refinement fully verified until that click-through exists.
+The current authenticated preview renders the premium sign-in screen in English and Spanish with no broken image or horizontal overflow. Full signed-in multi-account proof still requires real administrator accounts.
 
 ## Verified engineering evidence
 
 - The merged three-window workspace has previously completed its repository regression and QA chain on Vercel with zero failures.
 - The merged unified file-intake production build completed its current regression/QA chain successfully on Vercel.
 - PR #126 preview builds have run the full current source/unit suite, including dedicated UI-polish checks, and `qa-check` after the deployment layers were applied.
-- The server notification route remains expectedly blocked with HTTP 403 while authorization is fail-closed.
+- Anonymous server requests return HTTP 401 before business data is read. Provider-token and role enforcement pass the repository regression suite.
 - GitHub Actions may still fail before assigning a runner because of the account billing condition; that is an external verification blocker, not a passing or failing product test.
 
 Do not hardcode old test totals as permanent truth; report the actual output of the current run.
 
 ## Broken / risky
 
-- **Server authorization is not finished.** Sensitive server routes remain fail-closed. Local PINs do not provide safe record-level server authorization.
-- **Cross-device proof is incomplete.** Do not promise safely shared records, photos, notifications, or server AI until issue #70 is completed and independently verified.
-- **Live duplicate/demo data reconciliation is still pending** under issue #111. No live deletion is authorized without backup and exact dependency review.
+- **Production is behind current source.** The live alias still shows device-only PIN setup because the provider-authenticated build has not been promoted.
+- **Administrator activation is incomplete.** Otto has a confirmed email in the business profile; Julio and Sarays still need confirmed email addresses. Supabase Auth currently has zero users until an authorized person completes the first secure email-link sign-in.
+- **Cross-device proof is incomplete.** The server authorization tests pass, but the owner/field multi-device workflow cannot be completed until real accounts sign in.
+- **Provider delivery is not proven.** Customer email/text and server AI require configured provider credentials and a real delivery test.
 - Historical branches and documentation remain in Git history. `AGENTS.md` and `docs/REPO-CONTROL.md` are authoritative; do not resurrect superseded UI/auth/upload branches wholesale.
 
 ## Remaining release proof
 
-Before describing PR #126 as finished and production-ready:
+Before describing OTTO as fully production-ready:
 
 1. Verify the exact PR head has a READY Vercel preview and stamped version marker.
 2. Confirm the deployed page actually loads the UI-polish CSS/JS and service worker caches them.
@@ -99,6 +101,6 @@ Before describing PR #126 as finished and production-ready:
 5. On phone, verify the bottom dock, full-width working stage, touch targets, scrolling and window-state controls.
 6. Exercise representative secondary screens, forms, wrapped tabs, empty states, dialogs, confirmations, EN/ES and light/dark.
 7. Confirm no JavaScript errors, broken images, hidden controls, unintended horizontal overflow, or regressions to unified intake.
-8. Keep production untouched until the preview evidence is accepted.
+8. Promote the exact verified build to production and repeat the anonymous/authenticated checks on the public alias.
 
 Do not report these gates as complete without direct evidence.

@@ -58,24 +58,20 @@ Uploads, imports, OCR, and Plans & AutoCAD follow one user model: **Give OTTO th
 - The local/offline CRM and built-in demo are present.
 - English/Spanish, light/dark, personal identity treatment, and offline behavior must be preserved.
 - The Supabase project and core production tables already exist. This is **not** waiting on initial database creation or merely two Vercel variables.
-- Sensitive server routes remain intentionally fail-closed until the fresh server-authorization work in issue **#70** is implemented and proven from current `main`.
-- The older Supabase Auth attempt, PR **#103**, was reviewed and closed unmerged. Do not resurrect or merge that branch wholesale.
-- Duplicate/demo live records are tracked separately in issue **#111**; no live deletion is authorized by this README.
+- Supabase provider identity and server-controlled OTTO roles are implemented on current `main`; anonymous requests fail before business data is read.
+- The older Supabase Auth attempt, PR **#103**, remains obsolete and must not be restored.
+- Live Supabase currently contains only the three administrator profiles and no customer, job, estimate, invoice, or payment rows.
 - Failed photo uploads must remain queued and visibly pending instead of being silently abandoned.
 
 ## Authentication and shared sync
 
-A local PIN is a convenient device unlock; it is not sufficient server authorization.
+OTTO uses Supabase email-link authentication with persistent sessions. The server verifies the provider token, then reads the role from the server-controlled OTTO user profile. Field accounts receive only assigned-job data; management, accounting, unrelated jobs, and unrelated photos remain blocked.
 
-The replacement server authorization must be built fresh from current `main` under issue #70 using provider-backed identity, explicit role allowlists, record/job-level authorization, fail-closed defaults, and deployed multi-account proof.
-
-Until that work is complete, do not describe shared server data, cross-device photo access, notifications, or server AI as safely production-enabled simply because backend code or environment variables exist.
+An employee may allow or deny work-location sharing and continue using OTTO either way. Location requests and samples are limited to consenting field employees during assigned work.
 
 ## QuickBooks
 
-**QuickBooks/Intuit integration is deliberately out of scope.** `docs/NO-QUICKBOOKS.md` is authoritative.
-
-Keep OTTO's native invoices/payments, generic CSV export, payroll import, jobs, customers, documents, reports, Inbox, and Ask OTTO. Do not restore `/api/quickbooks`, Intuit OAuth, QuickBooks credentials, QuickBooks-specific UI, or QuickBooks-specific tests without a new explicit requirement.
+OTTO provides a manual QuickBooks handoff: copy details, export useful data, and open the official QuickBooks site separately. It does not use Intuit OAuth, background synchronization, QuickBooks API routes, or duplicate accounting logic.
 
 ## Main capabilities
 
@@ -94,7 +90,7 @@ Keep OTTO's native invoices/payments, generic CSV export, payroll import, jobs, 
 - Light and dark modes
 - Offline-first PWA behavior
 
-Some provider/server-backed capabilities remain blocked until issue #70 is complete. Code presence alone is not proof that a feature is live.
+Provider-backed customer notifications and server AI still require their company service credentials. Code presence alone is not delivery proof.
 
 ## Development and verification
 

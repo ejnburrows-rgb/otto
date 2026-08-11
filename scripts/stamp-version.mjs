@@ -29,9 +29,8 @@ const marker = {
   commit,
   shortCommit: commit.slice(0, 7),
   builtAt: new Date().toISOString(),
-  // Restated so the deployed artifact itself carries the claim, not just a doc:
-  // the sensitive server routes are closed until real server-side sign-in ships.
-  serverAuth: 'fail-closed',
+  // Restated so the deployed artifact itself carries the claim, not just a doc.
+  serverAuth: 'supabase-provider',
 };
 
 writeFileSync(new URL('../version.json', import.meta.url), JSON.stringify(marker, null, 2) + '\n');

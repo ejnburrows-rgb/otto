@@ -37,8 +37,9 @@ const retiredGuideClaims = [
   'Back to panels'
 ];
 check('guide no longer promises blocked or retired behavior', retiredGuideClaims.every((s) => !guide.includes(s)));
-check('guide states the fail-closed cloud limitation', guide.includes('Server routes are fail-closed right now'));
-check('guide states QuickBooks is not part of the current product', guide.includes('QuickBooks is not part of the current product'));
+check('guide explains secure cloud sign-in', guide.includes('Secure cloud sign-in'));
+check('guide explains the manual QuickBooks handoff boundary', guide.includes('manual handoff only'));
+check('guide explains optional location sharing', guide.includes('may allow or deny work-location sharing'));
 check('guide documents the three-window workspace', guide.includes('Three primary windows are open together') && guide.includes('minimized') && guide.includes('full screen'));
 check('guide documents Julio green and Saray pink identity', guide.includes('Julio’s interface uses green accents') && guide.includes('Saray’s uses pink accents'));
 check('guide documents Plans & AutoCAD', guide.includes('PDF, DWG, DXF, DWF, or DGN'));

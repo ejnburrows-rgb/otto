@@ -21,9 +21,8 @@ import { requireServerAuth } from './_lib/serverAuth.js';
 
 const BUCKET = 'job-photos';
 
-// Fail-closed gate first: no real server-side sign-in exists yet, so every
-// request is refused before it can reach Supabase Storage. See
-// api/_lib/serverAuth.js.
+// Provider-backed identity and job access are verified before Supabase Storage
+// is reached. See api/_lib/serverAuth.js.
 export default async function handler(req, res) {
   const identity = await requireServerAuth(req, res);
   if (!identity) return;
@@ -35,8 +34,7 @@ export default async function handler(req, res) {
   return photosHandler(req, res, identity);
 }
 
-// The real relay logic, kept separate so it stays fully covered by tests even
-// while the gate above refuses every live request.
+// The relay logic remains separate so storage behavior stays fully testable.
 export async function photosHandler(req, res, identity = { role: 'owner', userId: 'test-owner' }) {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
