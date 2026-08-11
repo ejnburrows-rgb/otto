@@ -262,6 +262,42 @@ body.otto-secondary .success {
   border: 1px solid color-mix(in srgb, var(--text2) 18%, var(--line));
 }
 
+/* Operational form states: make it immediately obvious where the user is
+   typing, and distinguish locked/disabled values from editable information. */
+body.otto-secondary .field input:focus-visible,
+body.otto-secondary .field select:focus-visible,
+body.otto-secondary .field textarea:focus-visible,
+body.otto-secondary .searchbar input:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--action) 68%, var(--line));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--action) 14%, transparent);
+}
+
+body.otto-secondary .field input:disabled,
+body.otto-secondary .field select:disabled,
+body.otto-secondary .field textarea:disabled,
+body.otto-secondary .field input[readonly],
+body.otto-secondary .field textarea[readonly] {
+  opacity: .72;
+  background: color-mix(in srgb, var(--text2) 6%, var(--card));
+  border-style: dashed;
+  cursor: not-allowed;
+}
+
+body.otto-secondary .btn:focus-visible,
+body.otto-secondary .tabs button:focus-visible,
+body.otto-secondary .otto-back-home:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--action) 18%, transparent);
+}
+
+body.otto-secondary .btn:disabled,
+body.otto-secondary .btn[aria-disabled="true"] {
+  opacity: .55;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
 @media (max-width: 1180px) and (min-width: 761px) {
   body.theme-app {
     --otto-taskbar-w: 196px;
@@ -370,6 +406,16 @@ body.otto-secondary .success {
 
   body.otto-secondary .tabs button {
     flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  body.otto-secondary .card .btn + .btn {
+    margin-top: 8px;
+  }
+
+  body.otto-secondary .card > .btn.primary,
+  body.otto-secondary .card > .btn.is-primary {
+    width: 100%;
     justify-content: center;
   }
 }
