@@ -1,6 +1,6 @@
 # STATUS — OTTO Plumbing CRM
 
-Last updated: 2026-08-10.
+Last updated: 2026-08-11.
 
 This file is the current factual snapshot. Historical incident detail remains in Git history and issue/PR discussions; it is intentionally not repeated here because stale status narratives were causing agents to redo completed work or restore superseded UI decisions.
 
@@ -35,9 +35,26 @@ This is the required UI direction. It supersedes the one-panel-at-a-time home th
 - Random heatmaps, fake hours formulas, mock performance charts, vanity location counts, and login-history presentation are not part of the approved worker UI.
 - Owner/office Settings is intentionally reduced to appearance, team access, owner security, data safety, and sign out. Provider keys and unfinished integration setup are not promoted as normal owner-facing controls.
 
+## Unified file intake — 2026-08-11 branch work
+
+Branch `feat/unified-file-intake` now defines one Upload / Import model for spreadsheets, OCR and Plans & AutoCAD:
+
+- Excel/XLS/CSV reads structured cells directly and ends in an editable employee review table.
+- Spreadsheet employee writes are forced to Field Worker; PINs are never imported.
+- Imported workers can receive an attendance-roster marker, but no `check_in` or `check_out` events are fabricated.
+- Images and scanned PDFs use browser-side Tesseract OCR with English + Spanish languages loaded together.
+- OCR output remains visible for review and can deliberately feed the same employee-review flow.
+- DWG/DXF/DWF/DGN files require a job and reuse the existing document storage plus `analyzeDrawing` pipeline.
+- PDF asks one explicit choice between document OCR and plan/drawing instead of guessing.
+- The Plans & AutoCAD contextual upload action and old job-document upload buttons are redirected into the unified intake. Old customer/check scan buttons that launched the separate provider-key OCR path are retired from the visible UI.
+- The legacy startup cleanup is corrected so legitimate newly imported employees are not removed merely because they have non-seed IDs.
+- Obsolete active-looking OCR handoffs `docs/HANDOFF-PHOTOS-OCR.md` and `docs/AGENT-HANDOFF.md` are removed on the branch; Git history remains the historical record.
+
+This branch is **not yet production-approved**. It still requires the full test/QA chain, Vercel preview build, and interactive browser verification before integration or production deployment.
+
 ## Verified build evidence
 
-- Vercel successfully built and deployed branch commit `98c6c1ebdf885b5e7e7ec574f5a9f8cce020a5c6` as a READY preview.
+- Vercel successfully built and deployed branch commit `98c6c1ebdf885b5e7e7ec574f5a9f8cce020a5c6` as a READY preview for the prior owner-workspace revision.
 - That commit contains the final runtime/CSS, current home tests, current live-surface tests, current guide, README, repository control, and paste-in brief. The later branch commits before this status update changed documentation only.
 - The Vercel build completed JavaScript syntax checks and the full repository test command with zero failures.
 - The rewritten final workspace regression suite reported **73 passed, 0 failed**.
@@ -73,12 +90,14 @@ This is the required UI direction. It supersedes the one-panel-at-a-time home th
 
 ## Remaining release proof
 
-Before describing this UI revision as fully production-proven, verify after integration that:
+Before describing this UI revision or the unified intake as fully production-proven, verify after integration that:
 
 1. The production deployment points to the accepted revision.
-2. The production URL serves the new `otto-home.js?v=3` and `otto-home.css?v=3` assets.
+2. The production URL serves the accepted workspace and unified-intake assets.
 3. The real app is exercised interactively at desktop and phone widths for Julio, Saray, and Otto, including minimize → restore → maximize → restore → full screen → restore.
-4. A non-destructive Plans & AutoCAD upload exercise and Crew Hours comparison against known check-in/check-out records are completed in the real browser environment.
-5. No browser JavaScript errors, broken images, or unintended horizontal overflow appear during that interactive verification.
+4. Unified intake is exercised non-destructively with spreadsheet, image, PDF OCR mode, PDF plan mode, and CAD plan routing; the review step and Field Worker-only employee save behavior are proven.
+5. A Plans & AutoCAD upload is linked to the correct job and reuses the existing analysis pipeline.
+6. Crew Hours is compared against known check-in/check-out records.
+7. No browser JavaScript errors, broken images, or unintended horizontal overflow appear during interactive verification.
 
 Do not report these remaining gates as complete without direct evidence.
