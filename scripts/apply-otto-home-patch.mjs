@@ -15,9 +15,7 @@ export function patchSource(source) {
   let out = source;
 
   const replacements = [
-    ["{ id: 'owner-2', name: 'Julio', role: 'owner'", "{ id: 'owner-2', name: 'Julio Pablo', role: 'owner'"],
     ["{ id: 'ops-1', name: 'Saray', role: 'office'", "{ id: 'ops-1', name: 'Sarays', role: 'office'"],
-    ["fixUser('owner-2', 'Julio');", "fixUser('owner-2', 'Julio Pablo');"],
     ["fixUser('ops-1', 'Saray');", "fixUser('ops-1', 'Sarays');"],
     ['PlumbBot AI Assistant', 'Ask OTTO'],
     ['Online · Boss-Level Intelligence', 'Assistant'],
@@ -39,7 +37,6 @@ export function patchSource(source) {
     ["connectQuickBooks: 'Conectar QuickBooks', quickBooksSection: 'QuickBooks', ", ''],
     ['<option>Cash</option><option>Check</option><option>Card</option><option>Transfer</option><option>QuickBooks</option>', '<option>Cash</option><option>Check</option><option>Card</option><option>Transfer</option>'],
     ["openUserForm, saveUser, toggleTheme,\n    cloudPullNow", "openUserForm, saveUser, toggleTheme,\n    cloudPullNow"],
-    ['exportCSV, exportQuickBooks, openUserForm', 'exportCSV, openUserForm'],
     ['connectQuickBooks, saveNotifyPrefs, refreshIntegrationStatus', 'saveNotifyPrefs, refreshIntegrationStatus']
   ];
 
@@ -64,10 +61,6 @@ export function patchSource(source) {
   out = out.replace(
     /\s*const qbEl = \$\('#qb-status'\); const nEl = \$\('#notify-status'\);\n\s*try \{\n\s*const qb = await serverFetch\('\/api\/quickbooks\?action=status'\)[\s\S]*?\} catch \(e\) \{ if \(qbEl\) qbEl\.textContent = t\('notConfigured'\); \}\n/g,
     "    const nEl = $('#notify-status');\n"
-  );
-  out = out.replace(
-    /\n\s*\/\* ============================ QuickBooks export ============================ \*\/[\s\S]*?\n\s*function exportCSV\(col\)/g,
-    '\n  function exportCSV(col)'
   );
   out = out.replace(
     /\n\s*async function connectQuickBooks\(\) \{[\s\S]*?\n\s*\}\n(?=\s*(?:async )?function |\s*\/\*|\s*Object\.assign)/g,
@@ -100,9 +93,9 @@ export function patchRuntime(source) {
 
 export function validatePatchedSource(source) {
   return [
-    ['Julio Pablo canonical seed', source.includes("id: 'owner-2', name: 'Julio Pablo'")],
+    ['Julio canonical seed', source.includes("id: 'owner-2', name: 'Julio'")],
     ['Sarays canonical seed', source.includes("id: 'ops-1', name: 'Sarays'")],
-    ['Julio Pablo migration', source.includes("fixUser('owner-2', 'Julio Pablo');")],
+    ['Julio migration', source.includes("fixUser('owner-2', 'Julio');")],
     ['Sarays migration', source.includes("fixUser('ops-1', 'Sarays');")],
     ['workspace stylesheet wired', source.includes(`href="./otto-home.css?v=${HOME_ASSET_VERSION}" data-otto-home-styles`)],
     ['workspace runtime wired', source.includes(`src="./otto-home.js?v=${HOME_ASSET_VERSION}" data-otto-home-runtime`)],
@@ -117,7 +110,7 @@ export function validatePatchedSource(source) {
     ['legacy PlumbBot heading removed', !source.includes('PlumbBot AI Assistant')],
     ['QuickBooks API calls removed', !source.includes('/api/quickbooks')],
     ['QuickBooks connect handler removed', !source.includes('connectQuickBooks')],
-    ['QuickBooks export helper removed', !source.includes('exportQuickBooks')],
+    ['QuickBooks handoff has no API sync', source.includes('exportQuickBooksCSV') && !source.includes('/api/quickbooks')],
     ['QuickBooks settings section removed', !source.includes('quickBooksSection')]
   ];
 }

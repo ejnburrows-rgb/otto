@@ -8,7 +8,7 @@ const REDIRECTS = `<script src="./otto-unified-intake-redirects.js?v=${INTAKE_AS
 const BRIDGE = `<script data-otto-unified-intake-bridge>\nwindow.__ottoUnifiedIntakeBridge = {\n  getDb: () => db,\n  getSession: () => session,\n  getLang: () => lang,\n  add: (col, obj) => add(col, col === 'users' ? { ...obj, role: 'field' } : obj),\n  update: (col, id, patch) => update(col, id, col === 'users' ? { ...patch, role: 'field' } : patch),\n  save: () => save(),\n  render: () => render(),\n  storeFile: file => storeFile(file),\n  analyzeDrawing: id => analyzeDrawing(id)\n};\n</script>`;
 
 const UNSAFE_USER_PRUNE = `const oldUsers = db.users.filter(u => !validIds.includes(u.id) || ['Owner', 'Office', 'Field Worker', 'Accounting', 'Employee Three', 'Employee Four', 'Employee Five'].includes(u.name));`;
-const SAFE_USER_PRUNE = `const oldUsers = db.users.filter(u => ['Owner', 'Office', 'Field Worker', 'Accounting', 'Employee Three', 'Employee Four', 'Employee Five'].includes(u.name));`;
+const SAFE_USER_PRUNE = `const oldUsers = db.users.filter(u => retiredIds.includes(u.id) ||`;
 
 export function patchUnifiedIntake(source) {
   let out = source;

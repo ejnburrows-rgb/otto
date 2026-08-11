@@ -430,6 +430,8 @@
         </section>
         <section><h3>${L ? 'Dinero' : 'Money'}</h3>
           ${can('estimates') ? item('fa-file-signature', t('estimates'), '', 'estimates') : ''}
+          ${can('pricing') ? item('fa-tags', L ? 'Precios de materiales' : 'Material Pricing', L ? 'Valores predeterminados editables' : 'Editable estimate defaults', 'pricing') : ''}
+          ${can('contracts') ? item('fa-file-contract', L ? 'Contratos' : 'Contracts', '', 'contracts') : ''}
           ${can('invoices') ? item('fa-file-invoice-dollar', t('invoices'), '', 'invoices') : ''}
           ${can('payments') ? item('fa-credit-card', t('payments'), '', 'payments') : ''}
           ${can('payroll') ? item('fa-money-check-dollar', t('payroll'), '', 'payroll') : ''}

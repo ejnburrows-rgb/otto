@@ -19,7 +19,7 @@
 //   GET  /api/data                  -> returns every collection as one object
 //   POST /api/data { collection, records } -> saves records for one collection
 
-import { hasServerAuth, denyUnauthenticated } from './_lib/serverAuth.js';
+import { requireServerAuth } from './_lib/serverAuth.js';
 
 const COLLECTIONS = ['customers', 'jobs', 'calls', 'notes', 'photos', 'documents', 'estimates',
   'invoices', 'payments', 'checks', 'followups', 'workflows', 'sops', 'users', 'locations', 'folders',
@@ -33,13 +33,14 @@ const COLLECTIONS = ['customers', 'jobs', 'calls', 'notes', 'photos', 'documents
 // Fail-closed gate first: no real server-side sign-in exists yet, so every
 // request is refused before it can reach Supabase. See api/_lib/serverAuth.js.
 export default async function handler(req, res) {
-  if (!hasServerAuth(req)) { denyUnauthenticated(res); return; }
-  return dataHandler(req, res);
+  const identity = await requireServerAuth(req, res);
+  if (!identity) return;
+  return dataHandler(req, res, identity);
 }
 
 // The real proxy logic, kept separate so it stays fully covered by tests even
 // while the gate above refuses every live request.
-export async function dataHandler(req, res) {
+export async function dataHandler(req, res, identity = { role: 'owner', userId: 'test-owner', profile: { id: 'test-owner', role: 'owner' } }) {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) {
@@ -57,13 +58,24 @@ export async function dataHandler(req, res) {
 
   try {
     if (req.method === 'GET') {
-      const result = await readEveryCollection(url, headers);
+      if (req.query && (req.query.session === '1' || req.query.session === 1)) {
+        res.status(200).json({ profile: identity.profile });
+        return;
+      }
+      const result = await readEveryCollection(url, headers, identity);
+      result._session = identity.profile;
       res.status(200).json(result);
       return;
     }
     if (req.method === 'POST') {
-      const { status, body } = await saveOneCollection(url, headers, await parseBody(req));
-      res.status(status).json(body);
+      const body = await parseBody(req);
+      const allowed = await authorizeWrite(url, headers, identity, body);
+      if (!allowed.ok) {
+        res.status(403).json({ error: 'forbidden', message: allowed.message });
+        return;
+      }
+      const { status, body: savedBody } = await saveOneCollection(url, headers, body);
+      res.status(status).json(savedBody);
       return;
     }
     res.status(405).json({ error: 'method_not_allowed' });
@@ -77,19 +89,93 @@ export async function dataHandler(req, res) {
 // A collection that fails comes back as null, which the app treats as "skip
 // this one" rather than "this collection is empty" — important, because
 // treating a failed read as empty would wipe good data off the device.
-async function readEveryCollection(url, headers) {
+const FIELD_COLLECTIONS = new Set([
+  'users', 'customers', 'jobs', 'notes', 'photos', 'documents', 'followups', 'locations',
+  'job_events', 'job_checklists', 'consent_records', 'checklist_submissions', 'pto_requests',
+  'time_off', 'employee_messages',
+]);
+
+function isAssignedJob(job, userId) {
+  if (!job) return false;
+  const assignments = [job.assignedTo, job.workerId, job.employeeId]
+    .concat(job.assignedWorkerIds || [], job.assignedToIds || [])
+    .filter(Boolean);
+  return assignments.includes(userId);
+}
+
+function fieldRecordVisible(collection, record, context) {
+  if (!record || record.deleted === true) return false;
+  const { userId, jobIds, customerIds } = context;
+  if (collection === 'users') return record.id === userId;
+  if (collection === 'jobs') return jobIds.has(record.id);
+  if (collection === 'customers') return customerIds.has(record.id);
+  if (['locations', 'consent_records', 'pto_requests', 'time_off', 'employee_messages'].includes(collection)) {
+    return [record.workerId, record.userId, record.employeeId, record.createdBy].filter(Boolean).includes(userId);
+  }
+  return jobIds.has(record.jobId) || jobIds.has(record.associatedJobId) ||
+    [record.workerId, record.userId, record.employeeId, record.createdBy, record.assignedTo].filter(Boolean).includes(userId);
+}
+
+async function readRows(url, headers, collection) {
+  const response = await fetch(`${url}/rest/v1/${encodeURIComponent(collection)}?select=data`, { headers });
+  if (!response.ok) return null;
+  const rows = await response.json();
+  return rows.map((row) => row.data).filter(Boolean);
+}
+
+async function fieldContext(url, headers, identity) {
+  const jobs = (await readRows(url, headers, 'jobs')) || [];
+  const assignedJobs = jobs.filter((job) => isAssignedJob(job, identity.userId));
+  return {
+    userId: identity.userId,
+    jobs: assignedJobs,
+    jobIds: new Set(assignedJobs.map((job) => job.id)),
+    customerIds: new Set(assignedJobs.map((job) => job.customerId).filter(Boolean)),
+  };
+}
+
+async function readEveryCollection(url, headers, identity) {
   const out = {};
+  const context = identity.role === 'field' ? await fieldContext(url, headers, identity) : null;
   await Promise.all(COLLECTIONS.map(async (col) => {
-    const r = await fetch(`${url}/rest/v1/${encodeURIComponent(col)}?select=data`, { headers });
-    if (!r.ok) {
-      console.warn(`read failed for ${col}: HTTP ${r.status}`);
+    if (context && !FIELD_COLLECTIONS.has(col)) {
       out[col] = null;
       return;
     }
-    const rows = await r.json();
-    out[col] = rows.map((row) => row.data);
+    const rows = await readRows(url, headers, col);
+    if (!rows) {
+      out[col] = null;
+      return;
+    }
+    out[col] = context ? rows.filter((record) => fieldRecordVisible(col, record, context)) : rows;
   }));
   return out;
+}
+
+async function authorizeWrite(url, headers, identity, body) {
+  if (identity.role === 'owner' || identity.role === 'office') return { ok: true };
+  const collection = body && body.collection;
+  if (!FIELD_COLLECTIONS.has(collection) || collection === 'users' || collection === 'customers') {
+    return { ok: false, message: 'Field accounts can only update their assigned work.' };
+  }
+  const records = (Array.isArray(body.records) ? body.records : [body.records]).filter(Boolean);
+  const context = await fieldContext(url, headers, identity);
+  for (const record of records) {
+    if (collection === 'jobs') {
+      const existing = context.jobs.find((job) => job.id === record.id);
+      if (!existing || record.assignedTo !== existing.assignedTo || record.customerId !== existing.customerId) {
+        return { ok: false, message: 'A field account cannot reassign a job or change its customer.' };
+      }
+      continue;
+    }
+    if (!fieldRecordVisible(collection, record, context)) {
+      return { ok: false, message: 'This record is not connected to the signed-in employee or an assigned job.' };
+    }
+    if (collection === 'locations' && record.consentGranted !== true && record.permission !== 'granted') {
+      return { ok: false, message: 'Location sharing requires employee consent.' };
+    }
+  }
+  return { ok: true };
 }
 
 // Saves the records of a single collection. Returns the status and body for
