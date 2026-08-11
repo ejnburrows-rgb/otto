@@ -11,6 +11,14 @@ const SCRIPT = `<script src="./otto-flex-ui.js?v=${FLEX_ASSET_VERSION}" data-ott
 const TRANSLATION_SCRIPT = `<script src="./otto-flex-translation-fixes.js?v=${FLEX_ASSET_VERSION}" data-otto-flex-translation-runtime></script>`;
 const OCR_SCRIPT = `<script src="./otto-flex-ocr-v2.js?v=${FLEX_ASSET_VERSION}" data-otto-flex-ocr-runtime></script>`;
 
+/* The legacy boot cleanup used to delete every user whose id was not one of the
+   original 19 seed ids. That is incompatible with real employee imports: add()
+   correctly generates a new id, but the next reload would then delete that
+   imported field worker. Keep the cleanup for the known old placeholder rows,
+   but never prune a legitimate user merely because their id is new. */
+const UNSAFE_USER_PRUNE = `const oldUsers = db.users.filter(u => !validIds.includes(u.id) || ['Owner', 'Office', 'Field Worker', 'Accounting', 'Employee Three', 'Employee Four', 'Employee Five'].includes(u.name));`;
+const SAFE_USER_PRUNE = `const oldUsers = db.users.filter(u => ['Owner', 'Office', 'Field Worker', 'Accounting', 'Employee Three', 'Employee Four', 'Employee Five'].includes(u.name));`;
+
 export function patchFlexSource(source) {
   let out = source;
   out = out.replace(/\s*<link\b[^>]*\bdata-otto-flex-ui-styles\b[^>]*>\s*/g, '\n');
@@ -19,6 +27,8 @@ export function patchFlexSource(source) {
   out = out.replace(/\s*<script\b[^>]*\bdata-otto-flex-ui-runtime\b[^>]*><\/script>\s*/g, '\n');
   out = out.replace(/\s*<script\b[^>]*\bdata-otto-flex-translation-runtime\b[^>]*><\/script>\s*/g, '\n');
   out = out.replace(/\s*<script\b[^>]*\bdata-otto-flex-ocr-runtime\b[^>]*><\/script>\s*/g, '\n');
+
+  if (out.includes(UNSAFE_USER_PRUNE)) out = out.replace(UNSAFE_USER_PRUNE, SAFE_USER_PRUNE);
 
   if (!out.includes('</head>')) throw new Error('index.html is missing </head>');
   if (!out.includes('</body>')) throw new Error('index.html is missing </body>');
@@ -39,6 +49,7 @@ export function validateFlexSource(source) {
     ['bridge exposes existing db safely', source.includes('getDb: () => db')],
     ['spreadsheet user adds are forced to field role', source.includes("col === 'users' ? { ...obj, role: 'field' } : obj")],
     ['spreadsheet user updates are forced to field role', source.includes("col === 'users' ? { ...patch, role: 'field' } : patch")],
+    ['imported users survive legacy startup cleanup', source.includes(SAFE_USER_PRUNE) && !source.includes(UNSAFE_USER_PRUNE)],
     ['legacy one-off expand control hidden when flex shell is active', source.includes('data-otto-flex-compat') && source.includes('data-otto-action="toggle-panel-size"')],
     ['bridge exposes existing attendance events', source.includes('add: (col, obj) => add(col')],
     ['bridge exposes current route and language', source.includes('getRoute: () => route') && source.includes('getLang: () => lang')]
