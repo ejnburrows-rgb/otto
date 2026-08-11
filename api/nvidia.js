@@ -1,56 +1,30 @@
 // Vercel serverless proxy for the NVIDIA AI API (OpenAI-compatible).
-//
-// The OTTO Plumbing CRM drawing/estimating assistant posts POST /api/nvidia
-// with an OpenAI-style chat body ({ messages, max_tokens, ... }). This function
-// adds the NVIDIA API key from the NVIDIA_API_KEY environment variable (set once
-// in the Vercel project settings) and forwards to NVIDIA's integrate endpoint,
-// so the key never reaches the browser and the owner does nothing technical.
-//
-// If no key is configured it returns 503 so the client can fall back gracefully
-// (let the owner type the estimate by hand). The default model can be overridden
-// with the NVIDIA_MODEL environment variable.
-
-import { hasServerAuth, denyUnauthenticated } from './_lib/serverAuth.js';
+import { requireCaller } from './_lib/serverAuth.js';
 
 const NVIDIA_URL = process.env.NVIDIA_URL || 'https://integrate.api.nvidia.com/v1/chat/completions';
 const DEFAULT_MODEL = 'meta/llama-3.3-70b-instruct';
 
-// Fail-closed gate first: no real server-side sign-in exists yet, so every
-// request is refused before it can reach NVIDIA. See api/_lib/serverAuth.js.
 export default async function handler(req, res) {
-  if (!hasServerAuth(req)) { denyUnauthenticated(res); return; }
+  const caller = await requireCaller(req, res, ['owner', 'office']);
+  if (!caller) return;
   return nvidiaHandler(req, res);
 }
 
-// The real proxy logic, kept separate so it stays fully covered by tests even
-// while the gate above refuses every live request.
 export async function nvidiaHandler(req, res) {
-  if (req.method !== 'POST') {
-    res.status(405).json({ error: 'method_not_allowed' });
-    return;
-  }
+  if (req.method !== 'POST') { res.status(405).json({ error: 'method_not_allowed' }); return; }
   const key = process.env.NVIDIA_API_KEY;
-  if (!key) {
-    res.status(503).json({ error: 'no_server_key' });
-    return;
-  }
+  if (!key) { res.status(503).json({ error: 'no_server_key' }); return; }
   try {
-    // req.body is auto-parsed for application/json; fall back to a raw read.
     let body = req.body;
     if (body == null || typeof body === 'string') {
       const raw = typeof body === 'string' ? body : await readRaw(req);
       body = raw ? JSON.parse(raw) : {};
     }
     if (!body.model) body.model = process.env.NVIDIA_MODEL || DEFAULT_MODEL;
-    if (body.stream) body.stream = false; // proxy returns a single JSON response
-
+    if (body.stream) body.stream = false;
     const upstream = await fetch(NVIDIA_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + key,
-        'Accept': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key, 'Accept': 'application/json' },
       body: JSON.stringify(body),
     });
     const text = await upstream.text();
