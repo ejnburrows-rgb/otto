@@ -2,22 +2,16 @@
 // Env: TWILIO_SID, TWILIO_AUTH, TWILIO_FROM, SENDGRID_API_KEY (or SMTP_* later).
 // POST { channel: 'sms'|'email', to, subject?, body, trigger?, customerId?, jobId? }
 
-import { hasServerAuth, denyUnauthenticated } from './_lib/serverAuth.js';
+import { requireCaller } from './_lib/serverAuth.js';
 
-// Fail-closed gate first: no real server-side sign-in exists yet, so every
-// request is refused before it can reach Twilio/SendGrid, and no destination
-// or message content is ever echoed back. See api/_lib/serverAuth.js.
 export default async function handler(req, res) {
-  if (!hasServerAuth(req)) { denyUnauthenticated(res); return; }
+  const caller = await requireCaller(req, res, ['owner', 'office']);
+  if (!caller) return;
   return notifyHandler(req, res);
 }
 
-// The real send logic, kept separate so it stays fully covered by tests even
-// while the gate above refuses every live request.
 export async function notifyHandler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'method_not_allowed' });
-  }
+  if (req.method !== 'POST') return res.status(405).json({ error: 'method_not_allowed' });
 
   let body = req.body;
   if (body == null || typeof body === 'string') {
@@ -30,19 +24,13 @@ export async function notifyHandler(req, res) {
 
   if (channel === 'sms') {
     if (!twilioReady) {
-      return res.status(503).json({
-        error: 'sms_not_configured',
-        message: 'Add TWILIO_SID, TWILIO_AUTH, and TWILIO_FROM in Vercel to send texts.',
-        preview: { to: body.to, body: body.body },
-      });
+      return res.status(503).json({ error: 'sms_not_configured', message: 'SMS is not configured.', preview: { to: body.to, body: body.body } });
     }
     try {
       const auth = Buffer.from(`${process.env.TWILIO_SID}:${process.env.TWILIO_AUTH}`).toString('base64');
       const params = new URLSearchParams({ To: body.to, From: process.env.TWILIO_FROM, Body: body.body || '' });
       const r = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${process.env.TWILIO_SID}/Messages.json`, {
-        method: 'POST',
-        headers: { Authorization: `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: params.toString(),
+        method: 'POST', headers: { Authorization: `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' }, body: params.toString(),
       });
       const data = await r.json();
       if (!r.ok) return res.status(r.status).json({ error: 'twilio_error', detail: data });
@@ -54,11 +42,7 @@ export async function notifyHandler(req, res) {
 
   if (channel === 'email') {
     if (!emailReady) {
-      return res.status(503).json({
-        error: 'email_not_configured',
-        message: 'Add SENDGRID_API_KEY in Vercel to send emails.',
-        preview: { to: body.to, subject: body.subject, body: body.body },
-      });
+      return res.status(503).json({ error: 'email_not_configured', message: 'Email is not configured.', preview: { to: body.to, subject: body.subject, body: body.body } });
     }
     try {
       const r = await fetch('https://api.sendgrid.com/v3/mail/send', {
@@ -71,10 +55,7 @@ export async function notifyHandler(req, res) {
           content: [{ type: 'text/plain', value: body.body || '' }],
         }),
       });
-      if (!r.ok) {
-        const detail = await r.text();
-        return res.status(r.status).json({ error: 'sendgrid_error', detail });
-      }
+      if (!r.ok) return res.status(r.status).json({ error: 'sendgrid_error', detail: await r.text() });
       return res.status(200).json({ ok: true });
     } catch (e) {
       return res.status(500).json({ error: 'email_failed', message: String(e.message || e) });
