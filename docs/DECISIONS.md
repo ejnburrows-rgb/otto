@@ -2,6 +2,16 @@
 
 A concise dated log of decisions that still govern the product. Historical implementation detail remains in Git history; superseded choices are not kept here as if they were still active.
 
+## 2026-08-11 — unified file intake
+
+- **One Upload / Import front door is the required file-intake model.** Do not restore separate competing spreadsheet, OCR, scan, and CAD upload experiences.
+- **Spreadsheets are parsed directly.** `.xlsx`, `.xls`, and `.csv` use their structured cells; OCR is not used on real spreadsheet files.
+- **Photos and scans use bilingual browser OCR.** English + Spanish OCR runs locally in the browser and leaves extracted text visible for review before anything is saved or imported.
+- **PDF is explicitly routed because the format is ambiguous.** Ask whether it is a text/scanned document or a plan/drawing instead of guessing silently.
+- **Plans reuse the existing job drawing pipeline.** DWG, DXF, DWF, DGN and plan PDFs remain attached to the selected job and use existing document storage plus drawing analysis rather than a second file system.
+- **All employee intake is review-first and least-privilege.** Spreadsheet/OCR employee intake ends in the same editable review table; imported people are Field Worker only, PINs are never imported, and attendance is never fabricated.
+- **The old provider-key/Claude OCR path is retired as the normal user workflow.** Historical code may remain where unrelated legacy features still depend on it, but it must not appear as a competing file-intake experience or be described as the current process.
+
 ## 2026-08-10 — owner / office workspace
 
 - **Three simultaneous primary windows are the required home model.** Today, Field Workers, and Inbox open together over the wallpaper. A prior one-panel-at-a-time redesign is superseded.
@@ -19,7 +29,7 @@ A concise dated log of decisions that still govern the product. Historical imple
 ## 2026-08-10 — Plans & AutoCAD
 
 - **Plans & AutoCAD is a first-class entry point.** It is visible from the owner/office side panel and in Tools instead of being buried only inside Job → Documents.
-- **Reuse the existing drawing pipeline.** PDF, DWG, DXF, DWF and DGN uploads continue through the existing `uploadDoc(jobId, 'cad')` / document-analysis flow rather than creating a second competing file system.
+- **Reuse the existing drawing pipeline.** PDF, DWG, DXF, DWF and DGN uploads continue through the existing job document/drawing-analysis flow rather than creating a second competing file system.
 - **A drawing belongs to a job folder.** The upload hub asks for the job first so plans remain attached to the correct customer/work context.
 
 ## 2026-08-10 — simplified navigation and Settings
