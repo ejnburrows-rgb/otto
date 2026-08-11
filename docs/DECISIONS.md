@@ -2,6 +2,14 @@
 
 A concise dated log of decisions that still govern the product. Historical implementation detail remains in Git history; superseded choices are not kept here as if they were still active.
 
+## 2026-08-11 — premium UI refinement
+
+- **Refine the current workspace; do not redesign it again.** The three-window owner/office model, wallpapers, personal accents, logo and operational workflows remain the product foundation.
+- **Desktop and phone may present navigation differently.** Desktop keeps the left-side workspace rail; on phones the same primary actions move to a compact bottom dock so working content receives the full screen width instead of being squeezed beside a desktop rail.
+- **Hierarchy must be obvious and restrained.** Today receives subtle priority, secondary screens share the same typography/spacing/card/form language, and decorative motion, heavy shadows, excessive glass and unnecessary visual effects are reduced rather than expanded.
+- **Controls must be practical in the field.** Important desktop controls use at least 40px targets where appropriate; phone controls use at least 36px targets, action rows may stack for thumb use, and filters/tabs wrap instead of hiding choices offscreen.
+- **Accessibility is part of the finished UI.** Dynamic dialogs expose dialog semantics, keep keyboard focus inside while open, close predictably with Escape, and restore focus. Toasts announce status/errors, the logo is keyboard-accessible Home navigation, and window state is exposed to assistive technology.
+
 ## 2026-08-11 — unified file intake
 
 - **One Upload / Import front door is the required file-intake model.** Do not restore separate competing spreadsheet, OCR, scan, and CAD upload experiences.
@@ -15,7 +23,7 @@ A concise dated log of decisions that still govern the product. Historical imple
 ## 2026-08-10 — owner / office workspace
 
 - **Three simultaneous primary windows are the required home model.** Today, Field Workers, and Inbox open together over the wallpaper. A prior one-panel-at-a-time redesign is superseded.
-- **Window controls stay.** Each primary window supports minimize to the left side panel, restore, maximize inside the workspace, and full screen.
+- **Window controls stay.** Each primary window supports minimize/restore, maximize inside the workspace, and full screen. Desktop restores minimized windows from the left rail; phone uses the bottom dock defined by the 2026-08-11 refinement.
 - **Generic drag/reorder stays out.** An earlier drag implementation attached to scrollable cards and interfered with normal phone scrolling. Window controls are useful; draggable content is not.
 - **Personal accents are functional identity, not a different product.** Julio uses green accents, Saray pink accents, Otto the blue OTTO identity. Permissions and workflows stay the same.
 - **The supplied OTTO Plumbing wordmark remains the CRM logo.** The app icon is not a substitute for the approved brand mark.
@@ -28,7 +36,7 @@ A concise dated log of decisions that still govern the product. Historical imple
 
 ## 2026-08-10 — Plans & AutoCAD
 
-- **Plans & AutoCAD is a first-class entry point.** It is visible from the owner/office side panel and in Tools instead of being buried only inside Job → Documents.
+- **Plans & AutoCAD is a first-class entry point.** It is visible from the owner/office primary launcher and in Tools instead of being buried only inside Job → Documents.
 - **Reuse the existing drawing pipeline.** PDF, DWG, DXF, DWF and DGN uploads continue through the existing job document/drawing-analysis flow rather than creating a second competing file system.
 - **A drawing belongs to a job folder.** The upload hub asks for the job first so plans remain attached to the correct customer/work context.
 
