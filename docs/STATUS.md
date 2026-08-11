@@ -8,7 +8,7 @@ This file is the current factual snapshot. Historical incident detail remains in
 
 ## Production now
 
-- The public production alias is still serving the older `79b7b4b` build. Current `main` is newer and must be promoted before the secure sign-in becomes live.
+- Current `main` contains the verified Supabase-provider build; release proof must check the public alias rather than relying on source state alone.
 - Core offline-first CRM records and workflows remain present: customers, jobs, calls, notes, estimates, invoices, payments, checks, follow-ups, payroll intake, documents, reports, backups, Inbox, field check-in/out, work-only location records, and Ask OTTO.
 - English/Spanish and light/dark modes are part of the app.
 - The supplied OTTO Plumbing wordmark is `logo.jpg` and is the approved CRM logo.
@@ -84,7 +84,7 @@ Do not hardcode old test totals as permanent truth; report the actual output of 
 
 ## Broken / risky
 
-- **Production is behind current source.** The live alias still shows device-only PIN setup because the provider-authenticated build has not been promoted.
+- **Production proof must be checked after every release.** The public alias must show secure email-link sign-in and anonymous API requests must be rejected.
 - **Administrator activation is incomplete.** Otto has a confirmed email in the business profile; Julio and Sarays still need confirmed email addresses. Supabase Auth currently has zero users until an authorized person completes the first secure email-link sign-in.
 - **Cross-device proof is incomplete.** The server authorization tests pass, but the owner/field multi-device workflow cannot be completed until real accounts sign in.
 - **Provider delivery is not proven.** Customer email/text and server AI require configured provider credentials and a real delivery test.
