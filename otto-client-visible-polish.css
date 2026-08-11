@@ -201,6 +201,67 @@ body.otto-secondary .btn.is-primary {
   font-weight: 760;
 }
 
+/* Make secondary work screens feel operationally finished rather than like
+   raw forms dropped below the workspace. This is styling only. */
+body.otto-secondary .field input,
+body.otto-secondary .field select,
+body.otto-secondary .field textarea,
+body.otto-secondary .searchbar input {
+  min-height: 48px;
+  padding-inline: 13px;
+  border-color: color-mix(in srgb, var(--text2) 24%, var(--line));
+}
+
+body.otto-secondary .field textarea {
+  min-height: 112px;
+  padding-block: 11px;
+  resize: vertical;
+}
+
+body.otto-secondary .field label,
+body.otto-secondary .field .field-heading {
+  color: var(--text);
+  font-size: 13px;
+  letter-spacing: -.004em;
+}
+
+body.otto-secondary .card {
+  padding: clamp(16px, 2.2vw, 22px);
+}
+
+body.otto-secondary .card + .card {
+  margin-top: 14px;
+}
+
+body.otto-secondary .btn.primary,
+body.otto-secondary .btn.is-primary {
+  border-color: color-mix(in srgb, var(--action) 82%, var(--line));
+  box-shadow: 0 5px 14px color-mix(in srgb, var(--action) 14%, transparent);
+}
+
+body.otto-secondary .btn.primary:hover,
+body.otto-secondary .btn.is-primary:hover,
+body.otto-secondary .btn.primary:focus-visible,
+body.otto-secondary .btn.is-primary:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--action) 16%, transparent),
+    0 6px 16px color-mix(in srgb, var(--action) 16%, transparent);
+}
+
+body.otto-secondary .tabs button[aria-selected="true"],
+body.otto-secondary .tabs button.active,
+body.otto-secondary .tabs .active {
+  border-color: color-mix(in srgb, var(--action) 32%, var(--line));
+  background: color-mix(in srgb, var(--action) 10%, var(--card));
+  color: var(--text);
+  font-weight: 760;
+}
+
+body.otto-secondary .empty,
+body.otto-secondary .error,
+body.otto-secondary .success {
+  border: 1px solid color-mix(in srgb, var(--text2) 18%, var(--line));
+}
+
 @media (max-width: 1180px) and (min-width: 761px) {
   body.theme-app {
     --otto-taskbar-w: 196px;
@@ -268,6 +329,48 @@ body.otto-secondary .btn.is-primary {
 
   .otto-action {
     min-height: 48px;
+  }
+
+  body.otto-secondary .wrap {
+    padding-inline: 14px;
+    padding-top: 18px;
+  }
+
+  body.otto-secondary .pagehead {
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  body.otto-secondary .pagehead h1 {
+    font-size: 25px;
+    line-height: 1.1;
+  }
+
+  body.otto-secondary .card {
+    padding: 15px;
+    border-radius: 12px;
+  }
+
+  body.otto-secondary .field {
+    margin-bottom: 15px;
+  }
+
+  body.otto-secondary .field input,
+  body.otto-secondary .field select,
+  body.otto-secondary .field textarea,
+  body.otto-secondary .searchbar input,
+  body.otto-secondary .btn,
+  body.otto-secondary .tabs button {
+    min-height: 48px;
+  }
+
+  body.otto-secondary .tabs {
+    gap: 6px;
+  }
+
+  body.otto-secondary .tabs button {
+    flex: 1 1 auto;
+    justify-content: center;
   }
 }
 
