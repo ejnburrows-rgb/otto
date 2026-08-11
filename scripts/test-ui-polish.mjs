@@ -4,6 +4,7 @@ import { patchIndex, patchServiceWorker, validate, UI_POLISH_VERSION } from './a
 const index = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
 const css = fs.readFileSync(new URL('../otto-ui-polish.css', import.meta.url), 'utf8');
+const finishCss = fs.readFileSync(new URL('../otto-client-visible-polish.css', import.meta.url), 'utf8');
 const js = fs.readFileSync(new URL('../otto-ui-polish.js', import.meta.url), 'utf8');
 const patchedIndex = patchIndex(index);
 const patchedSw = patchServiceWorker(sw);
@@ -11,7 +12,7 @@ const patchedSw = patchServiceWorker(sw);
 const checks = [
   ...validate(patchedIndex, patchedSw),
   ['polish patch is idempotent', patchIndex(patchedIndex) === patchedIndex && patchServiceWorker(patchedSw) === patchedSw],
-  ['polish assets share one version', UI_POLISH_VERSION === '1' && patchedIndex.includes('otto-ui-polish.css?v=1') && patchedIndex.includes('otto-ui-polish.js?v=1')],
+  ['polish assets share one version', UI_POLISH_VERSION === '2' && patchedIndex.includes('otto-ui-polish.css?v=2') && patchedIndex.includes('otto-client-visible-polish.css?v=2') && patchedIndex.includes('otto-ui-polish.js?v=2')],
   ['desktop touch targets are at least 40px', css.includes('body.admin-home .topbar .iconbtn') && css.includes('min-width: 40px') && css.includes('min-height: 40px')],
   ['window controls are at least 36px', css.includes('.otto-window-control') && css.includes('min-width: 36px') && css.includes('min-height: 36px')],
   ['Today receives restrained priority treatment', css.includes('#panel-today') && css.includes('inset 0 2px 0')],
@@ -21,6 +22,8 @@ const checks = [
   ['mobile stage uses the full phone width', css.includes('left: max(8px, env(safe-area-inset-left))') && css.includes('right: max(8px, env(safe-area-inset-right))')],
   ['mobile action rows stack for thumb use', css.includes('body.otto-secondary .btnrow .btn') && css.includes('flex-basis: 100%')],
   ['motion is restrained and reduced-motion respected', css.includes('transform: none') && css.includes('prefers-reduced-motion: reduce')],
+  ['client-visible layer strengthens workspace hierarchy', finishCss.includes('.otto-window-titlebar') && finishCss.includes('.otto-row + .otto-row') && finishCss.includes('body.otto-secondary .pagehead')],
+  ['client-visible layer preserves mobile polish', finishCss.includes('@media (max-width: 760px)') && finishCss.includes('.otto-action') && finishCss.includes('min-height: 48px')],
   ['toasts are announced accessibly', js.includes("setAttribute('aria-live'") && js.includes("setAttribute('role'")],
   ['dialogs gain semantic dialog roles', js.includes("setAttribute('role', 'dialog')") && js.includes("setAttribute('aria-modal', 'true')")],
   ['dialog keyboard focus is trapped', js.includes('function trapDialogTab') && js.includes("event.key === 'Tab'")],
