@@ -30,8 +30,8 @@ const COLLECTIONS = ['customers', 'jobs', 'calls', 'notes', 'photos', 'documents
   'rate_cards', 'estimate_projects', 'estimate_records', 'verification_logs', 'pricing_exceptions',
   'companyProfile'];
 
-// Fail-closed gate first: no real server-side sign-in exists yet, so every
-// request is refused before it can reach Supabase. See api/_lib/serverAuth.js.
+// Provider-backed identity is verified before any Supabase business data is
+// read or written. See api/_lib/serverAuth.js.
 export default async function handler(req, res) {
   const identity = await requireServerAuth(req, res);
   if (!identity) return;

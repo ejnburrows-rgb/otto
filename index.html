@@ -1143,7 +1143,7 @@
       beforePhoto: 'Before photo', afterPhoto: 'After photo', checklist: 'Checklist', checklistDone: 'Checklist complete', alerts: 'Alerts', alert: 'Alert',
       severity: 'Severity', sourceRecord: 'Source', assignedOwner: 'Assigned', resolve: 'Resolve', resolved: 'Resolved', openS: 'Open',
       dailySummary: 'Daily summary', aiActivity: 'AI activity', consentStatus: 'Consent', auditTrail: 'Audit trail', needsAttention: 'Needs attention tomorrow', allClear: 'All clear',
-      consentTitle: 'Permission to use the work app', consentBody: 'This app records your work location only between check-in and check-out, your job photos, and your checklists, to do your job. It does not track your personal phone use or your location outside of work. Do you agree?', iAgree: 'I agree', notNow: 'Not now', consentNeeded: 'Your consent is needed to use the app.',
+      consentTitle: 'Location sharing', consentBody: 'Location sharing is optional. If you allow it, OTTO records your work location only while you are checked in to an assigned job. You can deny location and still use the app. OTTO never tracks your personal phone use.', iAgree: 'Allow location', notNow: 'Continue without location', consentNeeded: 'Choose whether to share work location.',
       projectAI: 'Project AI', goal: 'Goal', phase: 'Phase', rules: 'Rules', faq: 'FAQ', approvedAnswers: 'Approved answers', openQuestions: 'Open questions', askProject: 'Ask about this job…', escalateToOwner: 'Send to owner', escalatedMsg: 'Sent to the owner', clarifyMsg: 'One quick question',
       contracts: 'Contracts', proposals: 'Proposals', plans: 'Plans', projectDocs: 'Contracts / Proposals / Plans', newVersion: 'Upload new version', version: 'Version', approve: 'Approve', approved2: 'Approved', versionHistory: 'Version history',
       backups: 'Backups', backupNow: 'Back up now', testRestore: 'Test restore', backupOk: 'Backup saved', backupLog: 'Backup & restore log', copies: 'copies', verified: 'Verified', lastBackup: 'Last backup', lastRestoreTest: 'Last restore test', restorePass: 'Restore test passed', restoreFail: 'Restore test FAILED', security: 'Security', mfaOwner: 'Extra code for owner/admin (MFA)', encryptBackups: 'Backup passphrase (encrypts backups)',
@@ -1229,7 +1229,7 @@
       beforePhoto: 'Foto antes', afterPhoto: 'Foto después', checklist: 'Checklist', checklistDone: 'Checklist completa', alerts: 'Alertas', alert: 'Alerta',
       severity: 'Severidad', sourceRecord: 'Origen', assignedOwner: 'Asignado', resolve: 'Resolver', resolved: 'Resuelta', openS: 'Abierta',
       dailySummary: 'Resumen diario', aiActivity: 'Actividad de IA', consentStatus: 'Consentimiento', auditTrail: 'Auditoría', needsAttention: 'Atención mañana', allClear: 'Todo en orden',
-      consentTitle: 'Permiso para usar la app de trabajo', consentBody: 'Esta app registra tu ubicación de trabajo solo entre la entrada y la salida, las fotos del trabajo y tus checklists, para hacer tu trabajo. No rastrea el uso personal de tu teléfono ni tu ubicación fuera del trabajo. ¿Estás de acuerdo?', iAgree: 'Acepto', notNow: 'Ahora no', consentNeeded: 'Se necesita tu consentimiento para usar la app.',
+      consentTitle: 'Compartir ubicación', consentBody: 'Compartir la ubicación es opcional. Si lo permite, OTTO registra su ubicación de trabajo únicamente mientras está registrado en un trabajo asignado. Puede negar la ubicación y continuar usando la aplicación. OTTO nunca rastrea el uso personal de su teléfono.', iAgree: 'Permitir ubicación', notNow: 'Continuar sin ubicación', consentNeeded: 'Elija si desea compartir su ubicación de trabajo.',
       projectAI: 'IA del Trabajo', overview: 'Resumen', goal: 'Objetivo', phase: 'Fase', rules: 'Reglas', faq: 'Preguntas frecuentes', approvedAnswers: 'Respuestas aprobadas', openQuestions: 'Preguntas abiertas', escalations: 'Escalaciones', askProject: 'Pregunta sobre este trabajo…', escalateToOwner: 'Enviar al dueño', escalatedMsg: 'Enviado al dueño', clarifyMsg: 'Una pregunta rápida',
       contracts: 'Contratos', proposals: 'Propuestas', plans: 'Planos', projectDocs: 'Contratos / Propuestas / Planos', newVersion: 'Subir nueva versión', version: 'Versión', approve: 'Aprobar', approved2: 'Aprobado', versionHistory: 'Historial de versiones',
       backups: 'Respaldos', backupNow: 'Respaldar ahora', testRestore: 'Probar restauración', backupOk: 'Respaldo guardado', backupLog: 'Registro de respaldos', copies: 'copias', verified: 'Verificado', lastBackup: 'Último respaldo', lastRestoreTest: 'Última prueba', restorePass: 'Prueba de restauración OK', restoreFail: 'Prueba de restauración FALLÓ', security: 'Seguridad', mfaOwner: 'Código extra para dueño/admin (MFA)', encryptBackups: 'Frase para cifrar respaldos',
@@ -4656,7 +4656,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
   function getPos() { return new Promise((res, rej) => { if (!navigator.geolocation) return rej(new Error('no gps')); navigator.geolocation.getCurrentPosition(p => res(p), e => rej(e), { enableHighAccuracy: true, timeout: 10000 }); }); }
 
   async function logGps(event, jobId = null, locationLabel = null) {
-    if (!session) return;
+    if (!session || session.role !== 'field' || !locationAllowed(session.id)) return;
     let lat = null, lng = null;
     try {
       const p = await getPos(); lat = p.coords.latitude; lng = p.coords.longitude;
@@ -4674,6 +4674,8 @@ Rules: Never invent precise counts you cannot support from the data — instead 
   let _gpsInterval = null;
   function startGpsTracking() {
     clearInterval(_gpsInterval);
+    _gpsInterval = null;
+    if (!session || session.role !== 'field' || !locationAllowed(session.id)) return;
     _gpsInterval = setInterval(() => {
       if (!session) return;
       const activeJob = db.jobs.find(j => j.activeCheckIn && get('job_events', j.activeCheckIn)?.userId === session.id);
@@ -4801,16 +4803,19 @@ Rules: Never invent precise counts you cannot support from the data — instead 
   async function doCheckIn(jobId) {
     closeModal();
     const j = get('jobs', jobId); if (!j) return;
-    toast(lang === 'es' ? 'Obteniendo ubicación…' : 'Getting location…');
+    const mayShareLocation = session.role === 'field' && locationAllowed(session.id);
+    if (mayShareLocation) toast(lang === 'es' ? 'Obteniendo ubicación…' : 'Getting location…');
     let lat = null, lng = null, offSite = false;
-    try { const p = await getPos(); lat = p.coords.latitude; lng = p.coords.longitude; } catch (e) { }
+    if (mayShareLocation) {
+      try { const p = await getPos(); lat = p.coords.latitude; lng = p.coords.longitude; } catch (e) { }
+    }
     if (lat != null) add('locations', { userId: session.id, lat, lng, jobId, ts: nowISO(), kind: 'check_in', consentGranted: true, permission: 'granted' });
     if (lat != null && j.siteLat != null) offSite = geoDist(lat, lng, j.siteLat, j.siteLng) > OFFSITE_M;
     const ev = add('job_events', { type: 'check_in', jobId, userId: session.id, lat, lng, offSite, ts: nowISO() });
     update('jobs', jobId, { activeCheckIn: ev.id, status: j.status === 'scheduled' ? 'inProgress' : j.status });
     audit('job.check_in', 'job', jobId, { offSite });
     if (offSite) raiseAlert('off-site', 'job', jobId, `${session.name}: ${t('offSite')} — ${j.title}`);
-    logGps('job_checkin', jobId);
+    if (mayShareLocation) logGps('job_checkin', jobId);
     toast(t('checkedInAt'), 'success'); render();
   }
 
@@ -4836,8 +4841,11 @@ Rules: Never invent precise counts you cannot support from the data — instead 
   async function doCheckOut(jobId) {
     closeModal();
     const j = get('jobs', jobId); if (!j) return;
+    const mayShareLocation = session.role === 'field' && locationAllowed(session.id);
     let lat = null, lng = null;
-    try { const p = await getPos(); lat = p.coords.latitude; lng = p.coords.longitude; } catch (e) { }
+    if (mayShareLocation) {
+      try { const p = await getPos(); lat = p.coords.latitude; lng = p.coords.longitude; } catch (e) { }
+    }
     if (lat != null) add('locations', { userId: session.id, lat, lng, jobId, ts: nowISO(), kind: 'check_out', consentGranted: true, permission: 'granted' });
     add('job_events', { type: 'check_out', jobId, userId: session.id, lat, lng, ts: nowISO() });
     const ci = db.job_events.filter(e => e.jobId === jobId && e.type === 'check_in').sort((a, b) => new Date(b.ts) - new Date(a.ts))[0];
@@ -4846,7 +4854,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     if (ci) { const hrs = (Date.now() - new Date(ci.ts)) / 3.6e6; if (hrs > LONG_SHIFT_H) late = true; }
     update('jobs', jobId, { activeCheckIn: null });
     audit('job.check_out', 'job', jobId, { late });
-    logGps('job_checkout', jobId);
+    if (mayShareLocation) logGps('job_checkout', jobId);
     await calcAllWeeklyHours();
     
     const cl = ensureChecklist(jobId);
@@ -5078,7 +5086,27 @@ Rules: Never invent precise counts you cannot support from the data — instead 
   }
 
   /* ---- consent (Spanish-first, work app) ---- */
-  function hasConsent(userId) { return db.consent_records.some(c => c.userId === userId && c.accepted); }
+  function latestLocationConsent(userId) {
+    return db.consent_records
+      .filter(c => c.userId === userId && (c.locationPermission || typeof c.accepted === 'boolean'))
+      .sort((a, b) => new Date(b.ts || 0) - new Date(a.ts || 0))[0] || null;
+  }
+  function hasLocationDecision(userId) { return !!latestLocationConsent(userId); }
+  function locationAllowed(userId) {
+    const record = latestLocationConsent(userId);
+    return !!record && (record.locationPermission === 'granted' || record.accepted === true);
+  }
+  function recordLocationDecision(granted) {
+    add('consent_records', {
+      userId: session.id,
+      accepted: granted,
+      locationPermission: granted ? 'granted' : 'denied',
+      version: 2,
+      ts: nowISO(),
+      lang,
+    });
+    audit(granted ? 'location.consent_granted' : 'location.consent_denied', 'user', session.id);
+  }
   function showConsent() {
     $('#login').classList.add('hidden'); $('#app').classList.remove('hidden');
     document.getElementById('bottomnav').innerHTML = '';
@@ -5087,9 +5115,26 @@ Rules: Never invent precise counts you cannot support from the data — instead 
       <h1 style="text-align:center">${t('consentTitle')}</h1>
       <div class="card" style="padding:16px;margin:16px 0;line-height:1.6">${esc(t('consentBody'))}</div>
       <button class="btn block" onclick="acceptConsent()"><i class="fas fa-check"></i> ${t('iAgree')}</button>
-      <button class="btn ghost block" style="margin-top:10px" onclick="signOut()">${t('notNow')}</button></div>`;
+      <button class="btn ghost block" style="margin-top:10px" onclick="declineConsent()">${t('notNow')}</button></div>`;
   }
-  function acceptConsent() { add('consent_records', { userId: session.id, accepted: true, version: 1, ts: nowISO(), lang }); audit('consent.accept', 'user', session.id); toast(t('saved'), 'success'); nav('home'); }
+  async function acceptConsent() {
+    let granted = false;
+    try { await getPos(); granted = true; } catch (_) { }
+    recordLocationDecision(granted);
+    if (granted) {
+      update('users', session.id, { gpsAcknowledged: true });
+      session.gpsAcknowledged = true;
+    }
+    toast(granted
+      ? (lang === 'es' ? 'Ubicación permitida.' : 'Location sharing enabled.')
+      : (lang === 'es' ? 'La ubicación no se compartirá.' : 'Location will not be shared.'), 'success');
+    startApp();
+  }
+  function declineConsent() {
+    recordLocationDecision(false);
+    toast(lang === 'es' ? 'La ubicación no se compartirá.' : 'Location will not be shared.', 'success');
+    startApp();
+  }
 
   /* ---- per-project AI context (answer as the owner, clarify once, then escalate) ---- */
   function projectAIHTML(jobId) {
@@ -5287,17 +5332,21 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     $('#login').classList.add('hidden'); $('#login').innerHTML = '';
     $('#app').classList.remove('hidden');
     setLang(lang);
-    // First-login consent for field workers (Spanish-first work-app permission).
-    if (session.role === 'field' && !hasConsent(session.id)) { showConsent(); return; }
+    // A field employee may approve or deny location and still use OTTO.
+    if (session.role === 'field' && !hasLocationDecision(session.id)) { showConsent(); return; }
 
-    if (session.role === 'field' && !session.gpsAcknowledged) {
-      showGpsOnboarding();
-      return;
+    const mayShareLocation = session.role === 'field' && locationAllowed(session.id);
+    if (mayShareLocation) {
+      startGpsTracking();
+      logGps('app_open');
+      if (!window.__ottoGpsPagehideBound) {
+        window.addEventListener('pagehide', () => logGps('app_close'));
+        window.__ottoGpsPagehideBound = true;
+      }
+    } else {
+      clearInterval(_gpsInterval);
+      _gpsInterval = null;
     }
-
-    startGpsTracking();
-    logGps('app_open');
-    window.addEventListener('pagehide', () => logGps('app_close'));
 
     nav('home');
     // The daily summary is a management view, so it stays owner/office.
@@ -5309,25 +5358,29 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
   }
 
   function showGpsOnboarding() {
-    const msgEn = "OTTO requires GPS access to track job site hours. Tap Allow to continue.";
-    const msgEs = "OTTO requiere acceso al GPS para registrar las horas de trabajo. Toca Permitir para continuar.";
+    const msgEn = "Location sharing is optional and is used only during assigned work. Tap Allow to share, or continue without location.";
+    const msgEs = "Compartir la ubicación es opcional y se usa únicamente durante el trabajo asignado. Presione Permitir para compartirla o continúe sin ubicación.";
     $('#main').innerHTML = `
       <div style="padding:40px 20px;text-align:center;max-width:400px;margin:0 auto">
         <h2><i class="fas fa-location-dot" style="font-size:40px;color:var(--accent)"></i></h2>
         <p style="margin:20px 0;font-size:16px">${lang === 'es' ? msgEs : msgEn}</p>
         <button class="btn block" onclick="acceptGps()"><i class="fas fa-check"></i> ${lang === 'es' ? 'Permitir' : 'Allow'}</button>
+        <button class="btn ghost block" style="margin-top:10px" onclick="declineConsent()">${t('notNow')}</button>
       </div>`;
   }
   
   async function acceptGps() {
     try {
       await getPos();
+      recordLocationDecision(true);
       update('users', session.id, { gpsAcknowledged: true });
       session.gpsAcknowledged = true;
       startApp();
     } catch(e) {
-      toast(lang === 'es' ? 'GPS es obligatorio' : 'GPS is required', 'error');
+      recordLocationDecision(false);
+      toast(lang === 'es' ? 'La ubicación no se compartirá.' : 'Location will not be shared.', 'success');
       logGps('gps_unavailable');
+      startApp();
     }
   }
   async function boot() {
@@ -5986,7 +6039,7 @@ Return ONLY valid JSON: { "fixtures": [], "pipes": [], "fittings": [], "notes": 
     viewEmails, openEmailForm, saveEmailForm, importEml, openEmail, relinkEmail, saveEmailLink, emailToNote, summarizeEmail,
     viewPayroll, openPayroll, importPayroll, previewPayroll, confirmPayrollImport, summarizePayrollAll,
     doCheckIn, doCheckOut, setJobSite, toggleChecklistItem, resolveAlert, showDailySummary, showReadyToClose,
-    acceptConsent, acceptGps, openProjectAIForm, saveProjectAI, askProjectAI, escalateProjectAI,
+    acceptConsent, declineConsent, acceptGps, openProjectAIForm, saveProjectAI, askProjectAI, escalateProjectAI,
     uploadProjectDoc, openProjectDoc, approveProjectDoc, backupNow, restoreTest,
     viewKpis, viewWorkerProfile, approvePTO, denyPTO, renderCharts, seedMockKPIs,
     saveGoogleClient, connectGmail, fetchNewEmails, viewInbox, previewPDF, analyzePdfAI, selectJobForTakeoff, assignTakeoff,

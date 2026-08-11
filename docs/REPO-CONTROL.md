@@ -36,11 +36,11 @@ For file handling, use one **Upload / Import** intake model. Spreadsheets are pa
 - Tools stays a restrained launcher for core daily modules. Secondary technical screens must not be promoted merely because they exist in code.
 - Admin Settings is intentionally simplified. Keep appearance, team access, owner security, data safety and sign-out visible. Provider keys and unfinished setup stubs do not belong in the normal owner/office settings experience.
 - The local/offline CRM and built-in demo are present.
-- Sensitive server features remain intentionally blocked by the fail-closed security gate. This is the safe production state until issue #70 ships a fresh, verified server-authorization implementation from current `main`.
+- Supabase-backed identity and server-controlled OTTO roles are implemented on current `main`. Anonymous requests fail before provider/business access, and field records are restricted to the employee and assigned work.
 - The older auth attempt in PR #103 was reviewed and closed unmerged; it must not be resurrected wholesale.
 - Photo upload must never silently abandon a locally stored job photo; pending uploads stay queued and visibly pending until they succeed or the user takes an explicit action.
-- Live Supabase contains later duplicate/demo rows tracked in issue #111. Reconciliation requires backup, dependency review, and explicit approval before live deletion.
-- QuickBooks is explicitly out of scope. `docs/NO-QUICKBOOKS.md` is authoritative; do not restore Intuit routes, UI, credentials, tests, or deployment requirements without a new explicit requirement.
+- Live Supabase currently contains only Julio, Sarays, and Otto administrator profiles; customer and job collections are empty.
+- QuickBooks is a manual handoff only: copy/export data and open the official site separately. Do not add Intuit OAuth, API synchronization, background syncing, credentials, or duplicate accounting logic.
 - GitHub Actions cannot be trusted as release evidence until a successful current run is proven. If Actions is unable to start because of an account/billing condition, record that as an external verification blocker rather than calling the code failed.
 
 ## Priority order
@@ -48,10 +48,10 @@ For file handling, use one **Upload / Import** intake model. Spreadsheets are pa
 1. **Finish and prove the owner/office UI refinement** — preserve three simultaneous windows and identity treatment while proving desktop left rail, phone bottom dock, minimize/restore/maximize/full-screen behavior, restrained hierarchy, consistent secondary screens, practical touch targets, bilingual parity and accessibility.
 2. **Unified file intake** — one Upload / Import surface for spreadsheet employee import, bilingual OCR, and job-linked plans; no conflicting old user-facing scan/upload flows; prove review-before-save behavior.
 3. **Photo-upload reliability** — never silently abandon a locally stored job photo; keep retrying and show a clear pending/not-sent state.
-4. **Server authorization (#70)** — build fresh from current `main` using provider-backed identity plus explicit role and record-level authorization. Preserve offline PIN unlock.
+4. **Production release** — publish the current provider-authenticated build and prove anonymous denial plus authorized owner access.
 5. **Cross-device proof** — prove authorized records and photo bytes reach the correct owner/office/field users without exposing unrelated records.
-6. **Duplicate live-data reconciliation (#111)** — back up first, remove only verified duplicate/demo rows and their linked seeded activity, and prove no genuine business data was lost. No delete is authorized until the exact rows and dependent records are approved.
-7. **Notifications only after authenticated server access is proven.** QuickBooks is not part of this product scope.
+6. **Administrator activation** — keep Otto's confirmed email and add confirmed emails for Julio and Sarays; never invent addresses.
+7. **Provider delivery proof** — test notifications and server AI only when their company credentials are configured. QuickBooks remains manual handoff only.
 8. **Final production readiness** — fresh tests, real-browser verification, demo verification, deployment proof, and director sign-off.
 
 Do not jump to a later item while an earlier item is unresolved unless the earlier item is genuinely blocked and the next item is independent.

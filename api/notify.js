@@ -4,17 +4,14 @@
 
 import { requireServerAuth } from './_lib/serverAuth.js';
 
-// Fail-closed gate first: no real server-side sign-in exists yet, so every
-// request is refused before it can reach Twilio/SendGrid, and no destination
-// or message content is ever echoed back. See api/_lib/serverAuth.js.
+// Only authenticated owner/office accounts may reach Twilio or SendGrid.
 export default async function handler(req, res) {
   const identity = await requireServerAuth(req, res, { roles: ['owner', 'office'] });
   if (!identity) return;
   return notifyHandler(req, res);
 }
 
-// The real send logic, kept separate so it stays fully covered by tests even
-// while the gate above refuses every live request.
+// The send logic remains separate so provider behavior stays fully testable.
 export async function notifyHandler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'method_not_allowed' });
