@@ -37,6 +37,7 @@ const checks = [
   ['employee import reuses SheetJS', js.includes('xlsx.full.min.js')],
   ['employee rows map to real users', js.includes("b.add('users',fields)")],
   ['bulk import bridge forces every imported user to field role', patched.includes("col === 'users' ? { ...obj, role: 'field' } : obj") && patched.includes("col === 'users' ? { ...patch, role: 'field' } : patch")],
+  ['imported users are not pruned on the next app start', !patched.includes("!validIds.includes(u.id) || ['Owner', 'Office', 'Field Worker'")],
   ['duplicate employees update instead of blindly duplicating', js.includes('existingMatch') && js.includes("b.update('users',user.id,fields)")],
   ['PINs are never imported', js.includes('PINs are never imported')],
   ['field workers join existing attendance event store', js.includes("type:'attendance_roster'") && js.includes("b.add('job_events'")],
