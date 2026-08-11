@@ -1,0 +1,234 @@
+/* OTTO CRM — compact manual QuickBooks handoff. */
+.otto-qb-panel {
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-top: 3px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow-sm);
+}
+
+.otto-qb-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 16px;
+}
+
+.otto-qb-head > div:first-child {
+  max-width: 620px;
+}
+
+.otto-qb-head h3 {
+  margin: 0;
+  font-family: 'Hanken Grotesk', 'Inter', system-ui, sans-serif;
+  font-size: 19px;
+  line-height: 1.25;
+  font-weight: 750;
+  letter-spacing: -.01em;
+  color: var(--text);
+}
+
+.otto-qb-head h3 i { margin-right: 7px; color: var(--accent); }
+.otto-qb-head p,
+.otto-qb-destination small {
+  display: block;
+  margin: 5px 0 0;
+  color: var(--text2);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.otto-qb-head-actions,
+.otto-qb-destination-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.otto-qb-head-actions {
+  justify-content: flex-end;
+}
+
+.otto-qb-panel .btn,
+.otto-qb-copy {
+  min-height: 42px;
+}
+
+.otto-qb-head-actions [data-qb-action="open"] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+  box-shadow: none;
+  font-weight: 750;
+}
+
+.otto-qb-head-actions [data-qb-action="open"]:hover {
+  filter: brightness(.96);
+}
+
+.otto-qb-details {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: color-mix(in srgb, var(--card) 94%, var(--bg));
+}
+
+.otto-qb-detail {
+  display: grid;
+  grid-template-columns: minmax(120px, .8fr) minmax(0, 1.7fr) auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 48px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.otto-qb-detail:last-child { border-bottom: 0; }
+.otto-qb-detail.is-empty {
+  opacity: .62;
+  background: color-mix(in srgb, var(--bg) 35%, transparent);
+}
+.otto-qb-detail-label { color: var(--text2); font-size: 12px; font-weight: 750; letter-spacing: .02em; }
+.otto-qb-detail-value { color: var(--text); font-size: 14px; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* Total is the second-to-last detail row; make it easy to scan without turning it into a dashboard card. */
+.otto-qb-detail:nth-last-child(2) {
+  background: color-mix(in srgb, var(--accent) 6%, var(--card));
+}
+.otto-qb-detail:nth-last-child(2) .otto-qb-detail-label,
+.otto-qb-detail:nth-last-child(2) .otto-qb-detail-value {
+  color: var(--text);
+  font-weight: 800;
+}
+
+.otto-qb-copy {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text2);
+  padding: 0 12px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+.otto-qb-copy:hover { background: var(--card-hover); color: var(--text); }
+
+.otto-qb-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--accent) 4%, var(--card));
+}
+
+.otto-qb-fields .field { margin: 0; }
+.otto-qb-fields .field label {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .01em;
+}
+.otto-qb-fields select,
+.otto-qb-fields input,
+.otto-qb-destination input {
+  width: 100%;
+  min-height: 46px;
+}
+
+.otto-qb-fields select {
+  font-weight: 750;
+  border-color: color-mix(in srgb, var(--accent) 32%, var(--line));
+  background: var(--card);
+}
+
+.otto-qb-destination {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+.otto-qb-destination > label {
+  display: block;
+  margin-bottom: 7px;
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.otto-qb-destination-row input { flex: 1 1 260px; }
+
+.otto-qb-panel button:focus-visible,
+.otto-qb-panel input:focus-visible,
+.otto-qb-panel select:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+  .otto-qb-head {
+    display: block;
+  }
+  .otto-qb-head-actions {
+    justify-content: flex-start;
+    margin-top: 12px;
+  }
+}
+
+@media (max-width: 600px) {
+  .otto-qb-panel {
+    margin-top: 14px;
+    padding: 14px;
+    border-top-width: 2px;
+  }
+  .otto-qb-head {
+    margin-bottom: 14px;
+  }
+  .otto-qb-head h3 { font-size: 18px; }
+  .otto-qb-head p {
+    max-width: 36ch;
+    font-size: 12.5px;
+  }
+  .otto-qb-head-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .otto-qb-head-actions .btn {
+    width: 100%;
+    min-height: 48px;
+  }
+  .otto-qb-head-actions [data-qb-action="open"] {
+    font-size: 14px;
+  }
+  .otto-qb-fields {
+    grid-template-columns: 1fr;
+    padding: 12px;
+  }
+  .otto-qb-detail {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px 10px;
+    padding: 11px 10px;
+  }
+  .otto-qb-detail-label { grid-column: 1 / -1; }
+  .otto-qb-detail-value { min-width: 0; }
+  .otto-qb-copy { min-height: 44px; }
+  .otto-qb-destination-row { align-items: stretch; }
+  .otto-qb-destination-row input,
+  .otto-qb-destination-row .btn { flex: 1 1 100%; min-height: 46px; }
+}
+
+@media (max-width: 390px) {
+  .otto-qb-head-actions { grid-template-columns: 1fr; }
+  .otto-qb-head-actions [data-qb-action="open"] {
+    min-height: 50px;
+  }
+}

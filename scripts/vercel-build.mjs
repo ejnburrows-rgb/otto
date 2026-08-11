@@ -18,6 +18,7 @@ run(process.execPath, ['scripts/apply-photo-retry-patch.mjs']);
 run(process.execPath, ['scripts/apply-otto-home-patch.mjs']);
 run(process.execPath, ['scripts/apply-unified-intake-patch.mjs']);
 run(process.execPath, ['scripts/apply-ui-polish-patch.mjs']);
+run(process.execPath, ['scripts/apply-quickbooks-handoff-patch.mjs']);
 run(process.execPath, ['scripts/qa-check.mjs']);
 run(process.execPath, ['scripts/stamp-version.mjs']);
 
