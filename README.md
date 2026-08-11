@@ -21,25 +21,29 @@ Old task queues, branch handoffs, historical audits, and chat summaries are not 
 
 ## Current owner / office workspace
 
-The approved owner/office direction is a wallpaper-first desktop workspace, not a one-panel dashboard:
+The approved owner/office direction is a wallpaper-first workspace, not a generic dashboard:
 
 - **Three primary windows are open together:** Today, Field Workers, and Inbox.
-- Every primary window can **minimize to the left side panel, restore, maximize inside the workspace, and use full screen**.
+- Every primary window can **minimize, restore, maximize inside the workspace, and use full screen**.
+- **Desktop:** minimized windows and primary launchers use the left-side rail.
+- **Phone:** the same primary actions use a compact bottom dock so working content receives the full phone width instead of being squeezed beside a desktop rail.
 - Generic drag/reorder behavior is intentionally excluded because the earlier drag implementation interfered with normal scrolling.
 - **Julio** uses green interface accents and his committed wallpaper.
 - **Saray** uses pink interface accents and her committed wallpaper.
 - **Otto** keeps the blue OTTO identity; no wallpaper is invented for him.
-- The supplied `logo.jpg` OTTO Plumbing wordmark remains the CRM logo.
-- **Plans & AutoCAD** is visible directly from the left panel and accepts PDF, DWG, DXF, DWF, and DGN through the existing job-document/drawing workflow.
+- The supplied `logo.jpg` OTTO Plumbing wordmark remains the CRM logo and returns the user Home.
+- **Plans & AutoCAD** remains a first-class launcher and accepts PDF, DWG, DXF, DWF, and DGN through the existing job-document/drawing workflow.
 - **Crew Hours** shows actual recorded hours for the whole field crew from job check-in/check-out records. Worker detail is intentionally limited to current job, next job, today/week hours, and time-off status.
 - Random worker heatmaps, fake KPI hours, vanity location counts, login-history presentation, and mock performance charts are not part of the approved worker UI.
 - Owner/office Settings is deliberately restrained: appearance, team access, owner security, data safety, and sign out. Provider keys and unfinished setup stubs are not normal owner-facing controls.
+
+The UI direction is now **refinement, not redesign**: clearer hierarchy, consistent secondary screens/forms/tabs, restrained shadows and motion, practical touch targets, intentional empty/error/confirmation states, and keyboard-accessible dialogs/window controls.
 
 These are product requirements. Do not simplify the workspace back to one active panel or change Julio/Saray accent identities without a new explicit owner decision.
 
 ## Unified file intake
 
-Uploads, imports, OCR, and Plans & AutoCAD now follow one user model: **Give OTTO the file → review what OTTO read → confirm → save.**
+Uploads, imports, OCR, and Plans & AutoCAD follow one user model: **Give OTTO the file → review what OTTO read → confirm → save.**
 
 - Excel/CSV is read directly as structured employee data; spreadsheets are not OCR'd.
 - Photos/scans use bilingual browser OCR (English + Spanish).
@@ -104,7 +108,7 @@ node scripts/qa-check.mjs
 npm run qa:visual
 ```
 
-For UI or behavior changes, browser verification is mandatory. Check phone and desktop widths, English/Spanish, light/dark where applicable, JavaScript errors, broken images, navigation, and unintended overflow. For the owner/office home specifically, exercise all three windows through minimize, restore, maximize and full screen, then verify Julio, Saray and Otto separately.
+For UI or behavior changes, browser verification is mandatory. Check phone and desktop widths, English/Spanish, light/dark where applicable, JavaScript errors, broken images, navigation, keyboard/touch behavior, and unintended overflow. For the owner/office home specifically, exercise all three windows through minimize, restore, maximize and full screen, verify desktop left rail and phone bottom dock, then verify Julio, Saray and Otto separately.
 
 Do not put a permanent fixed test count in this README; report the actual result of the current run.
 
