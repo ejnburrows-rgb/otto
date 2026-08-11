@@ -70,7 +70,42 @@ body.admin-home .crystal-logo {
 
 .otto-window-count,
 .otto-task-count {
+  min-width: 26px;
+  height: 26px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0 8px;
+  border: 1px solid color-mix(in srgb, var(--action) 18%, var(--line));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--action) 9%, var(--card));
+  color: var(--text);
+  font-size: 12px;
   font-weight: 800;
+  line-height: 1;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.66);
+}
+
+.otto-task-count {
+  margin-left: auto;
+  min-width: 24px;
+  height: 24px;
+  padding-inline: 7px;
+}
+
+.otto-task.is-active {
+  border-color: color-mix(in srgb, var(--action) 30%, var(--line));
+  background: color-mix(in srgb, var(--action) 10%, var(--card));
+  box-shadow: inset 3px 0 0 var(--accent), 0 5px 16px rgba(15,23,42,.06);
+}
+
+.otto-task.is-minimized {
+  opacity: .74;
+}
+
+.otto-task:hover,
+.otto-tools-launch:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--action) 24%, var(--line));
 }
 
 .otto-window-body {
@@ -82,10 +117,24 @@ body.admin-home .crystal-logo {
   padding: 11px 12px;
   border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
   background: color-mix(in srgb, var(--card) 97%, transparent);
+  transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease, background .16s ease;
 }
 
 .otto-row + .otto-row {
   margin-top: 8px;
+}
+
+.otto-row-link:hover,
+.otto-row-link:focus-visible {
+  border-color: color-mix(in srgb, var(--action) 28%, var(--line));
+  background: color-mix(in srgb, var(--action) 5%, var(--card));
+  box-shadow: 0 7px 18px rgba(15,23,42,.07);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.otto-row-link:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--action) 18%, transparent), 0 7px 18px rgba(15,23,42,.07);
 }
 
 .otto-row-icon {
@@ -102,7 +151,19 @@ body.admin-home .crystal-logo {
 }
 
 .otto-row-meta {
-  font-weight: 650;
+  display: inline-flex;
+  align-items: center;
+  min-height: 25px;
+  max-width: 100%;
+  padding: 4px 9px;
+  border: 1px solid color-mix(in srgb, var(--action) 14%, var(--line));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--action) 7%, var(--card));
+  color: var(--text2);
+  font-size: 11.5px;
+  font-weight: 720;
+  line-height: 1.15;
+  white-space: normal;
 }
 
 .otto-window-actions {
@@ -176,6 +237,12 @@ body.otto-secondary .btn.is-primary {
     min-height: 54px;
   }
 
+  .otto-window-count {
+    min-width: 24px;
+    height: 24px;
+    padding-inline: 7px;
+  }
+
   .otto-window-body {
     padding: 11px;
   }
@@ -187,6 +254,12 @@ body.otto-secondary .btn.is-primary {
 
   .otto-row + .otto-row {
     margin-top: 7px;
+  }
+
+  .otto-row-meta {
+    min-height: 24px;
+    padding: 4px 8px;
+    font-size: 11px;
   }
 
   .otto-window-actions {
@@ -202,8 +275,10 @@ body.otto-secondary .btn.is-primary {
   .otto-window,
   .otto-row,
   .otto-task,
+  .otto-tools-launch,
   .otto-action {
     transition: none !important;
     animation: none !important;
+    transform: none !important;
   }
 }
