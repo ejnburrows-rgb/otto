@@ -11,11 +11,14 @@ function run(command, args) {
 // GitHub Actions is still failing before a runner is assigned. Run the complete
 // current source/unit suite here instead of a hand-picked subset.
 run('npm', ['test']);
-run(process.execPath, ['scripts/qa-check.mjs']);
 
-// Only after the source checks pass do we materialize the deployment patches.
+// Materialize every approved deployment layer before final QA so the checks run
+// against the exact HTML/service-worker surface Vercel will actually serve.
 run(process.execPath, ['scripts/apply-photo-retry-patch.mjs']);
 run(process.execPath, ['scripts/apply-otto-home-patch.mjs']);
+run(process.execPath, ['scripts/apply-unified-intake-patch.mjs']);
+run(process.execPath, ['scripts/apply-ui-polish-patch.mjs']);
+run(process.execPath, ['scripts/qa-check.mjs']);
 run(process.execPath, ['scripts/stamp-version.mjs']);
 
 // Test/tooling source is needed to build and verify, not to serve publicly.
