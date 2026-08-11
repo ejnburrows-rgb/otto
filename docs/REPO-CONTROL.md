@@ -17,20 +17,23 @@ No other Markdown file may silently become a competing source of truth. Historic
 
 Finish OTTO as a dependable, demo-ready and production-ready plumbing CRM without redoing completed work.
 
-The current UI objective is now explicit and must not be simplified away again: owner and office users use a wallpaper-first desktop workspace with **three primary windows open together** — Today, Field Workers, and Inbox. Each window may minimize to the left side panel, maximize inside the workspace, enter full screen, and restore. Drag/reorder is intentionally excluded because the earlier drag implementation interfered with normal scrolling.
+The current UI objective is explicit: owner and office users use a wallpaper-first workspace with **three primary windows open together** — Today, Field Workers, and Inbox. Each window may minimize, restore, maximize inside the workspace, and enter full screen. Desktop uses the left-side workspace rail; phones present the same primary actions in a compact bottom dock so working content receives the full phone width. Drag/reorder is intentionally excluded because the earlier drag implementation interfered with normal scrolling. The remaining UI work is refinement, not another redesign: clearer hierarchy, consistent secondary screens, restrained effects, practical touch targets, and accessible interaction.
 
-For file handling, the current objective is equally explicit: use one **Upload / Import** intake model. Spreadsheets are parsed directly, photos/scans use bilingual browser OCR, CAD files reuse the existing job drawing pipeline, and PDF asks one simple document-vs-plan choice because it is ambiguous. All applicable flows end in review before save. Do not restore separate provider-key OCR or competing upload systems.
+For file handling, use one **Upload / Import** intake model. Spreadsheets are parsed directly, photos/scans use bilingual browser OCR, CAD files reuse the existing job drawing pipeline, and PDF asks one simple document-vs-plan choice because it is ambiguous. All applicable flows end in review before save. Do not restore separate provider-key OCR or competing upload systems.
 
 ## Current product truth
 
-- The owner/office UI contract is the three-window workspace described above. A previous one-panel-at-a-time left-rail redesign is superseded and must not be restored as the default.
-- Julio (`owner-2`) uses green interface accents and his committed wallpaper. Saray (`ops-1`) uses pink interface accents and her committed wallpaper. Otto keeps the blue OTTO identity. These accents follow the signed-in person; the workflow and permissions do not change by colour.
+- The owner/office UI contract is the three-window workspace described above. A previous one-panel-at-a-time redesign is superseded and must not be restored as the default.
+- Desktop keeps the left-side primary launcher. On phones the same primary workspace actions use a bottom dock; do not squeeze the working windows beside a narrow desktop rail.
+- Julio (`owner-2`) uses green interface accents and his committed wallpaper. Saray (`ops-1`) uses pink interface accents and her committed wallpaper. Otto keeps the blue OTTO identity. These accents follow the signed-in person; workflow and permissions do not change by colour.
 - The supplied OTTO Plumbing wordmark (`logo.jpg`) remains the CRM logo. Do not substitute the wrench/person app icon as the top-bar brand.
+- Today has subtle operational priority, but the interface remains restrained. Do not add excessive glass, animation, heavy shadows, neon effects, or decorative dashboards to make the app look more “premium.”
+- Secondary screens must feel like the same product as Home: consistent Hanken Grotesk hierarchy, spacing, cards, lists, forms, focus treatment, buttons, wrapped filters/tabs, and intentional empty/error/confirmation states.
 - Worker information is intentionally operational and compact: current job, next job, actual hours recorded from job check-in/check-out, and time-off status. Do not restore random heatmaps, fabricated KPI hours, vanity location counts, login-history cards, or fake charts as worker performance information.
 - The whole field crew has a Crew Hours view showing real recorded hours today, real recorded hours this week, and how many workers are currently clocked in.
 - Plans & AutoCAD is a first-class work entry point. It accepts PDF, DWG, DXF, DWF and DGN through the existing job-document/drawing pipeline; do not bury this capability only inside a job tab.
 - Upload/import/OCR follows `docs/UNIFIED-FILE-INTAKE.md`: one front door, direct spreadsheet parsing, browser bilingual OCR for images/scans, existing CAD analysis for plans, explicit PDF routing, review before save, Field Worker-only employee imports, no PIN import, and no fabricated attendance.
-- Tools stays a restrained launcher for the core daily modules. Secondary technical screens must not be promoted merely because they exist in code.
+- Tools stays a restrained launcher for core daily modules. Secondary technical screens must not be promoted merely because they exist in code.
 - Admin Settings is intentionally simplified. Keep appearance, team access, owner security, data safety and sign-out visible. Provider keys and unfinished setup stubs do not belong in the normal owner/office settings experience.
 - The local/offline CRM and built-in demo are present.
 - Sensitive server features remain intentionally blocked by the fail-closed security gate. This is the safe production state until issue #70 ships a fresh, verified server-authorization implementation from current `main`.
@@ -42,8 +45,8 @@ For file handling, the current objective is equally explicit: use one **Upload /
 
 ## Priority order
 
-1. **Finish and prove the owner/office workspace** — three simultaneous windows, minimize/restore/maximize/full-screen behavior, correct Julio/Saray/Otto identity, visible Plans & AutoCAD, real Crew Hours, simplified worker information, responsive layouts, bilingual parity and accessibility.
-2. **Unified file intake** — one Upload / Import surface for spreadsheet employee import, bilingual OCR, and job-linked plans; remove conflicting old user-facing scan/upload flows and prove review-before-save behavior.
+1. **Finish and prove the owner/office UI refinement** — preserve three simultaneous windows and identity treatment while proving desktop left rail, phone bottom dock, minimize/restore/maximize/full-screen behavior, restrained hierarchy, consistent secondary screens, practical touch targets, bilingual parity and accessibility.
+2. **Unified file intake** — one Upload / Import surface for spreadsheet employee import, bilingual OCR, and job-linked plans; no conflicting old user-facing scan/upload flows; prove review-before-save behavior.
 3. **Photo-upload reliability** — never silently abandon a locally stored job photo; keep retrying and show a clear pending/not-sent state.
 4. **Server authorization (#70)** — build fresh from current `main` using provider-backed identity plus explicit role and record-level authorization. Preserve offline PIN unlock.
 5. **Cross-device proof** — prove authorized records and photo bytes reach the correct owner/office/field users without exposing unrelated records.
@@ -73,15 +76,17 @@ The following are product requirements, not optional design suggestions:
 
 1. Do not replace the three-window owner/office home with a single active panel.
 2. Do not remove minimize, restore, maximize, or full-screen behavior unless the owner explicitly changes the requirement.
-3. Do not reintroduce generic drag/reorder behavior on scrollable cards or lists.
-4. Do not change Julio away from green accents or Saray away from pink accents.
-5. Do not invent an Otto wallpaper; Otto may use the finished base surface unless a real approved asset is supplied.
-6. Do not hide Plans & AutoCAD solely inside a job detail screen.
-7. Do not calculate hours from placeholder formulas. Crew hours come from recorded check-in/check-out time.
-8. Do not present random/demo chart values as worker performance.
-9. Do not replace the supplied OTTO Plumbing logo with the app icon.
-10. Do not expose technical integration setup simply to make Settings look fuller.
-11. Do not restore separate spreadsheet/OCR/CAD upload experiences that compete with the unified intake model.
+3. Desktop uses the left-side primary launcher; phone uses the compact bottom dock. Do not force the desktop rail into the narrow phone workspace.
+4. Do not reintroduce generic drag/reorder behavior on scrollable cards or lists.
+5. Do not change Julio away from green accents or Saray away from pink accents.
+6. Do not invent an Otto wallpaper; Otto may use the finished base surface unless a real approved asset is supplied.
+7. Do not hide Plans & AutoCAD solely inside a job detail screen.
+8. Do not calculate hours from placeholder formulas. Crew hours come from recorded check-in/check-out time.
+9. Do not present random/demo chart values as worker performance.
+10. Do not replace the supplied OTTO Plumbing logo with the app icon.
+11. Do not expose technical integration setup simply to make Settings look fuller.
+12. Do not restore separate spreadsheet/OCR/CAD upload experiences that compete with the unified intake model.
+13. Do not add visual effects at the expense of hierarchy, readability, touch usability, or consistent secondary screens.
 
 ## Definition of done
 
@@ -92,8 +97,10 @@ A task is complete only when all applicable evidence exists:
 - the real app is opened and exercised in a browser,
 - no new JavaScript errors, broken images, or mobile overflow appear,
 - UI work is checked at desktop and phone widths,
+- desktop left-rail and phone bottom-dock behavior are both exercised,
 - Julio, Saray and Otto are each checked for correct identity treatment,
 - minimize/restore/maximize/full-screen is exercised for all three home windows,
+- representative secondary screens, forms, tabs, empty states, dialogs and confirmations are checked for consistent hierarchy and keyboard/touch usability,
 - Plans & AutoCAD upload is opened through the dedicated hub and linked to a job,
 - unified intake is exercised with a spreadsheet, an image/scan, a PDF in both routing modes, and a plan format; review-before-save is verified,
 - Crew Hours is checked against known check-in/check-out records,
