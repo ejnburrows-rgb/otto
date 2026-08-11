@@ -14,7 +14,8 @@ For current instructions and product truth, read in this order:
 2. `docs/REPO-CONTROL.md`
 3. `docs/STATUS.md`
 4. `docs/DECISIONS.md`
-5. `docs/NO-QUICKBOOKS.md`
+5. `docs/UNIFIED-FILE-INTAKE.md` when working on uploads, imports, OCR, or Plans & AutoCAD
+6. `docs/NO-QUICKBOOKS.md`
 
 Old task queues, branch handoffs, historical audits, and chat summaries are not active instructions unless `docs/REPO-CONTROL.md` explicitly activates them.
 
@@ -35,6 +36,18 @@ The approved owner/office direction is a wallpaper-first desktop workspace, not 
 - Owner/office Settings is deliberately restrained: appearance, team access, owner security, data safety, and sign out. Provider keys and unfinished setup stubs are not normal owner-facing controls.
 
 These are product requirements. Do not simplify the workspace back to one active panel or change Julio/Saray accent identities without a new explicit owner decision.
+
+## Unified file intake
+
+Uploads, imports, OCR, and Plans & AutoCAD now follow one user model: **Give OTTO the file → review what OTTO read → confirm → save.**
+
+- Excel/CSV is read directly as structured employee data; spreadsheets are not OCR'd.
+- Photos/scans use bilingual browser OCR (English + Spanish).
+- DWG/DXF/DWF/DGN plans require a job and reuse the existing drawing pipeline.
+- PDF asks one simple choice because it can be either a scanned document or a plan.
+- Spreadsheet employee imports are Field Worker only, never import PINs, and never fabricate attendance.
+
+`docs/UNIFIED-FILE-INTAKE.md` is the task-specific source of truth. Do not restore separate provider-key OCR or competing scan/CAD upload experiences.
 
 ## Current state
 
@@ -64,6 +77,7 @@ Keep OTTO's native invoices/payments, generic CSV export, payroll import, jobs, 
 
 - Customers, jobs, calls, notes, follow-ups, and workflows
 - Job photos and documents
+- Unified Upload / Import intake for spreadsheets, scans, PDFs, and CAD files
 - Plans & AutoCAD / drawing upload and takeoff workflow
 - Estimates, invoices, payments, and checks inside OTTO
 - Payroll spreadsheet/CSV intake
