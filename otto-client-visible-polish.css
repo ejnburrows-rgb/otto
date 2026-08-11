@@ -1,0 +1,209 @@
+/* OTTO CRM — client-visible finishing pass.
+   This layer makes the existing three-window workspace read more clearly at a
+   glance without changing workflows, data, auth, or the approved structure. */
+
+body.admin-home .topbar {
+  padding: 8px 12px;
+  border-color: color-mix(in srgb, var(--action) 14%, var(--otto-hairline));
+}
+
+body.admin-home .crystal-logo {
+  height: 42px;
+  box-shadow: 0 1px 0 rgba(255,255,255,.8), 0 3px 12px rgba(15,23,42,.08);
+}
+
+.otto-taskbar {
+  padding: 16px 13px;
+  border-color: color-mix(in srgb, var(--action) 14%, var(--otto-hairline));
+}
+
+.otto-taskbar-head {
+  padding: 3px 7px 14px;
+}
+
+.otto-taskbar-greet {
+  font-size: 15px;
+  letter-spacing: -.012em;
+}
+
+.otto-task,
+.otto-tools-launch {
+  min-height: 58px;
+  padding: 9px 11px;
+}
+
+.otto-task-icon {
+  width: 36px;
+  height: 36px;
+}
+
+.otto-window-stage {
+  gap: 16px;
+}
+
+.otto-window {
+  border-color: color-mix(in srgb, var(--action) 10%, var(--otto-hairline));
+  background: color-mix(in srgb, var(--otto-surface-strong) 97%, var(--card));
+}
+
+.otto-window-titlebar {
+  min-height: 56px;
+  padding: 9px 9px 9px 13px;
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--card) 92%, transparent),
+    color-mix(in srgb, var(--card) 72%, transparent));
+  box-shadow: inset 0 3px 0 color-mix(in srgb, var(--action) 62%, transparent);
+}
+
+.otto-window-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  box-shadow: 0 5px 14px color-mix(in srgb, var(--action) 22%, transparent);
+}
+
+.otto-window-title {
+  font-size: 15.5px;
+  font-weight: 800;
+  letter-spacing: -.012em;
+}
+
+.otto-window-count,
+.otto-task-count {
+  font-weight: 800;
+}
+
+.otto-window-body {
+  padding: 14px;
+}
+
+.otto-row {
+  min-height: 56px;
+  padding: 11px 12px;
+  border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+  background: color-mix(in srgb, var(--card) 97%, transparent);
+}
+
+.otto-row + .otto-row {
+  margin-top: 8px;
+}
+
+.otto-row-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--action) 10%, transparent);
+  color: var(--accent);
+}
+
+.otto-row-main {
+  font-weight: 680;
+  letter-spacing: -.006em;
+}
+
+.otto-row-meta {
+  font-weight: 650;
+}
+
+.otto-window-actions {
+  padding: 11px 13px 13px;
+  border-top: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+}
+
+.otto-action {
+  min-height: 44px;
+  padding-inline: 15px;
+  font-weight: 760;
+}
+
+.otto-empty {
+  min-height: 112px;
+  display: grid;
+  place-items: center;
+  padding: 22px 18px;
+  text-align: center;
+  line-height: 1.45;
+  border: 1px dashed color-mix(in srgb, var(--text2) 26%, transparent);
+}
+
+body.otto-secondary .pagehead {
+  padding-bottom: 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
+}
+
+body.otto-secondary .card {
+  border-color: color-mix(in srgb, var(--action) 8%, var(--line));
+}
+
+body.otto-secondary .btn.primary,
+body.otto-secondary .btn.is-primary {
+  font-weight: 760;
+}
+
+@media (max-width: 1180px) and (min-width: 761px) {
+  body.theme-app {
+    --otto-taskbar-w: 196px;
+    --otto-gap: 11px;
+  }
+
+  .otto-window-stage {
+    gap: 11px;
+  }
+
+  .otto-window-body {
+    padding: 11px;
+  }
+}
+
+@media (max-width: 760px) {
+  body.admin-home .crystal-logo {
+    height: 35px;
+  }
+
+  .otto-taskbar {
+    padding: 6px;
+  }
+
+  .otto-window-stage {
+    gap: 12px;
+  }
+
+  .otto-window {
+    border-radius: 16px;
+  }
+
+  .otto-window-titlebar {
+    min-height: 54px;
+  }
+
+  .otto-window-body {
+    padding: 11px;
+  }
+
+  .otto-row {
+    min-height: 54px;
+    padding: 10px;
+  }
+
+  .otto-row + .otto-row {
+    margin-top: 7px;
+  }
+
+  .otto-window-actions {
+    padding: 10px 11px 12px;
+  }
+
+  .otto-action {
+    min-height: 48px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .otto-window,
+  .otto-row,
+  .otto-task,
+  .otto-action {
+    transition: none !important;
+    animation: none !important;
+  }
+}
