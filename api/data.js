@@ -1,25 +1,7 @@
-// Vercel serverless proxy for the Supabase database.
-//
-// WHY THIS EXISTS: the browser must never hold a key that can read the customer
-// database. The old Firebase setup put such a key straight into index.html, so
-// anyone who opened the site could copy it and read every customer record. This
-// function fixes that: the secret key lives only in Vercel's environment
-// variables (settings stored on the server, never in the code), exactly the way
-// api/claude.js already handles the Anthropic key.
-//
-// The browser calls this function; this function talks to Supabase.
-//
-// Environment variables required (set in Vercel -> Settings -> Environment
-// Variables, and in a local .env file for development):
-//   SUPABASE_URL               - the project URL, e.g. https://xxxx.supabase.co
-//   SUPABASE_SERVICE_ROLE_KEY  - the secret key. NEVER put this in the browser
-//                                or in any file that gets committed to git.
-//
-// Requests:
-//   GET  /api/data                  -> returns every collection as one object
-//   POST /api/data { collection, records } -> saves records for one collection
+// Server-side relay for OTTO cloud data. The browser never receives the
+// Supabase service-role key. Authorization is enforced here, not in the UI.
 
-import { hasServerAuth, denyUnauthenticated } from './_lib/serverAuth.js';
+import { requireCaller } from './_lib/serverAuth.js';
 
 const COLLECTIONS = ['customers', 'jobs', 'calls', 'notes', 'photos', 'documents', 'estimates',
   'invoices', 'payments', 'checks', 'followups', 'workflows', 'sops', 'users', 'locations', 'folders',
@@ -30,21 +12,24 @@ const COLLECTIONS = ['customers', 'jobs', 'calls', 'notes', 'photos', 'documents
   'rate_cards', 'estimate_projects', 'estimate_records', 'verification_logs', 'pricing_exceptions',
   'companyProfile'];
 
-// Fail-closed gate first: no real server-side sign-in exists yet, so every
-// request is refused before it can reach Supabase. See api/_lib/serverAuth.js.
+const FIELD_COLLECTIONS = new Set([
+  'customers', 'jobs', 'notes', 'photos', 'documents', 'locations', 'job_events',
+  'job_checklists', 'checklist_submissions', 'pto_requests', 'time_off',
+  'employee_messages', 'consent_records', 'sops', 'alerts', 'plans'
+]);
+
+const JOB_SCOPED = new Set(['notes', 'photos', 'documents', 'job_checklists', 'checklist_submissions', 'plans']);
+
 export default async function handler(req, res) {
-  if (!hasServerAuth(req)) { denyUnauthenticated(res); return; }
-  return dataHandler(req, res);
+  const caller = await requireCaller(req, res);
+  if (!caller) return;
+  return dataHandler(req, res, caller);
 }
 
-// The real proxy logic, kept separate so it stays fully covered by tests even
-// while the gate above refuses every live request.
-export async function dataHandler(req, res) {
+export async function dataHandler(req, res, caller = { role: 'owner', id: 'test-owner' }) {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) {
-    // Not configured yet. The app keeps working offline on the device, so this
-    // is a soft failure, not a crash.
     res.status(503).json({ error: 'no_server_key' });
     return;
   }
@@ -57,56 +42,129 @@ export async function dataHandler(req, res) {
 
   try {
     if (req.method === 'GET') {
-      const result = await readEveryCollection(url, headers);
+      const result = caller.role === 'field'
+        ? await readFieldData(url, headers, caller)
+        : await readEveryCollection(url, headers);
       res.status(200).json(result);
       return;
     }
+
     if (req.method === 'POST') {
-      const { status, body } = await saveOneCollection(url, headers, await parseBody(req));
-      res.status(status).json(body);
+      const payload = await parseBody(req);
+      const result = caller.role === 'field'
+        ? await saveFieldCollection(url, headers, payload, caller)
+        : await saveOneCollection(url, headers, payload);
+      res.status(result.status).json(result.body);
       return;
     }
+
     res.status(405).json({ error: 'method_not_allowed' });
   } catch (e) {
     res.status(500).json({ error: 'proxy_error', detail: String(e && e.message || e).slice(0, 300) });
   }
 }
 
-// Downloads every collection. Asks for them all at once rather than one after
-// another, so a slow connection in the field does not make sign-in crawl.
-// A collection that fails comes back as null, which the app treats as "skip
-// this one" rather than "this collection is empty" — important, because
-// treating a failed read as empty would wipe good data off the device.
+async function readRows(url, headers, col) {
+  const r = await fetch(`${url}/rest/v1/${encodeURIComponent(col)}?select=data`, { headers });
+  if (!r.ok) return null;
+  const rows = await r.json();
+  return rows.map((row) => row.data).filter(Boolean);
+}
+
 async function readEveryCollection(url, headers) {
   const out = {};
   await Promise.all(COLLECTIONS.map(async (col) => {
-    const r = await fetch(`${url}/rest/v1/${encodeURIComponent(col)}?select=data`, { headers });
-    if (!r.ok) {
-      console.warn(`read failed for ${col}: HTTP ${r.status}`);
-      out[col] = null;
-      return;
-    }
-    const rows = await r.json();
-    out[col] = rows.map((row) => row.data);
+    out[col] = await readRows(url, headers, col);
   }));
   return out;
 }
 
-// Saves the records of a single collection. Returns the status and body for
-// the caller to send, rather than writing to the response itself, so the
-// routing above stays easy to follow.
-async function saveOneCollection(url, headers, { collection, records }) {
-  if (!COLLECTIONS.includes(collection)) {
-    return { status: 400, body: { error: 'unknown_collection' } };
+function recordJobId(rec) {
+  return rec && (rec.jobId || rec.job_id || rec.projectJobId || rec.sourceJobId);
+}
+
+function recordWorkerId(rec) {
+  return rec && (rec.userId || rec.workerId || rec.employeeId || rec.assignedTo || rec.assignedUserId);
+}
+
+function fieldFilter(col, records, caller, jobIds, customerIds) {
+  if (!Array.isArray(records)) return null;
+  if (col === 'jobs') return records.filter((r) => r && r.assignedTo === caller.id);
+  if (col === 'customers') return records.filter((r) => r && customerIds.has(r.id));
+  if (col === 'job_events') return records.filter((r) => r && jobIds.has(recordJobId(r)) && recordWorkerId(r) === caller.id);
+  if (JOB_SCOPED.has(col)) return records.filter((r) => r && jobIds.has(recordJobId(r)));
+  if (col === 'locations' || col === 'pto_requests' || col === 'time_off' || col === 'consent_records') {
+    return records.filter((r) => r && recordWorkerId(r) === caller.id);
   }
+  if (col === 'employee_messages') {
+    return records.filter((r) => r && [r.userId, r.workerId, r.employeeId, r.toUserId, r.fromUserId].includes(caller.id));
+  }
+  if (col === 'alerts') {
+    return records.filter((r) => r && (jobIds.has(recordJobId(r)) || recordWorkerId(r) === caller.id));
+  }
+  if (col === 'sops') return records;
+  return [];
+}
+
+async function readFieldData(url, headers, caller) {
+  const jobs = (await readRows(url, headers, 'jobs')) || [];
+  const ownJobs = jobs.filter((j) => j && j.assignedTo === caller.id);
+  const jobIds = new Set(ownJobs.map((j) => j.id));
+  const customerIds = new Set(ownJobs.map((j) => j.customerId).filter(Boolean));
+  const out = { jobs: ownJobs };
+
+  await Promise.all([...FIELD_COLLECTIONS].filter((c) => c !== 'jobs').map(async (col) => {
+    const rows = await readRows(url, headers, col);
+    out[col] = fieldFilter(col, rows, caller, jobIds, customerIds);
+  }));
+
+  // Deliberately absent: users directory, payroll, rates, invoices/payments,
+  // audit/history, company settings, email inbox, estimates/accounting and
+  // unrelated customer/job records.
+  return out;
+}
+
+async function assignedJobIds(url, headers, caller) {
+  const jobs = (await readRows(url, headers, 'jobs')) || [];
+  return new Set(jobs.filter((j) => j && j.assignedTo === caller.id).map((j) => j.id));
+}
+
+async function saveFieldCollection(url, headers, payload, caller) {
+  const { collection, records } = payload || {};
+  if (!FIELD_COLLECTIONS.has(collection) || collection === 'customers' || collection === 'sops' || collection === 'alerts') {
+    return { status: 403, body: { error: 'not_authorized' } };
+  }
+
+  const jobIds = await assignedJobIds(url, headers, caller);
+  const list = (Array.isArray(records) ? records : [records]).filter(Boolean);
+  let allowed = [];
+
+  if (collection === 'jobs') {
+    // A field worker may update an already-assigned job but cannot create jobs
+    // or assign a job to themselves.
+    allowed = list.filter((r) => r && jobIds.has(r.id) && r.assignedTo === caller.id);
+  } else if (collection === 'job_events') {
+    allowed = list.filter((r) => r && jobIds.has(recordJobId(r)) && recordWorkerId(r) === caller.id);
+  } else if (JOB_SCOPED.has(collection)) {
+    allowed = list.filter((r) => r && jobIds.has(recordJobId(r)));
+  } else if (['locations', 'pto_requests', 'time_off', 'consent_records'].includes(collection)) {
+    allowed = list.filter((r) => r && recordWorkerId(r) === caller.id);
+  } else if (collection === 'employee_messages') {
+    allowed = list.filter((r) => r && [r.userId, r.workerId, r.employeeId, r.fromUserId].includes(caller.id));
+  }
+
+  if (allowed.length !== list.length) return { status: 403, body: { error: 'not_authorized' } };
+  return saveOneCollection(url, headers, { collection, records: allowed });
+}
+
+async function saveOneCollection(url, headers, { collection, records } = {}) {
+  if (!COLLECTIONS.includes(collection)) return { status: 400, body: { error: 'unknown_collection' } };
   const list = Array.isArray(records) ? records : [records];
   const rows = list
     .filter((rec) => rec && rec.id)
     .map((rec) => ({ id: String(rec.id), data: rec, updated_at: new Date().toISOString() }));
   if (!rows.length) return { status: 200, body: { saved: 0 } };
 
-  // "resolution=merge-duplicates" means: insert new records, and update any
-  // record whose id is already there, instead of failing.
   const r = await fetch(`${url}/rest/v1/${encodeURIComponent(collection)}`, {
     method: 'POST',
     headers: { ...headers, Prefer: 'resolution=merge-duplicates,return=minimal' },
@@ -119,8 +177,6 @@ async function saveOneCollection(url, headers, { collection, records }) {
   return { status: 200, body: { saved: rows.length } };
 }
 
-// Vercel usually parses JSON bodies for us, but not always — fall back to
-// reading the raw request when it hasn't.
 async function parseBody(req) {
   if (req.body != null && typeof req.body !== 'string') return req.body;
   const raw = typeof req.body === 'string' ? req.body : await readRaw(req);
