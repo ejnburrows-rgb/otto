@@ -12,7 +12,7 @@ Before doing anything, read:
 4. `docs/DECISIONS.md`
 5. `docs/UNIFIED-FILE-INTAKE.md` for uploads, imports, OCR, or Plans & AutoCAD
 
-The project goal is to finish OTTO as a dependable, demo-ready and production-ready plumbing CRM without redoing completed work.
+The goal is to finish OTTO as a dependable, demo-ready and production-ready plumbing CRM without redoing completed work.
 
 Permanent rules:
 
@@ -24,21 +24,23 @@ Permanent rules:
 - Do not change authentication, payments, live data, production deployment, or paid services without director approval.
 - Do not trust old reports, task queues, branch scripts, or chat summaries over the current repository control files.
 - QuickBooks is out of scope unless the owner explicitly changes that decision.
-- Do not hardcode test totals. Run the full current suite and report the actual output.
+- Do not hardcode test totals. Run the full current suite and report actual output.
 - Done requires tests, `node scripts/qa-check.mjs`, real-browser verification, mobile and desktop checks, and direct evidence.
 
 Current owner/office UI contract:
 
 - Three primary windows are open together: **Today, Field Workers, Inbox**.
-- Each window supports **minimize to the left side panel, restore, maximize, and full screen**.
+- Each supports **minimize, restore, maximize, and full screen**.
+- **Desktop uses the left-side workspace rail. Phone uses a compact bottom dock** so content gets the full narrow-screen width.
 - Do not replace this with a one-panel-at-a-time dashboard.
 - Do not reintroduce generic drag/reorder behavior.
 - **Julio = green accents. Saray = pink accents. Otto = blue OTTO identity.**
-- Keep the supplied OTTO Plumbing `logo.jpg` as the CRM logo.
-- **Plans & AutoCAD** must be clearly visible and use the existing job-document/drawing workflow.
-- **Crew Hours** must show actual recorded hours from job check-in/check-out for the whole field crew.
+- Keep the supplied OTTO Plumbing `logo.jpg` as the CRM logo; it returns Home.
+- **Plans & AutoCAD** stays clearly visible and uses the existing job-document/drawing workflow.
+- **Crew Hours** shows actual recorded hours from job check-in/check-out for the whole field crew.
 - Worker detail stays compact: current job, next job, today/week hours, time-off status. No random heatmaps, fake KPI hours, vanity location counts, or mock performance charts.
 - Owner/office Settings stays restrained: appearance, team access, owner security, data safety, sign out.
+- Refine rather than redesign: consistent secondary screens, restrained effects, practical touch targets, wrapped tabs, accessible dialogs, intentional empty/error/confirmation states.
 
 Unified file intake:
 
@@ -53,8 +55,8 @@ Unified file intake:
 
 Current priority order:
 
-1. Finish and prove the owner/office workspace above.
-2. Finish and prove unified file intake.
+1. Finish and prove the refined owner/office workspace above, including desktop rail and phone dock.
+2. Preserve and prove unified file intake.
 3. Photo-upload reliability: never silently abandon a locally stored photo; keep retrying and show its pending/not-sent state.
 4. Safe server authorization from current `main` under issue #70, preserving offline PIN unlock.
 5. Cross-device record/photo proof with role and record-level isolation.
@@ -70,4 +72,4 @@ Report only:
 - what changed,
 - and what is not done yet.
 
-For the full current rules and acceptance criteria, follow `AGENTS.md` and `docs/REPO-CONTROL.md`.
+For full current rules and acceptance criteria, follow `AGENTS.md` and `docs/REPO-CONTROL.md`.
