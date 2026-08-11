@@ -8,7 +8,8 @@ This is the current control point for the repository. It is not a restart. It te
 2. This file — current objective, priorities, and authority.
 3. `docs/STATUS.md` — factual product state and incident history.
 4. `docs/DECISIONS.md` — why major technical choices were made.
-5. Task-specific files only when they are named by the current objective.
+5. `docs/UNIFIED-FILE-INTAKE.md` — authoritative when working on uploads, imports, OCR, or Plans & AutoCAD.
+6. Other task-specific files only when they are named by the current objective.
 
 No other Markdown file may silently become a competing source of truth. Historical reports, old task queues, and tool-specific prompts are reference material only unless this file explicitly activates them.
 
@@ -18,6 +19,8 @@ Finish OTTO as a dependable, demo-ready and production-ready plumbing CRM withou
 
 The current UI objective is now explicit and must not be simplified away again: owner and office users use a wallpaper-first desktop workspace with **three primary windows open together** — Today, Field Workers, and Inbox. Each window may minimize to the left side panel, maximize inside the workspace, enter full screen, and restore. Drag/reorder is intentionally excluded because the earlier drag implementation interfered with normal scrolling.
 
+For file handling, the current objective is equally explicit: use one **Upload / Import** intake model. Spreadsheets are parsed directly, photos/scans use bilingual browser OCR, CAD files reuse the existing job drawing pipeline, and PDF asks one simple document-vs-plan choice because it is ambiguous. All applicable flows end in review before save. Do not restore separate provider-key OCR or competing upload systems.
+
 ## Current product truth
 
 - The owner/office UI contract is the three-window workspace described above. A previous one-panel-at-a-time left-rail redesign is superseded and must not be restored as the default.
@@ -26,6 +29,7 @@ The current UI objective is now explicit and must not be simplified away again: 
 - Worker information is intentionally operational and compact: current job, next job, actual hours recorded from job check-in/check-out, and time-off status. Do not restore random heatmaps, fabricated KPI hours, vanity location counts, login-history cards, or fake charts as worker performance information.
 - The whole field crew has a Crew Hours view showing real recorded hours today, real recorded hours this week, and how many workers are currently clocked in.
 - Plans & AutoCAD is a first-class work entry point. It accepts PDF, DWG, DXF, DWF and DGN through the existing job-document/drawing pipeline; do not bury this capability only inside a job tab.
+- Upload/import/OCR follows `docs/UNIFIED-FILE-INTAKE.md`: one front door, direct spreadsheet parsing, browser bilingual OCR for images/scans, existing CAD analysis for plans, explicit PDF routing, review before save, Field Worker-only employee imports, no PIN import, and no fabricated attendance.
 - Tools stays a restrained launcher for the core daily modules. Secondary technical screens must not be promoted merely because they exist in code.
 - Admin Settings is intentionally simplified. Keep appearance, team access, owner security, data safety and sign-out visible. Provider keys and unfinished setup stubs do not belong in the normal owner/office settings experience.
 - The local/offline CRM and built-in demo are present.
@@ -39,11 +43,11 @@ The current UI objective is now explicit and must not be simplified away again: 
 ## Priority order
 
 1. **Finish and prove the owner/office workspace** — three simultaneous windows, minimize/restore/maximize/full-screen behavior, correct Julio/Saray/Otto identity, visible Plans & AutoCAD, real Crew Hours, simplified worker information, responsive layouts, bilingual parity and accessibility.
-2. **Photo-upload reliability** — never silently abandon a locally stored job photo; keep retrying and show a clear pending/not-sent state.
-3. **Server authorization (#70)** — build fresh from current `main` using provider-backed identity plus explicit role and record-level authorization. Preserve offline PIN unlock.
-4. **Cross-device proof** — prove authorized records and photo bytes reach the correct owner/office/field users without exposing unrelated records.
-5. **Duplicate live-data reconciliation (#111)** — back up first, remove only verified duplicate/demo rows and their linked seeded activity, and prove no genuine business data was lost. No delete is authorized until the exact rows and dependent records are approved.
-6. **OCR/drawing reliability and error clarity.**
+2. **Unified file intake** — one Upload / Import surface for spreadsheet employee import, bilingual OCR, and job-linked plans; remove conflicting old user-facing scan/upload flows and prove review-before-save behavior.
+3. **Photo-upload reliability** — never silently abandon a locally stored job photo; keep retrying and show a clear pending/not-sent state.
+4. **Server authorization (#70)** — build fresh from current `main` using provider-backed identity plus explicit role and record-level authorization. Preserve offline PIN unlock.
+5. **Cross-device proof** — prove authorized records and photo bytes reach the correct owner/office/field users without exposing unrelated records.
+6. **Duplicate live-data reconciliation (#111)** — back up first, remove only verified duplicate/demo rows and their linked seeded activity, and prove no genuine business data was lost. No delete is authorized until the exact rows and dependent records are approved.
 7. **Notifications only after authenticated server access is proven.** QuickBooks is not part of this product scope.
 8. **Final production readiness** — fresh tests, real-browser verification, demo verification, deployment proof, and director sign-off.
 
@@ -77,6 +81,7 @@ The following are product requirements, not optional design suggestions:
 8. Do not present random/demo chart values as worker performance.
 9. Do not replace the supplied OTTO Plumbing logo with the app icon.
 10. Do not expose technical integration setup simply to make Settings look fuller.
+11. Do not restore separate spreadsheet/OCR/CAD upload experiences that compete with the unified intake model.
 
 ## Definition of done
 
@@ -90,12 +95,13 @@ A task is complete only when all applicable evidence exists:
 - Julio, Saray and Otto are each checked for correct identity treatment,
 - minimize/restore/maximize/full-screen is exercised for all three home windows,
 - Plans & AutoCAD upload is opened through the dedicated hub and linked to a job,
+- unified intake is exercised with a spreadsheet, an image/scan, a PDF in both routing modes, and a plan format; review-before-save is verified,
 - Crew Hours is checked against known check-in/check-out records,
 - a screenshot or equivalent direct evidence proves the visible result,
 - the pull request is reviewed against the stated acceptance criteria,
 - and `docs/STATUS.md` receives one factual dated update.
 
-Never hardcode a test count into permanent instructions. Report the actual count from the run.
+Never hardcode a test count into permanent instructions. Report the actual result from the run.
 
 ## Reporting format
 
