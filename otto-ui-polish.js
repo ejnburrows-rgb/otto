@@ -5,6 +5,15 @@
   let lastDialogOpener = null;
   let dialogSequence = 0;
 
+  function ensureClientVisiblePolish() {
+    if (document.querySelector('link[data-otto-client-visible-polish]')) return;
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = './otto-client-visible-polish.css?v=2';
+    link.setAttribute('data-otto-client-visible-polish', 'runtime');
+    document.head.appendChild(link);
+  }
+
   function isEditable(target) {
     if (!target) return false;
     const tag = target.tagName;
@@ -156,6 +165,7 @@
   });
 
   function start() {
+    ensureClientVisiblePolish();
     enhance(document);
     observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-state', 'class'] });
   }
