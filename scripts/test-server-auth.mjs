@@ -29,6 +29,10 @@ global.fetch = async (url, options = {}) => {
     { id: 'owner-1', auth_uid: 'auth-owner', data: { id: 'owner-1', name: 'Otto', role: 'owner', email: 'otto@example.com', active: true } },
     { id: 'worker-1', auth_uid: 'auth-field', data: { id: 'worker-1', name: 'Worker', role: 'field', email: 'worker@example.com', active: true } },
   ]), { status: 200 });
+  if (String(url).includes('/rest/v1/users')) return new Response(JSON.stringify([
+    { id: 'owner-1', data: { id: 'owner-1', name: 'Otto', role: 'owner', active: true } },
+    { id: 'worker-1', data: { id: 'worker-1', name: 'Worker', role: 'field', active: true } },
+  ]), { status: 200 });
   if (String(url).includes('/rest/v1/jobs')) return new Response('[]', { status: 200 });
   if (String(url).includes('/rest/v1/')) return new Response('[]', { status: 200 });
   throw new Error('unexpected upstream: ' + url);
@@ -39,6 +43,16 @@ console.log('\nSupabase-backed server authorization');
   calls = []; const res = response(); await dataRoute(request(), res);
   check('anonymous requests are denied', res.statusCode, 401);
   check('anonymous requests never reach Supabase', calls.length, 0);
+}
+{
+  calls = []; const res = response();
+  await dataHandler(request({}, { query: {}, method: 'POST', body: { collection: 'users', records: [{ id: 'owner-1', role: 'owner', active: true, deleted: true }] } }), res, { role: 'owner', userId: 'owner-1', profile: { id: 'owner-1', role: 'owner' } });
+  check('protected administrator cannot be deleted', res.statusCode, 403);
+}
+{
+  calls = []; const res = response();
+  await dataHandler(request({}, { query: {}, method: 'POST', body: { collection: 'users', records: [{ id: 'worker-1', role: 'field', active: true, deleted: true }] } }), res, { role: 'owner', userId: 'owner-1', profile: { id: 'owner-1', role: 'owner' } });
+  check('owner can delete a field worker', res.statusCode, 200);
 }
 {
   calls = []; const res = response(); await dataRoute(request({ authorization: 'Bearer invalid' }), res);

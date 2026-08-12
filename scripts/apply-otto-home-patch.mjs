@@ -15,8 +15,10 @@ export function patchSource(source) {
   let out = source;
 
   const replacements = [
-    ["{ id: 'ops-1', name: 'Saray', role: 'office'", "{ id: 'ops-1', name: 'Sarays', role: 'office'"],
-    ["fixUser('ops-1', 'Saray');", "fixUser('ops-1', 'Sarays');"],
+    ["{ id: 'ops-1', name: 'Saray', role: 'office'", "{ id: 'ops-1', name: 'Sarays', role: 'owner'"],
+    ["{ id: 'ops-1', name: 'Sarays', role: 'office'", "{ id: 'ops-1', name: 'Sarays', role: 'owner'"],
+    ["fixUser('ops-1', 'Saray');", "fixUser('ops-1', 'Sarays', 'owner');"],
+    ["fixUser('ops-1', 'Sarays');", "fixUser('ops-1', 'Sarays', 'owner');"],
     ['PlumbBot AI Assistant', 'Ask OTTO'],
     ['Online · Boss-Level Intelligence', 'Assistant'],
     ["Hello Boss! I'm PlumbBot. How can I assist you with estimates, crew dispatch, margin calculation, or job analytics today?", "Hi. Ask OTTO about today's work, jobs, estimates, payroll, or company records."],
@@ -94,9 +96,9 @@ export function patchRuntime(source) {
 export function validatePatchedSource(source) {
   return [
     ['Julio canonical seed', source.includes("id: 'owner-2', name: 'Julio'")],
-    ['Sarays canonical seed', source.includes("id: 'ops-1', name: 'Sarays'")],
+    ['Sarays canonical owner seed', source.includes("id: 'ops-1', name: 'Sarays', role: 'owner'")],
     ['Julio migration', source.includes("fixUser('owner-2', 'Julio');")],
-    ['Sarays migration', source.includes("fixUser('ops-1', 'Sarays');")],
+    ['Sarays owner migration', source.includes("fixUser('ops-1', 'Sarays', 'owner');")],
     ['workspace stylesheet wired', source.includes(`href="./otto-home.css?v=${HOME_ASSET_VERSION}" data-otto-home-styles`)],
     ['workspace runtime wired', source.includes(`src="./otto-home.js?v=${HOME_ASSET_VERSION}" data-otto-home-runtime`)],
     ['home assets share one cache-busting version', (source.match(/otto-home\.(?:css|js)\?v=/g) || []).length === 2],

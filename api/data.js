@@ -30,6 +30,8 @@ const COLLECTIONS = ['customers', 'jobs', 'calls', 'notes', 'photos', 'documents
   'rate_cards', 'estimate_projects', 'estimate_records', 'verification_logs', 'pricing_exceptions',
   'companyProfile'];
 
+const PROTECTED_ADMIN_IDS = new Set(['owner-1', 'owner-2', 'ops-1', 'it-admin-ejn']);
+
 // Provider-backed identity is verified before any Supabase business data is
 // read or written. See api/_lib/serverAuth.js.
 export default async function handler(req, res) {
@@ -153,8 +155,32 @@ async function readEveryCollection(url, headers, identity) {
 }
 
 async function authorizeWrite(url, headers, identity, body) {
-  if (identity.role === 'owner' || identity.role === 'office') return { ok: true };
   const collection = body && body.collection;
+  if (identity.role === 'owner' || identity.role === 'office') {
+    if (collection !== 'users') return { ok: true };
+    const records = (Array.isArray(body.records) ? body.records : [body.records]).filter(Boolean);
+    const existingUsers = await readRows(url, headers, 'users') || [];
+    const existingById = new Map(existingUsers.map(user => [user.id, user]));
+    for (const record of records) {
+      const existing = existingById.get(record.id);
+      if (PROTECTED_ADMIN_IDS.has(record.id)) {
+        if (record.deleted === true || record.active === false || record.role !== 'owner') {
+          return { ok: false, message: 'Protected administrator accounts must remain active owners.' };
+        }
+        continue;
+      }
+      if (!existing && record.role !== 'field') {
+        return { ok: false, message: 'New Team records must be field workers.' };
+      }
+      if (record.deleted === true && (!existing || existing.role !== 'field')) {
+        return { ok: false, message: 'Only field workers can be deleted.' };
+      }
+      if (existing && existing.role === 'field' && record.role !== 'field') {
+        return { ok: false, message: 'Field-worker records cannot be promoted through the Team form.' };
+      }
+    }
+    return { ok: true };
+  }
   if (!FIELD_COLLECTIONS.has(collection) || collection === 'users' || collection === 'customers') {
     return { ok: false, message: 'Field accounts can only update their assigned work.' };
   }

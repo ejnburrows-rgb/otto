@@ -40,8 +40,11 @@ const { ROLE_VIEWS, can } = new Function(`
 console.log('\nstaff admin — who can create accounts and set sign-in codes');
 check('an owner reaches Team', can('owner', 'team'), true);
 check('the office manager reaches Team', can('office', 'team'), true);
-check('the IT account reaches Team (it is an office role)', can('office', 'team'), true);
+check('administrative office access still reaches Team', can('office', 'team'), true);
 check('field crew do NOT reach Team', can('field', 'team'), false);
+check('Sarays is seeded as a full owner administrator', html.includes("id: 'ops-1', name: 'Sarays', role: 'owner'"), true);
+check('the IT administrator is protected from deletion', html.includes("'it-admin-ejn'") && html.includes("Only field workers can be deleted."), true);
+check('the Team delete action is limited to field workers', html.includes("u.role === 'field' && !protectedAdmin") && html.includes('deleteFieldWorker'), true);
 
 console.log('\nthe money screens');
 for (const view of ['invoices', 'payments', 'estimates', 'checks', 'payroll']) {

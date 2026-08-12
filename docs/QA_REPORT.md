@@ -4,8 +4,8 @@
 **Overall:** PASS (with notes below)
 
 ## Button wiring
-- Functions in app: 426
-- Buttons checked: 134
+- Functions in app: 428
+- Buttons checked: 135
 - Broken buttons: NONE
 - New features not on window export list: NONE (browser still OK)
 

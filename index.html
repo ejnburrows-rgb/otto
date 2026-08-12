@@ -1284,7 +1284,7 @@
     d.users = [
       { id: 'owner-1', name: 'Otto', role: 'owner', lang: 'en', active: true, email: '', created: nowISO() },
       { id: 'owner-2', name: 'Julio', role: 'owner', lang: 'es', active: true, email: '', created: nowISO() },
-      { id: 'ops-1', name: 'Sarays', role: 'office', lang: 'en', active: true, email: '', created: nowISO() }
+      { id: 'ops-1', name: 'Sarays', role: 'owner', lang: 'en', active: true, email: '', created: nowISO() }
     ];
     // A couple of genuinely useful plumbing SOPs and workflow templates.
     d.sops = [
@@ -3455,6 +3455,9 @@
   }
 
   /* ============================ TEAM ============================ */
+  const PROTECTED_ADMIN_IDS = new Set(['owner-1', 'owner-2', 'ops-1', 'it-admin-ejn']);
+  function isProtectedAdmin(user) { return Boolean(user && PROTECTED_ADMIN_IDS.has(user.id)); }
+
   function viewTeam() {
     const owners = db.users.filter(u => u.role === 'owner');
     const mgrs = db.users.filter(u => u.role === 'office');
@@ -3462,30 +3465,42 @@
     let html = pageHead(t('team'), `${db.users.length} · ${fields.length} ${t('fieldCrew')}`);
     html += `<div class="btnrow"><button class="btn" onclick="openUserForm()"><i class="fas fa-user-plus"></i> ${lang === 'es' ? 'Agregar empleado' : 'Add Employee'}</button><button class="btn ghost" onclick="window.ottoUnifiedIntake && window.ottoUnifiedIntake.open()"><i class="fas fa-file-excel"></i> ${lang === 'es' ? 'Importar Excel / CSV' : 'Import Excel / CSV'}</button></div>`;
     const makeList = (title, arr) => arr.length ? `<div style="font-size:11px;color:var(--text2);padding:4px 8px">${title} (${arr.length})</div>` + arr.map(u => `<div class="list-item" onclick="openUserForm('${u.id}')"><div class="avatar" style="background:${colorFor(u.name)}">${initials(u.name)}</div><div class="li-main"><div class="li-title">${esc(u.name)}</div><div class="li-sub">${t(u.role)}</div></div><i class="fas fa-chevron-right chev"></i></div>`).join('') : '';
-    html += `<div class="card">${makeList('OWNERS', owners)}${makeList('OPS & IT', mgrs)}${makeList('FIELD', fields)}</div>`;
+    html += `<div class="card">${makeList(lang === 'es' ? 'ADMINISTRADORES COMPLETOS' : 'FULL ADMINISTRATORS', owners)}${makeList('OPS & IT', mgrs)}${makeList(lang === 'es' ? 'TRABAJADORES DE CAMPO' : 'FIELD WORKERS', fields)}</div>`;
     $('#main').innerHTML = html;
   }
   function openUserForm(id) {
     const u = id ? get('users', id) : { role: 'field', lang: 'es' };
+    const protectedAdmin = isProtectedAdmin(u);
     modal(`<h2>${id ? t('edit') : t('addTeam')}</h2>
       <div class="field"><label for="u-name">${t('name')}</label><input id="u-name" value="${esc(u.name || '')}"></div>
       <div class="row2"><div class="field"><label for="u-phone">${lang === 'es' ? 'Teléfono' : 'Phone'}</label><input id="u-phone" type="tel" value="${esc(u.phone || '')}"></div>
       <div class="field"><label for="u-email">${lang === 'es' ? 'Correo de acceso' : 'Sign-in email'}</label><input id="u-email" type="email" value="${esc(u.email || '')}"></div></div>
-      <div class="field"><label for="u-role">${t('role')}</label><select id="u-role">${['owner', 'office', 'field'].map(r => `<option value="${r}" ${u.role === r ? 'selected' : ''}>${t(r)}</option>`).join('')}</select></div>
+      <div class="field"><label for="u-role">${t('role')}</label>${protectedAdmin
+        ? `<input id="u-role" type="hidden" value="owner"><div class="muted" style="padding:10px 0"><i class="fas fa-shield-halved"></i> ${lang === 'es' ? 'Administrador completo' : 'Full administrator'}</div>`
+        : `<select id="u-role"><option value="field" selected>${t('field')}</option></select>`}</div>
       <div class="row2"><div class="field"><label for="u-rate">${lang === 'es' ? 'Pago por hora' : 'Hourly pay'}</label><input id="u-rate" type="number" min="0" step="0.01" value="${esc(u.hourlyRate || '')}"></div>
       <div class="field"><label for="u-lang">${lang === 'es' ? 'Idioma' : 'Language'}</label><select id="u-lang"><option value="en" ${u.lang === 'en' ? 'selected' : ''}>English</option><option value="es" ${u.lang === 'es' ? 'selected' : ''}>Español</option></select></div></div>
-      <div class="field"><label for="u-status">${lang === 'es' ? 'Estado' : 'Status'}</label><select id="u-status"><option value="active" ${u.active !== false ? 'selected' : ''}>${lang === 'es' ? 'Activo' : 'Active'}</option><option value="inactive" ${u.active === false ? 'selected' : ''}>${lang === 'es' ? 'Inactivo' : 'Inactive'}</option></select></div>
+      <div class="field"><label for="u-status">${lang === 'es' ? 'Estado' : 'Status'}</label><select id="u-status" ${protectedAdmin ? 'disabled' : ''}><option value="active" ${u.active !== false ? 'selected' : ''}>${lang === 'es' ? 'Activo' : 'Active'}</option><option value="inactive" ${u.active === false ? 'selected' : ''}>${lang === 'es' ? 'Inactivo' : 'Inactive'}</option></select></div>
       <div class="field"><label for="u-notes">${t('notes')}</label><textarea id="u-notes">${esc(u.notes || '')}</textarea></div>
       <button class="btn block" onclick="saveUser('${id || ''}')"><i class="fas fa-check"></i> ${t('save')}</button>
-      ${id && db.users.length > 1 ? `<button class="btn red block" style="margin-top:10px" onclick="confirmDel(()=>{remove('users','${id}');closeModal();render()})"><i class="fas fa-trash"></i> ${t('delete')}</button>` : ''}`);
+      ${id && u.role === 'field' && !protectedAdmin ? `<button class="btn red block" style="margin-top:10px" onclick="confirmDel(()=>deleteFieldWorker('${id}'))"><i class="fas fa-trash"></i> ${t('delete')}</button>` : ''}`);
+  }
+  function deleteFieldWorker(id) {
+    const user = get('users', id);
+    if (!session || !['owner', 'office'].includes(session.role) || !user || user.role !== 'field' || isProtectedAdmin(user)) {
+      return toast(lang === 'es' ? 'Solo se pueden eliminar trabajadores de campo.' : 'Only field workers can be deleted.', 'error');
+    }
+    remove('users', id); closeModal(); render();
   }
   async function saveUser(id) {
     const name = $('#u-name').value.trim(); if (!name) return toast(t('name') + '?', 'error');
     const email = ($('#u-email').value || '').trim().toLowerCase();
     if (email && !/^\S+@\S+\.\S+$/.test(email)) return toast(lang === 'es' ? 'Correo inválido' : 'Invalid email', 'error');
+    const existing = id ? get('users', id) : null;
+    const protectedAdmin = isProtectedAdmin(existing);
     const data = { name, phone: ($('#u-phone').value || '').trim(), email,
-      role: $('#u-role').value, lang: $('#u-lang').value,
-      hourlyRate: Number($('#u-rate').value || 0), active: $('#u-status').value === 'active',
+      role: protectedAdmin ? 'owner' : 'field', lang: $('#u-lang').value,
+      hourlyRate: Number($('#u-rate').value || 0), active: protectedAdmin ? true : $('#u-status').value === 'active',
       notes: ($('#u-notes').value || '').trim() };
     const user = id ? update('users', id, data) : add('users', data);
     if (email) {
@@ -5399,7 +5414,7 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     };
     fixUser('owner-1', 'Otto');
     fixUser('owner-2', 'Julio');
-    fixUser('ops-1', 'Sarays');
+    fixUser('ops-1', 'Sarays', 'owner');
     const retiredIds = ['it-1', ...Array.from({ length: 15 }, (_, i) => 'field-' + (i + 1))];
     const oldUsers = db.users.filter(u => retiredIds.includes(u.id) ||
       ['Owner', 'Office', 'Field Worker', 'Accounting', 'Employee Three', 'Employee Four', 'Employee Five'].includes(u.name));
@@ -6033,7 +6048,7 @@ Return ONLY valid JSON: { "fixtures": [], "pipes": [], "fittings": [], "notes": 
     openNoteForm, saveNote, quickPhoto, chooseJob, runJobAction, uploadDoc, openDoc, quickVoiceNote, voiceInto,
     openEstimateForm, saveEstimate, estimateToInvoice, printDoc, openInvoiceForm, saveInvoice, openInvoiceView, openPaymentForm, savePayment,
     openCheckForm, saveCheck, quickScanCheck, openFollowForm, saveFollow, toggleFollow, openWorkflow, openWorkflowForm, saveWorkflow,
-    openSop, openSopForm, saveSop, shareLocation, exportCSV, openUserForm, saveUser, toggleTheme,
+    openSop, openSopForm, saveSop, shareLocation, exportCSV, openUserForm, saveUser, deleteFieldWorker, toggleTheme,
     cloudPullNow, exportAll, importAll, askAssistant,
     analyzeDrawing, askDrawingQuestion, answerDrawingQ, skipDrawingQ, showDrawingReview, addMaterialRow, saveDrawingEstimate, estimateFromDrawing,
     viewEmails, openEmailForm, saveEmailForm, importEml, openEmail, relinkEmail, saveEmailLink, emailToNote, summarizeEmail,
