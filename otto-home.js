@@ -371,6 +371,26 @@
     </aside>`;
   }
 
+  function primaryNavMarkup() {
+    const items = [
+      { icon: 'fa-house', label: words('Home', 'Inicio'), action: 'go-home' },
+      { icon: 'fa-users', label: words('Customers', 'Clientes'), view: 'customers' },
+      { icon: 'fa-screwdriver-wrench', label: words('Jobs', 'Trabajos'), view: 'jobs' },
+      { icon: 'fa-inbox', label: words('Inbox', 'Bandeja'), view: 'inbox' },
+      { icon: 'fa-file-signature', label: words('Estimates', 'Estimados'), view: 'estimates' },
+      { icon: 'fa-credit-card', label: words('Payments', 'Pagos'), view: 'payments' },
+      { icon: 'fa-drafting-compass', label: words('Plans & AutoCAD', 'Planos y AutoCAD'), action: 'plans-hub', featured: true },
+      { icon: 'fa-user-gear', label: words('Team', 'Equipo'), view: 'team' },
+      { icon: 'fa-gear', label: words('Settings', 'Ajustes'), view: 'settings' }
+    ].filter(item => !item.view || can(item.view));
+
+    return `<nav class="otto-primary-nav" aria-label="${esc(words('Main CRM sections', 'Secciones principales del CRM'))}">
+      ${items.map(item => `<button type="button" class="otto-primary-tab${item.featured ? ' is-featured' : ''}" data-otto-action="${item.action || 'nav'}"${item.view ? ` data-otto-view="${esc(item.view)}"` : ''}>
+        <i class="fas ${item.icon}" aria-hidden="true"></i><span>${esc(item.label)}</span>
+      </button>`).join('')}
+    </nav>`;
+  }
+
   function renderWorkspace(focus, focusId) {
     const stage = document.getElementById('otto-window-stage');
     if (!stage) return;
@@ -403,7 +423,7 @@
     document.body.classList.add('theme-app', 'admin-home', 'admin-workspace');
     const main = document.getElementById('main');
     if (!main) return;
-    main.innerHTML = `<div class="otto-owner-home">${railMarkup()}<main class="otto-window-stage" id="otto-window-stage" aria-label="${esc(words('Main workspace windows', 'Ventanas principales'))}"></main></div>`;
+    main.innerHTML = `<div class="otto-owner-home">${railMarkup()}${primaryNavMarkup()}<main class="otto-window-stage" id="otto-window-stage" aria-label="${esc(words('Main workspace windows', 'Ventanas principales'))}"></main></div>`;
     const fab = document.getElementById('fab');
     if (fab) fab.classList.add('hidden');
     renderWorkspace(false);
@@ -469,6 +489,10 @@
 
     modal(`<div class="otto-plans-hub">
       <div class="otto-plans-head"><span class="otto-plans-icon"><i class="fas fa-drafting-compass"></i></span><div><h2>${L ? 'Planos y AutoCAD' : 'Plans & AutoCAD'}</h2><p>${L ? 'Un solo lugar para cargar PDF y archivos AutoCAD al trabajo correcto.' : 'One place to upload PDFs and AutoCAD files to the correct job.'}</p><div class="otto-format-line">PDF · DWG · DXF · DWF · DGN</div></div></div>
+      <div class="otto-plan-primary-actions">
+        <button type="button" class="btn" data-otto-action="import-plan"><i class="fas fa-file-arrow-up"></i> ${L ? 'Importar PDF / AutoCAD' : 'Import PDF / AutoCAD'}</button>
+        <button type="button" class="btn ghost" data-otto-action="new-job"><i class="fas fa-plus"></i> ${L ? 'Crear trabajo' : 'Create job'}</button>
+      </div>
       <h3>${L ? 'Seleccione el trabajo' : 'Choose the job'}</h3><div class="otto-plan-jobs">${jobRows}</div>
       <h3>${L ? 'Planos recientes' : 'Recent plans'}</h3><div class="otto-plan-recent-list">${recentRows}</div>
     </div>`);
@@ -695,6 +719,15 @@
       const jobId = target.getAttribute('data-otto-job');
       closeModal();
       if (jobId) uploadDoc(jobId, 'cad');
+    } else if (action === 'import-plan') {
+      event.preventDefault();
+      closeModal();
+      if (window.ottoUnifiedIntake && typeof window.ottoUnifiedIntake.openPlan === 'function') window.ottoUnifiedIntake.openPlan();
+      else if (window.ottoUnifiedIntake && typeof window.ottoUnifiedIntake.open === 'function') window.ottoUnifiedIntake.open();
+    } else if (action === 'new-job') {
+      event.preventDefault();
+      closeModal();
+      if (typeof window.openJobForm === 'function') window.openJobForm();
     } else if (action === 'open-plan') {
       event.preventDefault();
       const docId = target.getAttribute('data-otto-doc');

@@ -228,6 +228,58 @@ body.admin-home .topbar .langtoggle button.on {
   min-height: 100dvh;
 }
 
+/* Direct module tabs stay visible so owners never have to hunt through a
+   launcher to reach core CRM work. */
+.otto-primary-nav {
+  position: fixed;
+  top: var(--otto-top);
+  left: calc(max(var(--otto-edge), env(safe-area-inset-left)) + var(--otto-taskbar-w) + var(--otto-gap));
+  right: max(var(--otto-edge), env(safe-area-inset-right));
+  z-index: 61;
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  overflow-x: auto;
+  border: 1px solid var(--otto-hairline);
+  border-radius: 15px;
+  background: var(--otto-surface);
+  box-shadow: var(--otto-shadow-sm);
+  backdrop-filter: var(--otto-blur);
+  -webkit-backdrop-filter: var(--otto-blur);
+  scrollbar-width: thin;
+}
+
+.otto-primary-tab {
+  flex: 0 0 auto;
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 11px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 720;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.otto-primary-tab:hover {
+  background: color-mix(in srgb, var(--action) 9%, transparent);
+  border-color: var(--otto-hairline);
+}
+
+.otto-primary-tab.is-featured {
+  background: var(--action);
+  color: #fff;
+}
+
 /* ============================ LEFT TASK PANEL ============================== */
 
 .otto-taskbar {
@@ -377,7 +429,7 @@ body.admin-home .topbar .langtoggle button.on {
 
 .otto-window-stage {
   position: fixed;
-  top: var(--otto-top);
+  top: calc(var(--otto-top) + 66px);
   left: calc(max(var(--otto-edge), env(safe-area-inset-left)) + var(--otto-taskbar-w) + var(--otto-gap));
   right: max(var(--otto-edge), env(safe-area-inset-right));
   bottom: max(var(--otto-edge), env(safe-area-inset-bottom));
@@ -780,6 +832,21 @@ body.otto-fullscreen-window .otto-taskbar {
   margin-bottom: 18px;
 }
 
+.otto-plan-primary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin: 0 0 18px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--action) 26%, var(--line));
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--action) 7%, var(--card));
+}
+
+.otto-plan-primary-actions .btn {
+  min-height: 44px;
+}
+
 .otto-plan-job {
   display: flex;
   align-items: center;
@@ -988,6 +1055,7 @@ body.otto-fullscreen-window .otto-taskbar {
 .otto-task:focus-visible,
 .otto-tools-launch:focus-visible,
 .otto-window-control:focus-visible,
+.otto-primary-tab:focus-visible,
 .otto-row-link:focus-visible,
 .otto-action:focus-visible,
 .otto-tool-item:focus-visible,
@@ -1100,10 +1168,29 @@ body.otto-fullscreen-window .otto-taskbar {
     margin-top: auto;
   }
 
-  .otto-window-stage {
+  body.admin-home .otto-window-stage {
     grid-template-columns: 1fr;
     overflow-y: auto;
     align-content: start;
+    top: calc(var(--otto-top) + 70px);
+  }
+
+  .otto-primary-nav {
+    top: var(--otto-top);
+    bottom: auto;
+    left: max(var(--otto-edge), env(safe-area-inset-left));
+    right: max(var(--otto-edge), env(safe-area-inset-right));
+    min-height: 60px;
+    padding: 5px;
+  }
+
+  .otto-primary-tab {
+    min-width: 66px;
+    min-height: 48px;
+    flex-direction: column;
+    gap: 3px;
+    padding: 5px 7px;
+    font-size: 9px;
   }
 
   .otto-window[data-state="normal"],
@@ -1178,6 +1265,10 @@ body.otto-fullscreen-window .otto-taskbar {
   .otto-plan-job {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .otto-plan-primary-actions .btn {
+    width: 100%;
   }
 }
 

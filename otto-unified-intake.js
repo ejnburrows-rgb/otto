@@ -45,8 +45,13 @@
   }
 
   function jobs() { return (data().jobs || []).filter(Boolean); }
+  function customers() { return (data().customers || []).filter(Boolean); }
   function jobOptions(selected = '') {
     return `<option value="">${esc(tx('Select a job when this file belongs to one','Selecciona un trabajo si este archivo pertenece a uno'))}</option>` + jobs().map(j => `<option value="${esc(j.id)}" ${j.id === selected ? 'selected' : ''}>${esc(j.title || j.id)}</option>`).join('');
+  }
+
+  function customerOptions(selected = '') {
+    return `<option value="">${esc(tx('No customer selected','Sin cliente seleccionado'))}</option>` + customers().map(c => `<option value="${esc(c.id)}" ${c.id === selected ? 'selected' : ''}>${esc(c.name || c.company || c.id)}</option>`).join('');
   }
 
   function ensureLauncher() {
@@ -89,6 +94,34 @@
     drop.addEventListener('drop', e => { e.preventDefault(); const f = e.dataTransfer?.files?.[0]; if (f) routeFile(f, job.value, root); });
   }
 
+  function openPlanIntake() {
+    const root = shell(tx('Import PDF / AutoCAD','Importar PDF / AutoCAD'), `
+      <p class="otto-intake-muted">${esc(tx('Choose a PDF or AutoCAD file. OTTO will attach it to the correct job and open the drawing review.','Selecciona un archivo PDF o AutoCAD. OTTO lo adjuntará al trabajo correcto y abrirá la revisión del plano.'))}</p>
+      <div class="otto-intake-field"><label>${esc(tx('Job (you can create one after choosing the file)','Trabajo (puedes crear uno después de seleccionar el archivo'))}</label><select data-intake-job>${jobOptions()}</select></div>
+      <label class="otto-intake-drop" data-intake-drop>
+        <i class="fas fa-file-arrow-up" style="font-size:28px" aria-hidden="true"></i>
+        <strong>${esc(tx('Choose PDF / AutoCAD file','Selecciona PDF / AutoCAD'))}</strong>
+        <span class="otto-intake-muted">PDF · DWG · DXF · DWF · DGN</span>
+        <input type="file" hidden data-plan-file accept=".pdf,.dwg,.dxf,.dwf,.dgn,application/pdf">
+      </label>
+      <div class="otto-intake-progress" data-intake-progress></div>`);
+    const input = $('[data-plan-file]', root);
+    const selectedJob = $('[data-intake-job]', root);
+    const receive = file => {
+      if (!file) return;
+      const x = ext(file);
+      if (!['pdf','dwg','dxf','dwf','dgn'].includes(x) && file.type !== 'application/pdf') {
+        progress(root, tx('Choose a PDF, DWG, DXF, DWF, or DGN file.','Selecciona un archivo PDF, DWG, DXF, DWF o DGN.'), 'otto-intake-error');
+        return;
+      }
+      saveAsPlan(file, selectedJob.value);
+    };
+    input.addEventListener('change', () => receive(input.files?.[0]));
+    const drop = $('[data-intake-drop]', root);
+    drop.addEventListener('dragover', event => event.preventDefault());
+    drop.addEventListener('drop', event => { event.preventDefault(); receive(event.dataTransfer?.files?.[0]); });
+  }
+
   function ext(file) { return (file.name.match(/\.([^.]+)$/)?.[1] || '').toLowerCase(); }
   function progress(root, text, cls = '') { const p = $('[data-intake-progress]', root); if (p) { p.className = `otto-intake-progress ${cls}`; p.textContent = text; } }
 
@@ -115,8 +148,39 @@
 
   async function saveAsPlan(file, jobId) {
     if (!jobId) {
-      const root = shell(tx('Choose the job','Selecciona el trabajo'), `<p class="otto-intake-muted">${esc(tx('Plans must stay attached to the correct job.','Los planos deben permanecer adjuntos al trabajo correcto.'))}</p><div class="otto-intake-field"><label>${esc(tx('Job','Trabajo'))}</label><select data-plan-job>${jobOptions()}</select></div><div class="otto-intake-actions"><button class="otto-intake-btn primary" type="button" data-plan-save>${esc(tx('Continue','Continuar'))}</button></div>`);
-      $('[data-plan-save]', root).addEventListener('click', () => { const id = $('[data-plan-job]', root).value; if (id) saveAsPlan(file, id); });
+      const proposedTitle = (file.name || '').replace(/\.[^.]+$/, '').replace(/[-_]+/g, ' ').trim() || tx('Imported plan','Plano importado');
+      const root = shell(tx('Attach plan to a job','Adjuntar plano a un trabajo'), `
+        <p class="otto-intake-muted">${esc(tx('Plans must stay attached to the correct job. Select one below or create the job now.','Los planos deben permanecer adjuntos al trabajo correcto. Selecciona uno o crea el trabajo ahora.'))}</p>
+        ${jobs().length ? `<div class="otto-intake-field"><label>${esc(tx('Existing job','Trabajo existente'))}</label><select data-plan-job>${jobOptions()}</select></div><div class="otto-intake-actions"><button class="otto-intake-btn primary" type="button" data-plan-save>${esc(tx('Import to selected job','Importar al trabajo seleccionado'))}</button></div>` : ''}
+        <hr style="border:0;border-top:1px solid rgba(34,86,132,.12);margin:18px 0">
+        <h3 style="margin:0 0 8px">${esc(tx('Create a job for this plan','Crear un trabajo para este plano'))}</h3>
+        <div class="otto-intake-field"><label>${esc(tx('Job name','Nombre del trabajo'))}</label><input type="text" data-new-job-title value="${esc(proposedTitle)}"></div>
+        <div class="otto-intake-field"><label>${esc(tx('Customer (optional)','Cliente (opcional)'))}</label><select data-new-job-customer>${customerOptions()}</select></div>
+        <div class="otto-intake-actions"><button class="otto-intake-btn primary" type="button" data-plan-create>${esc(tx('Create job & import','Crear trabajo e importar'))}</button></div>
+        <div class="otto-intake-progress" data-intake-progress></div>`);
+      const saveButton = $('[data-plan-save]', root);
+      if (saveButton) saveButton.addEventListener('click', () => {
+        const id = $('[data-plan-job]', root).value;
+        if (id) saveAsPlan(file, id);
+        else progress(root, tx('Select a job first.','Selecciona un trabajo primero.'), 'otto-intake-error');
+      });
+      $('[data-plan-create]', root).addEventListener('click', () => {
+        const title = $('[data-new-job-title]', root).value.trim();
+        if (!title) {
+          progress(root, tx('Enter a job name.','Ingresa un nombre para el trabajo.'), 'otto-intake-error');
+          return;
+        }
+        const b = bridge();
+        const job = b.add('jobs', {
+          title,
+          customerId: $('[data-new-job-customer]', root).value || '',
+          status: 'scheduled',
+          description: tx(`Plan imported from ${file.name || 'file'}`, `Plano importado de ${file.name || 'archivo'}`)
+        });
+        b.save();
+        b.render();
+        if (job && job.id) saveAsPlan(file, job.id);
+      });
       return;
     }
     const root = shell(tx('Plan / drawing','Plano / dibujo'), `<p class="otto-intake-muted">${esc(file.name)}</p><div class="otto-intake-progress" data-intake-progress>${esc(tx('Saving to the job…','Guardando en el trabajo…'))}</div>`);
@@ -212,6 +276,6 @@
   const observer = new MutationObserver(() => queueMicrotask(ensureLauncher));
   observer.observe(document.documentElement,{childList:true,subtree:true});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#otto-unified-intake-overlay'))close();});
-  window.ottoUnifiedIntake = { open: openIntake, routeFile, importSpreadsheet, runOCR };
+  window.ottoUnifiedIntake = { open: openIntake, openPlan: openPlanIntake, routeFile, importSpreadsheet, runOCR };
   setTimeout(ensureLauncher,0);
 })();
