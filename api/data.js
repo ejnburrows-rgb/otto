@@ -31,6 +31,7 @@ const COLLECTIONS = ['customers', 'jobs', 'calls', 'notes', 'photos', 'documents
   'companyProfile'];
 
 const PROTECTED_ADMIN_IDS = new Set(['owner-1', 'owner-2', 'ops-1', 'it-admin-ejn']);
+const FULL_ADMIN_ROLES = new Set(['owner', 'office']);
 
 // Provider-backed identity is verified before any Supabase business data is
 // read or written. See api/_lib/serverAuth.js.
@@ -156,7 +157,10 @@ async function readEveryCollection(url, headers, identity) {
 
 async function authorizeWrite(url, headers, identity, body) {
   const collection = body && body.collection;
-  if (identity.role === 'owner' || identity.role === 'office') {
+  // Full administrators can create, edit or soft-delete every business record.
+  // User-account writes receive extra safeguards so the four administrators
+  // cannot be accidentally removed or demoted.
+  if (FULL_ADMIN_ROLES.has(identity.role)) {
     if (collection !== 'users') return { ok: true };
     const records = (Array.isArray(body.records) ? body.records : [body.records]).filter(Boolean);
     const existingUsers = await readRows(url, headers, 'users') || [];

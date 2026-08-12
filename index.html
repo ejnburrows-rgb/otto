@@ -2014,8 +2014,11 @@
   function confirmDel(fn) { if (confirm(t('confirmDelete'))) fn(); }
 
   /* ============================ AUTH / ROLES ============================ */
+  const FULL_ADMIN_VIEWS = ['home', 'hub', 'kpis', 'worker_profile', 'urgent', 'customers', 'jobs', 'calls', 'inbox', 'emails', 'estimates', 'pricing', 'contracts', 'invoices', 'payments', 'checks', 'payroll', 'alerts', 'followups', 'workflows', 'knowledge', 'map', 'reports', 'backups', 'audit', 'team', 'settings', 'assistant'];
   const ROLE_VIEWS = {
-    owner: ['home', 'hub', 'kpis', 'worker_profile', 'urgent', 'customers', 'jobs', 'calls', 'inbox', 'emails', 'estimates', 'pricing', 'contracts', 'invoices', 'payments', 'checks', 'payroll', 'alerts', 'followups', 'workflows', 'knowledge', 'map', 'reports', 'backups', 'audit', 'team', 'settings', 'assistant'],
+    // EJN, Julio, Otto and Sarays are owners. Owner is the complete CRM role:
+    // people, customers, jobs, money, communications, files and oversight.
+    owner: FULL_ADMIN_VIEWS,
     // 'team' is here as well as under owner: the office manager and the IT
     // account both run day-to-day staff admin — adding a new hire, setting or
     // resetting a sign-in code — and routing that through an owner every time
@@ -2888,8 +2891,17 @@
       </div>` : ''}
       <div class="btnrow">
         ${url ? `<a class="btn ghost" href="${url}" download="${esc(d.name)}"><i class="fas fa-download"></i> ${lang === 'es' ? 'Descargar' : 'Download'}</a>` : ''}
-        <button class="btn red" onclick="confirmDel(()=>{remove('documents','${id}');closeModal();render()})"><i class="fas fa-trash"></i> ${t('delete')}</button>
+        <button class="btn red" onclick="confirmDel(()=>deleteDocument('${id}'))"><i class="fas fa-trash"></i> ${t('delete')}</button>
       </div>`);
+  }
+  function deleteDocument(id) {
+    const documentRecord = get('documents', id);
+    if (!documentRecord) return;
+    deletePhotoFile(documentRecord.fileId);
+    remove('documents', id);
+    closeModal();
+    toast(t('deleted'), 'success');
+    render();
   }
   function blobToDataURL(b) { return new Promise(r => { const fr = new FileReader(); fr.onload = () => r(fr.result); fr.readAsDataURL(b); }); }
 
@@ -3465,6 +3477,7 @@
     let html = pageHead(t('team'), `${db.users.length} · ${fields.length} ${t('fieldCrew')}`);
     html += `<div class="btnrow"><button class="btn" onclick="openUserForm()"><i class="fas fa-user-plus"></i> ${lang === 'es' ? 'Agregar empleado' : 'Add Employee'}</button><button class="btn ghost" onclick="window.ottoUnifiedIntake && window.ottoUnifiedIntake.open()"><i class="fas fa-file-excel"></i> ${lang === 'es' ? 'Importar Excel / CSV' : 'Import Excel / CSV'}</button></div>`;
     const makeList = (title, arr) => arr.length ? `<div style="font-size:11px;color:var(--text2);padding:4px 8px">${title} (${arr.length})</div>` + arr.map(u => `<div class="list-item" onclick="openUserForm('${u.id}')"><div class="avatar" style="background:${colorFor(u.name)}">${initials(u.name)}</div><div class="li-main"><div class="li-title">${esc(u.name)}</div><div class="li-sub">${t(u.role)}</div></div><i class="fas fa-chevron-right chev"></i></div>`).join('') : '';
+    html += `<div class="card" style="padding:12px 14px;margin-bottom:12px"><div style="font-weight:750"><i class="fas fa-shield-halved"></i> ${lang === 'es' ? 'Acceso completo al CRM' : 'Complete CRM access'}</div><div class="muted" style="margin-top:6px">${lang === 'es' ? 'Los administradores completos pueden ver y administrar usuarios, clientes, trabajos, facturas, pagos, contratos, comunicaciones, documentos, fotos y ajustes.' : 'Full administrators can view and manage users, customers, jobs, invoices, payments, contracts, communications, documents, photos and settings.'}</div></div>`;
     html += `<div class="card">${makeList(lang === 'es' ? 'ADMINISTRADORES COMPLETOS' : 'FULL ADMINISTRATORS', owners)}${makeList('OPS & IT', mgrs)}${makeList(lang === 'es' ? 'TRABAJADORES DE CAMPO' : 'FIELD WORKERS', fields)}</div>`;
     $('#main').innerHTML = html;
   }
@@ -3476,7 +3489,7 @@
       <div class="row2"><div class="field"><label for="u-phone">${lang === 'es' ? 'Teléfono' : 'Phone'}</label><input id="u-phone" type="tel" value="${esc(u.phone || '')}"></div>
       <div class="field"><label for="u-email">${lang === 'es' ? 'Correo de acceso' : 'Sign-in email'}</label><input id="u-email" type="email" value="${esc(u.email || '')}"></div></div>
       <div class="field"><label for="u-role">${t('role')}</label>${protectedAdmin
-        ? `<input id="u-role" type="hidden" value="owner"><div class="muted" style="padding:10px 0"><i class="fas fa-shield-halved"></i> ${lang === 'es' ? 'Administrador completo' : 'Full administrator'}</div>`
+        ? `<input id="u-role" type="hidden" value="owner"><div class="muted" style="padding:10px 0"><i class="fas fa-shield-halved"></i> ${lang === 'es' ? 'Administrador completo — acceso a todos los usuarios, clientes, trabajos, facturas y archivos' : 'Full administrator — access to every user, customer, job, invoice and file'}</div>`
         : `<select id="u-role"><option value="field" selected>${t('field')}</option></select>`}</div>
       <div class="row2"><div class="field"><label for="u-rate">${lang === 'es' ? 'Pago por hora' : 'Hourly pay'}</label><input id="u-rate" type="number" min="0" step="0.01" value="${esc(u.hourlyRate || '')}"></div>
       <div class="field"><label for="u-lang">${lang === 'es' ? 'Idioma' : 'Language'}</label><select id="u-lang"><option value="en" ${u.lang === 'en' ? 'selected' : ''}>English</option><option value="es" ${u.lang === 'es' ? 'selected' : ''}>Español</option></select></div></div>
