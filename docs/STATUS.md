@@ -1,6 +1,6 @@
 # STATUS — OTTO Plumbing CRM
 
-Last updated: 2026-08-11.
+Last updated: 2026-08-12.
 
 This file is the current factual snapshot. Historical incident detail remains in Git history and issue/PR discussions; stale status narratives must not be used to restore superseded behavior.
 
@@ -16,6 +16,7 @@ This file is the current factual snapshot. Historical incident detail remains in
 - Failed job-photo uploads remain in a persistent retry flow instead of being silently abandoned.
 - Current source uses Supabase email-link identity, persistent sessions, server-controlled OTTO roles, and record/job-level restrictions for field employees.
 - Current source treats employee location as optional: approve or deny, continue either way, and collect work location only after approval.
+- EJN, Julio, Otto and Sarays are protected Owner profiles. Owner is the complete CRM role across users, customers, jobs, schedules, financial records, communications, documents, photos, plans, settings, backups and audit history. Uploaded-document deletion removes both the CRM record and its stored file.
 - QuickBooks is a manual handoff only: copy/export details and open QuickBooks separately, with no OAuth or synchronization.
 
 ## Current owner / office UI contract

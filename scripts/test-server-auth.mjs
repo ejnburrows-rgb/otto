@@ -54,6 +54,11 @@ console.log('\nSupabase-backed server authorization');
   await dataHandler(request({}, { query: {}, method: 'POST', body: { collection: 'users', records: [{ id: 'worker-1', role: 'field', active: true, deleted: true }] } }), res, { role: 'owner', userId: 'owner-1', profile: { id: 'owner-1', role: 'owner' } });
   check('owner can delete a field worker', res.statusCode, 200);
 }
+for (const collection of ['customers', 'jobs', 'invoices', 'payments', 'estimates', 'contracts', 'documents', 'photos', 'emails', 'inbox_emails', 'plans', 'companyProfile']) {
+  calls = []; const res = response();
+  await dataHandler(request({}, { query: {}, method: 'POST', body: { collection, records: [{ id: `${collection}-1`, deleted: true }] } }), res, { role: 'owner', userId: 'owner-1', profile: { id: 'owner-1', role: 'owner' } });
+  check(`owner can manage ${collection}`, res.statusCode, 200);
+}
 {
   calls = []; const res = response(); await dataRoute(request({ authorization: 'Bearer invalid' }), res);
   check('invalid provider token is denied', res.statusCode, 401);
