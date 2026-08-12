@@ -40,10 +40,10 @@ const { ROLE_VIEWS, can } = new Function(`
   return { ROLE_VIEWS, can: (role, view) => { setSession({ role }); return can(view); } };
 `)();
 
-console.log('\nstaff admin — who can create accounts and set sign-in codes');
+console.log('\nstaff admin — only owners can change cloud identities or roles');
 check('an owner reaches Team', can('owner', 'team'), true);
-check('the office manager reaches Team', can('office', 'team'), true);
-check('administrative office access still reaches Team', can('office', 'team'), true);
+check('the office manager cannot reach Team', can('office', 'team'), false);
+check('office cannot change user roles', can('office', 'team'), false);
 check('field crew do NOT reach Team', can('field', 'team'), false);
 check('Sarays is seeded as a full owner administrator', html.includes("id: 'ops-1', name: 'Sarays', role: 'owner'"), true);
 check('the IT administrator is protected from deletion', html.includes("'it-admin-ejn'") && html.includes("Only field workers can be deleted."), true);

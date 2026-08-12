@@ -18,8 +18,8 @@
 //   DELETE /api/photos?fileId=<id>  → { ok: true }
 
 import { requireServerAuth } from './_lib/serverAuth.js';
+import { STORAGE_BUCKET as BUCKET, MAX_FILE_BYTES, safeUpload, uploadStorageObject } from './_lib/storage.js';
 
-const BUCKET = 'job-photos';
 
 // Provider-backed identity and job access are verified before Supabase Storage
 // is reached. See api/_lib/serverAuth.js.
@@ -104,24 +104,13 @@ export async function photosHandler(req, res, identity = { role: 'owner', userId
         return;
       }
 
-      const path = fileId;
-      const r = await fetch(
-        `${url}/storage/v1/object/${BUCKET}/${encodeURIComponent(path)}`,
-        {
-          method: 'POST',
-          headers: {
-            ...headers,
-            'Content-Type': mime,
-            'x-upsert': 'true',
-          },
-          body: fileBuffer,
-        }
-      );
-      if (!r.ok) {
-        const text = await r.text();
-        res.status(r.status).json({ error: 'upload_failed', detail: text.slice(0, 200) });
+      if (!safeUpload(fileId, mime, fileBuffer.length)) {
+        res.status(fileBuffer.length > MAX_FILE_BYTES ? 413 : 415).json({ error: 'unsafe_upload', message: 'Files must be an allowed type and no larger than 25 MB.' });
         return;
       }
+
+      const path = fileId;
+      await uploadStorageObject({ url, key, fileId: path, mime, buffer: fileBuffer });
       res.status(200).json({ ok: true, path });
       return;
     }
@@ -151,6 +140,14 @@ export async function photosHandler(req, res, identity = { role: 'owner', userId
 
     res.status(405).json({ error: 'method_not_allowed' });
   } catch (e) {
+    if (e && e.code === 'upload_failed') {
+      res.status(e.status || 502).json({ error: 'upload_failed', detail: String(e.message || '').slice(0, 300) });
+      return;
+    }
+    if (e && e.code === 'unsafe_upload') {
+      res.status(413).json({ error: 'unsafe_upload', detail: String(e.message || '').slice(0, 300) });
+      return;
+    }
     res.status(500).json({ error: 'proxy_error', detail: String(e && e.message || e).slice(0, 300) });
   }
 }

@@ -16,6 +16,10 @@ This file is the current factual snapshot. Historical incident detail remains in
 - Failed job-photo uploads remain in a persistent retry flow instead of being silently abandoned.
 - Current source uses Supabase email-link identity, persistent sessions, server-controlled OTTO roles, and record/job-level restrictions for field employees.
 - Current source treats employee location as optional: approve or deny, continue either way, and collect work location only after approval.
+- Inbox is one provider-neutral SendGrid-backed email register. Outbound estimates/invoices use PDF attachments; inbound messages, attachments and replies share the same customer/job thread.
+- Anonymous boot no longer sends collection writes. Device-local PIN sign-in and Gmail polling have been removed; Supabase email-link identity is the only sign-in path.
+- Default workflows/SOPs use stable IDs; production duplicates and the false restore alert have been removed. Backups now attempt private cloud storage before claiming `local+cloud`.
+- All 43 current public document-store tables have an explicit direct-client deny policy, and the private upload bucket enforces a 25 MB limit plus an allowlist.
 - EJN, Julio, Otto and Sarays are protected Owner profiles. Owner is the complete CRM role across users, customers, jobs, schedules, financial records, communications, documents, photos, plans, settings, backups and audit history. Uploaded-document deletion removes both the CRM record and its stored file.
 - QuickBooks is a manual handoff only: copy/export details and open QuickBooks separately, with no OAuth or synchronization.
 
@@ -31,7 +35,7 @@ The required UI is a wallpaper-first operational workspace, not a generic SaaS d
 - **Julio:** green interface accents + Julio wallpaper.
 - **Saray:** pink interface accents + Saray wallpaper.
 - **Otto:** blue OTTO identity; no wallpaper is invented.
-- **Plans & AutoCAD:** first-class launcher using the existing PDF/DWG/DXF/DWF/DGN job-document pipeline.
+- **Plans & AutoCAD:** PDF and DXF are analyzable. DWG/DWF/DGN remain stored with the job and explicitly require a PDF or DXF export for reliable takeoff.
 - **Crew Hours:** whole-team today/week totals and currently clocked-in count derived from real job check-in/check-out records.
 - Worker detail remains limited to current job, next job, today/week hours, and time-off status.
 - Random heatmaps, fake KPI formulas, mock performance charts, vanity location counts, and login-history presentation are not approved worker UI.
@@ -86,9 +90,9 @@ Do not hardcode old test totals as permanent truth; report the actual output of 
 ## Broken / risky
 
 - **Production proof must be checked after every release.** The public alias must show secure email-link sign-in and anonymous API requests must be rejected.
-- **Administrator activation is incomplete.** Otto has a confirmed email in the business profile; Julio and Sarays still need confirmed email addresses. Supabase Auth currently has zero users until an authorized person completes the first secure email-link sign-in.
+- **Administrator activation is partial.** `ejnrcgplm@proton.me` is an active protected Owner. Julio and Sarays still need confirmed email addresses before their cloud identities can be invited.
 - **Cross-device proof is incomplete.** The server authorization tests pass, but the owner/field multi-device workflow cannot be completed until real accounts sign in.
-- **Provider delivery is not proven.** Customer email/text and server AI require configured provider credentials and a real delivery test.
+- **Provider delivery is blocked on business setup.** The owner is supplying the company domain. SendGrid SPF/DKIM, a verified `SENDGRID_FROM`, Inbound Parse, `INBOUND_WEBHOOK_TOKEN`, and confirmation of `NVIDIA_API_KEY` are still required before real email and AI delivery can be proven.
 - Historical branches and documentation remain in Git history. `AGENTS.md` and `docs/REPO-CONTROL.md` are authoritative; do not resurrect superseded UI/auth/upload branches wholesale.
 
 ## Remaining release proof

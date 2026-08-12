@@ -5,7 +5,7 @@ export default async function handler(req, res) {
     res.status(405).json({ error: 'method_not_allowed' });
     return;
   }
-  const identity = await requireServerAuth(req, res, { roles: ['owner', 'office'] });
+  const identity = await requireServerAuth(req, res, { roles: ['owner'] });
   if (!identity) return;
 
   const url = process.env.SUPABASE_URL;

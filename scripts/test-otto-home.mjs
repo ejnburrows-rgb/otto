@@ -61,7 +61,7 @@ const checks = [
 
   // ── Plans & AutoCAD ──────────────────────────────────────────────────────
   ['Plans & AutoCAD has a dedicated hub', runtime.includes('function openPlansHub()') && runtime.includes("'Plans & AutoCAD'")],
-  ['plan hub clearly accepts PDF and AutoCAD-family files', runtime.includes('PDF · DWG · DXF · DWF · DGN')],
+  ['plan hub clearly distinguishes analyzable and storage-only formats', runtime.includes('PDF · DXF') && runtime.includes('DWG · DWF · DGN') && runtime.includes("'(storage)'")],
   ['plan upload uses the existing tested drawing pipeline', runtime.includes("uploadDoc(jobId, 'cad')")],
   ['recent plans are linked to their job folder', runtime.includes('function planDocuments()') && runtime.includes('jobTitle(doc.jobId)')],
   ['Plans & AutoCAD is visible directly on the left rail', runtime.includes('otto-plans-launch') && runtime.includes("words('Plans & AutoCAD', 'Planos y AutoCAD')")],
@@ -95,7 +95,7 @@ const checks = [
 
   // ── existing product contracts preserved ─────────────────────────────────
   ['Ask OTTO still routes to the real assistant', runtime.includes('openPlumbBotModal = function ()') && runtime.includes("nav('assistant')")],
-  ['attention window still uses real inbox data', runtime.includes("list('inbox_emails')")],
+  ['attention window uses unified email data', runtime.includes("list('emails')") && !runtime.includes("list('inbox_emails')")],
   ['attention window still uses worker messages and PTO', runtime.includes("list('employee_messages')") && runtime.includes("list('pto_requests')")],
   ['public website is untouched', !runtime.includes('landing.html') && !styles.includes('landing.html')],
   ['top bar still uses the supplied OTTO Plumbing logo', patched.includes('<img src="./logo.jpg" alt="OTTO Plumbing Inc." class="crystal-logo"')],

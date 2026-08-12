@@ -8,6 +8,7 @@ const SHELL = [
   './', './index.html', './landing.html', './guide.html', './manifest.json', './logo.jpg',
   './otto-home.css', './otto-home.js',
   './otto-ui-polish.css', './otto-ui-polish.js',
+  './otto-quickbooks-handoff.css', './otto-quickbooks-handoff.js',
   './otto-client-visible-polish.css',
   './design-assets/wallpapers/julio-pablo.avif', './design-assets/wallpapers/sarays.avif'
 ];
@@ -115,11 +116,8 @@ self.addEventListener('fetch', (e) => {
   // offline — while the font files it points at were cached and unusable.
   const API_HOSTS = [
     'api.anthropic.com',
-    'gmail.googleapis.com',
     'www.googleapis.com',
     'oauth2.googleapis.com',
-    'accounts.google.com',
-    'apis.google.com',
   ];
   if (API_HOSTS.includes(url.hostname) ||
       url.hostname.endsWith('.intuit.com') ||
