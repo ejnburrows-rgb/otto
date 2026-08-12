@@ -162,6 +162,9 @@ async function authorizeWrite(url, headers, identity, body) {
   // cannot be accidentally removed or demoted.
   if (FULL_ADMIN_ROLES.has(identity.role)) {
     if (collection !== 'users') return { ok: true };
+    if (identity.role !== 'owner') {
+      return { ok: false, message: 'Only an owner can create or change user accounts and roles.' };
+    }
     const records = (Array.isArray(body.records) ? body.records : [body.records]).filter(Boolean);
     const existingUsers = await readRows(url, headers, 'users') || [];
     const existingById = new Map(existingUsers.map(user => [user.id, user]));

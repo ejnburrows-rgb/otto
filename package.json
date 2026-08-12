@@ -13,6 +13,10 @@
     "verify": "node scripts/apply-photo-retry-patch.mjs && node scripts/apply-otto-home-patch.mjs && node scripts/apply-unified-intake-patch.mjs && node scripts/apply-ui-polish-patch.mjs && node scripts/apply-quickbooks-handoff-patch.mjs && node scripts/verify.mjs",
     "verify:live": "node scripts/verify-live.mjs"
   },
+  "dependencies": {
+    "busboy": "^1.6.0",
+    "jspdf": "^2.5.2"
+  },
   "devDependencies": {
     "playwright": "^1.61.1"
   }

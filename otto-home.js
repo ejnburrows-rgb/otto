@@ -184,7 +184,7 @@
     const items = [];
 
     if (includeMail) {
-      list('inbox_emails').filter(e => e && !e.read).forEach(e => items.push({
+      list('emails').filter(e => e && e.direction !== 'outgoing' && !e.read).forEach(e => items.push({
         icon: 'fa-envelope',
         text: e.subject || e.from || words('Email', 'Correo'),
         meta: words('Email', 'Correo'),
@@ -379,10 +379,10 @@
       { icon: 'fa-inbox', label: words('Inbox', 'Bandeja'), view: 'inbox' },
       { icon: 'fa-file-signature', label: words('Estimates', 'Estimados'), view: 'estimates' },
       { icon: 'fa-credit-card', label: words('Payments', 'Pagos'), view: 'payments' },
-      { icon: 'fa-drafting-compass', label: words('Plans & AutoCAD', 'Planos y AutoCAD'), action: 'plans-hub', featured: true },
+      { icon: 'fa-drafting-compass', label: words('Plans & AutoCAD', 'Planos y AutoCAD'), action: 'plans-hub', featured: true, allowed: can('estimates') },
       { icon: 'fa-user-gear', label: words('Team', 'Equipo'), view: 'team' },
       { icon: 'fa-gear', label: words('Settings', 'Ajustes'), view: 'settings' }
-    ].filter(item => !item.view || can(item.view));
+    ].filter(item => item.allowed !== false && (!item.view || can(item.view)));
 
     return `<nav class="otto-primary-nav" aria-label="${esc(words('Main CRM sections', 'Secciones principales del CRM'))}">
       ${items.map(item => `<button type="button" class="otto-primary-tab${item.featured ? ' is-featured' : ''}" data-otto-action="${item.action || 'nav'}"${item.view ? ` data-otto-view="${esc(item.view)}"` : ''}>
@@ -438,7 +438,7 @@
     modal(`<div class="otto-tools-sheet">
       <div class="otto-tools-hero">
         <span class="otto-tools-hero-icon"><i class="fas fa-drafting-compass"></i></span>
-        <div><h2>${L ? 'Planos y AutoCAD' : 'Plans & AutoCAD'}</h2><p>${L ? 'PDF, DWG, DXF, DWF o DGN. Seleccione el trabajo y suba el plano.' : 'PDF, DWG, DXF, DWF or DGN. Choose the job and upload the plan.'}</p></div>
+        <div><h2>${L ? 'Planos y AutoCAD' : 'Plans & AutoCAD'}</h2><p>${L ? 'PDF y DXF se pueden analizar. DWG, DWF y DGN se guardan en el trabajo; solicite una exportación PDF o DXF para el análisis.' : 'PDF and DXF can be analyzed. DWG, DWF and DGN are stored with the job; request a PDF or DXF export for analysis.'}</p></div>
         <button type="button" class="btn" data-otto-action="plans-hub">${L ? 'Abrir' : 'Open'}</button>
       </div>
       <div class="otto-tool-groups">
@@ -488,7 +488,7 @@
     const recentRows = recent.length ? recent.map(doc => `<button type="button" class="otto-plan-recent" data-otto-action="open-plan" data-otto-doc="${esc(doc.id)}"><i class="fas fa-file-pdf"></i><span><b>${esc(doc.name || 'Plan')}</b><small>${esc(jobTitle(doc.jobId))}</small></span></button>`).join('') : `<p class="otto-empty">${esc(L ? 'Aún no hay planos cargados.' : 'No plans uploaded yet.')}</p>`;
 
     modal(`<div class="otto-plans-hub">
-      <div class="otto-plans-head"><span class="otto-plans-icon"><i class="fas fa-drafting-compass"></i></span><div><h2>${L ? 'Planos y AutoCAD' : 'Plans & AutoCAD'}</h2><p>${L ? 'Un solo lugar para cargar PDF y archivos AutoCAD al trabajo correcto.' : 'One place to upload PDFs and AutoCAD files to the correct job.'}</p><div class="otto-format-line">PDF · DWG · DXF · DWF · DGN</div></div></div>
+      <div class="otto-plans-head"><span class="otto-plans-icon"><i class="fas fa-drafting-compass"></i></span><div><h2>${L ? 'Planos y AutoCAD' : 'Plans & AutoCAD'}</h2><p>${L ? 'Analice PDF/DXF. Los archivos DWG/DWF/DGN se guardan, pero requieren una exportación PDF o DXF para cantidades confiables.' : 'Analyze PDF/DXF. DWG/DWF/DGN files are stored, but need a PDF or DXF export for reliable quantities.'}</p><div class="otto-format-line">PDF · DXF ${L ? '(análisis)' : '(analysis)'} · DWG · DWF · DGN ${L ? '(archivo)' : '(storage)'}</div></div></div>
       <div class="otto-plan-primary-actions">
         <button type="button" class="btn" data-otto-action="import-plan"><i class="fas fa-file-arrow-up"></i> ${L ? 'Importar PDF / AutoCAD' : 'Import PDF / AutoCAD'}</button>
         <button type="button" class="btn ghost" data-otto-action="new-job"><i class="fas fa-plus"></i> ${L ? 'Crear trabajo' : 'Create job'}</button>
@@ -601,12 +601,18 @@
       <div class="card otto-settings-card"><button class="otto-settings-row" type="button" data-otto-action="theme"><i class="fas fa-${dark ? 'sun' : 'moon'}"></i><span>${esc(dark ? words('Light mode', 'Modo claro') : words('Dark mode', 'Modo oscuro'))}</span></button></div>
       ${can('team') ? `<div class="section-title">${esc(words('Team access', 'Acceso del equipo'))}</div><div class="card otto-settings-card"><button class="otto-settings-row" type="button"${navAttrs('team')}><i class="fas fa-user-gear"></i><span>${esc(t('team'))}</span></button></div>` : ''}
       ${ownerSecurity}
+      <div class="section-title">${esc(words('Company email', 'Correo de la compañía'))}</div>
+      <div class="card otto-settings-card" style="padding:14px">
+        <div id="email-connection-status" role="status">${esc(words('Checking connection…', 'Comprobando la conexión…'))}</div>
+        <div class="muted" style="margin-top:8px;font-size:13px">${esc(words('Secure SendGrid delivery works with any mailbox provider. Email passwords are never stored in OTTO.', 'El envío seguro por SendGrid funciona con cualquier proveedor. OTTO nunca guarda contraseñas de correo.'))}</div>
+      </div>
       <div class="section-title">${esc(words('Data safety', 'Seguridad de datos'))}</div>
       <div class="card otto-settings-card">
         <button class="otto-settings-row" type="button" data-otto-action="backup"><i class="fas fa-download"></i><span>${esc(words('Download backup', 'Descargar respaldo'))}</span></button>
         <button class="otto-settings-row" type="button" data-otto-action="restore-backup"><i class="fas fa-upload"></i><span>${esc(words('Restore backup', 'Restaurar respaldo'))}</span></button>
       </div>
       <div class="btnrow"><button class="btn red block" data-otto-action="sign-out"><i class="fas fa-right-from-bracket"></i> ${esc(t('signOut'))}</button></div>`;
+    refreshIntegrationStatus();
   };
 
   function renderSecondaryNav() {

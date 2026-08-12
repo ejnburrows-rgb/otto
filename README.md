@@ -69,6 +69,14 @@ OTTO uses Supabase email-link authentication with persistent sessions. The serve
 
 An employee may allow or deny work-location sharing and continue using OTTO either way. Location requests and samples are limited to consenting field employees during assigned work.
 
+## Company email
+
+OTTO uses SendGrid as one provider-neutral email path. It never stores a Gmail, Microsoft, GoDaddy, IONOS, or ISP mailbox password.
+
+Production requires `SENDGRID_API_KEY`, a domain-authenticated `SENDGRID_FROM`, `INBOUND_WEBHOOK_TOKEN`, and SendGrid Inbound Parse posting to `https://otto-kohl.vercel.app/api/inbound-email?token=<INBOUND_WEBHOOK_TOKEN>`. `SENDGRID_REPLY_TO` may point replies to the Parse subdomain. SPF and DKIM domain authentication are required before sending customer mail.
+
+The Inbox reads the single `emails` collection. Estimates and invoices send as branded HTML with a PDF attachment; replies preserve threading headers. Inbound attachments are stored in the private Supabase bucket through the server relay, limited to 25 MB, and executable uploads are rejected.
+
 ## QuickBooks
 
 OTTO provides a manual QuickBooks handoff: copy details, export useful data, and open the official QuickBooks site separately. It does not use Intuit OAuth, background synchronization, QuickBooks API routes, or duplicate accounting logic.

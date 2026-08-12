@@ -186,7 +186,7 @@
     const root = shell(tx('Plan / drawing','Plano / dibujo'), `<p class="otto-intake-muted">${esc(file.name)}</p><div class="otto-intake-progress" data-intake-progress>${esc(tx('Saving to the job…','Guardando en el trabajo…'))}</div>`);
     try {
       const b = bridge();
-      const fileId = await b.storeFile(file);
+      const fileId = await b.storeFile(file, file.type || 'application/octet-stream');
       const rec = b.add('documents', { jobId, name: file.name || `drawing-${Date.now()}`, kind: 'cad', mime: file.type || '', size: file.size || 0 });
       rec.fileId = fileId; b.save();
       progress(root, tx('Saved. Opening the existing drawing analysis…','Guardado. Abriendo el análisis de dibujos existente…'), 'otto-intake-ok');
@@ -270,12 +270,23 @@
     finally { if(worker) try{await worker.terminate();}catch(_){} }
     $('[data-ocr-copy]',root).addEventListener('click',async()=>{if(out.value&&navigator.clipboard)await navigator.clipboard.writeText(out.value);});
     $('[data-ocr-employees]',root).addEventListener('click',()=>{const rows=out.value.split(/\n+/).map(s=>s.trim()).filter(s=>s && !/^---/.test(s)).map(line=>({name:line,phone:'',email:'',employeeId:'',lang:'es'})); reviewEmployees(rows,file.name);});
-    const saveBtn=$('[data-ocr-save]',root); if(saveBtn) saveBtn.addEventListener('click',async()=>{try{const b=bridge();const fileId=await b.storeFile(file);const rec=b.add('documents',{jobId,name:file.name||`scan-${Date.now()}`,kind:'scan',mime:file.type||'',size:file.size||0,ocr:out.value});rec.fileId=fileId;b.save();progress(root,tx('Saved to job.','Guardado en el trabajo.'),'otto-intake-ok');}catch(e){progress(root,tx('Could not save to job.','No se pudo guardar en el trabajo.'),'otto-intake-error');}});
+    const saveBtn=$('[data-ocr-save]',root); if(saveBtn) saveBtn.addEventListener('click',async()=>{try{const b=bridge();const fileId=await b.storeFile(file,file.type||'application/octet-stream');const rec=b.add('documents',{jobId,name:file.name||`scan-${Date.now()}`,kind:'scan',mime:file.type||'',size:file.size||0,ocr:out.value});rec.fileId=fileId;b.save();progress(root,tx('Saved to job.','Guardado en el trabajo.'),'otto-intake-ok');}catch(e){progress(root,tx('Could not save to job.','No se pudo guardar en el trabajo.'),'otto-intake-error');}});
   }
 
   const observer = new MutationObserver(() => queueMicrotask(ensureLauncher));
   observer.observe(document.documentElement,{childList:true,subtree:true});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('#otto-unified-intake-overlay'))close();});
-  window.ottoUnifiedIntake = { open: openIntake, openPlan: openPlanIntake, routeFile, importSpreadsheet, runOCR };
+  async function extractOCRText(file) {
+    let worker;
+    try {
+      const T = await loadTesseract();
+      worker = await T.createWorker(['eng','spa']);
+      const sources = ext(file)==='pdf' || file.type==='application/pdf' ? await pdfPages(file) : [file];
+      let text = '';
+      for (const source of sources) { const result = await worker.recognize(source); text += '\n' + (result?.data?.text || ''); }
+      return text.trim();
+    } finally { if (worker) try { await worker.terminate(); } catch (_) {} }
+  }
+  window.ottoUnifiedIntake = { open: openIntake, openPlan: openPlanIntake, routeFile, importSpreadsheet, runOCR, extractOCRText };
   setTimeout(ensureLauncher,0);
 })();

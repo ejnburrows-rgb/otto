@@ -145,10 +145,10 @@ console.log('\nno sign-in code is shipped in the source (regression guard)');
   check('no pin field on any seeded user', /\bpin:/.test(seedBlock), false);
   check('no stored fingerprint on any seeded user either', /pinHash/.test(seedBlock), false);
 
-  check('sign-in refuses accounts that have no code yet',
-    html.includes('window.__noCode()'), true);
-  check('a fresh install can still set up the first owner',
-    html.includes('window.__bootstrap'), true);
+  check('retired device-local PIN login is absent',
+    html.includes('window.__noCode()') || html.includes('window.__bootstrap'), false);
+  check('Supabase cloud identity is the only sign-in path',
+    html.includes('signInWithOtp') && html.includes('showCloudLogin();'), true);
 }
 
 console.log(`\n${passed} passed, ${failed} failed\n`);
