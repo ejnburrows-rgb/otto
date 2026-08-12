@@ -18,6 +18,8 @@ check('OCR worker loads English and Spanish', runtime.includes("createWorker(['e
 check('PDF ambiguity is explicit', runtime.includes("What kind of PDF is this?") && runtime.includes('data-pdf-ocr') && runtime.includes('data-pdf-plan'));
 check('CAD extensions route to existing plan path', runtime.includes("['dwg','dxf','dwf','dgn'].includes(x)") && runtime.includes('saveAsPlan(file, jobId)'));
 check('plans require a job', runtime.includes("Plans must stay attached to the correct job."));
+check('Plans hub exposes a dedicated PDF and AutoCAD intake', runtime.includes('openPlan: openPlanIntake') && runtime.includes('Import PDF / AutoCAD') && runtime.includes('accept=".pdf,.dwg,.dxf,.dwf,.dgn,application/pdf"'));
+check('plan intake can create the required job without leaving the upload', runtime.includes('data-plan-create') && runtime.includes("b.add('jobs'") && runtime.includes('Create job & import'));
 check('plans reuse existing analyzeDrawing', runtime.includes('await b.analyzeDrawing(rec.id)'));
 check('employee review happens before save', runtime.includes('Review employees') && runtime.includes('Save selected employees'));
 check('employee role is fixed to field', runtime.includes("role: 'field'"));

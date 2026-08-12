@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const INDEX = new URL('../index.html', import.meta.url);
-export const INTAKE_ASSET_VERSION = '1';
+export const INTAKE_ASSET_VERSION = '2';
 const SCRIPT = `<script src="./otto-unified-intake.js?v=${INTAKE_ASSET_VERSION}" data-otto-unified-intake></script>`;
 const REDIRECTS = `<script src="./otto-unified-intake-redirects.js?v=${INTAKE_ASSET_VERSION}" data-otto-unified-intake-redirects></script>`;
 const BRIDGE = `<script data-otto-unified-intake-bridge>\nwindow.__ottoUnifiedIntakeBridge = {\n  getDb: () => db,\n  getSession: () => session,\n  getLang: () => lang,\n  add: (col, obj) => add(col, col === 'users' ? { ...obj, role: 'field' } : obj),\n  update: (col, id, patch) => update(col, id, col === 'users' ? { ...patch, role: 'field' } : patch),\n  save: () => save(),\n  render: () => render(),\n  storeFile: file => storeFile(file),\n  analyzeDrawing: id => analyzeDrawing(id)\n};\n</script>`;

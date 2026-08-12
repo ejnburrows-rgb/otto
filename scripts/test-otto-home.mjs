@@ -66,6 +66,8 @@ const checks = [
   ['recent plans are linked to their job folder', runtime.includes('function planDocuments()') && runtime.includes('jobTitle(doc.jobId)')],
   ['Plans & AutoCAD is visible directly on the left rail', runtime.includes('otto-plans-launch') && runtime.includes("words('Plans & AutoCAD', 'Planos y AutoCAD')")],
   ['Plans & AutoCAD is also the first prominent Tools action', runtime.includes('otto-tools-hero') && runtime.includes('data-otto-action="plans-hub"')],
+  ['core CRM sections have visible direct navigation tabs', runtime.includes('function primaryNavMarkup()') && runtime.includes('class="otto-primary-nav"') && runtime.includes("label: words('Customers', 'Clientes')") && runtime.includes("label: words('Jobs', 'Trabajos')")],
+  ['Plans hub always offers direct PDF and AutoCAD import', runtime.includes('data-otto-action="import-plan"') && runtime.includes("'Import PDF / AutoCAD'")],
 
   // ── simplified navigation/settings ───────────────────────────────────────
   ['daily Tools launcher keeps only core operational groups',
@@ -100,7 +102,7 @@ const checks = [
   ['wrench-person icon is not restored as the CRM logo', !/<img[^>]*icon-192\.png[^>]*class="crystal-logo"/.test(patched)],
 
   // ── offline update ────────────────────────────────────────────────────────
-  ['workspace assets use the new cache-busting version', HOME_ASSET_VERSION === '3' && patched.includes('otto-home.css?v=3') && patched.includes('otto-home.js?v=3')],
+  ['workspace assets use the new cache-busting version', HOME_ASSET_VERSION === '4' && patched.includes('otto-home.css?v=4') && patched.includes('otto-home.js?v=4')],
   ['offline cache is bumped for the new workspace', sw.includes("const CACHE = 'otto-crm-v12'")],
   ['both personal wallpapers remain precached', sw.includes('julio-pablo.avif') && sw.includes('sarays.avif')],
   ['cache-busted same-origin assets still resolve offline', sw.includes('ignoreSearch: sameOrigin')]
