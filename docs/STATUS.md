@@ -1,6 +1,6 @@
 # STATUS — OTTO Plumbing CRM
 
-Last updated: 2026-08-12.
+Last updated: 2026-08-13.
 
 This file is the current factual snapshot. Historical incident detail remains in Git history and issue/PR discussions; stale status narratives must not be used to restore superseded behavior.
 
@@ -40,6 +40,43 @@ The required UI is a wallpaper-first operational workspace, not a generic SaaS d
 - Worker detail remains limited to current job, next job, today/week hours, and time-off status.
 - Random heatmaps, fake KPI formulas, mock performance charts, vanity location counts, and login-history presentation are not approved worker UI.
 - Owner/office Settings remains restrained: appearance, team access, owner security, data safety, and sign out.
+
+## Owner/office navigation repair — 2026-08-13
+
+The owner reported being stuck on a screen with no back control and no menu, and
+unable to open screens his role allows. Three confirmed defects, now fixed:
+
+- **One fragile exit.** Every secondary view rewrites `#main`, which removes the
+  workspace rail and the primary tabs, while the legacy bottom navigation is
+  hidden for owner/office. The only way out was the `#otto-back-home` button in
+  the top bar, and that button is skipped when no `.topbar` is present. A
+  persistent Back / Home / Menu dock now renders on `document.body`, outside
+  `#main`, so no view render can remove it. It does not appear on Home.
+- **No device back.** The router changed screens by reassigning `route` alone and
+  never touched the History API. With `manifest.json` set to `"display":
+  "standalone"` the installed app has no browser chrome, so the phone back
+  gesture closed OTTO. Route changes now record history entries and `popstate`
+  restores the matching screen; a depth marker keeps Back from ever exiting.
+- **Authorized screens with no entry point.** Workflows, Knowledge, Map, Cheques,
+  Crew Hours (`kpis`), Backups and Audit are granted by `ROLE_VIEWS` but were
+  only reachable through the legacy "More" sheet inside the hidden bottom
+  navigation. They are now listed in Tools, each still `can()`-gated. Worker
+  pages had the same problem in reverse: `viewWorkerProfile` existed but every
+  crew row opened the modal summary, so the full Crew Hours screen now opens the
+  worker's own page.
+
+This narrows the earlier "Tools stays restrained" position: a screen a role
+grants must be reachable. The regression test that asserted those views stayed
+out of Tools was inverted to assert they are reachable. Home is unchanged —
+three windows, desktop rail, phone dock, minimize/restore/maximize/full screen.
+
+Verified: full suite 618 passed / 0 failed; `qa-check` pass. Exercised in
+Chromium at 1440px and 390px as owner and as a field worker — dock present on
+secondary screens only, 48px targets, no overlap with the add button, no
+horizontal overflow, browser back returns instead of exiting, field users keep
+their bottom navigation and never see the dock. Julio's green accents with the
+mountain wallpaper and Saray's pink accents with the city-skyline wallpaper were
+re-checked in the browser and are unchanged.
 
 ## Unified file intake — merged
 

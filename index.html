@@ -2185,12 +2185,55 @@
 
   /* ============================ ROUTER ============================ */
   let route = { view: 'home', id: null, tab: null };
+  /* The installed app declares `"display": "standalone"` in manifest.json, so it
+     runs without browser chrome and without a browser back button. The router
+     used to move between screens by reassigning `route` alone, which left the
+     history stack empty — so the phone's back gesture closed OTTO instead of
+     returning to the previous screen, and an owner on a secondary screen had no
+     way back at all. Every route change now records a history entry and popstate
+     replays it. */
+  let _restoringRoute = false;
+  function sameRoute(a, b) {
+    return Boolean(a && b) && a.view === b.view
+      && (a.id || null) === (b.id || null)
+      && (a.tab || null) === (b.tab || null);
+  }
+  /* The first recorded route replaces rather than pushes, so the base entry is
+     the screen the session opened on. `depth` counts entries from that base so a
+     Back control can tell "there is somewhere to go back to" from "going back
+     would close OTTO" and offer Home instead. */
+  function recordRoute() {
+    if (_restoringRoute) return;
+    const entry = { otto: true, view: route.view, id: route.id, tab: route.tab, depth: 0 };
+    const current = history.state;
+    if (current && current.otto && sameRoute(current, entry)) return;
+    if (current && current.otto) {
+      entry.depth = (current.depth || 0) + 1;
+      history.pushState(entry, '');
+    } else {
+      history.replaceState(entry, '');
+    }
+  }
   function nav(view, id = null, tab = null) {
     if (view !== 'settings' && view !== 'assistant' && !can(view) && !['customer', 'job'].includes(view)) {
       // entity detail views allowed if their list is allowed
     }
-    route = { view, id, tab }; window.scrollTo(0, 0); render();
+    route = { view, id, tab }; recordRoute(); window.scrollTo(0, 0); render();
   }
+  window.addEventListener('popstate', function (event) {
+    const state = event.state;
+    /* Anything that is not one of our own entries (or a popstate that arrives
+       after sign-out) is left to the browser. */
+    if (!session || !state || !state.otto) return;
+    _restoringRoute = true;
+    try {
+      route = { view: state.view, id: state.id, tab: state.tab };
+      window.scrollTo(0, 0);
+      render();
+    } finally {
+      _restoringRoute = false;
+    }
+  });
 
   const NAVBAR = {
     field: ['home', 'jobs', 'customers', 'followups', 'assistant'],

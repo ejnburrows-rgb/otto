@@ -111,8 +111,10 @@ body.admin-workspace .fab,
   display: none !important;
 }
 
+/* Clearance for the floating action button and the secondary navigation dock,
+   so the last row of a screen stays reachable above both. */
 body.admin-workspace:not(.admin-home) .wrap {
-  padding-bottom: 104px;
+  padding-bottom: 132px;
 }
 
 body.admin-workspace:not(.admin-home) .fab {
@@ -151,6 +153,95 @@ body.admin-workspace:not(.admin-home) .fab {
 body.otto-secondary .topbar {
   flex-wrap: wrap;
   row-gap: 8px;
+}
+
+/* Persistent way out of a secondary screen. It sits on document.body rather
+   than inside `#main`, because every view render replaces `#main` wholesale and
+   would otherwise take the controls with it. Left-anchored and stopping short of
+   the floating action button so the two never overlap; below `.overlay`
+   (z-index 60) so the Tools sheet still covers it. */
+.otto-secondary-dock {
+  position: fixed;
+  z-index: 40;
+  left: max(var(--otto-edge), env(safe-area-inset-left));
+  right: calc(92px + max(var(--otto-edge), env(safe-area-inset-right)));
+  bottom: calc(24px + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid var(--otto-hairline);
+  border-radius: 16px;
+  background: var(--otto-surface);
+  box-shadow: var(--otto-shadow-sm);
+  backdrop-filter: var(--otto-blur);
+  -webkit-backdrop-filter: var(--otto-blur);
+}
+
+.otto-dock-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 720;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.otto-dock-btn:hover {
+  background: color-mix(in srgb, var(--action) 9%, transparent);
+  border-color: var(--otto-hairline);
+}
+
+.otto-dock-btn:focus-visible {
+  outline: 2px solid var(--action);
+  outline-offset: 2px;
+}
+
+.otto-dock-btn i {
+  font-size: 15px;
+}
+
+/* On a wide screen the controls only need their own width; stretching them
+   across the viewport made a small utility read as a major surface. */
+@media (min-width: 721px) {
+  .otto-secondary-dock {
+    right: auto;
+    max-width: calc(100vw - 140px);
+  }
+
+  .otto-dock-btn {
+    flex: 0 0 auto;
+    padding: 8px 18px;
+  }
+}
+
+@media (max-width: 720px) {
+  .otto-secondary-dock {
+    gap: 4px;
+    padding: 5px;
+  }
+
+  .otto-dock-btn {
+    flex-direction: column;
+    gap: 3px;
+    padding: 6px 4px;
+    font-size: 11px;
+  }
+
+  .otto-dock-btn i {
+    font-size: 17px;
+  }
 }
 
 /* ================================= HOME ==================================== */
