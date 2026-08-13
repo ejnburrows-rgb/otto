@@ -447,6 +447,9 @@
           ${can('customers') ? item('fa-users', t('customers'), '', 'customers') : ''}
           ${can('calls') ? item('fa-phone', t('calls'), '', 'calls') : ''}
           ${can('followups') ? item('fa-bell', t('followups'), '', 'followups') : ''}
+          ${can('workflows') ? item('fa-diagram-project', t('workflows'), '', 'workflows') : ''}
+          ${can('knowledge') ? item('fa-book', t('knowledge'), '', 'knowledge') : ''}
+          ${can('map') ? item('fa-map-location-dot', t('map'), '', 'map') : ''}
         </section>
         <section><h3>${L ? 'Dinero' : 'Money'}</h3>
           ${can('estimates') ? item('fa-file-signature', t('estimates'), '', 'estimates') : ''}
@@ -454,16 +457,25 @@
           ${can('contracts') ? item('fa-file-contract', L ? 'Contratos' : 'Contracts', '', 'contracts') : ''}
           ${can('invoices') ? item('fa-file-invoice-dollar', t('invoices'), '', 'invoices') : ''}
           ${can('payments') ? item('fa-credit-card', t('payments'), '', 'payments') : ''}
+          ${can('checks') ? item('fa-money-check', t('checks'), '', 'checks') : ''}
           ${can('payroll') ? item('fa-money-check-dollar', t('payroll'), '', 'payroll') : ''}
         </section>
         <section><h3>${L ? 'Equipo' : 'Team'}</h3>
-          ${item('fa-clock', L ? 'Horas del equipo' : 'Crew Hours', L ? 'Hoy y esta semana' : 'Today and this week', '', 'crew-hours')}
+          ${/* The `kpis` route renders the full-screen Crew Hours view (see the
+                viewKpis override below), which is where the individual worker
+                pages are opened from. Launching it as a screen rather than as
+                the modal keeps the back control and the navigation dock
+                available; the Field Workers window on Home still opens the
+                quick modal version. */''}
+          ${can('kpis') ? item('fa-clock', L ? 'Horas del equipo' : 'Crew Hours', L ? 'Hoy, esta semana y perfiles' : 'Today, this week and profiles', 'kpis') : ''}
           ${can('team') ? item('fa-user-gear', t('team'), '', 'team') : ''}
           ${can('urgent') ? item('fa-bolt', t('urgentHub'), '', 'urgent') : ''}
         </section>
         <section><h3>${L ? 'Negocio' : 'Business'}</h3>
           ${can('reports') ? item('fa-chart-line', t('reports'), '', 'reports') : ''}
           ${can('alerts') ? item('fa-triangle-exclamation', t('alerts'), '', 'alerts') : ''}
+          ${can('backups') ? item('fa-database', t('backups'), '', 'backups') : ''}
+          ${can('audit') ? item('fa-clipboard-list', t('auditTrail'), '', 'audit') : ''}
           ${can('assistant') ? item('fa-wand-magic-sparkles', t('assistant'), '', 'assistant') : ''}
           ${can('settings') ? item('fa-gear', t('settings'), '', 'settings') : ''}
         </section>
@@ -515,7 +527,14 @@
     const listRows = rows.length ? rows.map(({ worker, time, pto }) => {
       let status = time.currentJob ? `${words('On job', 'En trabajo')} · ${time.currentJob.title || t('job')}` : words('Off clock', 'Fuera de turno');
       if (pto) status += ` · ${pto.status === 'pending' ? words('PTO pending', 'Permiso pendiente') : words('PTO approved', 'Permiso aprobado')}`;
-      return `<button type="button" class="otto-hours-row" data-otto-action="worker-summary" data-otto-worker="${esc(worker.id)}">
+      /* Inside the modal a row opens the quick summary, because a screen cannot
+         be pushed underneath a sheet. On the full Crew Hours screen it opens the
+         worker's own page instead — that page already existed and was the one
+         thing an owner could not reach, since nothing navigated to it. */
+      const openAttrs = compact
+        ? `data-otto-action="worker-summary" data-otto-worker="${esc(worker.id)}"`
+        : `data-otto-action="nav" data-otto-view="worker_profile" data-otto-id="${esc(worker.id)}"`;
+      return `<button type="button" class="otto-hours-row" ${openAttrs}>
         <span class="otto-hours-person"><b>${esc(worker.name)}</b><small>${esc(status)}</small></span>
         <span><small>${words('Today', 'Hoy')}</small><b>${hoursText(time.today)}</b></span>
         <span><small>${words('Week', 'Semana')}</small><b>${hoursText(time.week)}</b></span>
@@ -636,6 +655,45 @@
     document.body.classList.add('otto-secondary');
   }
 
+  /* Every secondary screen rewrites the whole of `#main`, which destroys the
+     workspace rail and the primary tab bar built by viewHome, and the legacy
+     bottom navigation is hidden for owner/office. That left the single
+     `#otto-back-home` button in the top bar as the only way out of a screen —
+     and no way out at all when the top bar was absent or this file failed to
+     load. This dock is appended to document.body, outside `#main`, so no view
+     render can remove it, and it carries the three controls the workspace
+     otherwise provides: back, home, and the Tools menu. */
+  function renderSecondaryDock() {
+    const show = Boolean(session) && isAdmin() && !onHome();
+    let dock = document.getElementById('otto-secondary-dock');
+    if (!show) {
+      if (dock) dock.remove();
+      return;
+    }
+    if (!dock) {
+      dock = document.createElement('nav');
+      dock.id = 'otto-secondary-dock';
+      dock.className = 'otto-secondary-dock';
+      document.body.appendChild(dock);
+    }
+    dock.setAttribute('aria-label', words('Screen navigation', 'Navegación de pantalla'));
+    const item = (action, icon, label) => `<button type="button" class="otto-dock-btn" data-otto-action="${action}">
+      <i class="fas ${icon}" aria-hidden="true"></i><span>${esc(label)}</span>
+    </button>`;
+    dock.innerHTML = item('history-back', 'fa-arrow-left', words('Back', 'Atrás'))
+      + item('go-home', 'fa-house', words('Home', 'Inicio'))
+      + item('tools', 'fa-bars', words('Menu', 'Menú'));
+  }
+
+  /* Prefer the real history entry so this control and the phone's back gesture
+     agree. `depth` is 0 only on the entry the session opened on, where going
+     back would leave OTTO entirely — there we go to Home instead. */
+  function goBack() {
+    const state = window.history.state;
+    if (state && state.otto && (state.depth || 0) > 0) window.history.back();
+    else nav('home');
+  }
+
   renderNav = function () {
     legacyRenderNav();
     const admin = isAdmin();
@@ -645,6 +703,7 @@
     if (bottom) bottom.classList.toggle('admin-nav-hidden', admin);
     if (!onHome()) document.body.classList.remove('otto-fullscreen-window');
     renderSecondaryNav();
+    renderSecondaryDock();
   };
 
   startApp = function (...args) {
@@ -749,6 +808,10 @@
     } else if (action === 'go-home') {
       event.preventDefault();
       nav('home');
+    } else if (action === 'history-back') {
+      event.preventDefault();
+      closeModal();
+      goBack();
     } else if (action === 'nav') {
       event.preventDefault();
       closeModal();
@@ -765,6 +828,10 @@
       importAll();
     } else if (action === 'sign-out') {
       event.preventDefault();
+      /* signOut() swaps in the login screen without re-running renderNav, so the
+         dock has to be taken down here or it would float over sign-in. */
+      const dock = document.getElementById('otto-secondary-dock');
+      if (dock) dock.remove();
       signOut();
     }
   });

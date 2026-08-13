@@ -1066,6 +1066,7 @@
   <link rel="stylesheet" href="./otto-ui-polish.css?v=2" data-otto-ui-polish-styles />
   <link rel="stylesheet" href="./otto-client-visible-polish.css?v=2" data-otto-client-visible-polish />
   <link rel="stylesheet" href="./otto-quickbooks-handoff.css?v=1" data-otto-quickbooks-handoff-styles />
+  <link rel="stylesheet" href="./otto-assistant.css?v=1" data-otto-assistant-style />
 </head>
 
 <body>
@@ -2298,12 +2299,55 @@
 
   /* ============================ ROUTER ============================ */
   let route = { view: 'home', id: null, tab: null };
+  /* The installed app declares `"display": "standalone"` in manifest.json, so it
+     runs without browser chrome and without a browser back button. The router
+     used to move between screens by reassigning `route` alone, which left the
+     history stack empty — so the phone's back gesture closed OTTO instead of
+     returning to the previous screen, and an owner on a secondary screen had no
+     way back at all. Every route change now records a history entry and popstate
+     replays it. */
+  let _restoringRoute = false;
+  function sameRoute(a, b) {
+    return Boolean(a && b) && a.view === b.view
+      && (a.id || null) === (b.id || null)
+      && (a.tab || null) === (b.tab || null);
+  }
+  /* The first recorded route replaces rather than pushes, so the base entry is
+     the screen the session opened on. `depth` counts entries from that base so a
+     Back control can tell "there is somewhere to go back to" from "going back
+     would close OTTO" and offer Home instead. */
+  function recordRoute() {
+    if (_restoringRoute) return;
+    const entry = { otto: true, view: route.view, id: route.id, tab: route.tab, depth: 0 };
+    const current = history.state;
+    if (current && current.otto && sameRoute(current, entry)) return;
+    if (current && current.otto) {
+      entry.depth = (current.depth || 0) + 1;
+      history.pushState(entry, '');
+    } else {
+      history.replaceState(entry, '');
+    }
+  }
   function nav(view, id = null, tab = null) {
     if (view !== 'settings' && view !== 'assistant' && !can(view) && !['customer', 'job'].includes(view)) {
       // entity detail views allowed if their list is allowed
     }
-    route = { view, id, tab }; window.scrollTo(0, 0); render();
+    route = { view, id, tab }; recordRoute(); window.scrollTo(0, 0); render();
   }
+  window.addEventListener('popstate', function (event) {
+    const state = event.state;
+    /* Anything that is not one of our own entries (or a popstate that arrives
+       after sign-out) is left to the browser. */
+    if (!session || !state || !state.otto) return;
+    _restoringRoute = true;
+    try {
+      route = { view: state.view, id: state.id, tab: state.tab };
+      window.scrollTo(0, 0);
+      render();
+    } finally {
+      _restoringRoute = false;
+    }
+  });
 
   const NAVBAR = {
     field: ['home', 'jobs', 'customers', 'followups', 'assistant'],
@@ -6273,5 +6317,30 @@ window.__ottoUnifiedIntakeBridge = {
 </script>
   <script src="./otto-unified-intake.js?v=2" data-otto-unified-intake></script>
   <script src="./otto-unified-intake-redirects.js?v=2" data-otto-unified-intake-redirects></script>
+  <script data-otto-assistant-bridge>
+window.__ottoAssistantBridge = {
+  getDb: () => db,
+  getSession: () => session,
+  getRoute: () => route,
+  getLang: () => lang,
+  add: (col, obj) => add(col, obj),
+  update: (col, id, patch) => update(col, id, patch),
+  save: () => save(),
+  render: () => render(),
+  callClaude: body => callClaude(body),
+  openResult: (type, id, source, employeeId) => {
+    if (type === 'contract' && typeof openContractForm === 'function' && source === 'contracts') return openContractForm(id);
+    if (type === 'employee' && typeof viewWorkerProfile === 'function') return viewWorkerProfile(employeeId || id);
+    if ((type === 'payroll' || type === 'paystub') && typeof viewPayroll === 'function') return viewPayroll();
+    if (type === 'email' && typeof viewInbox === 'function') return viewInbox();
+    if (type === 'note' && typeof viewNotes === 'function') return viewNotes();
+    if (type === 'schedule' && typeof viewSchedule === 'function') return viewSchedule();
+    if (type === 'employee' && typeof viewTeam === 'function') return viewTeam();
+    if (type === 'contract' && typeof viewContracts === 'function') return viewContracts();
+    if (typeof viewHome === 'function') return viewHome();
+  }
+};
+</script>
+  <script src="./otto-assistant.js?v=1" data-otto-assistant-runtime></script>
 </body>
 </html>

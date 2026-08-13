@@ -8,6 +8,7 @@ const SHELL = [
   './', './index.html', './landing.html', './guide.html', './manifest.json', './logo.jpg',
   './otto-home.css', './otto-home.js',
   './otto-ui-polish.css', './otto-ui-polish.js',
+  './otto-assistant.css', './otto-assistant.js',
   './otto-quickbooks-handoff.css', './otto-quickbooks-handoff.js',
   './otto-client-visible-polish.css',
   './design-assets/wallpapers/julio-pablo.avif', './design-assets/wallpapers/sarays.avif'
