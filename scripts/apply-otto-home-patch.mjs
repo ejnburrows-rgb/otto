@@ -9,7 +9,7 @@ const HOME_RUNTIME = new URL('../otto-home.js', import.meta.url);
    page cannot end up asking for one version of the stylesheet and another of
    the runtime. The service worker resolves same-origin hits with the query
    ignored, so a bump never costs an offline device its home screen. */
-export const HOME_ASSET_VERSION = '4';
+export const HOME_ASSET_VERSION = '5';
 
 export function patchSource(source) {
   let out = source;
@@ -92,12 +92,15 @@ export function patchRuntime(source) {
     .split("${L ? 'QuickBooks, idioma, apariencia y equipo' : 'QuickBooks, language, appearance and team'}")
     .join("${L ? 'Idioma, apariencia y equipo' : 'Language, appearance and team'}");
 
-  const toolsCaptureMarker = 'data-otto-tools-capture';
-  if (!out.includes(toolsCaptureMarker)) {
-    const delegatedClick = "  document.addEventListener('click', function (event) {\n    const target = event.target && event.target.closest && event.target.closest('[data-otto-action]');";
-    const toolsCapture = `  /* The legacy modal sheet stops click propagation inside its content. Tools\n     therefore needs a capture-phase handler; otherwise every launcher item\n     renders correctly but its delegated document click handler never fires. */\n  document.addEventListener('click', function (event) {\n    const target = event.target && event.target.closest && event.target.closest('.otto-tools-sheet [data-otto-action]');\n    if (!target) return;\n    target.setAttribute('data-otto-tools-capture', '1');\n    const action = target.getAttribute('data-otto-action');\n    if (action === 'nav') {\n      event.preventDefault();\n      event.stopPropagation();\n      const view = target.getAttribute('data-otto-view');\n      const id = target.getAttribute('data-otto-id') || null;\n      closeModal();\n      if (view) nav(view, id);\n    } else if (action === 'plans-hub') {\n      event.preventDefault();\n      event.stopPropagation();\n      closeModal();\n      openPlansHub();\n    }\n  }, true);\n\n`;
-    if (!out.includes(delegatedClick)) throw new Error('OTTO runtime is missing delegated click handler');
-    out = out.replace(delegatedClick, toolsCapture + delegatedClick);
+  /* Modal content stops click propagation before bubble-phase document handlers
+     see it. The workspace uses one delegated data-otto-action listener for all
+     navigation and modal controls, so put that single listener in capture phase.
+     This fixes Tools plus every nested modal action without duplicating handlers. */
+  const handlerEnd = "      signOut();\n    }\n  });\n\n  window.setWindowState";
+  const capturedHandlerEnd = "      signOut();\n    }\n  }, true);\n\n  window.setWindowState";
+  if (!out.includes(capturedHandlerEnd)) {
+    if (!out.includes(handlerEnd)) throw new Error('OTTO runtime is missing delegated click handler end');
+    out = out.replace(handlerEnd, capturedHandlerEnd);
   }
 
   return out;
@@ -130,8 +133,9 @@ export function validatePatchedSource(source) {
 export function validatePatchedRuntime(source) {
   return [
     ['QuickBooks removed from workspace runtime', !source.includes('QuickBooks')],
-    ['Tools modal actions are captured before modal propagation stops', source.includes('data-otto-tools-capture') && source.includes("closest('.otto-tools-sheet [data-otto-action]')") && source.includes('}, true);')],
-    ['Tools capture routes launcher views and Plans hub', source.includes("if (action === 'nav')") && source.includes("else if (action === 'plans-hub')")]
+    ['all delegated OTTO actions run in capture phase', source.includes("event.target.closest && event.target.closest('[data-otto-action]')") && source.includes("      signOut();\n    }\n  }, true);\n\n  window.setWindowState")],
+    ['modal action handler still covers navigation and Plans actions', source.includes("action === 'nav'") && source.includes("action === 'plans-hub'") && source.includes("action === 'upload-plan'") && source.includes("action === 'import-plan'")],
+    ['modal action handler still covers Crew Hours and worker actions', source.includes("action === 'crew-hours'") && source.includes("action === 'worker-summary'")]
   ];
 }
 
