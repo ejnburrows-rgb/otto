@@ -1,4 +1,5 @@
 /* OTTO owner workspace corrections: left-side sections, true desktop resize, full wallpaper fit. */
+/* Release marker for the verified production workspace fix. */
 body.admin-home{--otto-owner-nav-w:194px;--otto-owner-gap:14px}
 body.admin-home .otto-owner-home{position:fixed;top:var(--otto-top);left:max(var(--otto-edge),env(safe-area-inset-left));right:max(var(--otto-edge),env(safe-area-inset-right));bottom:max(var(--otto-edge),env(safe-area-inset-bottom));min-height:0;display:grid;grid-template-columns:var(--otto-owner-nav-w) minmax(0,1fr);grid-template-rows:minmax(210px,1fr) auto;gap:var(--otto-owner-gap)}
 body.admin-home .otto-primary-nav{position:static!important;grid-column:1;grid-row:1;width:auto;min-height:0;display:flex;flex-direction:column;align-items:stretch;gap:5px;padding:8px;overflow-x:hidden;overflow-y:auto}
