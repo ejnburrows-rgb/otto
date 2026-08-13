@@ -1,0 +1,18 @@
+/* OTTO final owner workspace. */
+body.admin-home{--otto-owner-nav-w:194px;--otto-owner-gap:14px}
+body.admin-home .otto-owner-home{position:fixed;top:var(--otto-top);left:max(var(--otto-edge),env(safe-area-inset-left));right:max(var(--otto-edge),env(safe-area-inset-right));bottom:max(var(--otto-edge),env(safe-area-inset-bottom));min-height:0;display:grid;grid-template-columns:var(--otto-owner-nav-w) minmax(0,1fr);grid-template-rows:minmax(210px,1fr) auto;gap:var(--otto-owner-gap)}
+body.admin-home .otto-primary-nav{position:static!important;grid-column:1;grid-row:1;width:auto;min-height:0;display:flex;flex-direction:column;align-items:stretch;gap:5px;padding:8px;overflow-x:hidden;overflow-y:auto}
+body.admin-home .otto-primary-tab{width:100%;min-width:0;min-height:44px;flex:0 0 auto;justify-content:flex-start;gap:9px;padding:8px 10px;text-align:left;font-size:12px}
+body.admin-home .otto-taskbar{position:static!important;grid-column:1;grid-row:2;width:auto;min-height:0;max-height:min(355px,46dvh);overflow-y:auto;padding:10px}
+body.admin-home .otto-window-stage{position:static!important;grid-column:2;grid-row:1/-1;min-width:0;min-height:0;display:flex!important;flex-wrap:wrap;align-content:flex-start;gap:14px;overflow:auto}
+body.admin-home .otto-window[data-state="normal"]{position:relative;flex:0 0 calc((100% - 28px)/3);width:calc((100% - 28px)/3);height:calc(100% - 2px);min-width:270px;min-height:250px;max-width:100%;max-height:100%;resize:both;overflow:auto}
+body.admin-home .otto-window[data-state="normal"]::after{content:'';position:absolute;right:5px;bottom:5px;width:12px;height:12px;border-right:2px solid var(--action);border-bottom:2px solid var(--action);pointer-events:none;opacity:.7}
+body.admin-home .otto-window[data-state="maximized"]{flex:1 1 100%;width:100%!important;height:100%!important;resize:none}
+body.admin-home .otto-window[data-state="fullscreen"]{resize:none}
+.otto-window-titlebar{min-height:56px}
+.otto-row + .otto-row{margin-top:8px}
+body.otto-secondary .pagehead{padding-bottom:14px}
+.wallpaper-container{background-size:contain!important;background-position:center center!important;background-repeat:no-repeat!important}
+@media (min-width: 1537px){.wallpaper-container[data-user="owner-2"],.wallpaper-container[data-user="ops-1"]{background-size:1536px auto!important}}
+@media (max-width: 1180px){body.admin-home{--otto-owner-nav-w:174px}body.admin-home .otto-window[data-state="normal"]{flex-basis:calc((100% - 14px)/2);width:calc((100% - 14px)/2);height:min(430px,100%)}}
+@media (max-width: 760px){body.admin-home{--otto-owner-nav-w:76px;--otto-owner-gap:8px}body.admin-home .otto-owner-home{grid-template-rows:minmax(170px,1fr) minmax(180px,42dvh)}body.admin-home .otto-primary-tab{min-height:48px;justify-content:center;padding:6px 4px}body.admin-home .otto-primary-tab>span{display:none}body.admin-home .otto-taskbar{max-height:none;padding:6px 4px}body.admin-home .otto-taskbar-head{display:none}body.admin-home .otto-window[data-state="normal"]{flex:1 0 100%;width:100%!important;height:auto!important;min-width:0;min-height:360px;max-height:none;resize:none}.otto-action{min-height:48px}}
