@@ -6,6 +6,7 @@ const index = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8')
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
 const runtime = fs.readFileSync(new URL('../otto-assistant.js', import.meta.url), 'utf8');
 const css = fs.readFileSync(new URL('../otto-assistant.css', import.meta.url), 'utf8');
+const vercelBuild = fs.readFileSync(new URL('./vercel-build.mjs', import.meta.url), 'utf8');
 const patchedIndex = patchIndex(index);
 const patchedSw = patchServiceWorker(sw);
 
@@ -13,6 +14,8 @@ for (const [name, ok] of validate(patchedIndex, patchedSw)) assert.equal(ok, tru
 assert.equal(patchIndex(patchedIndex), patchedIndex, 'index patch is idempotent');
 assert.equal(patchServiceWorker(patchedSw), patchedSw, 'service-worker patch is idempotent');
 assert.match(patchedIndex, new RegExp(`otto-assistant\\.js\\?v=${ASSISTANT_VERSION}`));
+assert.match(vercelBuild, /apply-assistant-patch\.mjs/, 'Vercel materializes the assistant into the deployed index and service worker');
+assert.match(vercelBuild, /apply-assistant-patch\.mjs[\s\S]*qa-check\.mjs/, 'Vercel applies assistant before final QA');
 assert.match(runtime, /owner-1.*owner-2.*ops-1.*it-admin-ejn/s, 'assistant is limited to four approved administrator ids');
 assert.doesNotMatch(runtime, /webkitSpeechRecognition|SpeechRecognition|speechSynthesis/i, 'no voice assistant code');
 assert.match(runtime, /MAX_RESULTS\s*=\s*5/, 'results are capped for low-cognitive-load UI');
