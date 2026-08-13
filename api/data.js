@@ -5,7 +5,7 @@
 // anyone who opened the site could copy it and read every customer record. This
 // function fixes that: the secret key lives only in Vercel's environment
 // variables (settings stored on the server, never in the code), exactly the way
-// api/claude.js already handles the Anthropic key.
+// api/nvidia.js already handles the AI provider key.
 //
 // The browser calls this function; this function talks to Supabase.
 //

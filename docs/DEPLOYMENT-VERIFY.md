@@ -22,7 +22,6 @@ Verify status codes without printing response bodies or customer data:
 
 ```bash
 curl -sS -o /dev/null -w '%{http_code}\n' https://otto-kohl.vercel.app/api/data
-curl -sS -o /dev/null -w '%{http_code}\n' -X POST https://otto-kohl.vercel.app/api/claude
 curl -sS -o /dev/null -w '%{http_code}\n' -X POST https://otto-kohl.vercel.app/api/nvidia
 curl -sS -o /dev/null -w '%{http_code}\n' -X POST https://otto-kohl.vercel.app/api/notify
 ```
