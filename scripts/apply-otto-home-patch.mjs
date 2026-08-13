@@ -88,9 +88,19 @@ export function patchSource(source) {
 }
 
 export function patchRuntime(source) {
-  return source
+  let out = source
     .split("${L ? 'QuickBooks, idioma, apariencia y equipo' : 'QuickBooks, language, appearance and team'}")
     .join("${L ? 'Idioma, apariencia y equipo' : 'Language, appearance and team'}");
+
+  const toolsCaptureMarker = 'data-otto-tools-capture';
+  if (!out.includes(toolsCaptureMarker)) {
+    const delegatedClick = "  document.addEventListener('click', function (event) {\n    const target = event.target && event.target.closest && event.target.closest('[data-otto-action]');";
+    const toolsCapture = `  /* The legacy modal sheet stops click propagation inside its content. Tools\n     therefore needs a capture-phase handler; otherwise every launcher item\n     renders correctly but its delegated document click handler never fires. */\n  document.addEventListener('click', function (event) {\n    const target = event.target && event.target.closest && event.target.closest('.otto-tools-sheet [data-otto-action]');\n    if (!target) return;\n    target.setAttribute('data-otto-tools-capture', '1');\n    const action = target.getAttribute('data-otto-action');\n    if (action === 'nav') {\n      event.preventDefault();\n      event.stopPropagation();\n      const view = target.getAttribute('data-otto-view');\n      const id = target.getAttribute('data-otto-id') || null;\n      closeModal();\n      if (view) nav(view, id);\n    } else if (action === 'plans-hub') {\n      event.preventDefault();\n      event.stopPropagation();\n      closeModal();\n      openPlansHub();\n    }\n  }, true);\n\n`;
+    if (!out.includes(delegatedClick)) throw new Error('OTTO runtime is missing delegated click handler');
+    out = out.replace(delegatedClick, toolsCapture + delegatedClick);
+  }
+
+  return out;
 }
 
 export function validatePatchedSource(source) {
@@ -118,7 +128,11 @@ export function validatePatchedSource(source) {
 }
 
 export function validatePatchedRuntime(source) {
-  return [['QuickBooks removed from workspace runtime', !source.includes('QuickBooks')]];
+  return [
+    ['QuickBooks removed from workspace runtime', !source.includes('QuickBooks')],
+    ['Tools modal actions are captured before modal propagation stops', source.includes('data-otto-tools-capture') && source.includes("closest('.otto-tools-sheet [data-otto-action]')") && source.includes('}, true);')],
+    ['Tools capture routes launcher views and Plans hub', source.includes("if (action === 'nav')") && source.includes("else if (action === 'plans-hub')")]
+  ];
 }
 
 function run() {
