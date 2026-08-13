@@ -72,8 +72,14 @@ const checks = [
   // ── simplified navigation/settings ───────────────────────────────────────
   ['daily Tools launcher keeps only core operational groups',
     ['jobs', 'customers', 'calls', 'followups', 'estimates', 'invoices', 'payments', 'payroll', 'team', 'urgent', 'reports', 'alerts', 'assistant', 'settings'].every(v => runtime.includes(`can('${v}')`))],
-  ['secondary technical clutter is not promoted in Tools',
-    !runtime.includes("nav('workflows')") && !runtime.includes("nav('knowledge')") && !runtime.includes("nav('map')") && !runtime.includes("nav('audit')")],
+  /* This previously asserted that workflows, knowledge, map and audit stayed OUT
+     of Tools. In practice that left them with no entry point anywhere for
+     owner/office — the legacy "More" sheet that used to reach them lives in the
+     bottom navigation, which is hidden for admins — so an owner could not open
+     screens their own role allows. The rule is now the opposite: every view a
+     role grants must be reachable from a launcher. */
+  ['every admin-allowed view has a launcher entry',
+    ['workflows', 'knowledge', 'map', 'checks', 'kpis', 'backups', 'audit'].every(v => runtime.includes(`can('${v}')`))],
   ['admin Settings hides provider keys and setup stubs',
     runtime.includes('viewSettings = function ()') && !runtime.includes('Twilio From') && !runtime.includes('Google Client ID') && !runtime.includes('NVIDIA API Key')],
   ['admin Settings keeps essential appearance, team, owner security, data safety and sign out',
@@ -85,6 +91,41 @@ const checks = [
   // ── navigation, accessibility and responsive behavior ────────────────────
   ['owner/office legacy bottom navigation stays hidden', runtime.includes("classList.toggle('admin-nav-hidden', admin)") && styles.includes('.bottomnav.admin-nav-hidden')],
   ['secondary screens keep one Back to Home control', runtime.includes("id = 'otto-back-home'") && runtime.includes("words('Back to Home', 'Volver al inicio')")],
+
+  // ── being able to leave a secondary screen ───────────────────────────────
+  /* Every view render replaces `#main`, which takes the rail and the primary
+     tabs with it, and the legacy bottom navigation is hidden for admins. The
+     dock therefore has to live on document.body, or an owner is left with no
+     control at all when the top bar is missing. */
+  ['secondary screens carry a persistent navigation dock',
+    runtime.includes("id = 'otto-secondary-dock'") && runtime.includes('document.body.appendChild(dock)')],
+  ['the dock offers back, home and menu',
+    runtime.includes("item('history-back'") && runtime.includes("item('go-home'") && runtime.includes("item('tools'")],
+  ['the dock is built outside #main so a view render cannot remove it',
+    !runtime.includes("main.appendChild(dock)")],
+  ['the dock stays off the workspace home', runtime.includes('isAdmin() && !onHome()')],
+  ['the dock is taken down on sign out', runtime.includes("getElementById('otto-secondary-dock')") && runtime.includes("action === 'sign-out'")],
+  ['dock controls meet the touch-target rule', styles.includes('.otto-dock-btn') && styles.includes('min-height: 48px')],
+  ['the dock clears the floating action button', styles.includes('.otto-secondary-dock') && styles.includes('right: calc(92px')],
+  ['back never leaves OTTO from a first-entry screen',
+    runtime.includes("(state.depth || 0) > 0") && runtime.includes("else nav('home')")],
+
+  // ── device/browser back ──────────────────────────────────────────────────
+  /* manifest.json declares "display": "standalone", so the installed app has no
+     browser back button. Without history entries the phone back gesture closed
+     OTTO instead of returning a screen. */
+  ['route changes record a history entry', patched.includes('function recordRoute()') && patched.includes('history.pushState(entry')],
+  ['the first route replaces rather than pushes', patched.includes('history.replaceState(entry')],
+  ['a popstate restores the matching screen', patched.includes("addEventListener('popstate'") && patched.includes('_restoringRoute = true')],
+  ['restoring a route does not push another entry', patched.includes('if (_restoringRoute) return;')],
+  ['repeating the same route does not stack duplicates', patched.includes('sameRoute(current, entry)) return;')],
+
+  // ── worker pages are reachable ───────────────────────────────────────────
+  /* viewWorkerProfile existed but nothing navigated to it: every crew row opened
+     the modal summary instead, so an owner could not open a worker's own page. */
+  ['the full Crew Hours screen opens a worker page rather than only a modal',
+    runtime.includes('data-otto-view="worker_profile"') && runtime.includes('data-otto-action="worker-summary"')],
+  ['Crew Hours is reachable as a screen from the launcher', runtime.includes("can('kpis') ? item(")],
   ['desktop stage uses three columns', styles.includes('grid-template-columns: repeat(3, minmax(0, 1fr))')],
   ['small desktop/tablet keeps all windows visible in a two-column flow', styles.includes('@media (max-width: 1180px)') && styles.includes('grid-template-columns: repeat(2, minmax(0, 1fr))')],
   ['phone keeps the side task panel and a one-window column', styles.includes('@media (max-width: 760px)') && styles.includes('--otto-taskbar-w: 78px')],
