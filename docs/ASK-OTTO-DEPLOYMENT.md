@@ -1,0 +1,1 @@
+Deployment path: Vercel project `otto`. Feature branch preview must be READY and correspond to the exact head commit before merge. After merge, production deployment must correspond to the resulting main commit and the public OTTO alias must be rechecked.

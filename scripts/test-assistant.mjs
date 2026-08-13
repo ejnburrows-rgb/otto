@@ -1,0 +1,36 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import { patchIndex, patchServiceWorker, validate, ASSISTANT_VERSION } from './apply-assistant-patch.mjs';
+
+const index = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
+const runtime = fs.readFileSync(new URL('../otto-assistant.js', import.meta.url), 'utf8');
+const css = fs.readFileSync(new URL('../otto-assistant.css', import.meta.url), 'utf8');
+const vercelBuild = fs.readFileSync(new URL('./vercel-build.mjs', import.meta.url), 'utf8');
+const patchedIndex = patchIndex(index);
+const patchedSw = patchServiceWorker(sw);
+
+for (const [name, ok] of validate(patchedIndex, patchedSw)) assert.equal(ok, true, name);
+assert.equal(patchIndex(patchedIndex), patchedIndex, 'index patch is idempotent');
+assert.equal(patchServiceWorker(patchedSw), patchedSw, 'service-worker patch is idempotent');
+assert.match(patchedIndex, new RegExp(`otto-assistant\\.js\\?v=${ASSISTANT_VERSION}`));
+assert.match(vercelBuild, /apply-assistant-patch\.mjs/, 'Vercel materializes the assistant into the deployed index and service worker');
+assert.match(vercelBuild, /apply-assistant-patch\.mjs[\s\S]*qa-check\.mjs/, 'Vercel applies assistant before final QA');
+assert.match(runtime, /owner-1.*owner-2.*ops-1.*it-admin-ejn/s, 'assistant is limited to four approved administrator ids');
+assert.doesNotMatch(runtime, /webkitSpeechRecognition|SpeechRecognition|speechSynthesis/i, 'no voice assistant code');
+assert.match(runtime, /MAX_RESULTS\s*=\s*5/, 'results are capped for low-cognitive-load UI');
+assert.match(runtime, /create_note.*create_email_draft.*create_contract.*create_paystub.*create_payroll_summary.*schedule_change.*update_employee/s, 'approved create/change actions exist');
+assert.match(runtime, /Confirm change|Confirmar cambio/, 'changes require confirmation');
+assert.match(runtime, /No matching records found|No se encontraron registros/, 'clear empty state exists');
+assert.match(runtime, /navigator\.onLine/, 'offline/online behavior is explicit');
+assert.match(runtime, /type:\s*'paystub'|type === 'paystub'/, 'paystubs are searchable');
+assert.match(runtime, /type:\s*'contract'|type === 'contract'/, 'contracts are searchable');
+assert.match(runtime, /type:\s*'email'|type === 'email'/, 'emails are searchable');
+assert.match(runtime, /type:\s*'note'|type === 'note'/, 'notes are searchable');
+assert.match(runtime, /type:\s*'payroll'|type === 'payroll'/, 'payroll is searchable');
+assert.match(runtime, /type:\s*'schedule'|type === 'schedule'/, 'schedules are searchable');
+assert.match(runtime, /type:\s*'employee'|type === 'employee'/, 'employee records are searchable');
+assert.match(css, /\.otto-assistant-trigger/, 'wrench trigger styled');
+assert.match(css, /@media \(max-width: 760px\)/, 'phone layout exists');
+assert.match(css, /prefers-reduced-motion/, 'reduced-motion support exists');
+console.log('Ask OTTO tests passed');
