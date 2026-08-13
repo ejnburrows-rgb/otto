@@ -1057,3 +1057,16 @@ time and git reports a conflict here, the correct fix is to keep both lines.
   Node, and every product assertion in those runs (25 owner screens at three
   widths, no broken images, no sideways scroll, zero JavaScript errors, axe 0 on
   landing and guide) passed. Both need a re-run where the CDN is reachable.
+
+- 2026-08-13 - Added a versioned first-access Code of Conduct gate for field
+  workers. The normal app chrome stays unavailable until the worker reaches the
+  end of the disclosure, draws a finger signature, checks the confirmation, and
+  taps Acknowledge. The app saves the signature image, policy version, ISO
+  timestamp, and `acknowledged` status to `consent_records`, links that record to
+  the employee profile, and persists it before releasing the screen; the same
+  version does not appear again on later access. Owner worker profiles display
+  acknowledged/pending status. Verified in Chromium at 390x844 and 1280x900:
+  the full tap/scroll/sign/reload exercise passed 16/16 with zero JavaScript
+  errors or horizontal overflow; the complete `npm test` command passed and
+  `node scripts/qa-check.mjs` reported `pass: true`. Not deployed. Cross-device
+  persistence remains behind the existing fail-closed server-auth dependency.

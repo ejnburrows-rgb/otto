@@ -571,6 +571,10 @@
     if (!session) return;
     document.body.classList.add('theme-app');
     applySessionWallpaper();
+    // The first-access policy gate owns the screen until the field worker has
+    // read, signed and acknowledged it. Re-rendering Home here used to replace
+    // the gate's contents while leaving its blocking shell active.
+    if (document.getElementById('app')?.classList.contains('policy-gate-active')) return;
     if (onHome()) render();
     else renderNav();
   }, 0);
