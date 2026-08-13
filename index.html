@@ -2186,6 +2186,10 @@
 
   async function establishCloudSession() {
     await initCloudAuth();
+    if (cloudAuth) {
+      const result = await cloudAuth.auth.getSession();
+      cloudAuthSession = result.data && result.data.session;
+    }
     if (!cloudAuthSession) return false;
     try {
       const response = await serverFetch('/api/data?session=1');
