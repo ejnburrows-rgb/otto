@@ -1,6 +1,6 @@
 /* OTTO Plumbing CRM — service worker
    Offline-first shell cache. App data lives in IndexedDB, not here. */
-const CACHE = 'otto-crm-v12';
+const CACHE = 'otto-crm-v13';
 // landing.html and guide.html ship too. Without them here, an installed phone
 // with no signal that opened /guide.html was served the CRM instead, because the
 // navigate handler below falls back to index.html for anything it cannot fetch.
@@ -13,30 +13,11 @@ const SHELL = [
   './design-assets/wallpapers/julio-pablo.avif', './design-assets/wallpapers/sarays.avif'
 ];
 
-// Runtime libraries that are loaded only when a user invokes a specialized
-// workflow — payroll Excel import (SheetJS) and document import (pdf.js). They
-// are cached at install time instead of letting the first no-signal import fail
-// simply because that screen had never been opened online before.
-//
-// The URL list used to be written out here. That is the same two-copies-of-one-
-// URL shape that cost the app its webfonts, so these are read off the page too:
-// the page assigns them to `.src` / `.workerSrc` when it injects the script.
 function runtimeScriptsIn(html) {
   return [...html.matchAll(/\.(?:src|workerSrc)\s*=\s*['"](https:\/\/[^'"]+)['"]/g)]
     .map((m) => m[1]);
 }
 
-// The icon font and the webfonts, fetched at install rather than waiting for a
-// second visit. On the very first load the service worker is not controlling the
-// page yet, so it never sees those requests — a phone that opened the app once
-// and then lost signal had no icons at all.
-//
-// These URLs are read out of index.html rather than listed here. They were
-// listed here once, and then the dashboard redesign added two more font families
-// to the page's stylesheet link without touching this file. The worker went on
-// caching the old URL, the page went on asking for the new one, and every
-// webfont vanished the moment a phone lost signal — while the icons, whose URL
-// had not changed, carried on working and made it look fine. One URL, one place.
 function cdnStylesheetsIn(html) {
   return [...html.matchAll(/<link\b[^>]*>/g)]
     .filter((tag) => /rel=["']stylesheet["']/.test(tag[0]))
@@ -50,12 +31,6 @@ function cdnScriptsIn(html) {
     .filter((src) => src && src.startsWith('https://'));
 }
 
-// A stylesheet on its own is not enough: caching all.min.css while its
-// fa-solid-900.woff2 stays on the network leaves every icon a blank box, and the
-// computed font-family still reads "Font Awesome", so it looks fine to a test
-// that only checks the name. Read the font files out of the stylesheet that was
-// just fetched, rather than hardcoding them — these URLs carry version hashes
-// that change whenever the CDN updates.
 async function cacheFontsReferencedBy(cache, cssUrl, cssText) {
   const urls = [...cssText.matchAll(/url\(\s*['"]?([^'")]+)['"]?\s*\)/g)]
     .map((m) => m[1])
@@ -69,8 +44,6 @@ async function cacheFontsReferencedBy(cache, cssUrl, cssText) {
 self.addEventListener('install', (e) => {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE).then(async (c) => {
-    // One at a time: addAll rejects the whole batch if any single request
-    // fails, and a CDN hiccup must not cost the app its offline shell.
     for (const url of SHELL) {
       try { await c.add(url); } catch (err) { /* keep going */ }
     }
@@ -109,11 +82,6 @@ self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
-  // Never cache API calls (Anthropic, Gmail, QuickBooks, etc.).
-  // Match the API hosts exactly. This used to be a substring test, which also
-  // caught fonts.googleapis.com, so the stylesheet that declares every webfont
-  // was never stored and the app lost its headings the moment a phone went
-  // offline — while the font files it points at were cached and unusable.
   const API_HOSTS = [
     'api.anthropic.com',
     'www.googleapis.com',
@@ -122,7 +90,6 @@ self.addEventListener('fetch', (e) => {
   if (API_HOSTS.includes(url.hostname) ||
       url.hostname.endsWith('.intuit.com') ||
       url.hostname === 'intuit.com') return;
-  // Network-first for the app shell so updates land; fall back to cache offline.
   if (req.mode === 'navigate' || url.pathname.endsWith('index.html')) {
     e.respondWith(
       fetch(req).then((res) => {
@@ -131,9 +98,6 @@ self.addEventListener('fetch', (e) => {
         return res;
       }).catch(() => caches.match(req).then((m) => {
         if (m) return m;
-        // Only fall back to the app for app navigations. The marketing site and
-        // the user guide are separate pages; serving the CRM in place of the one
-        // that was asked for is worse than an offline error.
         const p = url.pathname;
         if (p.endsWith('/landing.html') || p.endsWith('/guide.html')) return caches.match(p.slice(p.lastIndexOf('/') + 1) ? './' + p.slice(p.lastIndexOf('/') + 1) : './index.html');
         return caches.match('./index.html');
@@ -141,12 +105,6 @@ self.addEventListener('fetch', (e) => {
     );
     return;
   }
-  // Cache-first for static CDN assets and app assets.
-  //
-  // Same-origin lookups ignore the query string: otto-home.css and otto-home.js
-  // are requested with a cache-busting `?v=` that changes whenever they change,
-  // and an exact-match lookup would miss the precached copy and leave an
-  // offline phone with an unstyled home screen.
   const sameOrigin = url.origin === self.location.origin;
   e.respondWith(
     caches.match(req, { ignoreSearch: sameOrigin }).then((m) => m || fetch(req).then((res) => {
