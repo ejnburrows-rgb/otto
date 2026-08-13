@@ -2013,6 +2013,7 @@
       await idbPut('kv', 'db', JSON.stringify(db));
 
       for (const col of SYNCED_COLLECTIONS) _lastCloudState[col] = JSON.stringify(_syncableRecords(col));
+      window.db = db;
       return true;
     } catch (e) { console.warn('cloud pull failed', e); }
     return false;
@@ -2213,8 +2214,81 @@
       <p class="muted">${es ? 'Use el correo autorizado de su cuenta. OTTO enviará un enlace seguro.' : 'Use the authorized email for your account. OTTO will send a secure sign-in link.'}</p>
       <div class="field"><label for="cloud-email">${es ? 'Correo electrónico' : 'Email'}</label><input id="cloud-email" type="email" autocomplete="email" placeholder="name@company.com"></div>
       <button class="btn block" onclick="sendCloudSignIn()"><i class="fas fa-envelope"></i> ${es ? 'Enviar enlace seguro' : 'Send secure link'}</button>
+      <div style="text-align:center;margin-top:16px">
+        <button class="btn ghost sm" onclick="showLocalSetup()" style="width:100%"><i class="fas fa-mobile-screen"></i> ${es ? 'Configurar este dispositivo' : 'Set up this device'}</button>
+      </div>
       <div id="cloud-login-status" class="muted" style="margin-top:14px" role="status">${esc(message)}</div>
       <div class="langtoggle"><button class="${lang === 'en' ? 'on' : ''}" onclick="setLang('en');showCloudLogin()">EN</button><button class="${lang === 'es' ? 'on' : ''}" onclick="setLang('es');showCloudLogin()">ES</button></div>`;
+  }
+
+  function showLocalSetup() {
+    const es = lang === 'es';
+    $('#login').innerHTML = `
+      <div style="text-align:center;margin-bottom:24px"><img src="./logo.jpg" alt="OTTO Plumbing" style="width:190px;border-radius:12px"></div>
+      <h2 style="margin-top:0">${es ? 'Configurar este dispositivo' : 'Set up this device'}</h2>
+      <p class="muted">${es ? 'Cree el primer perfil de dueño. Elija un PIN de 4 dígitos para acceder.' : 'Create the first owner profile. Choose a 4-digit PIN to sign in.'}</p>
+      <div class="field"><label for="setup-name">${es ? 'Nombre' : 'Name'}</label><input id="setup-name" type="text" placeholder="${es ? 'Su nombre' : 'Your name'}"></div>
+      <div class="field"><label for="setup-email">${es ? 'Correo electrónico' : 'Email'}</label><input id="setup-email" type="email" placeholder="name@company.com"></div>
+      <div class="field"><label for="setup-pin">${es ? 'PIN (4 dígitos)' : 'PIN (4 digits)'}</label><input id="setup-pin" type="password" inputmode="numeric" maxlength="4" pattern="\\d{4}" placeholder="••••"></div>
+      <div class="field"><label for="setup-pin2">${es ? 'Confirmar PIN' : 'Confirm PIN'}</label><input id="setup-pin2" type="password" inputmode="numeric" maxlength="4" pattern="\\d{4}" placeholder="••••"></div>
+      <button class="btn block" onclick="completeLocalSetup()"><i class="fas fa-check"></i> ${es ? 'Guardar y entrar' : 'Save and sign in'}</button>
+      <div style="text-align:center;margin-top:16px">
+        <button class="btn ghost sm" onclick="showCloudLogin()" style="width:100%"><i class="fas fa-arrow-left"></i> ${es ? 'Volver' : 'Back'}</button>
+      </div>
+      <div id="setup-status" class="muted" style="margin-top:14px" role="status"></div>`;
+  }
+
+  async function completeLocalSetup() {
+    const es = lang === 'es';
+    const name = ($('#setup-name') && $('#setup-name').value || '').trim();
+    const email = ($('#setup-email') && $('#setup-email').value || '').trim().toLowerCase();
+    const pin = ($('#setup-pin') && $('#setup-pin').value || '').trim();
+    const pin2 = ($('#setup-pin2') && $('#setup-pin2').value || '').trim();
+    const status = $('#setup-status');
+    if (!name) { if (status) status.textContent = es ? 'Escriba su nombre.' : 'Enter your name.'; return; }
+    if (!/^\S+@\S+\.\S+$/.test(email)) { if (status) status.textContent = es ? 'Escriba un correo válido.' : 'Enter a valid email.'; return; }
+    if (!/^\d{4}$/.test(pin)) { if (status) status.textContent = es ? 'El PIN debe ser de 4 dígitos.' : 'PIN must be 4 digits.'; return; }
+    if (pin !== pin2) { if (status) status.textContent = es ? 'Los PIN no coinciden.' : 'PINs do not match.'; return; }
+    if (db.users.some(u => u.email === email)) { if (status) status.textContent = es ? 'Ese correo ya está en uso.' : 'That email is already in use.'; return; }
+    const id = 'owner-' + uid();
+    const user = { id, name, role: 'owner', email, lang: 'en', active: true, created: nowISO() };
+    await setUserPin(user, pin, 'pin');
+    db.users.push(user);
+    save();
+    localStorage.setItem('otto_session', id);
+    session = user;
+    if (status) status.textContent = es ? 'Configuración guardada.' : 'Setup saved.';
+    startApp();
+  }
+
+  function showLocalLogin() {
+    const es = lang === 'es';
+    $('#login').innerHTML = `
+      <div style="text-align:center;margin-bottom:24px"><img src="./logo.jpg" alt="OTTO Plumbing" style="width:190px;border-radius:12px"></div>
+      <h2 style="margin-top:0">${es ? 'Entrar con PIN' : 'Sign in with PIN'}</h2>
+      <p class="muted">${es ? 'Escriba el PIN de 4 dígitos para este dispositivo.' : 'Enter the 4-digit PIN for this device.'}</p>
+      <div class="field"><label for="local-pin">PIN</label><input id="local-pin" type="password" inputmode="numeric" maxlength="4" pattern="\\d{4}" placeholder="••••" autofocus></div>
+      <button class="btn block" onclick="signInLocal()"><i class="fas fa-right-to-bracket"></i> ${es ? 'Entrar' : 'Sign in'}</button>
+      <div style="text-align:center;margin-top:16px">
+        <button class="btn ghost sm" onclick="showCloudLogin()" style="width:100%"><i class="fas fa-envelope"></i> ${es ? 'Correo electrónico' : 'Email link'}</button>
+      </div>
+      <div id="local-login-status" class="muted" style="margin-top:14px" role="status"></div>`;
+    setTimeout(() => { const inp = $('#local-pin'); if (inp) inp.focus(); }, 100);
+  }
+
+  async function signInLocal() {
+    const es = lang === 'es';
+    const pin = ($('#local-pin') && $('#local-pin').value || '').trim();
+    const status = $('#local-login-status');
+    if (!/^\d{4}$/.test(pin)) { if (status) status.textContent = es ? 'Escriba 4 dígitos.' : 'Enter 4 digits.'; return; }
+    const sessionId = localStorage.getItem('otto_session');
+    const user = sessionId ? get('users', sessionId) : null;
+    if (!user || !hasPin(user, 'pin')) { if (status) status.textContent = es ? 'Configure este dispositivo primero.' : 'Set up this device first.'; return; }
+    const ok = await verifyPin(user, pin, 'pin');
+    if (!ok) { recordFailedPin(user.id); if (status) status.textContent = es ? 'PIN incorrecto.' : 'Wrong PIN.'; return; }
+    clearFailedPins(user.id);
+    session = user;
+    startApp();
   }
 
   async function sendCloudSignIn() {
@@ -5781,7 +5855,17 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     backfillUpdatedStamps();
     await migratePlainPins();
     await initCloudAuth();
-    const signedIn = await establishCloudSession();
+    let signedIn = await establishCloudSession();
+    if (!signedIn) {
+      const localSessionId = localStorage.getItem('otto_session');
+      const localUser = localSessionId ? get('users', localSessionId) : null;
+      if (localUser && hasPin(localUser, 'pin')) {
+        session = localUser;
+        signedIn = true;
+      } else if (localSessionId) {
+        localStorage.removeItem('otto_session');
+      }
+    }
     if (signedIn) {
       try { _cloudAvailable = await cloudPull(); } catch (e) { }
     }
@@ -5800,7 +5884,10 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
       startCloudPolling();
       startPhotoQueueDrainer();
     }
-    if (session) startApp(); else showLogin();
+    if (session) startApp(); else {
+      const hasLocalUsers = (db.users || []).some(u => hasPin(u, 'pin'));
+      if (hasLocalUsers) showLocalLogin(); else showLogin();
+    }
     if ('serviceWorker' in navigator) { try { navigator.serviceWorker.register('./sw.js'); } catch (e) { } }
   }
   function setSearch(key, val) { _search[key] = val; render(); }
