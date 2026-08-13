@@ -1,21 +1,15 @@
-// Vercel serverless route for Ask OTTO AI.
-// Uses Vercel AI Gateway through the AI SDK. On Vercel deployments the gateway
-// can authenticate with the project OIDC identity, so the CRM does not require
-// an Anthropic API key in the browser or project settings.
+// Vercel serverless proxy for the Claude (Anthropic) API.
+//
+// The OTTO Plumbing CRM front-end calls POST /api/claude with the same JSON
+// body it would send to https://api.anthropic.com/v1/messages. This function
+// adds the Anthropic API key from the ANTHROPIC_API_KEY environment variable
+// (set once in the Vercel project settings) so the key never lives in the
+// browser and every worker's device gets AI with nothing to paste.
+//
+// If no key is configured it returns 503 so the client can fall back to a
+// personal key entered in Settings, or to local (no-AI) behavior.
 
-import { generateText } from 'ai';
 import { requireServerAuth } from './_lib/serverAuth.js';
-
-const MODEL_ALIASES = {
-  'claude-sonnet-4-6': 'anthropic/claude-sonnet-4.6',
-  'claude-sonnet-4.6': 'anthropic/claude-sonnet-4.6',
-};
-
-function gatewayModel(model) {
-  const value = String(model || 'claude-sonnet-4-6');
-  if (value.startsWith('anthropic/')) return value;
-  return MODEL_ALIASES[value] || 'anthropic/claude-sonnet-4.6';
-}
 
 // Only authenticated owner/office accounts may reach the provider.
 export default async function handler(req, res) {
@@ -24,38 +18,37 @@ export default async function handler(req, res) {
   return claudeHandler(req, res);
 }
 
+// The proxy logic remains separate so provider behavior stays fully testable.
 export async function claudeHandler(req, res) {
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'method_not_allowed' });
     return;
   }
-
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!key) {
+    res.status(503).json({ error: 'no_server_key' });
+    return;
+  }
   try {
+    // req.body is auto-parsed for application/json; fall back to raw read.
     let body = req.body;
     if (body == null || typeof body === 'string') {
       const raw = typeof body === 'string' ? body : await readRaw(req);
       body = raw ? JSON.parse(raw) : {};
     }
-
-    const result = await generateText({
-      model: gatewayModel(body.model),
-      system: typeof body.system === 'string' ? body.system : undefined,
-      messages: Array.isArray(body.messages) ? body.messages : [],
-      maxOutputTokens: Number(body.max_tokens) > 0 ? Number(body.max_tokens) : 600,
-    });
-
-    res.status(200).json({
-      id: result.response?.id || `otto_${Date.now()}`,
-      type: 'message',
-      role: 'assistant',
-      model: result.response?.modelId || gatewayModel(body.model),
-      content: [{ type: 'text', text: result.text || '' }],
-      stop_reason: result.finishReason || 'end_turn',
-      usage: {
-        input_tokens: result.usage?.inputTokens || 0,
-        output_tokens: result.usage?.outputTokens || 0,
+    const upstream = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
       },
+      body: JSON.stringify(body),
     });
+    const text = await upstream.text();
+    res.status(upstream.status);
+    res.setHeader('Content-Type', 'application/json');
+    res.send(text);
   } catch (e) {
     res.status(502).json({ error: 'upstream_error', detail: String(e && e.message || e) });
   }
