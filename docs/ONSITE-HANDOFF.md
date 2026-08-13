@@ -257,16 +257,15 @@ at the server (section 6).
 own jobs and customers), reading photographed checks and receipts, drafting job
 summaries, and reading drawings (section 10).
 
-**The two providers, and which one you need.** The app is wired for both:
+**One provider, one key.** Everything AI in the app runs through **NVIDIA**
+(`NVIDIA_API_KEY`): reading your PDF drawings and drafting the estimate,
+"Ask OTTO", reading photographed checks and receipts, and job summaries. Sign up
+at `build.nvidia.com`, which gives free starter credits, and generate a key
+beginning `nvapi-`.
 
-- **NVIDIA** (`NVIDIA_API_KEY`) — this is the one that reads your PDF drawings
-  and drafts the estimate. If PDF takeoff is what you care about, this is the
-  account to open. Sign up at `build.nvidia.com`, which gives free starter
-  credits, and generate a key beginning `nvapi-`.
-- **Anthropic** (`ANTHROPIC_API_KEY`) — powers "Ask OTTO", reading photographed
-  checks and receipts, and job summaries. Separate account, separate key.
-
-You do not need both to start. **NVIDIA alone covers the PDF workflow.**
+There is no second AI account to open. The app used to also use Anthropic for
+the assistant and photo reading; that was removed, so anything you read
+elsewhere about an `ANTHROPIC_API_KEY` is out of date.
 
 **Where the key goes:** to the developer, to be set in Vercel under
 Settings → Environment Variables. Never in a text message, never in the code,
@@ -337,7 +336,7 @@ final number — and that is the right way to describe it to a client anyway.
 | Supabase `Cartilla de Gretel` | A different, unrelated project | Not for Otto | Free tier — check whether it is yours |
 | GitHub (private repo) | Stores the code | **Yes** | Free tier |
 | GitHub Actions | **Not actually running** — see STATUS §3.9 | Needs fixing | $0 (nothing runs) |
-| Anthropic / NVIDIA | Keys may exist but routes are off | Not yet | **$0 today** — nothing can call them |
+| NVIDIA | The one AI provider; the route refuses callers at the gate in section 6 | Not yet | **$0 today** — nothing can call it |
 | Twilio / SendGrid | Not connected | Not yet | $0 |
 | Windows "heartbeat" task | Retired in July | **No** | $0, but delete the scheduled task on the PC if it still exists |
 

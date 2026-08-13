@@ -37,8 +37,9 @@ All of this code exists and works the moment its key is present; today they retu
   UI ships without it and degrades to "call us" — see `docs/issues/landing-03`).
 - **QuickBooks (Intuit)** — `api/quickbooks.js` is a stub; only one-way CSV export
   works until you connect an Intuit app.
-- **Anthropic ("Ask OTTO" AI)** — set `ANTHROPIC_API_KEY` for the AI assistant.
-- **NVIDIA (drawing → estimate)** — set `NVIDIA_API_KEY`.
+- **NVIDIA (every AI feature)** — set `NVIDIA_API_KEY`. One key covers "Ask
+  OTTO", reading photographed checks and receipts, job summaries, and
+  drawing → estimate. There is no second AI account to open.
 - **Inbound email** — set `INBOUND_WEBHOOK_TOKEN` and point your email provider's
   webhook at `api/inbound-email.js`.
 
