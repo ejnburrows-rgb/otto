@@ -1206,7 +1206,7 @@
       addCustomer: 'Add Customer', addJob: 'Add Job', linkCustomer: 'Customer', jobFolder: 'Job Folder',
       activity: 'Activity', overview: 'Overview', cadFile: 'CAD / AutoCAD file',
       sop: 'SOP / How-to', question: 'Question', answer: 'Answer', escalate: 'Ask the owner',
-      noKey: 'Add an AI key in Settings to use voice text, scanning, and the assistant fully.',
+      noKey: 'Scanning and written answers need a signal. Nothing to set up — try again when you are back online.',
       saved: 'Saved', deleted: 'Deleted', confirmDelete: 'Delete this? This cannot be undone.',
       checkNumber: 'Check #', memo: 'Memo', payer: 'Payer', linkInvoice: 'Link to invoice',
       addCheck: 'Add Check', addEstimate: 'Add Estimate', addInvoice: 'Add Invoice', addPayment: 'Add Payment',
@@ -1292,7 +1292,7 @@
       addCustomer: 'Agregar Cliente', addJob: 'Agregar Trabajo', linkCustomer: 'Cliente', jobFolder: 'Carpeta del Trabajo',
       activity: 'Actividad', overview: 'Resumen', cadFile: 'Archivo CAD / AutoCAD',
       sop: 'Guía / Cómo hacer', question: 'Pregunta', answer: 'Respuesta', escalate: 'Preguntar al dueño',
-      noKey: 'Agrega una clave de IA en Ajustes para usar voz a texto, escaneo y el asistente completos.',
+      noKey: 'El escaneo y las respuestas escritas necesitan señal. No hay nada que configurar; inténtelo de nuevo con conexión.',
       saved: 'Guardado', deleted: 'Eliminado', confirmDelete: '¿Eliminar esto? No se puede deshacer.',
       checkNumber: 'Cheque #', memo: 'Memo', payer: 'Pagador', linkInvoice: 'Vincular a factura',
       addCheck: 'Agregar Cheque', addEstimate: 'Agregar Presupuesto', addInvoice: 'Agregar Factura', addPayment: 'Agregar Pago',
@@ -1642,6 +1642,14 @@
         delete db.meta.nvidiaKey;
         db.meta.nvidiaKeyPurged = nowISO();
       }
+      // The same applies to the retired personal Anthropic key, which lived in
+      // localStorage and was sent straight from the browser to the provider.
+      try {
+        if (localStorage.getItem('otto_ai_key') !== null) {
+          localStorage.removeItem('otto_ai_key');
+          db.meta.anthropicKeyPurged = nowISO();
+        }
+      } catch (e) { /* private mode — nothing stored to remove */ }
       if (!db.meta.deterministicDefaultTemplates) {
         const defaults = blankDB();
         for (const collection of ['workflows', 'sops']) {
@@ -3561,9 +3569,7 @@
 
     html += `<div class="section-title"><i class="fas fa-wand-magic-sparkles"></i> Ask OTTO</div>
       <div class="card" style="padding:14px">
-        <div class="muted" style="margin-bottom:10px">${lang === 'es' ? 'Clave de Anthropic Claude y NVIDIA para usar el asistente y OCR.' : 'Anthropic Claude & NVIDIA keys for assistant & OCR.'}</div>
-        <div class="field"><label for="set-aikey">${lang === 'es' ? 'Clave Anthropic (opcional, este dispositivo)' : 'Anthropic API Key (optional, this device)'}</label><input id="set-aikey" type="password" value="${esc(localStorage.getItem('otto_ai_key') || '')}" placeholder="sk-ant-..."></div>
-        <button class="btn block" onclick="saveAIKey()"><i class="fas fa-check"></i> ${t('save')}</button>
+        <div class="muted">${lang === 'es' ? 'El asistente, los resúmenes y la lectura de fotos ya vienen configurados en el servidor. No hay ninguna clave que escribir en este dispositivo. Sin señal, OTTO sigue buscando en los registros guardados.' : 'The assistant, the summaries, and photo reading are already set up on the server. There is no key to enter on this device. With no signal, OTTO still searches your saved records.'}</div>
       </div>`;
 
     if (session.role === 'owner') {
@@ -3840,35 +3846,58 @@
     try { rec.start(); } catch (e) { }
   }
 
-  /* ============================ OCR (Claude vision) ============================ */
-  function aiKey() { return localStorage.getItem('otto_ai_key') || ''; }
-  // Calls Claude through the server proxy first (key in Vercel env, nothing in
-  // the browser). Falls back to a personal key from Settings, then to nothing.
-  // Returns the parsed Anthropic message object, or null if AI is unavailable.
-  async function callClaude(body) {
-    // 1) Server-side proxy — preferred. 503 = no server key configured.
-    try {
-      const r = await serverFetch('/api/claude', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      if (r.ok) { const d = await r.json(); if (d && d.content) return d; }
-    } catch (e) { /* no function / offline — fall through */ }
-    // 2) Personal key entered in Settings (direct browser call).
-    const key = aiKey();
-    if (key) {
-      try {
-        const r = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-          body: JSON.stringify(body)
-        });
-        if (r.ok) { const d = await r.json(); if (d && d.content) return d; }
-      } catch (e) { /* fall through */ }
+  /* ======================= AI (NVIDIA, through the server) ======================= */
+  // Every AI feature goes through /api/nvidia. The key lives in the Vercel
+  // project settings and never reaches the browser, so there is nothing for
+  // anyone to paste, export, or leak, and nothing to set up on a phone.
+  //
+  // Call sites speak a block shape — { system, max_tokens, messages: [{ role,
+  // content }] } where content is a string or an array of text/image parts — and
+  // read the answer back as d.content[0].text. NVIDIA's endpoint is
+  // OpenAI-compatible, so both translations happen here instead of in the nine
+  // places that ask for an answer.
+  function toProviderMessages(body) {
+    const out = [];
+    if (body.system) out.push({ role: 'system', content: String(body.system) });
+    for (const m of (body.messages || [])) {
+      if (typeof m.content === 'string') { out.push({ role: m.role, content: m.content }); continue; }
+      const parts = [];
+      for (const p of (m.content || [])) {
+        if (!p) continue;
+        if (p.type === 'text') parts.push({ type: 'text', text: p.text || '' });
+        else if (p.type === 'image' && p.source && p.source.data) {
+          parts.push({ type: 'image_url', image_url: { url: `data:${p.source.media_type || 'image/jpeg'};base64,${p.source.data}` } });
+        }
+      }
+      out.push({ role: m.role, content: parts });
     }
-    return null;
+    return out;
   }
+  // Returns { content: [{ type:'text', text }] }, or null when AI is
+  // unavailable — offline, no server key (503), or not owner/office (401).
+  // Every caller already treats null as "fall back to local records".
+  // The model is chosen server-side, so no model name is sent from here.
+  async function callAI(body) {
+    const payload = { messages: toProviderMessages(body || {}) };
+    if (body && body.max_tokens) payload.max_tokens = body.max_tokens;
+    try {
+      const r = await serverFetch('/api/nvidia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      if (!r.ok) return null;
+      const d = await r.json();
+      const choice = d && d.choices && d.choices[0];
+      const text = choice && choice.message && choice.message.content;
+      return text ? { content: [{ type: 'text', text: String(text) }] } : null;
+    } catch (e) {
+      return null; // no function or offline — the caller answers from local data
+    }
+  }
+  // Former name. Kept so a service-worker-cached otto-assistant.js from before
+  // this change still resolves its bridge call instead of silently losing AI.
+  const callClaude = callAI;
   async function aiVision(dataUrl, prompt) {
     const mt = dataUrl.startsWith('data:image/png') ? 'image/png' : 'image/jpeg';
     const b64 = dataUrl.split(',')[1];
-    const d = await callClaude({ model: 'claude-sonnet-4-6', max_tokens: 1024, messages: [{ role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: mt, data: b64 } }, { type: 'text', text: prompt }] }] });
+    const d = await callAI({max_tokens: 1024, messages: [{ role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: mt, data: b64 } }, { type: 'text', text: prompt }] }] });
     if (!d) { toast(t('noKey'), 'error'); return null; }
     try { const txt = d.content[0].text; const m = txt.match(/\{[\s\S]*\}/); return m ? JSON.parse(m[0]) : null; }
     catch (e) { return null; }
@@ -4163,7 +4192,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
   // language. Uses the Claude proxy; returns null if AI is unavailable.
   async function aiSummarize(text, kind) {
     const langName = lang === 'es' ? 'Spanish' : 'English';
-    const d = await callClaude({ model: 'claude-sonnet-4-6', max_tokens: 400,
+    const d = await callAI({max_tokens: 400,
       system: `You summarize a ${kind} for a busy plumbing company owner in 2-3 short, plain sentences. Call out any money, dates, or action needed. Reply in ${langName}.`,
       messages: [{ role: 'user', content: (text || '').slice(0, 6000) }] });
     return d && d.content ? d.content[0].text.trim() : null;
@@ -4550,7 +4579,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     }
     const sys = `You are OTTO, the in-house assistant for a plumbing company. Answer briefly and practically in ${lang === 'es' ? 'Spanish' : 'English'} using ONLY the company data below. If the answer isn't in the data and isn't general plumbing how-to, say the office/owner should be asked. Data:\n\n${ctx || '(no matching records)'}`;
     let d = null;
-    try { d = await callClaude({ model: 'claude-sonnet-4-6', max_tokens: 700, system: sys, messages: [{ role: 'user', content: q }] }); } catch (e) { d = null; }
+    try { d = await callAI({max_tokens: 700, system: sys, messages: [{ role: 'user', content: q }] }); } catch (e) { d = null; }
     const typingEl = $('#typing-indicator'); if (typingEl) typingEl.remove();
     if (d && d.content) { 
       chatHistory.push({ role: 'bot', text: d.content[0].text, ts: Date.now() }); 
@@ -4562,7 +4591,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
   }
   function localAnswer(q, ctx) {
     if (ctx) return { text: (lang === 'es' ? 'Esto encontré en los registros:' : 'Here is what I found in the records:') + '\n\n' + ctx, src: lang === 'es' ? 'Datos de la empresa' : 'Company records' };
-    return { text: lang === 'es' ? 'No encontré nada sobre eso. Pregunta a la oficina o al dueño. (Agrega una clave de IA en Ajustes para respuestas más inteligentes.)' : "I couldn't find anything about that. Please ask the office or owner. (Add an AI key in Settings for smarter answers.)", src: '' };
+    return { text: lang === 'es' ? 'No encontré nada sobre eso en los registros. Pregunta a la oficina o al dueño.' : "I couldn't find anything about that in the records. Please ask the office or owner.", src: '' };
   }
 
   /* ============================ PREMIUM FLOATING AI CHAT BOX (EN/ES) ============================ */
@@ -4643,7 +4672,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     }
     const ctx = buildContext(q);
     const sys = `You are OTTO, the in-house assistant for a plumbing company. Answer briefly and practically in ${lang === 'es' ? 'Spanish' : 'English'} using ONLY the company data below. If the answer isn't in the data and isn't general plumbing how-to, say the office/owner should be asked. Data:\n\n${ctx || '(no matching records)'}`;
-    callClaude({ model: 'claude-sonnet-4-6', max_tokens: 650, system: sys, messages: [{ role: 'user', content: q }] }).then(d => {
+    callAI({max_tokens: 650, system: sys, messages: [{ role: 'user', content: q }] }).then(d => {
       const tdiv = log ? log.querySelector('.bubble.bot:last-child') : null; if (tdiv) tdiv.remove();
       if (d && d.content) chatHistory.push({ role: 'bot', text: d.content[0].text, ts: Date.now() });
       else { const a = localAnswer(q, ctx); chatHistory.push({ role: 'bot', text: a.text, src: a.src, ts: Date.now() }); }
@@ -5429,7 +5458,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     const sys = `You are the project assistant for THIS specific plumbing job, answering as the owner would, using ONLY this job's data. Reply in ${langName}, briefly. Return STRICT JSON only: {"answer":"...","confident":true|false,"clarify":""}. Answer from the job data first. If you cannot answer confidently from it, set "confident" false and put ONE short clarifying question in "clarify". Never invent specifics.
 JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     let parsed = null;
-    const d = await callClaude({ model: 'claude-sonnet-4-6', max_tokens: 500, system: sys, messages: [{ role: 'user', content: q }] });
+    const d = await callAI({max_tokens: 500, system: sys, messages: [{ role: 'user', content: q }] });
     if (d && d.content) { try { const m = d.content[0].text.match(/\{[\s\S]*\}/); parsed = m ? JSON.parse(m[0]) : { answer: d.content[0].text, confident: true, clarify: '' }; } catch (e) { parsed = { answer: d.content[0].text, confident: true, clarify: '' }; } }
     if (!parsed) { escalateProjectAI(jobId, q, lang === 'es' ? 'IA no disponible' : 'AI unavailable'); return; }
     if (parsed.confident === false && parsed.clarify) { add('ai_conversations', { jobId, role: 'assistant', text: parsed.clarify, clarify: true }); render(); return; }
@@ -5727,11 +5756,6 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     if ('serviceWorker' in navigator) { try { navigator.serviceWorker.register('./sw.js'); } catch (e) { } }
   }
   function setSearch(key, val) { _search[key] = val; render(); }
-  function saveAIKey() { 
-    localStorage.setItem('otto_ai_key', ($('#set-aikey').value || '').trim());
-    save();
-    toast(t('saved'), 'success'); 
-  }
   async function saveMfa() {
     const v = ($('#set-mfa').value || '').trim();
     if (v === '') return toast(lang === 'es' ? 'Escribe 4 dígitos' : 'Type 4 digits', 'error');
@@ -6187,7 +6211,7 @@ Return ONLY valid JSON: { "fixtures": [], "pipes": [], "fittings": [], "notes": 
     toast(t('saved'), 'success');
   }
 
-  Object.assign(window, { __db: () => db, setSearch, saveAIKey, saveMfa, clearMfa, t, toast, closeModal, modal,
+  Object.assign(window, { __db: () => db, setSearch, saveMfa, clearMfa, t, toast, closeModal, modal,
     setLang, nav, signOut, deletePayment, quickAdd, openMore, get, remove, update, confirmDel, render,
     newCall, saveCall, jobFromCall, openCallView, openCustomerForm, saveCustomer, openJobForm, saveJob, changeJobStatus, setJobStatus,
     openNoteForm, saveNote, quickPhoto, chooseJob, runJobAction, uploadDoc, openDoc, quickVoiceNote, voiceInto,

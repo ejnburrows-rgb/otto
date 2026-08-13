@@ -1,10 +1,17 @@
 /* OTTO CRM — focused command assistant.
    Search first, preview second, confirm before changes. Offline search and safe
-   template creation use the CRM's local data; Claude is optional for drafting. */
+   template creation use the CRM's local data; AI is optional for drafting. */
 (function () {
   'use strict';
 
   const bridge = () => window.__ottoAssistantBridge || {};
+  // The provider is NVIDIA and the bridge call is named callAI. The former name
+  // is still accepted so a service-worker-cached index.html keeps answering
+  // rather than silently dropping to search-only after an update.
+  const bridgeAI = (b) => {
+    const fn = (b || {}).callAI || (b || {}).callClaude;
+    return typeof fn === 'function' ? fn : null;
+  };
   const ALLOWED_IDS = new Set(['owner-1', 'owner-2', 'ops-1', 'it-admin-ejn']);
   const MAX_RESULTS = 5;
   const SEARCH_TYPES = new Set(['paystub', 'contract', 'email', 'note', 'payroll', 'schedule', 'employee']);
@@ -317,13 +324,14 @@
 
   async function aiProposal(query) {
     const b = bridge();
-    if (typeof b.callClaude !== 'function' || navigator.onLine === false) return null;
+    const ask = bridgeAI(b);
+    if (!ask || navigator.onLine === false) return null;
     const employees = list('users').map(u => ({ id: u.id, name: u.name || u.name_en || u.name_es || '', email: u.email || '' }));
     const schedules = list('jobs').filter(j => j.scheduledDate || j.start || j.date).slice(-30).map(j => ({ id: j.id, title: j.title || '', employeeId: j.assignedTo || j.workerId || j.employeeId || '', when: j.scheduledDate || j.start || j.date || '' }));
     const ctx = currentContext();
     const system = `You convert a plumbing CRM owner's instruction into ONE safe proposed action. Never execute anything. Allowed actions only: ${[...ACTIONS].join(', ')}. Never change roles, authentication, permissions, payments, bank data, payroll amounts, or delete data. Return ONLY compact JSON: {"action":"...","employeeId":"","recordId":"","summary":"","payload":{}}. If the request is not one allowed action, return {"action":""}. Current context employee: ${ctx.employee ? `${ctx.employee.id} ${ctx.employee.name}` : 'none'}. Employees: ${JSON.stringify(employees)}. Recent schedules: ${JSON.stringify(schedules)}.`;
     try {
-      const d = await b.callClaude({ model: 'claude-sonnet-4-6', max_tokens: 450, system, messages: [{ role: 'user', content: String(query).slice(0, 1600) }] });
+      const d = await ask({ max_tokens: 450, system, messages: [{ role: 'user', content: String(query).slice(0, 1600) }] });
       const text = d && d.content && d.content[0] && d.content[0].text;
       const match = text && text.match(/\{[\s\S]*\}/);
       const parsed = match ? JSON.parse(match[0]) : null;
@@ -413,9 +421,10 @@
       if (!employee || !employee.email) throw new Error(tx('That employee does not have an email address in OTTO.', 'Ese empleado no tiene correo en OTTO.'));
       let body = String(p.payload.body || p.summary || '').trim();
       let subject = String(p.payload.subject || '').trim() || tx('OTTO Plumbing', 'OTTO Plumbing');
-      if (typeof b.callClaude === 'function' && navigator.onLine !== false && body) {
+      const ask = bridgeAI(b);
+      if (ask && navigator.onLine !== false && body) {
         try {
-          const d = await b.callClaude({ model: 'claude-sonnet-4-6', max_tokens: 450, system: `Draft a concise professional internal email for OTTO Plumbing. Output JSON only: {"subject":"","body":""}. Reply in ${currentLang() === 'es' ? 'Spanish' : 'English'}. Do not invent facts, money, dates, commitments, or policy.`, messages: [{ role: 'user', content: body }] });
+          const d = await ask({ max_tokens: 450, system: `Draft a concise professional internal email for OTTO Plumbing. Output JSON only: {"subject":"","body":""}. Reply in ${currentLang() === 'es' ? 'Spanish' : 'English'}. Do not invent facts, money, dates, commitments, or policy.`, messages: [{ role: 'user', content: body }] });
           const t = d && d.content && d.content[0] && d.content[0].text; const m = t && t.match(/\{[\s\S]*\}/); const j = m ? JSON.parse(m[0]) : null;
           if (j && j.body) { body = j.body; subject = j.subject || subject; }
         } catch (_) {}

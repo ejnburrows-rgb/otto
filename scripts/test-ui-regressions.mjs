@@ -493,5 +493,44 @@ console.log('\nseeded company profile — only confirmed facts reach a printed d
   check('website is left for the owner to fill', field('website'), '');
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+console.log('\nno provider key may live in the browser');
+{
+  // WHAT HAPPENED: Settings carried two provider key fields. The NVIDIA one
+  // saved into the local database, so the key travelled inside every export and
+  // backup. The Anthropic one saved into localStorage and was sent straight from
+  // the browser to api.anthropic.com. Each was a second path around the server
+  // proxy, which exists precisely so that no key ever reaches a device.
+  check('no NVIDIA key field in Settings', html.includes('set-nvi-key'), false);
+  check('no Anthropic key field in Settings', html.includes('set-aikey'), false);
+  check('nothing writes the retired localStorage key',
+    /setItem\('otto_ai_key'/.test(html), false);
+  // Two references remain and both belong to the purge: the guard that decides
+  // whether a device had one, and the removal itself. Nothing reads the value.
+  check('the retired key is only touched in order to delete it',
+    (html.match(/otto_ai_key/g) || []).length, 2);
+  check('a device that already stored one has it purged',
+    /localStorage\.removeItem\('otto_ai_key'\)/.test(html), true);
+  check('the browser never contacts a provider directly',
+    /api\.anthropic\.com|integrate\.api\.nvidia\.com/.test(html), false);
+  check('AI goes through the server proxy', html.includes("serverFetch('/api/nvidia'"), true);
+  // The model is chosen server-side so it can be swapped in the Vercel settings
+  // without a deploy. A model name sent from the browser silently overrides that.
+  check('no model name is hard-coded in the browser', /claude-sonnet|meta\/llama/.test(html), false);
+
+  // Nine call sites still speak the block shape and read d.content[0].text, so
+  // callAI is the only place that translates and must keep doing both halves.
+  check('image parts are converted for an OpenAI-compatible endpoint',
+    html.includes("type: 'image_url'"), true);
+  check('the reply is returned in the shape the call sites read',
+    /content: \[\{ type: 'text', text: String\(text\) \}\]/.test(html), true);
+  // An otto-assistant.js still cached from before the rename must resolve a
+  // bridge function, or an updated phone loses AI with no error anywhere.
+  check('the former bridge name still resolves', /const callClaude = callAI;/.test(html), true);
+  check('the bridge offers both names',
+    ['callAI: body => callAI(body)', 'callClaude: body => callAI(body)']
+      .every(s => readFileSync(new URL('../scripts/apply-assistant-patch.mjs', import.meta.url), 'utf8').includes(s)), true);
+}
+
 console.log(`\n${passed} passed, ${failed} failed\n`);
 process.exit(failed ? 1 : 0);
