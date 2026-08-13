@@ -1635,6 +1635,13 @@
         delete db.meta.gmailHistoryId;
         db.meta.emailCollectionsUnified = nowISO();
       }
+      // A retired Settings field used to store an NVIDIA key in this local
+      // database, which carried it into exports and backups. The provider is
+      // reached only through the server proxy now, so drop any saved copy.
+      if (db.meta.nvidiaKey !== undefined) {
+        delete db.meta.nvidiaKey;
+        db.meta.nvidiaKeyPurged = nowISO();
+      }
       if (!db.meta.deterministicDefaultTemplates) {
         const defaults = blankDB();
         for (const collection of ['workflows', 'sops']) {
@@ -3556,7 +3563,6 @@
       <div class="card" style="padding:14px">
         <div class="muted" style="margin-bottom:10px">${lang === 'es' ? 'Clave de Anthropic Claude y NVIDIA para usar el asistente y OCR.' : 'Anthropic Claude & NVIDIA keys for assistant & OCR.'}</div>
         <div class="field"><label for="set-aikey">${lang === 'es' ? 'Clave Anthropic (opcional, este dispositivo)' : 'Anthropic API Key (optional, this device)'}</label><input id="set-aikey" type="password" value="${esc(localStorage.getItem('otto_ai_key') || '')}" placeholder="sk-ant-..."></div>
-        <div class="field"><label for="set-nvi-key">${lang === 'es' ? 'Clave NVIDIA (para estimado de planos)' : 'NVIDIA API Key (for floor plan takeoff)'}</label><input id="set-nvi-key" type="password" value="${esc(db.meta?.nvidiaKey || '')}" placeholder="nvapi-..."></div>
         <button class="btn block" onclick="saveAIKey()"><i class="fas fa-check"></i> ${t('save')}</button>
       </div>`;
 
@@ -5722,8 +5728,7 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
   }
   function setSearch(key, val) { _search[key] = val; render(); }
   function saveAIKey() { 
-    localStorage.setItem('otto_ai_key', ($('#set-aikey').value || '').trim()); 
-    db.meta.nvidiaKey = ($('#set-nvi-key').value || '').trim();
+    localStorage.setItem('otto_ai_key', ($('#set-aikey').value || '').trim());
     save();
     toast(t('saved'), 'success'); 
   }
@@ -6106,21 +6111,10 @@ Return ONLY valid JSON: { "fixtures": [], "pipes": [], "fittings": [], "notes": 
           text = data.choices?.[0]?.message?.content;
         }
       } catch (e) { /* fall through */ }
-      if (!text && db.meta?.nvidiaKey) {
-        const res = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${db.meta.nvidiaKey}` },
-          body: JSON.stringify({
-            model: 'nvidia/llama-3.1-nemotron-nano-vl-8b-v1',
-            messages: [{ role: 'user', content: prompt + ` <img src="data:image/jpeg;base64,${imgB64}" />` }],
-            temperature: 0.2,
-          }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          text = data.choices[0].message.content;
-        }
-      }
+      // The server proxy at /api/nvidia is the only path to the provider. It
+      // holds the key in NVIDIA_API_KEY and returns 503 when none is set, so
+      // takeoff degrades to manual entry rather than sending a key from the
+      // browser to a third party.
       if (!text) throw new Error('no_ai');
       const jmatch = text.match(/\{[\s\S]*\}/);
       const parsed = JSON.parse(jmatch ? jmatch[0] : text);
