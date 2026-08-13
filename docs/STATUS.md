@@ -114,8 +114,29 @@ The Vercel build path was corrected so final QA runs **after** all deployment la
 
 The current authenticated preview renders the premium sign-in screen in English and Spanish with no broken image or horizontal overflow. Full signed-in multi-account proof still requires real administrator accounts.
 
+## Ask OTTO command assistant — release candidate
+
+PR #139 adds one restrained wrench-based Ask OTTO surface for the four protected administrator profiles: EJN, Otto, Julio and Sarays. It preserves the existing three-window workspace and does not alter Julio or Sarays wallpaper assets.
+
+- Search is intentionally limited to paystubs, contracts, emails, notes, payroll, schedules and employee records.
+- Results are shown before opening; current-screen context is carried into the search so follow-up language such as “his last paystub” can resolve against the active record.
+- Local CRM state provides offline search, preview and deterministic operations. Claude remains optional for drafting/reasoning when online.
+- Supported creation/change intents include notes, email drafts, contracts, paystubs, payroll summaries, schedule changes and restricted employee-record updates.
+- Record changes are proposed before application. Paystub values are sourced from recorded payroll data rather than invented by AI.
+- The assistant JS/CSS are wired into the existing build and service-worker shell cache.
+- The exact PR candidate completed a READY Vercel preview with the full repository build chain, dedicated Ask OTTO tests and `qa-check` reporting `pass: true` before merge. Production proof still requires checking the merged `main` deployment and public alias.
+
 ## Verified engineering evidence
 
+- The `feat/employee-policy-ack` branch adds a versioned first-access Code of
+  Conduct gate for field employees. The phone layout uses the approved OTTO
+  logo, requires the employee to reach the end, capture a finger signature,
+  check the confirmation, and tap Acknowledge. It stores the signature,
+  timestamp, policy version, acknowledgment status, and employee-profile link
+  before releasing the screen. The dedicated browser exercise passed 16/16 at
+  390x844 and 1280x900 with no JavaScript errors or horizontal overflow. This
+  branch has not been deployed; cross-device production proof still requires
+  the real authenticated multi-account workflow.
 - The merged three-window workspace has previously completed its repository regression and QA chain on Vercel with zero failures.
 - The merged unified file-intake production build completed its current regression/QA chain successfully on Vercel.
 - PR #126 preview builds have run the full current source/unit suite, including dedicated UI-polish checks, and `qa-check` after the deployment layers were applied.

@@ -934,6 +934,104 @@
       .hub-job-foot { padding-right:62px; }
     }
 
+    /* ---- first-access employee policy acknowledgment ----
+       This is deliberately isolated from the normal app chrome. A field worker
+       cannot reach jobs or navigation until the current policy version has
+       been read to the end, signed and acknowledged. */
+    #app.policy-gate-active {
+      position:fixed; inset:0; z-index:500; background:#fff; color:#182235;
+    }
+    #app.policy-gate-active .topbar,
+    #app.policy-gate-active .bottomnav,
+    #app.policy-gate-active #fab,
+    #app.policy-gate-active #wallpaper-bg { display:none !important; }
+    #app.policy-gate-active #main {
+      width:100%; max-width:none; height:100dvh; padding:0; overflow:hidden;
+      background:#fff; color:#182235; opacity:1 !important;
+    }
+    .policy-gate { height:100%; display:flex; flex-direction:column; background:#fff; }
+    .policy-scroll { flex:1 1 auto; min-height:0; overflow-y:auto; overscroll-behavior:contain; }
+    .policy-document { width:min(100%, 720px); margin:0 auto; padding:0 22px 38px; }
+    .policy-brand {
+      display:flex; justify-content:center; align-items:center; min-height:102px;
+      border-bottom:2px solid #092B4C; margin:0 -22px 28px; background:#fff;
+      padding:max(14px, env(safe-area-inset-top)) 20px 14px;
+    }
+    .policy-brand img {
+      display:block; width:176px; height:68px; object-fit:cover; object-position:50% 49%;
+      border-radius:8px; background:#fff;
+    }
+    .policy-intro {
+      background:#F7FAFC; border:1px solid #DDE6ED; border-radius:16px;
+      padding:22px 18px; margin-bottom:28px; color:#425168; text-align:center;
+      font-size:16px; line-height:1.55;
+    }
+    .policy-section { margin:0 0 28px; }
+    .policy-section-head { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+    .policy-number {
+      width:38px; height:38px; flex:0 0 38px; display:flex; align-items:center;
+      justify-content:center; border-radius:10px; background:#092B4C; color:#fff;
+      font:800 16px/1 'Hanken Grotesk', Inter, sans-serif;
+    }
+    .policy-section h2 {
+      color:#111A2C; font:800 21px/1.2 'Hanken Grotesk', Inter, sans-serif;
+      letter-spacing:-.015em;
+    }
+    .policy-section p, .policy-section li {
+      color:#425168; font-size:16px; line-height:1.55;
+    }
+    .policy-section ul { list-style:none; display:grid; gap:10px; }
+    .policy-section li { position:relative; padding-left:24px; }
+    .policy-section li::before {
+      content:""; position:absolute; left:5px; top:.68em; width:6px; height:6px;
+      border-radius:50%; background:#2F6BFF;
+    }
+    .policy-signature-block {
+      margin:34px 0 8px; padding:18px; border:1px solid #DDE6ED;
+      border-radius:14px; background:#F7FAFC;
+    }
+    .policy-signature-block h2 {
+      color:#111A2C; font:800 20px/1.25 'Hanken Grotesk', Inter, sans-serif;
+      margin-bottom:5px;
+    }
+    .policy-signature-block p { color:#526077; font-size:14px; margin-bottom:12px; }
+    .policy-signature-wrap {
+      position:relative; overflow:hidden; border:1px solid #AFC1CE; border-radius:8px;
+      background:#fff;
+    }
+    #policy-signature { display:block; width:100%; height:150px; touch-action:none; cursor:crosshair; }
+    .policy-signature-line { position:absolute; left:18px; right:18px; bottom:30px; border-top:1px solid #9AABBA; pointer-events:none; }
+    .policy-signature-label { position:absolute; left:18px; bottom:8px; color:#6A788A; font-size:11px; pointer-events:none; }
+    .policy-clear {
+      min-height:44px; margin-top:8px; border:0; background:transparent; color:#1D4ED8;
+      font-weight:700; padding:0 4px; cursor:pointer;
+    }
+    .policy-actions {
+      flex:0 0 auto; border-top:1px solid #DDE6ED; background:rgba(255,255,255,.98);
+      box-shadow:0 -8px 24px rgba(15,23,42,.08);
+      padding:12px 18px max(14px, env(safe-area-inset-bottom));
+    }
+    .policy-actions-inner { width:min(100%, 680px); margin:0 auto; }
+    .policy-progress { color:#526077; font-size:12px; text-align:center; margin-bottom:8px; }
+    .policy-confirm {
+      display:flex; align-items:flex-start; justify-content:center; gap:10px;
+      color:#25344A; font-size:14px; line-height:1.35; margin-bottom:10px; cursor:pointer;
+    }
+    .policy-confirm input { width:22px; height:22px; flex:0 0 auto; accent-color:#2C67F8; }
+    .policy-ack-button {
+      width:100%; min-height:54px; border:0; border-radius:999px; background:#2C67F8;
+      color:#fff; font-weight:800; cursor:pointer;
+    }
+    .policy-ack-button:disabled { background:#E2E8F0; color:#94A3B8; cursor:not-allowed; }
+    .policy-ack-button:focus-visible, .policy-clear:focus-visible, .policy-confirm input:focus-visible {
+      outline:3px solid rgba(47,107,255,.35); outline-offset:2px;
+    }
+    @media (min-width:700px) {
+      .policy-document { padding-inline:36px; }
+      .policy-brand { margin-inline:-36px; }
+      .policy-intro { padding:25px 30px; font-size:17px; }
+    }
+
     /* ---- Printing (invoices, estimates) ----
        On screen the print area is hidden. When printing, everything else is
        hidden instead and only this is shown, in plain black on white so it
@@ -968,6 +1066,7 @@
   <link rel="stylesheet" href="./otto-ui-polish.css?v=2" data-otto-ui-polish-styles />
   <link rel="stylesheet" href="./otto-client-visible-polish.css?v=2" data-otto-client-visible-polish />
   <link rel="stylesheet" href="./otto-quickbooks-handoff.css?v=1" data-otto-quickbooks-handoff-styles />
+  <link rel="stylesheet" href="./otto-assistant.css?v=1" data-otto-assistant-style />
 </head>
 
 <body>
@@ -5098,10 +5197,189 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     $('#main').innerHTML = html; bindSearch('aud');
   }
 
+  /* ---- first-access Code of Conduct acknowledgment ---- */
+  const EMPLOYEE_POLICY_VERSION = 2;
+  let _policyGate = { reachedEnd: false, signed: false };
+
+  function currentPolicyAcknowledgment(userId) {
+    return db.consent_records.find(c => c.userId === userId
+      && c.type === 'employee_code_of_conduct'
+      && c.version === EMPLOYEE_POLICY_VERSION
+      && c.status === 'acknowledged'
+      && c.accepted === true);
+  }
+  function hasEmployeePolicyAcknowledgment(userId) { return !!currentPolicyAcknowledgment(userId); }
+
+  function employeePolicyCopy() {
+    if (lang === 'es') return {
+      intro: 'Antes de usar este sistema, lee por completo las siguientes políticas. Para continuar, debes llegar al final, firmar y confirmar que las has leído y comprendido.',
+      sections: [
+        ['Empleo a Voluntad', ['El empleo es a voluntad. Otto Plumbing Inc. o el empleado puede terminar la relación laboral en cualquier momento, por cualquier razón lícita o sin razón alguna, con o sin previo aviso.', 'Este documento es una guía de políticas y no constituye un contrato de empleo.']],
+        ['Asistencia y Puntualidad', ['Preséntate a tiempo según tu horario asignado.', 'Si no puedes asistir, notifica a tu supervisor al menos 1 hora antes del inicio del turno.', 'Tres ausencias injustificadas dentro de 90 días pueden resultar en terminación del empleo.', 'Ausentarse sin avisar (no-call / no-show) es causa para terminación inmediata.', 'Registra diariamente tu entrada y salida a través de la aplicación.']],
+        ['Sistema y Aplicación', ['El GPS debe permanecer activado en los vehículos y dispositivos de la empresa durante las horas de trabajo.', 'Toma fotografías de cada trabajo antes de iniciar, durante la ejecución y al finalizar, y súbelas al portal.', 'Si no puedes completar una tarea, reporta de inmediato la razón a través del sistema.', 'Las credenciales de acceso son personales e intransferibles.']],
+        ['Conducta con Clientes y Compañeros', ['Trata a clientes, compañeros y supervisores con respeto y cortesía.', 'Actúa con integridad y profesionalismo en el sitio, en vehículos de la empresa y al representar a Otto Plumbing Inc.', 'Reporta cualquier conflicto al supervisor de inmediato.', 'El acoso, la intimidación y las amenazas están estrictamente prohibidos.']],
+        ['Seguridad', ['Usa en todo momento el equipo de protección personal (PPE) requerido.', 'Reporta inmediatamente toda condición insegura.', 'Reporta a la empresa el mismo día cualquier lesión ocurrida durante el trabajo.', 'No operes maquinaria, equipo o herramientas sin la capacitación adecuada.']]
+      ],
+      signatureTitle: 'Firma del empleado', signatureHelp: 'Firma dentro del recuadro con tu dedo.', signatureLabel: 'Firma', clear: 'Borrar firma',
+      scrollMore: 'Desplázate hasta el final para continuar.', ready: 'Firma y marca la casilla para continuar.',
+      confirm: 'He leído y comprendido las políticas anteriores.', acknowledge: 'Reconocer', saving: 'Guardando…', incomplete: 'Completa la lectura, firma y confirmación.'
+    };
+    return {
+      intro: 'Before using this system, please read the following policies in full. To continue, you must reach the end, sign, and confirm that you have read and understood them.',
+      sections: [
+        ['At-Will Employment', ['Employment is at-will. Either Otto Plumbing Inc. or the employee may end the employment relationship at any time, for any lawful reason or no reason, with or without notice.', 'This document is a policy guide and does not constitute an employment contract.']],
+        ['Attendance & Punctuality', ['Report to work on time according to your assigned schedule.', 'If you cannot attend, notify your supervisor at least 1 hour before your shift begins.', 'Three unexcused absences within 90 days may result in termination.', 'A no-call / no-show is cause for immediate termination.', 'Record your clock-in and clock-out daily through the company app.']],
+        ['System & App Requirements', ['GPS must remain active on company vehicles and devices during working hours.', 'Take photos of every job before work begins, during the work, and after completion, then upload them to the portal.', 'If a task cannot be completed, report the reason through the system immediately.', 'System credentials are personal and may not be shared.']],
+        ['Client & Workplace Conduct', ['Treat clients, coworkers, and supervisors with respect and courtesy.', 'Act with integrity and professionalism at job sites, in company vehicles, and whenever representing Otto Plumbing Inc.', 'Report any conflict to your supervisor immediately.', 'Harassment, intimidation, and threats are strictly prohibited.']],
+        ['Safety', ['Use all required personal protective equipment (PPE) at all times.', 'Report unsafe working conditions immediately.', 'Report every work injury to the company on the same day it occurs.', 'Do not operate machinery, equipment, or tools without proper training.']]
+      ],
+      signatureTitle: 'Employee signature', signatureHelp: 'Sign inside the box with your finger.', signatureLabel: 'Signature', clear: 'Clear signature',
+      scrollMore: 'Scroll to the end to continue.', ready: 'Sign and check the box to continue.',
+      confirm: 'I have read and understand all policies above.', acknowledge: 'Acknowledge', saving: 'Saving…', incomplete: 'Complete the reading, signature, and confirmation.'
+    };
+  }
+
+  function showEmployeePolicyAcknowledgment() {
+    const copy = employeePolicyCopy();
+    _policyGate = { reachedEnd: false, signed: false };
+    $('#login').classList.add('hidden');
+    const app = $('#app');
+    app.classList.remove('hidden');
+    app.classList.add('policy-gate-active');
+    document.body.classList.add('policy-gate-open');
+    document.getElementById('bottomnav').innerHTML = '';
+    const sections = copy.sections.map((section, index) => `<section class="policy-section" aria-labelledby="policy-section-${index + 1}">
+      <div class="policy-section-head"><span class="policy-number" aria-hidden="true">${index + 1}</span><h2 id="policy-section-${index + 1}">${esc(section[0])}</h2></div>
+      <ul>${section[1].map(item => `<li>${esc(item)}</li>`).join('')}</ul>
+    </section>`).join('');
+    $('#main').innerHTML = `<div class="policy-gate">
+      <div class="policy-scroll" id="policy-scroll" tabindex="0" aria-label="${lang === 'es' ? 'Políticas del empleado' : 'Employee policies'}">
+        <article class="policy-document">
+          <header class="policy-brand"><img src="./logo.jpg" alt="OTTO Plumbing Inc."></header>
+          <div class="policy-intro">${esc(copy.intro)}</div>
+          ${sections}
+          <section class="policy-signature-block" aria-labelledby="policy-signature-title">
+            <h2 id="policy-signature-title">${esc(copy.signatureTitle)}</h2>
+            <p>${esc(copy.signatureHelp)}</p>
+            <div class="policy-signature-wrap">
+              <canvas id="policy-signature" aria-label="${esc(copy.signatureTitle)}"></canvas>
+              <span class="policy-signature-line"></span><span class="policy-signature-label">${esc(copy.signatureLabel)}</span>
+            </div>
+            <button type="button" class="policy-clear" onclick="clearPolicySignature()">${esc(copy.clear)}</button>
+          </section>
+        </article>
+      </div>
+      <footer class="policy-actions">
+        <div class="policy-actions-inner">
+          <div class="policy-progress" id="policy-progress" role="status">${esc(copy.scrollMore)}</div>
+          <label class="policy-confirm"><input id="policy-confirm" type="checkbox" onchange="updatePolicyGateState()" disabled><span>${esc(copy.confirm)}</span></label>
+          <button id="policy-acknowledge" class="policy-ack-button" type="button" onclick="acknowledgeEmployeePolicy()" disabled>${esc(copy.acknowledge)}</button>
+        </div>
+      </footer>
+    </div>`;
+    initPolicySignaturePad();
+    const scroller = $('#policy-scroll');
+    scroller.addEventListener('scroll', updatePolicyGateState, { passive: true });
+    requestAnimationFrame(updatePolicyGateState);
+  }
+
+  function initPolicySignaturePad() {
+    const canvas = $('#policy-signature');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const resize = () => {
+      const ratio = Math.max(1, window.devicePixelRatio || 1);
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = Math.round(rect.width * ratio);
+      canvas.height = Math.round(rect.height * ratio);
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      ctx.lineWidth = 2.4; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#092B4C';
+    };
+    resize();
+    let drawing = false;
+    const point = e => { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+    canvas.addEventListener('pointerdown', e => {
+      drawing = true; canvas.setPointerCapture(e.pointerId); const p = point(e);
+      ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + .01, p.y + .01); ctx.stroke();
+      _policyGate.signed = true; updatePolicyGateState(); e.preventDefault();
+    });
+    canvas.addEventListener('pointermove', e => { if (!drawing) return; const p = point(e); ctx.lineTo(p.x, p.y); ctx.stroke(); e.preventDefault(); });
+    const stop = e => { drawing = false; if (e && canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId); };
+    canvas.addEventListener('pointerup', stop); canvas.addEventListener('pointercancel', stop);
+  }
+
+  function clearPolicySignature() {
+    const canvas = $('#policy-signature');
+    if (canvas) canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+    _policyGate.signed = false;
+    updatePolicyGateState();
+  }
+
+  function updatePolicyGateState() {
+    const copy = employeePolicyCopy();
+    const scroller = $('#policy-scroll');
+    if (scroller && scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight <= 24) _policyGate.reachedEnd = true;
+    const confirm = $('#policy-confirm');
+    const button = $('#policy-acknowledge');
+    const progress = $('#policy-progress');
+    if (confirm) confirm.disabled = !_policyGate.reachedEnd;
+    const ready = _policyGate.reachedEnd && _policyGate.signed && confirm && confirm.checked;
+    if (button) button.disabled = !ready;
+    if (progress) progress.textContent = _policyGate.reachedEnd ? copy.ready : copy.scrollMore;
+  }
+
+  async function acknowledgeEmployeePolicy() {
+    const copy = employeePolicyCopy();
+    const confirm = $('#policy-confirm');
+    const canvas = $('#policy-signature');
+    if (!_policyGate.reachedEnd || !_policyGate.signed || !confirm || !confirm.checked || !canvas) {
+      toast(copy.incomplete, 'error'); return;
+    }
+    const button = $('#policy-acknowledge');
+    if (button) { button.disabled = true; button.textContent = copy.saving; }
+    const acknowledgedAt = nowISO();
+    const record = add('consent_records', {
+      userId: session.id,
+      type: 'employee_code_of_conduct',
+      documentTitle: 'Otto Plumbing Inc. - Código de Conducta del Empleado',
+      version: EMPLOYEE_POLICY_VERSION,
+      accepted: true,
+      status: 'acknowledged',
+      acknowledgedAt,
+      ts: acknowledgedAt,
+      lang,
+      scrolledToEnd: true,
+      signatureDataUrl: canvas.toDataURL('image/png')
+    });
+    const profileStatus = { status: 'acknowledged', version: EMPLOYEE_POLICY_VERSION, acknowledgedAt, recordId: record.id };
+    update('users', session.id, { policyAcknowledgment: profileStatus });
+    session.policyAcknowledgment = profileStatus;
+    audit('policy.acknowledged', 'user', session.id, { policyVersion: EMPLOYEE_POLICY_VERSION, consentRecordId: record.id });
+    // Persist before releasing the blocking screen. The normal save path is
+    // intentionally debounced, but an employee may close the app immediately
+    // after tapping Acknowledge; this legal record must already be durable.
+    try {
+      db.meta.updated = nowISO();
+      const snapshot = JSON.stringify(db);
+      await idbPut('kv', 'db', snapshot);
+      try { localStorage.setItem('otto_db_backup', snapshot); } catch (e) { }
+    } catch (e) {
+      if (button) { button.disabled = false; button.textContent = copy.acknowledge; }
+      toast(lang === 'es' ? 'No se pudo guardar. Inténtalo de nuevo.' : 'Could not save. Please try again.', 'error');
+      return;
+    }
+    $('#app').classList.remove('policy-gate-active');
+    document.body.classList.remove('policy-gate-open');
+    toast(t('saved'), 'success');
+    startApp();
+  }
+
   /* ---- consent (Spanish-first, work app) ---- */
   function latestLocationConsent(userId) {
     return db.consent_records
-      .filter(c => c.userId === userId && (c.locationPermission || typeof c.accepted === 'boolean'))
+      .filter(c => c.userId === userId
+        && c.type !== 'employee_code_of_conduct'
+        && (c.type === 'location_consent' || c.locationPermission || typeof c.accepted === 'boolean'))
       .sort((a, b) => new Date(b.ts || 0) - new Date(a.ts || 0))[0] || null;
   }
   function hasLocationDecision(userId) { return !!latestLocationConsent(userId); }
@@ -5112,6 +5390,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
   function recordLocationDecision(granted) {
     add('consent_records', {
       userId: session.id,
+      type: 'location_consent',
       accepted: granted,
       locationPermission: granted ? 'granted' : 'denied',
       version: 2,
@@ -5361,6 +5640,16 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     $('#login').classList.add('hidden'); $('#login').innerHTML = '';
     $('#app').classList.remove('hidden');
     setLang(lang);
+    // First access to this policy version is blocked until the worker has
+    // scrolled through it, signed, and acknowledged it once.
+    if (session.role === 'field' && !hasEmployeePolicyAcknowledgment(session.id)) {
+      showEmployeePolicyAcknowledgment();
+      return;
+    }
+
+    $('#app').classList.remove('policy-gate-active');
+    document.body.classList.remove('policy-gate-open');
+
     // A field employee may approve or deny location and still use OTTO.
     if (session.role === 'field' && !hasLocationDecision(session.id)) { showConsent(); return; }
 
@@ -5725,6 +6014,13 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     if (!w) return nav('kpis');
     
     let html = pageHead(w.name, t('workerProfile'), "nav('kpis')", '', t('teamKpis'));
+
+    const policyAck = currentPolicyAcknowledgment(w.id);
+    html += `<div class="section-title">${esc(t('consentStatus'))}</div><div class="card" style="padding:16px;">
+      ${policyAck
+        ? `<div style="display:flex;align-items:center;gap:12px"><span class="avatar" style="background:var(--green-fill)"><i class="fas fa-check"></i></span><div><div class="li-title">${lang === 'es' ? 'Reconocido' : 'Acknowledged'}</div><div class="li-sub">${fmtDate(policyAck.acknowledgedAt || policyAck.ts)} · v${policyAck.version}</div></div></div>`
+        : `<div style="display:flex;align-items:center;gap:12px"><span class="avatar" style="background:var(--neutral-fill)"><i class="fas fa-clock"></i></span><div><div class="li-title">${lang === 'es' ? 'Pendiente' : 'Pending'}</div><div class="li-sub">${lang === 'es' ? 'El empleado debe reconocer la política en su primer acceso.' : 'The employee must acknowledge the policy on first access.'}</div></div></div>`}
+    </div>`;
     
     // Calendar Heatmap
     html += `<div class="section-title">${t('daysWorked')}</div><div class="card" style="padding:16px;">`;
@@ -5974,7 +6270,13 @@ Return ONLY valid JSON: { "fixtures": [], "pipes": [], "fittings": [], "notes": 
   window.__pinLockRemaining = (id) => pinLockRemainingMs(id);
   window.__mergeCollections = (a, b) => mergeCollections(a, b);
   
-  boot().then(() => { setTimeout(seedMockKPIs, 500); render(); });
+  boot().then(() => {
+    setTimeout(seedMockKPIs, 500);
+    // A first-time field worker may be inside the mandatory policy gate.
+    // Rendering the normal route here would replace the policy document while
+    // the blocking shell stayed active, leaving a visually broken dead end.
+    if (!$('#app').classList.contains('policy-gate-active')) render();
+  });
   </script>
   <script src="./otto-home.js?v=4" data-otto-home-runtime></script>
 
@@ -5997,5 +6299,30 @@ window.__ottoUnifiedIntakeBridge = {
 </script>
   <script src="./otto-unified-intake.js?v=2" data-otto-unified-intake></script>
   <script src="./otto-unified-intake-redirects.js?v=2" data-otto-unified-intake-redirects></script>
+  <script data-otto-assistant-bridge>
+window.__ottoAssistantBridge = {
+  getDb: () => db,
+  getSession: () => session,
+  getRoute: () => route,
+  getLang: () => lang,
+  add: (col, obj) => add(col, obj),
+  update: (col, id, patch) => update(col, id, patch),
+  save: () => save(),
+  render: () => render(),
+  callClaude: body => callClaude(body),
+  openResult: (type, id, source, employeeId) => {
+    if (type === 'contract' && typeof openContractForm === 'function' && source === 'contracts') return openContractForm(id);
+    if (type === 'employee' && typeof viewWorkerProfile === 'function') return viewWorkerProfile(employeeId || id);
+    if ((type === 'payroll' || type === 'paystub') && typeof viewPayroll === 'function') return viewPayroll();
+    if (type === 'email' && typeof viewInbox === 'function') return viewInbox();
+    if (type === 'note' && typeof viewNotes === 'function') return viewNotes();
+    if (type === 'schedule' && typeof viewSchedule === 'function') return viewSchedule();
+    if (type === 'employee' && typeof viewTeam === 'function') return viewTeam();
+    if (type === 'contract' && typeof viewContracts === 'function') return viewContracts();
+    if (typeof viewHome === 'function') return viewHome();
+  }
+};
+</script>
+  <script src="./otto-assistant.js?v=1" data-otto-assistant-runtime></script>
 </body>
 </html>

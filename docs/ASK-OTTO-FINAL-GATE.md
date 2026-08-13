@@ -1,0 +1,1 @@
+Final gate: do not claim production completion until the merged `main` commit has a READY Vercel production deployment and the public OTTO CRM alias loads the assistant assets.
