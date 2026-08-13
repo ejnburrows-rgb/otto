@@ -1,26 +1,98 @@
-export default async function handler(req, res) {
-  if (req.method !== 'GET') return res.status(405).json({ error: 'method_not_allowed' });
-  let browser;
-  let stage = 'start';
-  try {
-    stage = 'import-playwright';
-    const { chromium: playwrightChromium } = await import('playwright');
-    stage = 'import-chromium';
-    const module = await import('@sparticuz/chromium');
-    const chromium = module.default || module;
-    stage = 'resolve-executable';
-    const executablePath = await chromium.executablePath();
-    stage = 'launch';
-    browser = await playwrightChromium.launch({ args: chromium.args, executablePath, headless: true });
-    stage = 'page';
-    const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
-    stage = 'navigate';
-    const response = await page.goto('https://otto-kohl.vercel.app/', { waitUntil: 'domcontentloaded', timeout: 30000 });
-    const title = await page.title();
-    return res.status(200).json({ ok: true, status: response && response.status(), title, stage: 'done' });
-  } catch (error) {
-    return res.status(500).json({ ok: false, stage, error: String(error && error.stack || error).slice(0, 8000) });
-  } finally {
-    if (browser) await browser.close().catch(() => {});
+import { chromium as playwrightChromium } from 'playwright';
+import chromium from '@sparticuz/chromium';
+
+const PROD = 'https://otto-kohl.vercel.app';
+const SB = process.env.SUPABASE_URL;
+const SERVICE = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const PUB = 'sb_publishable_xOJK14-CGJWKdy7W_bulEQ_hciST-Bb';
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const rand = n => Math.random().toString(36).slice(2, 2 + n);
+const headers = () => ({ apikey:SERVICE, Authorization:`Bearer ${SERVICE}`, 'Content-Type':'application/json' });
+
+async function jfetch(url, opts={}) {
+  const r = await fetch(url, opts); const text = await r.text(); let data = null;
+  try { data = text ? JSON.parse(text) : null; } catch { data = text; }
+  if (!r.ok) throw new Error(`${opts.method||'GET'} ${url} -> ${r.status}: ${String(text).slice(0,600)}`);
+  return data;
+}
+async function createAuth(email,password,run){ return jfetch(`${SB}/auth/v1/admin/users`,{method:'POST',headers:headers(),body:JSON.stringify({email,password,email_confirm:true,user_metadata:{qa:true,qaRun:run}})}); }
+async function deleteAuth(id){ if(id) await fetch(`${SB}/auth/v1/admin/users/${encodeURIComponent(id)}`,{method:'DELETE',headers:headers()}).catch(()=>{}); }
+async function upsert(table,rows){ return jfetch(`${SB}/rest/v1/${table}?on_conflict=id`,{method:'POST',headers:{...headers(),Prefer:'resolution=merge-duplicates,return=representation'},body:JSON.stringify(Array.isArray(rows)?rows:[rows])}); }
+async function removeByIds(table,ids){ for(const id of (ids||[]).filter(Boolean)) await fetch(`${SB}/rest/v1/${table}?id=eq.${encodeURIComponent(id)}`,{method:'DELETE',headers:headers()}).catch(()=>{}); }
+async function passwordToken(email,password){ return jfetch(`${SB}/auth/v1/token?grant_type=password`,{method:'POST',headers:{apikey:PUB,'Content-Type':'application/json'},body:JSON.stringify({email,password})}); }
+async function prodData(token,query=''){ const r=await fetch(`${PROD}/api/data${query}`,{headers:{Authorization:`Bearer ${token}`}}); const text=await r.text(); let data=null; try{data=JSON.parse(text)}catch{data=text} return {status:r.status,data}; }
+async function loginPage(page,email,password){
+  await page.goto(PROD,{waitUntil:'domcontentloaded',timeout:30000});
+  await page.waitForFunction(()=>!!(window.supabase&&window.supabase.createClient),null,{timeout:15000});
+  const result=await page.evaluate(async ({email,password,url,key})=>{ const c=window.supabase.createClient(url,key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}); const out=await c.auth.signInWithPassword({email,password}); return {error:out.error&&out.error.message,user:out.data&&out.data.user&&out.data.user.id}; },{email,password,url:SB,key:PUB});
+  if(result.error||!result.user) throw new Error('provider sign-in failed: '+(result.error||'no user'));
+  await page.reload({waitUntil:'domcontentloaded',timeout:30000});
+  await page.waitForFunction(()=>{const app=document.querySelector('#app');return app&&!app.classList.contains('hidden')},null,{timeout:20000}); await sleep(1200);
+  return page.evaluate(()=>({session:localStorage.getItem('otto_session'),body:document.body.innerText.slice(0,5000),ownerHome:!!document.querySelector('.otto-owner-home'),taskbar:!!document.querySelector('.otto-taskbar')}));
+}
+function pass(results,n,ok,detail,proof={}){ results.push({item:n,pass:!!ok,detail,proof}); return !!ok; }
+
+export default async function handler(req,res){
+  if(req.method!=='GET') return res.status(405).json({error:'method_not_allowed'});
+  if(!SB||!SERVICE) return res.status(500).json({error:'missing_supabase_server_config'});
+  const run=`qa-e2e-${Date.now()}-${rand(4)}`, ownerId=`${run}-owner`, fieldId=`${run}-field`;
+  const ownerEmail=`${run}.owner@example.com`, fieldEmail=`${run}.field@example.com`;
+  const ownerPassword=`Q!${rand(14)}7aA`, fieldPassword=`F!${rand(14)}9bB`;
+  const ownerName=`QA Owner ${run.slice(-4)}`, fieldName=`QA Worker ${run.slice(-4)}`;
+  const customerName=`QA Customer ${run.slice(-4)}`, jobTitle=`QA Plumbing Rough-In ${run.slice(-4)}`;
+  const noteText=`QA field update ${run.slice(-4)}: rough-in measurements verified.`;
+  const created={auth:[],users:[ownerId,fieldId],consent_records:[],customers:[],jobs:[],notes:[],locations:[],job_events:[],job_checklists:[],documents:[],estimates:[]};
+  const results=[], evidence={run,production:PROD}; let browser,ownerPage,fieldPage,ownerToken,fieldToken,customerId,jobId,checkInEv;
+  try{
+    const oa=await createAuth(ownerEmail,ownerPassword,run); created.auth.push(oa.id); const fa=await createAuth(fieldEmail,fieldPassword,run); created.auth.push(fa.id);
+    const ackId=`${run}-policy`,ackAt=new Date().toISOString(); created.consent_records.push(ackId);
+    await upsert('users',[{id:ownerId,auth_uid:oa.id,data:{id:ownerId,name:ownerName,email:ownerEmail,role:'owner',active:true,status:'active',qa:true,qaRun:run}},{id:fieldId,auth_uid:fa.id,data:{id:fieldId,name:fieldName,email:fieldEmail,role:'field',active:true,status:'active',qa:true,qaRun:run,policyAcknowledgment:{status:'acknowledged',version:2,acknowledgedAt:ackAt,recordId:ackId}}}]);
+    await upsert('consent_records',{id:ackId,data:{id:ackId,userId:fieldId,type:'employee_code_of_conduct',version:2,accepted:true,status:'acknowledged',acknowledgedAt:ackAt,ts:ackAt,qa:true,qaRun:run}});
+    ownerToken=(await passwordToken(ownerEmail,ownerPassword)).access_token; fieldToken=(await passwordToken(fieldEmail,fieldPassword)).access_token;
+    browser=await playwrightChromium.launch({args:chromium.args,executablePath:await chromium.executablePath(),headless:true});
+
+    const ownerCtx=await browser.newContext({viewport:{width:1440,height:900}}); ownerPage=await ownerCtx.newPage(); const ownerLogin=await loginPage(ownerPage,ownerEmail,ownerPassword); const ownerSession=await prodData(ownerToken,'?session=1');
+    pass(results,1,ownerLogin.session===ownerId&&ownerSession.status===200&&ownerSession.data?.profile?.role==='owner','Temporary owner authenticated through Supabase and opened the production owner workspace.',{profile:ownerSession.data?.profile?.id,role:ownerSession.data?.profile?.role,ownerHome:ownerLogin.ownerHome});
+
+    let custNav=ownerPage.locator('[data-otto-view="customers"]').first(); if(await custNav.count()) await custNav.click(); else await ownerPage.evaluate(()=>nav('customers')); await ownerPage.waitForTimeout(400);
+    const addCustomer=ownerPage.getByRole('button',{name:/Add Customer/i}).first(); if(await addCustomer.count()) await addCustomer.click(); else await ownerPage.evaluate(()=>openCustomerForm());
+    await ownerPage.locator('#c-name').fill(customerName); await ownerPage.locator('#c-phone').fill('555-010-2026'); await ownerPage.locator('#c-email').fill(`${run}.customer@example.com`); await ownerPage.locator('#c-address').fill('100 Test Plaza, Miami, FL 33101'); await ownerPage.locator('#c-notes').fill('QA fake data only'); await ownerPage.locator('button').filter({hasText:/Save/i}).last().click(); await sleep(1800);
+    const cust=await ownerPage.evaluate(name=>window.__db().customers.find(c=>c.name===name),customerName); customerId=cust?.id; if(customerId) created.customers.push(customerId); let cloudOwner=await prodData(ownerToken); const custBack=cloudOwner.data?.customers?.find(c=>c.id===customerId);
+    pass(results,3,!!customerId&&!!custBack,'Owner created a fake customer through the production UI and it persisted to Supabase.',{customerId});
+
+    await ownerPage.evaluate(id=>nav('customer',id),customerId); await ownerPage.waitForTimeout(350); const newJob=ownerPage.getByRole('button',{name:/New Job/i}).first(); if(await newJob.count()) await newJob.click(); else await ownerPage.evaluate(id=>openJobForm(null,id),customerId);
+    await ownerPage.locator('#j-title').fill(jobTitle); await ownerPage.locator('#j-desc').fill('QA test: lavatory, water closet, shower; 3/4 in PEX trunk; 2 in vent; 4 in soil.'); await ownerPage.locator('#j-addr').fill('100 Test Plaza, Miami, FL 33101'); await ownerPage.locator('#j-date').fill(new Date().toISOString().slice(0,10)); await ownerPage.locator('#j-worker').selectOption(fieldId); await ownerPage.locator('#j-status').selectOption('scheduled'); await ownerPage.locator('button').filter({hasText:/Save/i}).last().click(); await sleep(2000);
+    const job=await ownerPage.evaluate(title=>window.__db().jobs.find(j=>j.title===title),jobTitle); jobId=job?.id; if(jobId) created.jobs.push(jobId); cloudOwner=await prodData(ownerToken); const jobBack=cloudOwner.data?.jobs?.find(j=>j.id===jobId);
+    pass(results,4,!!jobId&&jobBack?.assignedTo===fieldId&&jobBack?.customerId===customerId,'Owner created a job through the production UI and assigned it to the temporary field worker.',{jobId,assignedTo:jobBack?.assignedTo});
+
+    const fieldCtx=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true,geolocation:{latitude:25.7617,longitude:-80.1918},permissions:['geolocation']}); fieldPage=await fieldCtx.newPage(); const fieldLogin=await loginPage(fieldPage,fieldEmail,fieldPassword);
+    const allow=fieldPage.getByRole('button',{name:/Allow location/i}).first(); if(await allow.count()){await allow.click();await sleep(1200);} const fieldData=await prodData(fieldToken); const fieldUsers=fieldData.data?.users||[]; const restricted=fieldData.status===200&&fieldData.data?.invoices===null&&fieldData.data?.payments===null&&fieldUsers.length===1&&fieldUsers[0]?.id===fieldId&&(fieldData.data?.jobs||[]).every(j=>j.assignedTo===fieldId); const noAdminTaskbar=!(await fieldPage.locator('.otto-taskbar').count());
+    pass(results,2,fieldLogin.session===fieldId&&restricted&&noAdminTaskbar,'Temporary field worker authenticated and production backend/UI enforced field-only scope.',{role:fieldData.data?._session?.role,invoices:fieldData.data?.invoices,visibleUsers:fieldUsers.map(u=>u.id)});
+    await fieldPage.evaluate(()=>nav('jobs')); await fieldPage.waitForTimeout(350); const jobVisible=(await fieldPage.locator('body').innerText()).includes(jobTitle); pass(results,5,jobVisible&&(fieldData.data?.jobs||[]).some(j=>j.id===jobId),'Assigned job appeared in the field worker production workspace and field-scoped backend payload.',{jobId});
+
+    await sleep(1600); const afterConsent=await prodData(fieldToken); const consentRec=(afterConsent.data?.consent_records||[]).find(c=>c.type==='location_consent'&&c.userId===fieldId&&c.accepted===true); const appLoc=(afterConsent.data?.locations||[]).find(l=>l.userId===fieldId&&Number.isFinite(Number(l.lat))&&Number.isFinite(Number(l.lng))); if(consentRec?.id)created.consent_records.push(consentRec.id); if(appLoc?.id)created.locations.push(appLoc.id);
+    const row=fieldPage.locator('.list-item').filter({hasText:jobTitle}).first(); if(await row.count()) await row.click(); else await fieldPage.evaluate(id=>nav('job',id),jobId); await fieldPage.waitForTimeout(300); const startBtn=fieldPage.getByRole('button',{name:/Start Job|Check in/i}).first(); if(await startBtn.count()) await startBtn.click(); else await fieldPage.evaluate(id=>startCheckInFlow(id),jobId); await fieldPage.waitForTimeout(150); const ackBtn=fieldPage.getByRole('button',{name:/Acknowledge/i}).first(); if(await ackBtn.count()) await ackBtn.click(); else await fieldPage.evaluate(id=>doCheckIn(id),jobId); await sleep(1800);
+    let fieldAfter=await prodData(fieldToken); checkInEv=(fieldAfter.data?.job_events||[]).filter(e=>e.jobId===jobId&&e.type==='check_in').sort((a,b)=>new Date(b.ts)-new Date(a.ts))[0]; const checkInLoc=(fieldAfter.data?.locations||[]).filter(l=>l.jobId===jobId&&l.userId===fieldId).sort((a,b)=>new Date(b.ts)-new Date(a.ts))[0]; if(checkInEv?.id)created.job_events.push(checkInEv.id); if(checkInLoc?.id)created.locations.push(checkInLoc.id); cloudOwner=await prodData(ownerToken); const ownerLoc=(cloudOwner.data?.locations||[]).find(l=>l.id===checkInLoc?.id);
+    pass(results,7,!!consentRec&&!!checkInLoc&&!!ownerLoc&&Math.abs(Number(ownerLoc.lat)-25.7617)<0.02,'Worker granted location permission; check-in coordinates persisted and were visible to the owner data used by production location views.',{lat:ownerLoc?.lat,lng:ownerLoc?.lng,kind:ownerLoc?.kind});
+
+    await fieldPage.evaluate(id=>openNoteForm(id),jobId); await fieldPage.locator('#note-text').fill(noteText); await fieldPage.locator('button').filter({hasText:/Save/i}).last().click(); await sleep(1600); fieldAfter=await prodData(fieldToken); const note=(fieldAfter.data?.notes||[]).find(n=>n.jobId===jobId&&n.text===noteText); if(note?.id)created.notes.push(note.id); await ownerPage.reload({waitUntil:'domcontentloaded'}); await sleep(900); await ownerPage.evaluate(id=>nav('job',id),jobId); await ownerPage.waitForTimeout(300); const ownerSawNote=(await ownerPage.locator('body').innerText()).includes(noteText);
+    pass(results,8,!!note&&ownerSawNote,'Field worker added a production job note and the owner saw the same update after cloud refresh.',{noteId:note?.id});
+
+    const aiResp=await fetch(`${PROD}/api/nvidia`,{method:'POST',headers:{Authorization:`Bearer ${ownerToken}`,'Content-Type':'application/json'},body:JSON.stringify({messages:[{role:'user',content:'In one concise sentence, explain a practical plumbing reason to use a 3/4-inch PEX trunk instead of 1/2-inch for multiple simultaneous fixtures.'}],max_tokens:120,temperature:0.1})}); const aiRaw=await aiResp.text(); let aiJson={};try{aiJson=JSON.parse(aiRaw)}catch{} const aiAnswer=aiJson?.choices?.[0]?.message?.content||'';
+    pass(results,9,aiResp.status===200&&aiAnswer.length>20&&/PEX|pressure|flow|fixture/i.test(aiAnswer),'Production /api/nvidia returned a real plumbing answer for an authenticated owner request.',{status:aiResp.status,answer:aiAnswer.slice(0,260),model:aiJson?.model});
+
+    await ownerPage.evaluate(()=>nav('home')); await ownerPage.waitForTimeout(400); const ui=await ownerPage.evaluate(()=>{const stage=document.querySelector('.otto-window-stage'),win=document.querySelector('.otto-window'),task=document.querySelector('.otto-taskbar'),wall=document.querySelector('.wallpaper-container'),cs=wall?getComputedStyle(wall):null;return{taskbar:!!task,windows:document.querySelectorAll('.otto-window').length,min:!!document.querySelector('[data-otto-action="window-state"][data-otto-state="minimized"]'),max:!!document.querySelector('[data-otto-action="window-state"][data-otto-state="maximized"]'),full:!!document.querySelector('[data-otto-action="window-state"][data-otto-state="fullscreen"]'),resizeCss:win?getComputedStyle(win).resize:null,stageOverflow:stage?getComputedStyle(stage).overflow:null,wallpaper:!!wall,bgSize:cs&&cs.backgroundSize,bgPos:cs&&cs.backgroundPosition,overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth}}); let stateCycle=false; const firstWin=ownerPage.locator('.otto-window').first(); if(await firstWin.count()){const id=await firstWin.getAttribute('id');const minb=ownerPage.locator(`[data-otto-panel="${id}"][data-otto-state="minimized"]`).first();if(await minb.count()){await minb.click();await ownerPage.waitForTimeout(120);}const restore=ownerPage.locator(`.otto-task[data-otto-panel="${id}"]`).first();if(await restore.count()){await restore.click();await ownerPage.waitForTimeout(120);}const maxb=ownerPage.locator(`[data-otto-panel="${id}"][data-otto-state="maximized"]`).first();if(await maxb.count()){await maxb.click();await ownerPage.waitForTimeout(120);}const fullb=ownerPage.locator(`[data-otto-panel="${id}"][data-otto-state="fullscreen"]`).first();if(await fullb.count()){await fullb.click();await ownerPage.waitForTimeout(120);}stateCycle=true;} const realResize=ui.resizeCss==='both'||ui.resizeCss==='horizontal'||ui.resizeCss==='vertical'||!!(await ownerPage.locator('[data-otto-resize], .otto-resize-handle').count());
+    pass(results,11,ui.taskbar&&ui.windows>=3&&ui.min&&ui.max&&ui.full&&stateCycle&&realResize&&ui.wallpaper&&ui.bgSize==='cover'&&ui.overflow<=1,'Owner workspace controls and fitted background were exercised in production; manual resize must also be available.',{...ui,stateCycle,realResize});
+
+    const desktop=await ownerPage.evaluate(()=>({w:innerWidth,overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth,body:document.body.innerText.length})); const mobile=await fieldPage.evaluate(()=>({w:innerWidth,overflow:document.documentElement.scrollWidth-document.documentElement.clientWidth,body:document.body.innerText.length})); pass(results,12,desktop.w>=1200&&mobile.w<=430&&desktop.overflow<=1&&mobile.overflow<=1&&desktop.body>100&&mobile.body>100,'Live production rendered usable owner desktop and field-worker mobile layouts without horizontal page overflow.',{desktop,mobile});
+
+    await fieldPage.evaluate(id=>nav('job',id),jobId); await fieldPage.waitForTimeout(250); const checklist=await fieldPage.evaluate(id=>{const cl=window.__db().job_checklists.find(c=>c.jobId===id);return cl?cl.items.map(i=>({key:i.key,done:i.done})):[]},jobId); for(const it of checklist.filter(i=>!i.done)){await fieldPage.evaluate(({id,key})=>toggleChecklistItem(id,key),{id:jobId,key:it.key});await fieldPage.waitForTimeout(40);} const checkoutBtn=fieldPage.getByRole('button',{name:/Submit.*Close|Check out/i}).first(); if(await checkoutBtn.count()) await checkoutBtn.click(); else await fieldPage.evaluate(id=>startCheckOutFlow(id),jobId); await fieldPage.waitForTimeout(120); const confirmCheckout=fieldPage.getByRole('button',{name:/Submit.*Close|Check out/i}).last(); if(await confirmCheckout.count()) await confirmCheckout.click(); else await fieldPage.evaluate(id=>doCheckOut(id),jobId); await sleep(1800); fieldAfter=await prodData(fieldToken); const checkOutEv=(fieldAfter.data?.job_events||[]).filter(e=>e.jobId===jobId&&e.type==='check_out').sort((a,b)=>new Date(b.ts)-new Date(a.ts))[0]; if(checkOutEv?.id)created.job_events.push(checkOutEv.id); const cl=(fieldAfter.data?.job_checklists||[]).find(c=>c.jobId===jobId);if(cl?.id)created.job_checklists.push(cl.id); cloudOwner=await prodData(ownerToken); const ownerIn=(cloudOwner.data?.job_events||[]).find(e=>e.id===checkInEv?.id),ownerOut=(cloudOwner.data?.job_events||[]).find(e=>e.id===checkOutEv?.id); await ownerPage.reload({waitUntil:'domcontentloaded'});await sleep(900);await ownerPage.evaluate(()=>nav('home'));await ownerPage.waitForTimeout(250);const crewButton=ownerPage.locator('[data-otto-action="crew-hours"]').first();if(await crewButton.count())await crewButton.click();await ownerPage.waitForTimeout(200);const crewText=await ownerPage.locator('body').innerText();
+    pass(results,6,!!ownerIn&&!!ownerOut&&new Date(ownerOut.ts)>=new Date(ownerIn.ts)&&crewText.includes(fieldName),'Field worker checked in/out in production; matching events persisted and the owner crew-hours view showed the worker.',{checkIn:ownerIn?.ts,checkOut:ownerOut?.ts});
+
+    pass(results,10,false,'The live AutoCAD/PDF estimate workflow was not executed by this verifier run.',{}); evidence.ids={ownerId,fieldId,customerId,jobId};
+  }catch(error){evidence.fatal=String(error?.stack||error).slice(0,7000);}finally{
+    try{if(browser)await browser.close()}catch{}
+    try{for(const table of ['consent_records','customers','jobs','notes','locations','job_events','job_checklists','documents','estimates']){const rows=await jfetch(`${SB}/rest/v1/${table}?select=id,data`,{headers:headers()}).catch(()=>[]);for(const row of rows||[])if(row?.data?.qaRun===run&&!created[table]?.includes(row.id))(created[table]||=[]).push(row.id);} await removeByIds('notes',created.notes);await removeByIds('locations',created.locations);await removeByIds('job_events',created.job_events);await removeByIds('job_checklists',created.job_checklists);await removeByIds('documents',created.documents);await removeByIds('estimates',created.estimates);await removeByIds('consent_records',created.consent_records);await removeByIds('jobs',created.jobs);await removeByIds('customers',created.customers);await removeByIds('users',created.users);for(const id of created.auth)await deleteAuth(id);evidence.cleanup='attempted-complete';}catch(e){evidence.cleanup='cleanup-error: '+String(e?.message||e).slice(0,500);}
   }
+  const byItem={};for(const r of results)byItem[r.item]=r;return res.status(200).json({run,results,byItem,evidence});
 }
