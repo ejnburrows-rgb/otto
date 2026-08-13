@@ -1,53 +1,59 @@
-/* OTTO CRM — owner/office wallpaper-first home.
-
-   Layout contract, in one place so nothing has to be guessed at:
-
-   - The personal wallpaper is the dominant surface and is never covered by a
-     full-screen panel.
-   - All home chrome lives on the left: a compact top-left bar, then a permanent
-     rail of four tabs directly beneath it.
-   - An open panel sits in the lower-left/centre safe area. The right side and,
-     above all, Sarays's upper-right Little Prince artwork stay clear at every
-     supported viewport.
-
-   The public plumbing website is intentionally untouched by this file. */
+/* OTTO CRM — final owner/office workspace visual layer.
+   Three floating work windows, a true minimized-window side panel, restrained
+   per-person accents, simple crew hours, and one clear Plans & AutoCAD hub. */
 
 body.theme-app {
   background: transparent;
   color: var(--text);
   font-family: 'Hanken Grotesk', Inter, system-ui, sans-serif;
-  --glass-bg: rgba(255, 255, 255, 0.90);
-  --glass-border: rgba(203, 213, 225, 0.94);
-
-  /* Home geometry. Overridden per breakpoint below; everything else reads it. */
   --otto-edge: 18px;
-  --otto-rail-w: 226px;
-  --otto-gap: 18px;
+  --otto-taskbar-w: 220px;
+  --otto-gap: 14px;
   --otto-top: 84px;
-  --otto-panel-w: 620px;
-  --otto-panel-h: 60dvh;
-
-  /* One restrained elevation language for every home surface. Kept translucent
-     on purpose: the panels have to stay legible without becoming opaque boxes
-     that hide the wallpaper behind them. */
-  --otto-surface: rgba(255, 255, 255, 0.80);
-  --otto-surface-strong: rgba(255, 255, 255, 0.88);
-  --otto-hairline: rgba(15, 23, 42, 0.10);
-  --otto-hairline-strong: rgba(15, 23, 42, 0.16);
-  --otto-shadow: 0 18px 44px rgba(15, 23, 42, 0.18), 0 2px 6px rgba(15, 23, 42, 0.08);
-  --otto-shadow-sm: 0 8px 20px rgba(15, 23, 42, 0.12);
-  --otto-blur: saturate(150%) blur(22px);
+  --otto-surface: rgba(255, 255, 255, 0.82);
+  --otto-surface-strong: rgba(255, 255, 255, 0.92);
+  --otto-hairline: rgba(15, 23, 42, 0.12);
+  --otto-hairline-strong: rgba(15, 23, 42, 0.20);
+  --otto-shadow: 0 22px 55px rgba(15, 23, 42, 0.18), 0 3px 10px rgba(15, 23, 42, 0.08);
+  --otto-shadow-sm: 0 10px 28px rgba(15, 23, 42, 0.14);
+  --otto-blur: saturate(145%) blur(22px);
 }
 
 [data-theme="dark"] body.theme-app {
-  --glass-bg: rgba(11, 19, 38, 0.90);
-  --glass-border: rgba(67, 70, 85, 0.94);
-  --otto-surface: rgba(13, 20, 36, 0.76);
-  --otto-surface-strong: rgba(13, 20, 36, 0.84);
-  --otto-hairline: rgba(148, 163, 184, 0.22);
-  --otto-hairline-strong: rgba(148, 163, 184, 0.34);
-  --otto-shadow: 0 20px 48px rgba(0, 0, 0, 0.55), 0 2px 6px rgba(0, 0, 0, 0.35);
-  --otto-shadow-sm: 0 10px 24px rgba(0, 0, 0, 0.45);
+  --otto-surface: rgba(11, 19, 38, 0.80);
+  --otto-surface-strong: rgba(11, 19, 38, 0.93);
+  --otto-hairline: rgba(148, 163, 184, 0.24);
+  --otto-hairline-strong: rgba(148, 163, 184, 0.36);
+  --otto-shadow: 0 24px 62px rgba(0, 0, 0, 0.52), 0 3px 12px rgba(0, 0, 0, 0.28);
+  --otto-shadow-sm: 0 12px 30px rgba(0, 0, 0, 0.42);
+}
+
+/* Per-person accent systems. Status red/amber/green remain semantic; only the
+   interface accent changes with the signed-in person. */
+body[data-otto-user="julio"] {
+  --action: #15803d;
+  --action-hover: #166534;
+  --accent: #15803d;
+  --accent-fill: #166534;
+  --blue: #15803d;
+  --blue2: #bbf7d0;
+}
+[data-theme="dark"] body[data-otto-user="julio"] {
+  --accent: #4ade80;
+  --blue2: #86efac;
+}
+
+body[data-otto-user="saray"] {
+  --action: #be185d;
+  --action-hover: #9d174d;
+  --accent: #be185d;
+  --accent-fill: #9d174d;
+  --blue: #be185d;
+  --blue2: #fbcfe8;
+}
+[data-theme="dark"] body[data-otto-user="saray"] {
+  --accent: #f472b6;
+  --blue2: #f9a8d4;
 }
 
 #app {
@@ -59,19 +65,18 @@ body.theme-app {
   position: fixed;
   inset: 0;
   z-index: 0;
-  /* Accounts without a supplied wallpaper still get a finished surface rather
-     than a bare page behind the transparent app body. */
   background-color: var(--bg);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
 }
 
-/* Sarays's Little Prince sits in the top-right corner of her artwork. Anchoring
-   the wallpaper to the right edge keeps him on screen at every aspect ratio
-   instead of being cropped away by `cover` on a narrow phone; anchoring to the
-   top keeps him on screen on short, wide windows. */
+.wallpaper-container[data-user="owner-2"] {
+  background-image: url('./design-assets/wallpapers/julio-pablo.avif');
+}
+
 .wallpaper-container[data-user="ops-1"] {
+  background-image: url('./design-assets/wallpapers/sarays.avif');
   background-position: right top;
 }
 
@@ -80,17 +85,23 @@ body.theme-app {
   z-index: 1;
 }
 
+/* Hide the duplicate floating assistant for owner/office. Ask OTTO remains a
+   normal tool in one predictable place. */
+body.admin-workspace #ai-float-btn,
+body.admin-workspace #floating-chat,
+body.admin-workspace #floating-chat-panel,
+body.admin-workspace .floating-chat {
+  display: none !important;
+}
+
 /* ============================ SECONDARY SCREENS ============================ */
 
-/* The wallpaper is the subject on the home screen only. A working screen full
-   of records needs a calm surface to sit on, so the wallpaper is dimmed and
-   softened behind it — still there, no longer competing with the data. */
 body.admin-workspace:not(.admin-home) .wallpaper-container::after {
   content: '';
   position: absolute;
   inset: 0;
   background: var(--bg);
-  opacity: 0.90;
+  opacity: 0.91;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
@@ -100,8 +111,6 @@ body.admin-workspace .fab,
   display: none !important;
 }
 
-/* The bottom tab bar is hidden for owner/office, so the long bottom padding it
-   needed goes with it — but leave room for the add button. */
 body.admin-workspace:not(.admin-home) .wrap {
   padding-bottom: 104px;
 }
@@ -111,9 +120,6 @@ body.admin-workspace:not(.admin-home) .fab {
   bottom: calc(24px + env(safe-area-inset-bottom));
 }
 
-/* The one and only secondary-screen navigation control. It rides in the sticky
-   top bar, so it stays in the upper-left on a long page, on a phone, in both
-   languages and in both themes — and there is nothing else competing with it. */
 .otto-back-home {
   order: -1;
   flex: 0 0 auto;
@@ -128,20 +134,13 @@ body.admin-workspace:not(.admin-home) .fab {
   color: #fff;
   font: inherit;
   font-size: 14px;
-  font-weight: 700;
-  line-height: 1.2;
-  white-space: nowrap;
+  font-weight: 720;
   cursor: pointer;
-  transition: background-color 140ms ease, transform 140ms ease;
 }
 
 .otto-back-home:hover {
   background: var(--action-hover);
   border-color: var(--action-hover);
-}
-
-.otto-back-home:active {
-  transform: translateY(1px);
 }
 
 .otto-back-arrow {
@@ -154,38 +153,25 @@ body.otto-secondary .topbar {
   row-gap: 8px;
 }
 
-/* On a phone the label, the wordmark, the language toggle and the bell cannot
-   share one row without something being squeezed. Give the back control the
-   whole first row instead — the height is fixed per breakpoint, so nothing
-   jumps while a screen loads. */
-@media (max-width: 560px) {
-  body.otto-secondary .topbar .otto-back-home {
-    flex: 1 0 100%;
-    justify-content: flex-start;
-  }
-}
-
-/* ================================== HOME =================================== */
+/* ================================= HOME ==================================== */
 
 body.admin-home .wrap {
-  max-width: none;
   width: 100%;
+  max-width: none;
   min-height: 100dvh;
   padding: 0;
 }
 
-/* Compact, left-pinned home chrome. The upper right is deliberately empty. */
 body.admin-home .topbar {
   position: fixed;
   top: max(var(--otto-edge), env(safe-area-inset-top));
   left: max(var(--otto-edge), env(safe-area-inset-left));
   right: auto;
-  z-index: 42;
+  z-index: 80;
   width: auto;
-  max-width: calc(100vw - 2 * var(--otto-edge));
   min-height: 0;
   padding: 7px 10px;
-  gap: 10px;
+  gap: 9px;
   border: 1px solid var(--otto-hairline);
   border-radius: 14px;
   background: var(--otto-surface);
@@ -198,40 +184,39 @@ body.admin-home .topbar .spacer {
   display: none;
 }
 
-/* The shared top bar paints its icons near-white for the deep navy bar used on
-   every other screen. The home bar is a light glass pill, so on the home screen
-   the icons and the language toggle take the theme's own text colours or they
-   vanish in light mode. */
-body.admin-home .topbar .iconbtn {
-  width: 38px;
+body.admin-home .crystal-logo {
+  width: auto;
   height: 38px;
-  min-width: 38px;
-  min-height: 38px;
-  font-size: 15px;
-  border-radius: 10px;
-  border: 1px solid var(--otto-hairline);
-  background: color-mix(in srgb, var(--card) 55%, transparent);
-  color: var(--text);
+  aspect-ratio: 2.35 / 1;
+  object-fit: cover;
+  object-position: 50% 49%;
+  border-radius: 8px;
+  background: #fff;
 }
 
-body.admin-home .topbar .iconbtn:hover {
-  background: color-mix(in srgb, var(--action) 12%, transparent);
-  color: var(--accent);
+body.admin-home .topbar .iconbtn {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  border: 1px solid var(--otto-hairline);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--card) 58%, transparent);
+  color: var(--text);
 }
 
 body.admin-home .topbar .langtoggle {
   border: 1px solid var(--otto-hairline);
-  background: color-mix(in srgb, var(--card) 55%, transparent);
-  border-radius: 10px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--card) 58%, transparent);
   overflow: hidden;
 }
 
 body.admin-home .topbar .langtoggle button {
-  min-height: 38px;
-  padding: 4px 12px;
-  font-size: 12px;
-  font-weight: 700;
+  min-height: 36px;
+  padding: 4px 10px;
   color: var(--text2);
+  font-size: 11px;
 }
 
 body.admin-home .topbar .langtoggle button.on {
@@ -239,30 +224,74 @@ body.admin-home .topbar .langtoggle button.on {
   color: #fff;
 }
 
-/* A toast must never land on top of the open panel. The panel is anchored to
-   the bottom with a known maximum height, so lifting the toast clear of that
-   band keeps the two apart whatever the panel currently contains. */
-body.admin-home.otto-panel-open .toast {
-  bottom: calc(var(--otto-panel-h) + var(--otto-edge) + 4px);
-}
-
-.otto-home {
+.otto-owner-home {
   min-height: 100dvh;
 }
 
-/* --- the permanent left rail ---------------------------------------------- */
+/* Direct module tabs stay visible so owners never have to hunt through a
+   launcher to reach core CRM work. */
+.otto-primary-nav {
+  position: fixed;
+  top: var(--otto-top);
+  left: calc(max(var(--otto-edge), env(safe-area-inset-left)) + var(--otto-taskbar-w) + var(--otto-gap));
+  right: max(var(--otto-edge), env(safe-area-inset-right));
+  z-index: 61;
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  overflow-x: auto;
+  border: 1px solid var(--otto-hairline);
+  border-radius: 15px;
+  background: var(--otto-surface);
+  box-shadow: var(--otto-shadow-sm);
+  backdrop-filter: var(--otto-blur);
+  -webkit-backdrop-filter: var(--otto-blur);
+  scrollbar-width: thin;
+}
 
-.otto-rail {
+.otto-primary-tab {
+  flex: 0 0 auto;
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 11px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 720;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.otto-primary-tab:hover {
+  background: color-mix(in srgb, var(--action) 9%, transparent);
+  border-color: var(--otto-hairline);
+}
+
+.otto-primary-tab.is-featured {
+  background: var(--action);
+  color: #fff;
+}
+
+/* ============================ LEFT TASK PANEL ============================== */
+
+.otto-taskbar {
   position: fixed;
   left: max(var(--otto-edge), env(safe-area-inset-left));
   top: var(--otto-top);
-  z-index: 36;
-  width: var(--otto-rail-w);
-  max-height: calc(100dvh - var(--otto-top) - var(--otto-edge));
-  overflow-y: auto;
+  bottom: max(var(--otto-edge), env(safe-area-inset-bottom));
+  z-index: 60;
+  width: var(--otto-taskbar-w);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 11px;
   padding: 14px 12px;
   border: 1px solid var(--otto-hairline);
   border-radius: 18px;
@@ -270,302 +299,343 @@ body.admin-home.otto-panel-open .toast {
   box-shadow: var(--otto-shadow);
   backdrop-filter: var(--otto-blur);
   -webkit-backdrop-filter: var(--otto-blur);
-  scrollbar-width: thin;
 }
 
-.otto-rail-head {
+.otto-taskbar-head {
   padding: 2px 6px 12px;
   border-bottom: 1px solid var(--otto-hairline);
 }
 
-.otto-rail-greet {
+.otto-taskbar-greet {
+  margin: 0;
   color: var(--text);
   font-size: 14px;
   font-weight: 600;
   line-height: 1.25;
 }
 
-.otto-rail-greet b {
+.otto-taskbar-greet b {
   font-weight: 800;
 }
 
-.otto-rail-date {
-  margin-top: 3px;
+.otto-taskbar-date {
+  margin: 4px 0 0;
   color: var(--text2);
-  font: 500 10.5px/1.3 'JetBrains Mono', monospace;
+  font: 550 10px/1.3 'JetBrains Mono', monospace;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
-.otto-rail-tabs {
+.otto-task-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 7px;
 }
 
-.otto-tab {
+.otto-task,
+.otto-tools-launch {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 11px;
+  gap: 10px;
   width: 100%;
-  min-height: 56px;
-  padding: 8px 12px 8px 10px;
+  min-height: 54px;
+  padding: 8px 10px;
   border: 1px solid transparent;
   border-radius: 12px;
   background: transparent;
   color: var(--text);
   font: inherit;
-  font-size: 14px;
-  font-weight: 650;
+  font-size: 13.5px;
+  font-weight: 680;
   text-align: left;
   cursor: pointer;
-  transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+  transition: background-color 140ms ease, border-color 140ms ease, transform 140ms ease;
 }
 
-.otto-tab-icon {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--action) 12%, transparent);
-  color: var(--accent);
-  font-size: 15px;
-  transition: background-color 140ms ease, color 140ms ease;
-}
-
-/* Wraps between words. `break-word` only ever splits a word that cannot fit on
-   a line of its own, so a long Spanish label stacks tidily instead of running
-   under the count badge. */
-.otto-tab-label {
-  flex: 1 1 auto;
-  min-width: 0;
-  line-height: 1.2;
-  overflow-wrap: break-word;
-}
-
-.otto-tab-count {
-  flex: 0 0 auto;
-  min-width: 26px;
-  padding: 3px 8px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--action) 14%, transparent);
-  color: var(--accent);
-  font: 700 11px/1.35 'JetBrains Mono', monospace;
-  text-align: center;
-}
-
-.otto-tab-count[data-empty="true"] {
-  background: color-mix(in srgb, var(--text3) 20%, transparent);
-  color: var(--text2);
-}
-
-.otto-tab:hover {
+.otto-task:hover,
+.otto-tools-launch:hover {
   background: color-mix(in srgb, var(--action) 9%, transparent);
   border-color: var(--otto-hairline);
 }
 
-.otto-tab.is-open {
+.otto-task.is-minimized {
+  background: color-mix(in srgb, var(--action) 12%, transparent);
+  border-color: color-mix(in srgb, var(--action) 35%, transparent);
+}
+
+.otto-task.is-minimized::after {
+  content: '';
+  position: absolute;
+  right: 8px;
+  bottom: 7px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--action);
+}
+
+.otto-task.is-active {
   background: var(--action);
   border-color: var(--action);
   color: #fff;
 }
 
-.otto-tab.is-open .otto-tab-icon {
-  background: rgba(255, 255, 255, 0.22);
-  color: #fff;
-}
-
-/* White-on-translucent-white over the blue fill measures about 3.4:1, so the
-   open tab's count flips to a solid chip instead — 6.1:1 either way round. */
-.otto-tab.is-open .otto-tab-count {
-  background: #fff;
-  color: var(--accent-fill);
-}
-
-/* --- the single open panel ------------------------------------------------ */
-
-.otto-stage {
-  position: fixed;
-  left: calc(max(var(--otto-edge), env(safe-area-inset-left)) + var(--otto-rail-w) + var(--otto-gap));
-  bottom: max(var(--otto-edge), env(safe-area-inset-bottom));
-  z-index: 35;
-  width: min(var(--otto-panel-w), calc(100vw - max(var(--otto-edge), env(safe-area-inset-left)) - var(--otto-rail-w) - var(--otto-gap) - 96px));
-  max-width: calc(100vw - max(var(--otto-edge), env(safe-area-inset-left)) - var(--otto-rail-w) - var(--otto-gap) - var(--otto-edge));
-  pointer-events: none;
-}
-
-.otto-stage > * {
-  pointer-events: auto;
-}
-
-.otto-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  max-height: var(--otto-panel-h);
-  padding: 16px;
-  border: 1px solid var(--otto-hairline);
-  border-radius: 18px;
-  background: var(--otto-surface-strong);
-  box-shadow: var(--otto-shadow);
-  backdrop-filter: var(--otto-blur);
-  -webkit-backdrop-filter: var(--otto-blur);
-  animation: otto-panel-in 160ms ease-out;
-}
-
-.otto-panel:focus {
-  outline: none;
-}
-
-@keyframes otto-panel-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: none; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .otto-panel { animation: none; }
-}
-
-/* The one way out of a panel: a real, labelled, full-width button at the top. */
-.otto-back {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  width: 100%;
-  min-height: 52px;
-  padding: 0 18px;
-  border: 1px solid var(--action);
-  border-radius: 12px;
-  background: var(--action);
-  color: #fff;
-  font: inherit;
-  font-size: 15px;
-  font-weight: 750;
-  cursor: pointer;
-  transition: background-color 140ms ease, transform 140ms ease;
-}
-
-.otto-back:hover {
-  background: var(--action-hover);
-  border-color: var(--action-hover);
-}
-
-.otto-back:active {
-  transform: translateY(1px);
-}
-
-.otto-panel-head {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  min-width: 0;
-}
-
-.otto-panel-icon {
+.otto-task-icon {
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   border-radius: 10px;
-  background: color-mix(in srgb, var(--action) 14%, transparent);
+  background: color-mix(in srgb, var(--action) 13%, transparent);
   color: var(--accent);
-  font-size: 15px;
 }
 
-.otto-panel-title {
+.otto-task.is-active .otto-task-icon {
+  background: rgba(255, 255, 255, 0.20);
+  color: #fff;
+}
+
+.otto-task-label {
   flex: 1 1 auto;
   min-width: 0;
-  margin: 0;
-  font-family: 'Hanken Grotesk', Inter, system-ui, sans-serif;
-  font-size: 19px;
-  font-weight: 800;
-  letter-spacing: -0.01em;
-  line-height: 1.2;
-  color: var(--text);
+  line-height: 1.15;
 }
 
-.otto-panel-count {
-  flex: 0 0 auto;
-  min-width: 30px;
-  padding: 4px 10px;
+.otto-task-count {
+  min-width: 24px;
+  padding: 2px 6px;
   border-radius: 999px;
-  background: var(--action);
-  color: #fff;
-  font: 700 12px/1.35 'JetBrains Mono', monospace;
+  background: color-mix(in srgb, var(--action) 14%, transparent);
+  color: var(--accent);
+  font: 700 10px/1.4 'JetBrains Mono', monospace;
   text-align: center;
 }
 
-.otto-panel-body {
+.otto-task.is-active .otto-task-count {
+  background: #fff;
+  color: var(--accent-fill);
+}
+
+.otto-tools-launch {
+  margin-top: auto;
+  border-color: var(--otto-hairline);
+  background: color-mix(in srgb, var(--card) 62%, transparent);
+}
+
+/* ============================== WINDOW STAGE =============================== */
+
+.otto-window-stage {
+  position: fixed;
+  top: calc(var(--otto-top) + 66px);
+  left: calc(max(var(--otto-edge), env(safe-area-inset-left)) + var(--otto-taskbar-w) + var(--otto-gap));
+  right: max(var(--otto-edge), env(safe-area-inset-right));
+  bottom: max(var(--otto-edge), env(safe-area-inset-bottom));
+  z-index: 50;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.otto-window {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--otto-hairline);
+  border-radius: 16px;
+  background: var(--otto-surface-strong);
+  box-shadow: var(--otto-shadow);
+  backdrop-filter: var(--otto-blur);
+  -webkit-backdrop-filter: var(--otto-blur);
+  overflow: hidden;
+  animation: otto-window-in 150ms ease-out;
+}
+
+@keyframes otto-window-in {
+  from { opacity: 0; transform: translateY(7px); }
+  to { opacity: 1; transform: none; }
+}
+
+.otto-window:focus {
+  outline: none;
+}
+
+.otto-window-titlebar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 52px;
+  padding: 8px 8px 8px 11px;
+  border-bottom: 1px solid var(--otto-hairline);
+  background: color-mix(in srgb, var(--card) 52%, transparent);
+  user-select: none;
+}
+
+.otto-window-icon {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  background: var(--action);
+  color: #fff;
+  font-size: 13px;
+}
+
+.otto-window-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 780;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.otto-window-count {
+  flex: 0 0 auto;
+  min-width: 24px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--action) 14%, transparent);
+  color: var(--accent);
+  font: 700 10px/1.4 'JetBrains Mono', monospace;
+  text-align: center;
+}
+
+.otto-window-controls {
+  flex: 0 0 auto;
+  display: inline-flex;
+  gap: 4px;
+}
+
+.otto-window-control {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--otto-hairline);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text2);
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.otto-window-control:hover {
+  border-color: var(--action);
+  background: color-mix(in srgb, var(--action) 10%, transparent);
+  color: var(--accent);
+}
+
+.otto-window-body {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding-right: 2px;
+  gap: 7px;
+  padding: 11px;
   scrollbar-width: thin;
 }
 
-.otto-group + .otto-group {
-  margin-top: 14px;
+.otto-window-actions {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 8px;
+  padding: 10px 11px;
+  border-top: 1px solid var(--otto-hairline);
 }
 
-.otto-group-title {
-  margin: 0 0 6px;
+.otto-window-stage.has-maximized .otto-window:not([data-state="maximized"]) {
+  display: none;
+}
+
+.otto-window[data-state="maximized"] {
+  grid-column: 1 / -1;
+}
+
+.otto-window[data-state="fullscreen"] {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  border: 0;
+  border-radius: 0;
+  background: var(--card);
+  box-shadow: none;
+}
+
+body.otto-fullscreen-window {
+  overflow: hidden;
+}
+
+body.otto-fullscreen-window .topbar,
+body.otto-fullscreen-window .otto-taskbar {
+  visibility: hidden;
+}
+
+.otto-all-minimized {
+  grid-column: 1 / -1;
+  align-self: end;
+  justify-self: start;
+  max-width: 430px;
+  padding: 14px 16px;
+  border: 1px solid var(--otto-hairline);
+  border-radius: 12px;
+  background: var(--otto-surface);
   color: var(--text2);
-  font: 600 10.5px/1.3 'JetBrains Mono', monospace;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
+  box-shadow: var(--otto-shadow-sm);
+  backdrop-filter: var(--otto-blur);
 }
 
-.otto-group .otto-row + .otto-row {
-  margin-top: 6px;
-}
+/* ============================ SHARED ROWS/ACTIONS ========================== */
 
 .otto-row {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
   width: 100%;
   min-width: 0;
   min-height: 46px;
-  padding: 9px 12px;
+  padding: 9px 10px;
   border: 1px solid var(--otto-hairline);
-  border-radius: 11px;
-  background: color-mix(in srgb, var(--card) 60%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--card) 62%, transparent);
   color: var(--text);
   font: inherit;
-  font-size: 13.5px;
-  line-height: 1.35;
+  font-size: 13px;
+  line-height: 1.3;
   text-align: left;
 }
 
 .otto-row-link {
   cursor: pointer;
-  transition: background-color 140ms ease, border-color 140ms ease;
 }
 
 .otto-row-link:hover {
-  background: color-mix(in srgb, var(--action) 10%, transparent);
-  border-color: color-mix(in srgb, var(--action) 45%, transparent);
+  background: color-mix(in srgb, var(--action) 9%, transparent);
+  border-color: color-mix(in srgb, var(--action) 40%, transparent);
 }
 
 .otto-row-icon {
   flex: 0 0 auto;
   width: 18px;
-  text-align: center;
   color: var(--accent);
-  font-size: 13px;
+  text-align: center;
 }
 
 .otto-row-main {
@@ -574,49 +644,41 @@ body.admin-home.otto-panel-open .toast {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-weight: 600;
+  font-weight: 650;
 }
 
 .otto-row-meta {
   flex: 0 0 auto;
-  max-width: 42%;
+  max-width: 46%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--text2);
-  font-size: 11.5px;
+  font-size: 11px;
 }
 
 .otto-empty {
   margin: 0;
   padding: 18px 12px;
   border: 1px dashed var(--otto-hairline-strong);
-  border-radius: 11px;
+  border-radius: 10px;
   color: var(--text2);
-  font-size: 13.5px;
+  font-size: 13px;
   text-align: center;
 }
 
-.otto-panel-actions {
-  flex: 0 0 auto;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
 .otto-action {
-  flex: 1 1 180px;
-  min-height: 46px;
-  padding: 0 16px;
+  flex: 1 1 160px;
+  min-height: 44px;
+  padding: 0 14px;
   border: 1px solid var(--otto-hairline-strong);
-  border-radius: 11px;
-  background: color-mix(in srgb, var(--card) 70%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--card) 68%, transparent);
   color: var(--text);
   font: inherit;
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 720;
   cursor: pointer;
-  transition: background-color 140ms ease, border-color 140ms ease;
 }
 
 .otto-action.is-primary {
@@ -626,26 +688,347 @@ body.admin-home.otto-panel-open .toast {
 }
 
 .otto-action.is-primary:hover {
-  background: var(--action-hover);
   border-color: var(--action-hover);
+  background: var(--action-hover);
 }
 
-.otto-action:not(.is-primary):hover {
-  border-color: var(--action);
+/* ============================== TOOLS HUB ================================== */
+
+.otto-tools-sheet,
+.otto-plans-hub,
+.otto-crew-hours,
+.otto-worker-summary {
+  width: 100%;
 }
 
-/* One visible focus treatment for every control this file adds. */
-.otto-tab:focus-visible,
-.otto-back:focus-visible,
-.otto-back-home:focus-visible,
-.otto-row-link:focus-visible,
-.otto-action:focus-visible,
-.attention-item:focus-visible {
-  outline: 3px solid var(--accent);
-  outline-offset: 2px;
+.otto-tools-hero {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  gap: 13px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--action) 32%, var(--line));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--action) 8%, var(--card));
+  margin-bottom: 16px;
 }
 
-/* =========================== ATTENTION STRIP =============================== */
+.otto-tools-hero h2,
+.otto-plans-head h2,
+.otto-worker-title h2 {
+  margin: 0;
+}
+
+.otto-tools-hero p,
+.otto-plans-head p,
+.otto-worker-title p {
+  margin: 3px 0 0;
+  color: var(--text2);
+  font-size: 13px;
+}
+
+.otto-tools-hero-icon,
+.otto-plans-icon {
+  width: 48px;
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 13px;
+  background: var(--action);
+  color: #fff;
+  font-size: 20px;
+}
+
+.otto-tool-groups {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.otto-tool-groups section {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg);
+}
+
+.otto-tool-groups h3,
+.otto-plans-hub > h3 {
+  margin: 2px 4px 8px;
+  color: var(--text2);
+  font: 700 11px/1.3 'JetBrains Mono', monospace;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.otto-tool-item {
+  width: 100%;
+  min-height: 48px;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 14px;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 8px;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.otto-tool-item:first-of-type {
+  border-top: 0;
+}
+
+.otto-tool-item small,
+.otto-plan-job small,
+.otto-plan-recent small,
+.otto-hours-person small,
+.otto-hours-row > span small {
+  display: block;
+  margin-top: 2px;
+  color: var(--text2);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.otto-tool-icon {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--action) 12%, transparent);
+  color: var(--accent);
+}
+
+/* =========================== PLANS & AUTOCAD =============================== */
+
+.otto-plans-head {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: 13px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.otto-format-line {
+  margin-top: 8px;
+  color: var(--accent);
+  font: 700 11px/1.3 'JetBrains Mono', monospace;
+  letter-spacing: 0.04em;
+}
+
+.otto-plan-jobs,
+.otto-plan-recent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-bottom: 18px;
+}
+
+.otto-plan-primary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin: 0 0 18px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--action) 26%, var(--line));
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--action) 7%, var(--card));
+}
+
+.otto-plan-primary-actions .btn {
+  min-height: 44px;
+}
+
+.otto-plan-job {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 58px;
+  padding: 9px 10px 9px 13px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--bg);
+}
+
+.otto-plan-job > span {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.otto-plan-recent {
+  width: 100%;
+  min-height: 52px;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 8px 11px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.otto-plan-recent > i {
+  color: var(--accent);
+  font-size: 18px;
+}
+
+/* ============================== CREW HOURS ================================= */
+
+.otto-hours-summary,
+.otto-worker-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 12px 0 14px;
+}
+
+.otto-worker-facts {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.otto-hours-summary > div,
+.otto-worker-facts > div {
+  min-width: 0;
+  padding: 13px 14px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--card);
+}
+
+.otto-hours-summary span,
+.otto-worker-facts span {
+  display: block;
+  color: var(--text2);
+  font-size: 11px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.otto-hours-summary b,
+.otto-worker-facts b {
+  display: block;
+  margin-top: 3px;
+  color: var(--text);
+  font-size: 20px;
+}
+
+.otto-hours-list {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+}
+
+.otto-hours-row {
+  width: 100%;
+  min-height: 62px;
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) 74px 74px 14px;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.otto-hours-row:last-child {
+  border-bottom: 0;
+}
+
+.otto-hours-row:hover {
+  background: color-mix(in srgb, var(--action) 7%, transparent);
+}
+
+.otto-hours-row > span:not(.otto-hours-person) {
+  text-align: right;
+}
+
+.otto-hours-row > span > b {
+  display: block;
+  margin-top: 2px;
+}
+
+.otto-worker-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.otto-worker-detail {
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 12px 2px;
+  border-top: 1px solid var(--line);
+}
+
+.otto-worker-detail span {
+  color: var(--text2);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.otto-worker-detail b {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.otto-worker-page-card,
+.otto-settings-card {
+  overflow: hidden;
+}
+
+/* ============================== SETTINGS =================================== */
+
+.otto-settings-row {
+  width: 100%;
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-weight: 650;
+  text-align: left;
+  cursor: pointer;
+}
+
+.otto-settings-row:last-child {
+  border-bottom: 0;
+}
+
+.otto-settings-row > i {
+  width: 24px;
+  color: var(--accent);
+  text-align: center;
+}
+
+/* ============================ ATTENTION STRIP ============================== */
 
 .attention-strip {
   margin: 0 0 14px;
@@ -663,269 +1046,290 @@ body.admin-home.otto-panel-open .toast {
   font-weight: 750;
 }
 
-.attention-strip .attention-item {
-  width: 100%;
-  min-height: 46px;
-  border: 0;
-  border-top: 1px solid var(--line);
-  background: transparent;
-  color: var(--text);
-  display: grid;
-  grid-template-columns: 18px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 0;
-  text-align: left;
-  cursor: pointer;
+.attention-strip .otto-row + .otto-row {
+  margin-top: 6px;
 }
 
-.attention-strip .attention-item small {
-  color: var(--text2);
-  font-size: 11px;
+/* ============================== ACCESSIBILITY ============================== */
+
+.otto-task:focus-visible,
+.otto-tools-launch:focus-visible,
+.otto-window-control:focus-visible,
+.otto-primary-tab:focus-visible,
+.otto-row-link:focus-visible,
+.otto-action:focus-visible,
+.otto-tool-item:focus-visible,
+.otto-plan-recent:focus-visible,
+.otto-hours-row:focus-visible,
+.otto-settings-row:focus-visible,
+.otto-back-home:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
 }
 
 /* ============================== BREAKPOINTS ================================ */
 
-/* Laptops and small desktops: a tighter panel. The rail keeps its width — the
-   longest label, "Trabajadores de Campo", needs it to wrap between words. */
 @media (max-width: 1180px) {
   body.theme-app {
-    --otto-panel-w: 540px;
+    --otto-taskbar-w: 198px;
+    --otto-gap: 11px;
   }
 
-  .otto-stage {
-    width: min(var(--otto-panel-w), calc(100vw - max(var(--otto-edge), env(safe-area-inset-left)) - var(--otto-rail-w) - var(--otto-gap) - 56px));
+  .otto-window-stage {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow-y: auto;
+    align-content: start;
+  }
+
+  .otto-window[data-state="normal"] {
+    min-height: 360px;
+  }
+
+  .otto-window[data-state="normal"]:last-child {
+    grid-column: 1 / -1;
   }
 }
 
-/* Phones and narrow tablets: a narrow icon-and-label rail, one bottom-anchored
-   panel, and the whole top of the screen left to the artwork. */
-@media (max-width: 700px) {
+@media (max-width: 760px) {
   body.theme-app {
     --otto-edge: 8px;
-    --otto-rail-w: 84px;
+    --otto-taskbar-w: 78px;
     --otto-gap: 8px;
     --otto-top: 68px;
-    --otto-panel-h: 58dvh;
   }
 
   body.admin-home .topbar {
-    padding: 6px 8px;
-    gap: 8px;
-  }
-
-  body.admin-home .topbar .iconbtn {
-    width: 34px;
-    height: 34px;
-    min-width: 34px;
-    min-height: 34px;
-    font-size: 14px;
-  }
-
-  body.admin-home .topbar .langtoggle button {
-    min-height: 34px;
-    padding: 4px 9px;
-    font-size: 11px;
-  }
-
-  /* `cover` has to enlarge the artwork by about 2.3x to fill a portrait phone,
-     which drags the Little Prince across most of the screen. Nudging the crop
-     off the right edge lands him clear of the left rail instead of behind it,
-     so he is still never covered on the narrowest supported screen. */
-  .wallpaper-container[data-user="ops-1"] {
-    background-position: 85% top;
-  }
-
-  .otto-rail {
-    padding: 8px 7px;
-    gap: 8px;
-    border-radius: 16px;
-  }
-
-  .otto-rail-head {
-    display: none;
-  }
-
-  .otto-tab {
-    flex-direction: column;
-    gap: 4px;
-    min-height: 70px;
-    padding: 8px 3px 7px;
-    text-align: center;
-  }
-
-  .otto-tab-icon {
-    width: 28px;
-    height: 28px;
-    border-radius: 9px;
-    font-size: 13px;
-  }
-
-  /* Wrap between words only. Breaking inside a word turned "Trabajadores de
-     Campo" into "Trabajador / es de Campo", which is a clipped-looking label
-     even though every character was on screen. */
-  .otto-tab-label {
-    flex: 0 0 auto;
-    width: 100%;
-    font-size: 9px;
-    font-weight: 700;
-    line-height: 1.16;
-    word-break: normal;
-    overflow-wrap: normal;
-    hyphens: none;
-  }
-
-  .otto-tab-count {
-    position: absolute;
-    top: 4px;
-    right: 5px;
-    min-width: 18px;
-    padding: 1px 5px;
-    font-size: 9px;
-  }
-
-  .otto-stage {
-    right: max(var(--otto-edge), env(safe-area-inset-right));
-    width: auto;
-    max-width: none;
-  }
-
-  .otto-panel {
-    gap: 12px;
-    padding: 12px;
-    border-radius: 16px;
-  }
-
-  .otto-back {
-    min-height: 48px;
-    font-size: 14px;
-  }
-
-  .otto-panel-title {
-    font-size: 17px;
-  }
-
-  .otto-row {
-    font-size: 13px;
-  }
-
-  .otto-row-meta {
-    max-width: 38%;
-  }
-
-  .otto-action {
-    flex: 1 1 100%;
-  }
-
-  .attention-strip .attention-item {
-    grid-template-columns: 18px minmax(0, 1fr);
-  }
-
-  .attention-strip .attention-item small {
-    grid-column: 2;
-  }
-
-  body.admin-workspace:not(.admin-home) .wrap {
-    padding-bottom: 96px;
-  }
-}
-
-/* Very narrow phones. */
-@media (max-width: 380px) {
-  body.theme-app {
-    --otto-rail-w: 76px;
-    --otto-edge: 6px;
-  }
-
-  /* The top-left pill has to stay narrow enough to clear the artwork on the
-     smallest supported screen, so the wordmark and the controls step down a
-     size rather than the pill running under the Little Prince. */
-  body.admin-home .topbar {
+    padding: 5px 7px;
     gap: 6px;
-    padding: 5px 6px;
   }
 
   body.admin-home .crystal-logo {
-    height: 30px;
+    height: 34px;
   }
 
   body.admin-home .topbar .iconbtn {
-    width: 30px;
-    height: 30px;
-    min-width: 30px;
-    min-height: 30px;
-    font-size: 13px;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
   }
 
   body.admin-home .topbar .langtoggle button {
-    min-height: 30px;
+    min-height: 32px;
     padding: 3px 7px;
     font-size: 10px;
   }
 
-  .otto-rail {
-    padding: 8px 5px;
+  .wallpaper-container[data-user="ops-1"] {
+    background-position: 84% top;
   }
 
-  .otto-tab {
-    min-height: 66px;
-    padding: 8px 2px 7px;
+  .otto-taskbar {
+    padding: 8px 6px;
+    border-radius: 14px;
   }
 
-  .otto-tab-label {
-    font-size: 8.5px;
-  }
-}
-
-/* Short windows — landscape phones and small laptop viewports. The rail must
-   still fit four tabs without scrolling or colliding with the top bar.
-   The panel height is deliberately *not* raised here: the top third of the
-   screen is where Sarays's artwork sits, and it stays hers. */
-@media (max-height: 640px) {
-  body.theme-app {
-    --otto-top: 62px;
-    --otto-panel-h: 52dvh;
-  }
-
-  .otto-rail-head {
+  .otto-taskbar-head {
     display: none;
   }
 
-  .otto-tab {
-    min-height: 46px;
+  .otto-task,
+  .otto-tools-launch {
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    min-height: 68px;
+    padding: 7px 2px;
+    text-align: center;
+    font-size: 9px;
+    line-height: 1.05;
   }
 
-  /* Give the list as much of the short panel as possible without shrinking the
-     Back button below a comfortable tap target. */
-  .otto-panel {
-    gap: 9px;
-    padding: 12px;
+  .otto-task-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
   }
 
-  .otto-back {
-    min-height: 46px;
+  .otto-task-label {
+    width: 100%;
   }
 
-  .otto-panel-icon {
-    width: 30px;
-    height: 30px;
+  .otto-task-count {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    min-width: 17px;
+    padding: 1px 4px;
+    font-size: 8px;
+  }
+
+  .otto-tools-launch {
+    margin-top: auto;
+  }
+
+  body.admin-home .otto-window-stage {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
+    align-content: start;
+    top: calc(var(--otto-top) + 70px);
+  }
+
+  .otto-primary-nav {
+    top: var(--otto-top);
+    bottom: auto;
+    left: max(var(--otto-edge), env(safe-area-inset-left));
+    right: max(var(--otto-edge), env(safe-area-inset-right));
+    min-height: 60px;
+    padding: 5px;
+  }
+
+  .otto-primary-tab {
+    min-width: 66px;
+    min-height: 48px;
+    flex-direction: column;
+    gap: 3px;
+    padding: 5px 7px;
+    font-size: 9px;
+  }
+
+  .otto-window[data-state="normal"],
+  .otto-window[data-state="normal"]:last-child {
+    grid-column: auto;
+    min-height: 390px;
+  }
+
+  .otto-window-titlebar {
+    gap: 6px;
+    padding-inline: 8px 6px;
+  }
+
+  .otto-window-title {
     font-size: 13px;
   }
 
-  .otto-panel-title {
-    font-size: 17px;
+  .otto-window-count {
+    display: none;
+  }
+
+  .otto-window-control {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    min-height: 30px;
+  }
+
+  .otto-row-meta {
+    max-width: 40%;
+  }
+
+  .otto-tools-hero {
+    grid-template-columns: 42px minmax(0, 1fr);
+  }
+
+  .otto-tools-hero > .btn {
+    grid-column: 1 / -1;
+  }
+
+  .otto-tool-groups {
+    grid-template-columns: 1fr;
+  }
+
+  .otto-hours-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .otto-hours-summary > div {
+    padding: 10px 8px;
+  }
+
+  .otto-hours-summary b {
+    font-size: 16px;
+  }
+
+  .otto-hours-row {
+    grid-template-columns: minmax(110px, 1fr) 54px 54px 10px;
+    gap: 6px;
+    padding-inline: 8px;
+  }
+
+  .otto-hours-row > span small {
+    font-size: 9px;
+  }
+
+  .otto-hours-row > span b {
+    font-size: 12px;
+  }
+
+  .otto-plan-job {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .otto-plan-primary-actions .btn {
+    width: 100%;
   }
 }
 
-@media (max-height: 640px) and (max-width: 700px) {
-  .otto-tab {
-    min-height: 50px;
-    padding: 5px 4px;
+@media (max-width: 480px) {
+  .otto-window-icon {
+    display: none;
   }
 
-  .otto-tab-icon {
-    width: 22px;
-    height: 22px;
-    font-size: 11px;
+  .otto-window-controls {
+    gap: 2px;
+  }
+
+  .otto-row {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .otto-row-meta {
+    flex: 1 0 100%;
+    max-width: none;
+    padding-left: 27px;
+    white-space: normal;
+  }
+
+  .otto-worker-detail {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .otto-worker-facts {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-height: 640px) and (min-width: 761px) {
+  body.theme-app {
+    --otto-top: 72px;
+    --otto-edge: 10px;
+  }
+
+  .otto-taskbar {
+    padding-block: 9px;
+  }
+
+  .otto-task,
+  .otto-tools-launch {
+    min-height: 46px;
+  }
+
+  .otto-window-titlebar {
+    min-height: 46px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .otto-window,
+  .otto-task,
+  .otto-window-control,
+  .otto-row-link,
+  .otto-action {
+    animation: none !important;
+    transition: none !important;
   }
 }

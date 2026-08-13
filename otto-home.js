@@ -1,17 +1,16 @@
-/* OTTO CRM — owner/office home.
+/* OTTO CRM — final owner/office workspace.
 
-   One interaction model, deliberately small:
-
-   - Four primary sections (Today, Field Workers, Inbox, Tools) are always
-     rendered as a permanent left rail. They are the only primary home controls.
-   - `activePanelId` is either one of those panel ids or null. Opening a panel
-     closes every other panel because only one panel is ever rendered.
-   - Every open panel carries one large "Back to panels" button; every secondary
-     owner/office screen carries one "Back to Home" button in the top bar.
-
-   Panel drag/reorder, full screen, maximize/restore and the duplicate
-   minimize/collapse controls were removed: the permanent rail *is* the
-   minimized state, so none of them had a job left to do.
+   Owner direction is intentionally explicit:
+   - three primary windows are open together by default: Today, Field Workers,
+     and Inbox;
+   - each window can minimize to the left rail, maximize inside the workspace,
+     or use the full screen, then restore;
+   - Tools is a launcher in the rail, not a fourth competing home window;
+   - Julio uses green accents, Saray uses pink accents, Otto keeps blue;
+   - crew information shows only operational facts: current work, actual recorded
+     hours, and time-off status. Fake KPI charts, random heatmaps, login-history
+     fluff, escalation counts and location-count vanity metrics are not used;
+   - Plans & AutoCAD has one obvious upload hub for PDF/DWG/DXF/DWF/DGN files.
 
    This file intentionally does not touch the public plumbing website. */
 (function () {
@@ -21,23 +20,28 @@
   const legacyViewInbox = viewInbox;
   const legacyRenderNav = renderNav;
   const legacyStartApp = startApp;
+  const legacyViewSettings = viewSettings;
 
-  /* `counted` marks the sections whose number means "this many things are
-     waiting for you". Tools is a menu, so a badge there would read as work
-     outstanding when it is nothing of the kind. */
-  const PANELS = [
-    { id: 'panel-today', key: 'today', icon: 'fa-calendar-day', counted: true },
-    { id: 'panel-field', key: 'fieldWorkers', icon: 'fa-users-gear', counted: true },
-    { id: 'panel-inbox', key: 'inbox', icon: 'fa-inbox', counted: true },
-    { id: 'panel-tools', key: 'tools', icon: 'fa-toolbox', counted: false }
+  const WINDOWS = [
+    { id: 'panel-today', key: 'today', icon: 'fa-calendar-day' },
+    { id: 'panel-field', key: 'fieldWorkers', icon: 'fa-users-gear' },
+    { id: 'panel-inbox', key: 'inbox', icon: 'fa-inbox' }
   ];
-  const PANEL_IDS = PANELS.map(p => p.id);
-
-  /* The whole home state. Null means "no panel open — wallpaper only". */
-  let activePanelId = null;
+  const WINDOW_IDS = WINDOWS.map(w => w.id);
+  const WINDOW_STATES = ['normal', 'minimized', 'maximized', 'fullscreen'];
+  const windowStates = {
+    'panel-today': 'normal',
+    'panel-field': 'normal',
+    'panel-inbox': 'normal'
+  };
 
   function words(en, es) {
     return lang === 'es' ? es : en;
+  }
+
+  function list(name) {
+    const value = db && db[name];
+    return Array.isArray(value) ? value : [];
   }
 
   function isAdmin() {
@@ -48,24 +52,25 @@
     return Boolean(route && route.view === 'home');
   }
 
-  function list(name) {
-    const v = db && db[name];
-    return Array.isArray(v) ? v : [];
-  }
+  function applySessionIdentity() {
+    const wallpaper = document.getElementById('wallpaper-bg');
+    if (!session) return;
 
-  function applySessionWallpaper() {
-    const wp = document.getElementById('wallpaper-bg');
-    if (!wp || !session) return;
-    if (session.id === 'owner-2') wp.setAttribute('data-user', 'owner-2');
-    else if (session.id === 'ops-1') wp.setAttribute('data-user', 'ops-1');
-    else wp.removeAttribute('data-user');
-  }
+    let userTheme = 'office';
+    if (session.id === 'owner-1') userTheme = 'otto';
+    if (session.id === 'owner-2') userTheme = 'julio';
+    if (session.id === 'ops-1') userTheme = 'saray';
+    document.body.setAttribute('data-otto-user', userTheme);
 
-  /* ---------------------------------------------------------------- data --- */
+    if (!wallpaper) return;
+    if (session.id === 'owner-2') wallpaper.setAttribute('data-user', 'owner-2');
+    else if (session.id === 'ops-1') wallpaper.setAttribute('data-user', 'ops-1');
+    else wallpaper.removeAttribute('data-user');
+  }
 
   function userName(id) {
-    const u = list('users').find(x => x.id === id);
-    return u ? (u.name || u.name_en || u.name_es || '') : '';
+    const user = list('users').find(u => u.id === id);
+    return user ? (user.name || user.name_en || user.name_es || '') : '';
   }
 
   function todayJobs() {
@@ -76,13 +81,110 @@
     return list('users').filter(u => u && u.role === 'field' && u.name);
   }
 
-  function attentionItems(includeMail = true) {
+  function eventWorkerId(event) {
+    return event && (event.workerId || event.userId) || '';
+  }
+
+  function workIntervals(workerId) {
+    const events = list('job_events')
+      .filter(e => eventWorkerId(e) === workerId && (e.type === 'check_in' || e.type === 'check_out') && e.ts)
+      .sort((a, b) => new Date(a.ts) - new Date(b.ts));
+    const open = new Map();
+    const intervals = [];
+
+    events.forEach(e => {
+      const jobId = e.jobId || '__no_job__';
+      if (e.type === 'check_in') {
+        open.set(jobId, new Date(e.ts));
+        return;
+      }
+      const start = open.get(jobId);
+      if (!start) return;
+      const end = new Date(e.ts);
+      if (!isNaN(start) && !isNaN(end) && end > start) intervals.push({ start, end, jobId: e.jobId || '' });
+      open.delete(jobId);
+    });
+
+    open.forEach((start, jobId) => {
+      const job = list('jobs').find(j => j.id === jobId);
+      if (!job || !job.activeCheckIn) return;
+      const end = new Date();
+      if (!isNaN(start) && end > start) intervals.push({ start, end, jobId });
+    });
+
+    return intervals;
+  }
+
+  function startOfToday() {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+
+  function startOfWeek() {
+    const d = startOfToday();
+    const mondayOffset = (d.getDay() + 6) % 7;
+    d.setDate(d.getDate() - mondayOffset);
+    return d;
+  }
+
+  function sumHours(intervals, from, to) {
+    const a = from.getTime();
+    const b = to.getTime();
+    const ms = intervals.reduce((total, interval) => {
+      const start = Math.max(a, interval.start.getTime());
+      const end = Math.min(b, interval.end.getTime());
+      return total + Math.max(0, end - start);
+    }, 0);
+    return ms / 3600000;
+  }
+
+  function currentJobFor(workerId) {
+    return list('jobs').find(job => {
+      if (!job || !job.activeCheckIn) return false;
+      const event = list('job_events').find(e => e.id === job.activeCheckIn);
+      return eventWorkerId(event) === workerId;
+    }) || null;
+  }
+
+  function nextJobFor(workerId) {
+    const today = todayISO();
+    return list('jobs')
+      .filter(j => j && j.assignedTo === workerId && j.scheduledDate && String(j.scheduledDate).slice(0, 10) >= today && !['completed', 'canceled'].includes(j.status))
+      .sort((a, b) => String(a.scheduledDate).localeCompare(String(b.scheduledDate)))[0] || null;
+  }
+
+  function workerTime(workerId) {
+    const intervals = workIntervals(workerId);
+    const now = new Date();
+    return {
+      today: sumHours(intervals, startOfToday(), now),
+      week: sumHours(intervals, startOfWeek(), now),
+      currentJob: currentJobFor(workerId),
+      nextJob: nextJobFor(workerId)
+    };
+  }
+
+  function hoursText(value) {
+    const number = Number(value) || 0;
+    return `${number.toFixed(number >= 10 ? 1 : 2)}h`;
+  }
+
+  function workerPto(workerId) {
+    const today = todayISO();
+    const requests = [...list('pto_requests'), ...list('time_off')]
+      .filter(p => p && p.workerId === workerId)
+      .sort((a, b) => String(b.startDate || '').localeCompare(String(a.startDate || '')));
+    const active = requests.find(p => p.status === 'approved' && (p.endDate || p.startDate || '') >= today);
+    const pending = requests.find(p => p.status === 'pending');
+    return active || pending || null;
+  }
+
+  function attentionItems(includeMail) {
     const items = [];
 
     if (includeMail) {
-      list('inbox_emails').filter(e => e && !e.read).forEach(e => items.push({
-        kind: 'email',
-        id: e.id,
+      list('emails').filter(e => e && e.direction !== 'outgoing' && !e.read).forEach(e => items.push({
         icon: 'fa-envelope',
         text: e.subject || e.from || words('Email', 'Correo'),
         meta: words('Email', 'Correo'),
@@ -90,14 +192,12 @@
       }));
     }
 
-    const openMessages = list('employee_messages').filter(m => m && m.status === 'open');
+    const messages = list('employee_messages').filter(m => m && m.status === 'open');
     const messageText = new Set();
-    openMessages.forEach(m => {
+    messages.forEach(m => {
       const text = m.text || words('Worker message', 'Mensaje del trabajador');
       messageText.add(String(text).trim().toLowerCase());
       items.push({
-        kind: 'worker',
-        id: m.id,
         icon: 'fa-bolt',
         text: `${userName(m.workerId) || words('Field worker', 'Trabajador')}: ${text}`,
         meta: words('Worker', 'Trabajador'),
@@ -106,111 +206,34 @@
     });
 
     list('pto_requests').filter(p => p && p.status === 'pending').forEach(p => items.push({
-      kind: 'pto',
-      id: p.id,
       icon: 'fa-calendar-check',
       text: `${userName(p.workerId) || words('Worker', 'Trabajador')} · ${p.startDate || ''}${p.endDate && p.endDate !== p.startDate ? ` – ${p.endDate}` : ''}`,
       meta: words('Time off', 'Tiempo libre'),
-      view: can('kpis') ? 'kpis' : 'team'
+      view: 'team'
     }));
 
     list('alerts').filter(a => a && a.status === 'open').forEach(a => {
       const text = a.msg || a.title || a.type || t('alert');
       if (messageText.has(String(text).trim().toLowerCase())) return;
-      items.push({
-        kind: 'alert',
-        id: a.id,
-        icon: 'fa-triangle-exclamation',
-        text,
-        meta: t('alert'),
-        view: 'alerts'
-      });
+      items.push({ icon: 'fa-triangle-exclamation', text, meta: t('alert'), view: 'alerts' });
     });
 
     return items;
   }
-
-  /* Everything an owner or office manager can actually open, grouped. This is
-     the single place the CRM's secondary screens are listed, so nothing is
-     reachable only through a hidden or duplicated path. */
-  const TOOL_GROUPS = [
-    {
-      en: 'Money', es: 'Dinero', views: [
-        ['estimates', 'fa-file-signature'],
-        ['invoices', 'fa-file-invoice-dollar'],
-        ['payments', 'fa-credit-card'],
-        ['checks', 'fa-money-check'],
-        ['payroll', 'fa-money-check-dollar']
-      ]
-    },
-    {
-      en: 'Work', es: 'Trabajo', views: [
-        ['jobs', 'fa-screwdriver-wrench'],
-        ['customers', 'fa-users'],
-        ['calls', 'fa-phone'],
-        ['followups', 'fa-bell'],
-        ['workflows', 'fa-diagram-project'],
-        ['map', 'fa-map-location-dot']
-      ]
-    },
-    {
-      en: 'Team', es: 'Equipo', views: [
-        ['team', 'fa-user-gear'],
-        ['kpis', 'fa-chart-pie'],
-        ['urgent', 'fa-bolt']
-      ]
-    },
-    {
-      en: 'Business', es: 'Negocio', views: [
-        ['reports', 'fa-chart-line'],
-        ['alerts', 'fa-triangle-exclamation'],
-        ['knowledge', 'fa-book'],
-        ['emails', 'fa-envelope-open-text'],
-        ['audit', 'fa-clipboard-list'],
-        ['backups', 'fa-database']
-      ]
-    },
-    {
-      en: 'System', es: 'Sistema', views: [
-        ['assistant', 'fa-wand-magic-sparkles'],
-        ['settings', 'fa-gear']
-      ]
-    }
-  ];
-
-  const VIEW_LABEL = {
-    audit: 'auditTrail',
-    urgent: 'urgentHub',
-    kpis: 'teamKpis'
-  };
-
-  function viewLabel(view) {
-    return t(VIEW_LABEL[view] || view);
-  }
-
-  function availableTools() {
-    return TOOL_GROUPS
-      .map(g => ({ title: words(g.en, g.es), views: g.views.filter(([v]) => can(v)) }))
-      .filter(g => g.views.length);
-  }
-
-  function toolCount() {
-    return availableTools().reduce((n, g) => n + g.views.length, 0);
-  }
-
-  /* -------------------------------------------------------------- markup --- */
 
   function navAttrs(view, id) {
     if (!view) return '';
     return ` data-otto-action="nav" data-otto-view="${esc(view)}"${id ? ` data-otto-id="${esc(String(id))}"` : ''}`;
   }
 
-  function row({ icon, main, meta, view, id }) {
-    const tag = view ? 'button' : 'div';
-    const attrs = view
-      ? ` type="button" class="otto-row otto-row-link"${navAttrs(view, id)}`
-      : ' class="otto-row"';
-    return `<${tag}${attrs}>
+  function rowMarkup(icon, main, meta, view, id, action, extra) {
+    const interactive = Boolean(view || action);
+    const tag = interactive ? 'button' : 'div';
+    let attrs = interactive ? ' type="button"' : '';
+    if (view) attrs += navAttrs(view, id);
+    if (action) attrs += ` data-otto-action="${action}"`;
+    if (extra) attrs += ` ${extra}`;
+    return `<${tag} class="otto-row${interactive ? ' otto-row-link' : ''}"${attrs}>
       <span class="otto-row-icon" aria-hidden="true"><i class="fas ${icon || 'fa-circle'}"></i></span>
       <span class="otto-row-main">${esc(main)}</span>
       ${meta ? `<span class="otto-row-meta">${esc(meta)}</span>` : ''}
@@ -221,285 +244,413 @@
     return `<p class="otto-empty">${esc(text)}</p>`;
   }
 
-  function actionButton(label, view, primary) {
-    return `<button type="button" class="otto-action${primary ? ' is-primary' : ''}"${navAttrs(view)}>${esc(label)}</button>`;
+  function actionButton(label, view, action) {
+    if (view) return `<button type="button" class="otto-action is-primary"${navAttrs(view)}>${esc(label)}</button>`;
+    return `<button type="button" class="otto-action is-primary" data-otto-action="${action}">${esc(label)}</button>`;
   }
 
-  function todayPanel() {
+  function todayWindow() {
     const jobs = todayJobs();
-    const rows = jobs.slice(0, 20).map(j => {
-      const customer = list('customers').find(c => c.id === j.customerId);
-      return row({
-        icon: 'fa-screwdriver-wrench',
-        main: `${j.title || t('untitled')}${customer && customer.name ? ` · ${customer.name}` : ''}`,
-        meta: j.status ? t(j.status) : '',
-        view: can('jobs') ? 'job' : null,
-        id: j.id
-      });
-    }).join('');
-    return {
-      count: jobs.length,
-      body: jobs.length ? rows : emptyRow(words('No jobs scheduled for today.', 'No hay trabajos programados para hoy.')),
-      actions: can('jobs') ? [actionButton(words('Open today’s jobs', 'Abrir trabajos de hoy'), 'jobs', true)] : []
-    };
+    const body = jobs.length
+      ? jobs.slice(0, 10).map(job => {
+          const customer = list('customers').find(c => c.id === job.customerId);
+          return rowMarkup('fa-screwdriver-wrench', `${job.title || t('untitled')}${customer && customer.name ? ` · ${customer.name}` : ''}`, job.status ? t(job.status) : '', can('jobs') ? 'job' : '', job.id);
+        }).join('')
+      : emptyRow(words('No jobs scheduled for today.', 'No hay trabajos programados para hoy.'));
+    return { count: jobs.length, body, actions: can('jobs') ? [actionButton(words('Open jobs', 'Abrir trabajos'), 'jobs')] : [] };
   }
 
-  function fieldPanel() {
-    const jobs = todayJobs();
+  function fieldWindow() {
     const workers = fieldWorkers();
-    const canProfile = can('worker_profile');
-    const rows = workers.map(w => {
-      const assigned = jobs.filter(j => j.assignedTo === w.id);
-      const current = assigned.find(j => !['completed', 'canceled'].includes(j.status)) || assigned[0];
-      return row({
-        icon: 'fa-user',
-        main: w.name,
-        meta: current ? (current.title || t('job')) : words('No job today', 'Sin trabajo hoy'),
-        view: canProfile ? 'worker_profile' : null,
-        id: w.id
-      });
-    }).join('');
+    const body = workers.length
+      ? workers.map(worker => {
+          const time = workerTime(worker.id);
+          const status = time.currentJob
+            ? `${words('On job', 'En trabajo')}: ${time.currentJob.title || t('job')}`
+            : `${words('Today', 'Hoy')} ${hoursText(time.today)} · ${words('Week', 'Semana')} ${hoursText(time.week)}`;
+          return rowMarkup('fa-user', worker.name, status, '', '', 'worker-summary', `data-otto-worker="${esc(worker.id)}"`);
+        }).join('')
+      : emptyRow(words('No field workers on the team yet.', 'Aún no hay trabajadores de campo en el equipo.'));
     return {
       count: workers.length,
-      body: workers.length ? rows : emptyRow(words('No field workers on the team yet.', 'Aún no hay trabajadores de campo en el equipo.')),
-      actions: can('team') ? [actionButton(words('Open field workers', 'Abrir trabajadores'), 'team', true)] : []
+      body,
+      actions: [actionButton(words('View crew hours', 'Ver horas del equipo'), '', 'crew-hours')]
     };
   }
 
-  function inboxPanel() {
+  function inboxWindow() {
     const items = attentionItems(true);
-    const rows = items.slice(0, 20).map(item => row({
-      icon: item.icon,
-      main: item.text,
-      meta: item.meta,
-      view: can(item.view) ? item.view : null
-    })).join('');
-    return {
-      count: items.length,
-      body: items.length ? rows : emptyRow(words('Nothing needs your attention.', 'Nada requiere tu atención.')),
-      actions: can('inbox') ? [actionButton(words('Open inbox', 'Abrir bandeja'), 'inbox', true)] : []
-    };
+    const body = items.length
+      ? items.slice(0, 12).map(item => rowMarkup(item.icon, item.text, item.meta, can(item.view) ? item.view : '')).join('')
+      : emptyRow(words('Nothing needs your attention.', 'Nada requiere tu atención.'));
+    return { count: items.length, body, actions: can('inbox') ? [actionButton(words('Open inbox', 'Abrir bandeja'), 'inbox')] : [] };
   }
 
-  function toolsPanel() {
-    const groups = availableTools();
-    const body = groups.map(g => `<div class="otto-group">
-      <h3 class="otto-group-title">${esc(g.title)}</h3>
-      ${g.views.map(([view, icon]) => row({ icon, main: viewLabel(view), view })).join('')}
-    </div>`).join('');
-    return {
-      count: toolCount(),
-      body: groups.length ? body : emptyRow(words('No tools are available for this account.', 'No hay herramientas disponibles para esta cuenta.')),
-      actions: []
-    };
-  }
-
-  const PANEL_BUILDERS = {
-    'panel-today': todayPanel,
-    'panel-field': fieldPanel,
-    'panel-inbox': inboxPanel,
-    'panel-tools': toolsPanel
+  const WINDOW_BUILDERS = {
+    'panel-today': todayWindow,
+    'panel-field': fieldWindow,
+    'panel-inbox': inboxWindow
   };
 
-  function panelCount(id) {
+  function buildWindow(id) {
     try {
-      const built = PANEL_BUILDERS[id] && PANEL_BUILDERS[id]();
-      return built ? Number(built.count) || 0 : 0;
-    } catch (err) {
-      return 0;
+      return WINDOW_BUILDERS[id]();
+    } catch (error) {
+      if (window.console && console.warn) console.warn('OTTO window failed', id, error);
+      return { count: 0, body: emptyRow(words('This window could not be loaded.', 'No se pudo cargar esta ventana.')), actions: [] };
     }
   }
 
-  function railMarkup() {
-    const hour = new Date().getHours();
-    const greet = hour < 12
-      ? words('Good morning', 'Buenos días')
-      : hour < 18 ? words('Good afternoon', 'Buenas tardes') : words('Good evening', 'Buenas noches');
-
-    const tabs = PANELS.map(p => {
-      const open = activePanelId === p.id;
-      const count = p.counted ? panelCount(p.id) : null;
-      return `<button type="button" class="otto-tab${open ? ' is-open' : ''}"
-        id="tab-${p.id}" data-otto-action="open-panel" data-otto-panel="${p.id}"
-        aria-expanded="${open ? 'true' : 'false'}"${open ? ` aria-controls="${p.id}" aria-current="true"` : ''}>
-        <span class="otto-tab-icon" aria-hidden="true"><i class="fas ${p.icon}"></i></span>
-        <span class="otto-tab-label">${esc(t(p.key))}</span>
-        ${count === null ? '' : `<span class="otto-tab-count"${count ? '' : ' data-empty="true"'}>${count}</span>`}
-      </button>`;
-    }).join('');
-
-    return `<nav class="otto-rail" aria-label="${esc(words('Home sections', 'Secciones de inicio'))}">
-      <div class="otto-rail-head">
-        <p class="otto-rail-greet">${esc(greet)}, <b>${esc(session.name || '')}</b></p>
-        <p class="otto-rail-date">${esc(fmtDate(todayISO()))}</p>
-      </div>
-      <div class="otto-rail-tabs">${tabs}</div>
-    </nav>`;
+  function windowControls(meta, state) {
+    const restore = state === 'maximized' || state === 'fullscreen';
+    return `<div class="otto-window-controls" aria-label="${esc(words('Window controls', 'Controles de ventana'))}">
+      <button type="button" class="otto-window-control" data-otto-action="window-state" data-otto-panel="${meta.id}" data-otto-state="minimized" title="${esc(words('Minimize', 'Minimizar'))}" aria-label="${esc(words('Minimize', 'Minimizar'))}"><i class="fas fa-minus"></i></button>
+      <button type="button" class="otto-window-control" data-otto-action="window-state" data-otto-panel="${meta.id}" data-otto-state="${restore ? 'normal' : 'maximized'}" title="${esc(restore ? words('Restore', 'Restaurar') : words('Maximize', 'Maximizar'))}" aria-label="${esc(restore ? words('Restore', 'Restaurar') : words('Maximize', 'Maximizar'))}"><i class="fas ${restore ? 'fa-clone' : 'fa-square'}"></i></button>
+      <button type="button" class="otto-window-control" data-otto-action="window-state" data-otto-panel="${meta.id}" data-otto-state="${state === 'fullscreen' ? 'normal' : 'fullscreen'}" title="${esc(state === 'fullscreen' ? words('Exit full screen', 'Salir de pantalla completa') : words('Full screen', 'Pantalla completa'))}" aria-label="${esc(state === 'fullscreen' ? words('Exit full screen', 'Salir de pantalla completa') : words('Full screen', 'Pantalla completa'))}"><i class="fas ${state === 'fullscreen' ? 'fa-compress' : 'fa-expand'}"></i></button>
+    </div>`;
   }
 
-  function panelMarkup(id) {
-    const meta = PANELS.find(p => p.id === id);
-    if (!meta) return '';
-    let built;
-    try {
-      built = PANEL_BUILDERS[id]();
-    } catch (err) {
-      /* Never leave the user on a blank panel with no way back. */
-      built = {
-        count: 0,
-        body: emptyRow(words('This section could not be loaded.', 'No se pudo cargar esta sección.')),
-        actions: []
-      };
-      if (window.console && console.warn) console.warn('OTTO: panel failed to build', id, err);
-    }
-    /* A list with no links of its own is a scroll region a keyboard user cannot
-       reach, so it takes a tab stop only in that case — adding one when the
-       rows are already buttons would just be an extra stop on the way in. */
-    return `<section class="otto-panel" id="${id}" tabindex="-1" role="region" aria-labelledby="${id}-title">
-      <button type="button" class="otto-back" data-otto-action="close-panel">
-        <span class="otto-back-arrow" aria-hidden="true">←</span>
-        <span>${esc(words('Back to panels', 'Volver a los paneles'))}</span>
-      </button>
-      <header class="otto-panel-head">
-        <span class="otto-panel-icon" aria-hidden="true"><i class="fas ${meta.icon}"></i></span>
-        <h2 class="otto-panel-title" id="${id}-title">${esc(t(meta.key))}</h2>
-        ${meta.counted ? `<span class="otto-panel-count">${Number(built.count) || 0}</span>` : ''}
+  function windowMarkup(meta) {
+    const state = windowStates[meta.id] || 'normal';
+    if (state === 'minimized') return '';
+    const built = buildWindow(meta.id);
+    return `<section class="otto-window" id="${meta.id}" data-panel-id="${meta.id}" data-state="${state}" tabindex="-1" role="region" aria-labelledby="${meta.id}-title">
+      <header class="otto-window-titlebar">
+        <span class="otto-window-icon" aria-hidden="true"><i class="fas ${meta.icon}"></i></span>
+        <h2 class="otto-window-title" id="${meta.id}-title">${esc(t(meta.key))}</h2>
+        <span class="otto-window-count">${Number(built.count) || 0}</span>
+        ${windowControls(meta, state)}
       </header>
-      <div class="otto-panel-body"${/otto-row-link/.test(built.body) ? '' : ' tabindex="0"'}>${built.body}</div>
-      ${built.actions.length ? `<div class="otto-panel-actions">${built.actions.join('')}</div>` : ''}
+      <div class="otto-window-body">${built.body}</div>
+      ${built.actions.length ? `<footer class="otto-window-actions">${built.actions.join('')}</footer>` : ''}
     </section>`;
   }
 
-  /* ------------------------------------------------------------ rendering --- */
-
-  function syncTabs() {
-    PANELS.forEach(p => {
-      const tab = document.getElementById(`tab-${p.id}`);
-      if (!tab) return;
-      const open = activePanelId === p.id;
-      tab.classList.toggle('is-open', open);
-      tab.setAttribute('aria-expanded', open ? 'true' : 'false');
-      if (open) {
-        tab.setAttribute('aria-controls', p.id);
-        tab.setAttribute('aria-current', 'true');
-      } else {
-        tab.removeAttribute('aria-controls');
-        tab.removeAttribute('aria-current');
-      }
-    });
+  function anyWindowState(state) {
+    return WINDOW_IDS.some(id => windowStates[id] === state);
   }
 
-  function renderStage(focusPanel) {
-    const stage = document.getElementById('otto-stage');
-    if (!stage) return;
-    if (activePanelId && !PANEL_IDS.includes(activePanelId)) activePanelId = null;
-    /* One write of the whole stage, so two fast clicks can never leave two
-       panels on screen or a half-updated one behind. */
-    stage.innerHTML = activePanelId ? panelMarkup(activePanelId) : '';
-    document.body.classList.toggle('otto-panel-open', Boolean(activePanelId));
-    syncTabs();
-    if (focusPanel && activePanelId) {
-      const panel = document.getElementById(activePanelId);
-      if (panel) panel.focus({ preventScroll: true });
+  function setWindowState(id, state, focus) {
+    if (!WINDOW_IDS.includes(id) || !WINDOW_STATES.includes(state)) return;
+    if (state === 'maximized' || state === 'fullscreen') {
+      WINDOW_IDS.forEach(other => {
+        if (other !== id && (windowStates[other] === 'maximized' || windowStates[other] === 'fullscreen')) windowStates[other] = 'normal';
+      });
     }
-  }
-
-  function openPanel(id, focusPanel) {
-    if (!PANEL_IDS.includes(id)) return;
-    activePanelId = activePanelId === id ? null : id;
+    windowStates[id] = state;
     if (!onHome()) {
       nav('home');
       return;
     }
-    renderStage(focusPanel && Boolean(activePanelId));
+    renderWorkspace(focus !== false && state !== 'minimized', id);
   }
 
-  function closePanel() {
-    const previous = activePanelId;
-    activePanelId = null;
-    renderStage(false);
-    const tab = previous && document.getElementById(`tab-${previous}`);
-    if (tab) tab.focus({ preventScroll: true });
+  function railMarkup() {
+    const hour = new Date().getHours();
+    const greet = hour < 12 ? words('Good morning', 'Buenos días') : hour < 18 ? words('Good afternoon', 'Buenas tardes') : words('Good evening', 'Buenas noches');
+    const tabs = WINDOWS.map(meta => {
+      const state = windowStates[meta.id];
+      const built = buildWindow(meta.id);
+      return `<button type="button" class="otto-task${state === 'minimized' ? ' is-minimized' : ''}${state === 'maximized' || state === 'fullscreen' ? ' is-active' : ''}" data-otto-action="restore-window" data-otto-panel="${meta.id}" aria-label="${esc(state === 'minimized' ? words(`Restore ${t(meta.key)}`, `Restaurar ${t(meta.key)}`) : t(meta.key))}">
+        <span class="otto-task-icon" aria-hidden="true"><i class="fas ${meta.icon}"></i></span>
+        <span class="otto-task-label">${esc(t(meta.key))}</span>
+        <span class="otto-task-count">${Number(built.count) || 0}</span>
+      </button>`;
+    }).join('');
+
+    return `<aside class="otto-taskbar" aria-label="${esc(words('Workspace', 'Espacio de trabajo'))}">
+      <div class="otto-taskbar-head">
+        <p class="otto-taskbar-greet">${esc(greet)}, <b>${esc(session.name || '')}</b></p>
+        <p class="otto-taskbar-date">${esc(fmtDate(todayISO()))}</p>
+      </div>
+      <div class="otto-task-list">${tabs}</div>
+      <div class="otto-task-utilities">
+        <button type="button" class="otto-tools-launch otto-plans-launch" data-otto-action="plans-hub"><span class="otto-task-icon"><i class="fas fa-drafting-compass"></i></span><span>${esc(words('Plans & AutoCAD', 'Planos y AutoCAD'))}</span></button>
+        <button type="button" class="otto-tools-launch" data-otto-action="tools"><span class="otto-task-icon"><i class="fas fa-toolbox"></i></span><span>${esc(t('tools'))}</span></button>
+      </div>
+    </aside>`;
   }
 
-  function goHome() {
-    activePanelId = null;
-    nav('home');
+  function primaryNavMarkup() {
+    const items = [
+      { icon: 'fa-house', label: words('Home', 'Inicio'), action: 'go-home' },
+      { icon: 'fa-users', label: words('Customers', 'Clientes'), view: 'customers' },
+      { icon: 'fa-screwdriver-wrench', label: words('Jobs', 'Trabajos'), view: 'jobs' },
+      { icon: 'fa-inbox', label: words('Inbox', 'Bandeja'), view: 'inbox' },
+      { icon: 'fa-file-signature', label: words('Estimates', 'Estimados'), view: 'estimates' },
+      { icon: 'fa-credit-card', label: words('Payments', 'Pagos'), view: 'payments' },
+      { icon: 'fa-drafting-compass', label: words('Plans & AutoCAD', 'Planos y AutoCAD'), action: 'plans-hub', featured: true, allowed: can('estimates') },
+      { icon: 'fa-user-gear', label: words('Team', 'Equipo'), view: 'team' },
+      { icon: 'fa-gear', label: words('Settings', 'Ajustes'), view: 'settings' }
+    ].filter(item => item.allowed !== false && (!item.view || can(item.view)));
+
+    return `<nav class="otto-primary-nav" aria-label="${esc(words('Main CRM sections', 'Secciones principales del CRM'))}">
+      ${items.map(item => `<button type="button" class="otto-primary-tab${item.featured ? ' is-featured' : ''}" data-otto-action="${item.action || 'nav'}"${item.view ? ` data-otto-view="${esc(item.view)}"` : ''}>
+        <i class="fas ${item.icon}" aria-hidden="true"></i><span>${esc(item.label)}</span>
+      </button>`).join('')}
+    </nav>`;
+  }
+
+  function renderWorkspace(focus, focusId) {
+    const stage = document.getElementById('otto-window-stage');
+    if (!stage) return;
+    const maximized = anyWindowState('maximized');
+    const fullscreen = anyWindowState('fullscreen');
+    stage.classList.toggle('has-maximized', maximized);
+    document.body.classList.toggle('otto-fullscreen-window', fullscreen);
+    stage.innerHTML = WINDOWS.map(windowMarkup).join('') || `<div class="otto-all-minimized">${esc(words('All three windows are minimized. Restore one from the left panel.', 'Las tres ventanas están minimizadas. Restaure una desde el panel izquierdo.'))}</div>`;
+
+    const home = document.querySelector('.otto-owner-home');
+    if (home) {
+      const oldRail = home.querySelector('.otto-taskbar');
+      if (oldRail) oldRail.outerHTML = railMarkup();
+    }
+
+    if (focus && focusId) {
+      const panel = document.getElementById(focusId);
+      if (panel) panel.focus({ preventScroll: true });
+    }
   }
 
   viewHome = function () {
     if (!session) return;
-
     if (session.role === 'field') {
-      document.body.classList.remove('admin-home', 'admin-workspace', 'otto-panel-open', 'otto-secondary');
-      activePanelId = null;
+      document.body.classList.remove('admin-home', 'admin-workspace', 'otto-secondary', 'otto-fullscreen-window');
       return legacyViewHome();
     }
 
-    applySessionWallpaper();
+    applySessionIdentity();
     document.body.classList.add('theme-app', 'admin-home', 'admin-workspace');
-
-    const main = $('#main');
+    const main = document.getElementById('main');
     if (!main) return;
-    main.innerHTML = `<div class="otto-home">${railMarkup()}<div class="otto-stage" id="otto-stage"></div></div>`;
-
+    main.innerHTML = `<div class="otto-owner-home">${railMarkup()}${primaryNavMarkup()}<main class="otto-window-stage" id="otto-window-stage" aria-label="${esc(words('Main workspace windows', 'Ventanas principales'))}"></main></div>`;
     const fab = document.getElementById('fab');
     if (fab) fab.classList.add('hidden');
-
-    renderStage(false);
+    renderWorkspace(false);
   };
 
-  /* One consistent secondary-screen control: a single labelled "Back to Home"
-     button pinned to the top-left of the sticky top bar. No bottom dock, no
-     second Home icon, nothing to guess at. */
+  function openTools() {
+    const L = lang === 'es';
+    const item = (icon, title, subtitle, view, action) => `<button type="button" class="otto-tool-item"${view ? navAttrs(view) : ` data-otto-action="${action}"`}>
+      <span class="otto-tool-icon"><i class="fas ${icon}"></i></span><span><b>${esc(title)}</b>${subtitle ? `<small>${esc(subtitle)}</small>` : ''}</span><i class="fas fa-chevron-right"></i>
+    </button>`;
+
+    modal(`<div class="otto-tools-sheet">
+      <div class="otto-tools-hero">
+        <span class="otto-tools-hero-icon"><i class="fas fa-drafting-compass"></i></span>
+        <div><h2>${L ? 'Planos y AutoCAD' : 'Plans & AutoCAD'}</h2><p>${L ? 'PDF y DXF se pueden analizar. DWG, DWF y DGN se guardan en el trabajo; solicite una exportación PDF o DXF para el análisis.' : 'PDF and DXF can be analyzed. DWG, DWF and DGN are stored with the job; request a PDF or DXF export for analysis.'}</p></div>
+        <button type="button" class="btn" data-otto-action="plans-hub">${L ? 'Abrir' : 'Open'}</button>
+      </div>
+      <div class="otto-tool-groups">
+        <section><h3>${L ? 'Trabajo' : 'Work'}</h3>
+          ${can('jobs') ? item('fa-screwdriver-wrench', t('jobs'), '', 'jobs') : ''}
+          ${can('customers') ? item('fa-users', t('customers'), '', 'customers') : ''}
+          ${can('calls') ? item('fa-phone', t('calls'), '', 'calls') : ''}
+          ${can('followups') ? item('fa-bell', t('followups'), '', 'followups') : ''}
+        </section>
+        <section><h3>${L ? 'Dinero' : 'Money'}</h3>
+          ${can('estimates') ? item('fa-file-signature', t('estimates'), '', 'estimates') : ''}
+          ${can('pricing') ? item('fa-tags', L ? 'Precios de materiales' : 'Material Pricing', L ? 'Valores predeterminados editables' : 'Editable estimate defaults', 'pricing') : ''}
+          ${can('contracts') ? item('fa-file-contract', L ? 'Contratos' : 'Contracts', '', 'contracts') : ''}
+          ${can('invoices') ? item('fa-file-invoice-dollar', t('invoices'), '', 'invoices') : ''}
+          ${can('payments') ? item('fa-credit-card', t('payments'), '', 'payments') : ''}
+          ${can('payroll') ? item('fa-money-check-dollar', t('payroll'), '', 'payroll') : ''}
+        </section>
+        <section><h3>${L ? 'Equipo' : 'Team'}</h3>
+          ${item('fa-clock', L ? 'Horas del equipo' : 'Crew Hours', L ? 'Hoy y esta semana' : 'Today and this week', '', 'crew-hours')}
+          ${can('team') ? item('fa-user-gear', t('team'), '', 'team') : ''}
+          ${can('urgent') ? item('fa-bolt', t('urgentHub'), '', 'urgent') : ''}
+        </section>
+        <section><h3>${L ? 'Negocio' : 'Business'}</h3>
+          ${can('reports') ? item('fa-chart-line', t('reports'), '', 'reports') : ''}
+          ${can('alerts') ? item('fa-triangle-exclamation', t('alerts'), '', 'alerts') : ''}
+          ${can('assistant') ? item('fa-wand-magic-sparkles', t('assistant'), '', 'assistant') : ''}
+          ${can('settings') ? item('fa-gear', t('settings'), '', 'settings') : ''}
+        </section>
+      </div>
+    </div>`);
+  }
+
+  function planDocuments() {
+    return list('documents')
+      .filter(d => d && (d.kind === 'cad' || d.kind === 'drawing' || /\.(dwg|dxf|dwf|dgn|pdf)$/i.test(d.name || '')))
+      .sort((a, b) => new Date(b.created || 0) - new Date(a.created || 0));
+  }
+
+  function openPlansHub() {
+    const L = lang === 'es';
+    const jobs = list('jobs').filter(j => j && !['completed', 'canceled'].includes(j.status));
+    const recent = planDocuments().slice(0, 6);
+    const jobRows = jobs.length ? jobs.map(job => `<div class="otto-plan-job">
+      <span><b>${esc(job.title || t('untitled'))}</b><small>${esc(customerName(job.customerId))}</small></span>
+      <button type="button" class="btn sm" data-otto-action="upload-plan" data-otto-job="${esc(job.id)}"><i class="fas fa-file-arrow-up"></i> ${L ? 'Subir plano' : 'Upload plan'}</button>
+    </div>`).join('') : `<p class="otto-empty">${esc(L ? 'Cree un trabajo primero para guardar el plano en su carpeta.' : 'Create a job first so the plan has a job folder.')}</p>`;
+    const recentRows = recent.length ? recent.map(doc => `<button type="button" class="otto-plan-recent" data-otto-action="open-plan" data-otto-doc="${esc(doc.id)}"><i class="fas fa-file-pdf"></i><span><b>${esc(doc.name || 'Plan')}</b><small>${esc(jobTitle(doc.jobId))}</small></span></button>`).join('') : `<p class="otto-empty">${esc(L ? 'Aún no hay planos cargados.' : 'No plans uploaded yet.')}</p>`;
+
+    modal(`<div class="otto-plans-hub">
+      <div class="otto-plans-head"><span class="otto-plans-icon"><i class="fas fa-drafting-compass"></i></span><div><h2>${L ? 'Planos y AutoCAD' : 'Plans & AutoCAD'}</h2><p>${L ? 'Analice PDF/DXF. Los archivos DWG/DWF/DGN se guardan, pero requieren una exportación PDF o DXF para cantidades confiables.' : 'Analyze PDF/DXF. DWG/DWF/DGN files are stored, but need a PDF or DXF export for reliable quantities.'}</p><div class="otto-format-line">PDF · DXF ${L ? '(análisis)' : '(analysis)'} · DWG · DWF · DGN ${L ? '(archivo)' : '(storage)'}</div></div></div>
+      <div class="otto-plan-primary-actions">
+        <button type="button" class="btn" data-otto-action="import-plan"><i class="fas fa-file-arrow-up"></i> ${L ? 'Importar PDF / AutoCAD' : 'Import PDF / AutoCAD'}</button>
+        <button type="button" class="btn ghost" data-otto-action="new-job"><i class="fas fa-plus"></i> ${L ? 'Crear trabajo' : 'Create job'}</button>
+      </div>
+      <h3>${L ? 'Seleccione el trabajo' : 'Choose the job'}</h3><div class="otto-plan-jobs">${jobRows}</div>
+      <h3>${L ? 'Planos recientes' : 'Recent plans'}</h3><div class="otto-plan-recent-list">${recentRows}</div>
+    </div>`);
+  }
+
+  function crewRows() {
+    return fieldWorkers().map(worker => ({ worker, time: workerTime(worker.id), pto: workerPto(worker.id) }));
+  }
+
+  function crewHoursMarkup(compact) {
+    const rows = crewRows();
+    const totalToday = rows.reduce((sum, row) => sum + row.time.today, 0);
+    const totalWeek = rows.reduce((sum, row) => sum + row.time.week, 0);
+    const active = rows.filter(row => row.time.currentJob).length;
+    const summary = `<div class="otto-hours-summary">
+      <div><span>${words('Today', 'Hoy')}</span><b>${hoursText(totalToday)}</b></div>
+      <div><span>${words('This week', 'Esta semana')}</span><b>${hoursText(totalWeek)}</b></div>
+      <div><span>${words('Clocked in', 'Trabajando')}</span><b>${active}</b></div>
+    </div>`;
+    const listRows = rows.length ? rows.map(({ worker, time, pto }) => {
+      let status = time.currentJob ? `${words('On job', 'En trabajo')} · ${time.currentJob.title || t('job')}` : words('Off clock', 'Fuera de turno');
+      if (pto) status += ` · ${pto.status === 'pending' ? words('PTO pending', 'Permiso pendiente') : words('PTO approved', 'Permiso aprobado')}`;
+      return `<button type="button" class="otto-hours-row" data-otto-action="worker-summary" data-otto-worker="${esc(worker.id)}">
+        <span class="otto-hours-person"><b>${esc(worker.name)}</b><small>${esc(status)}</small></span>
+        <span><small>${words('Today', 'Hoy')}</small><b>${hoursText(time.today)}</b></span>
+        <span><small>${words('Week', 'Semana')}</small><b>${hoursText(time.week)}</b></span>
+        <i class="fas fa-chevron-right"></i>
+      </button>`;
+    }).join('') : emptyRow(words('No field workers on the team yet.', 'Aún no hay trabajadores de campo.'));
+    return `${summary}<div class="otto-hours-list${compact ? ' is-compact' : ''}">${listRows}</div>`;
+  }
+
+  function openCrewHours() {
+    modal(`<div class="otto-crew-hours"><h2>${esc(words('Crew Hours', 'Horas del equipo'))}</h2><p class="sheet-sub">${esc(words('Actual time recorded from job check-in and check-out.', 'Tiempo real registrado al entrar y salir de cada trabajo.'))}</p>${crewHoursMarkup(true)}</div>`);
+  }
+
+  function openWorkerSummary(workerId) {
+    const worker = list('users').find(u => u.id === workerId);
+    if (!worker) return;
+    const time = workerTime(workerId);
+    const pto = workerPto(workerId);
+    const next = time.nextJob;
+    const ptoText = !pto ? words('None', 'Ninguno') : pto.status === 'pending'
+      ? `${words('Pending', 'Pendiente')} · ${pto.startDate || ''}${pto.endDate ? ` – ${pto.endDate}` : ''}`
+      : `${words('Approved', 'Aprobado')} · ${pto.startDate || ''}${pto.endDate ? ` – ${pto.endDate}` : ''}`;
+
+    modal(`<div class="otto-worker-summary">
+      <div class="otto-worker-title"><span class="avatar" style="background:var(--action)">${esc(initials(worker.name))}</span><div><h2>${esc(worker.name)}</h2><p>${esc(words('Field worker', 'Trabajador de campo'))}</p></div></div>
+      <div class="otto-worker-facts">
+        <div><span>${words('Today', 'Hoy')}</span><b>${hoursText(time.today)}</b></div>
+        <div><span>${words('This week', 'Esta semana')}</span><b>${hoursText(time.week)}</b></div>
+      </div>
+      <div class="otto-worker-detail"><span>${words('Current job', 'Trabajo actual')}</span><b>${esc(time.currentJob ? (time.currentJob.title || t('job')) : words('Off clock', 'Fuera de turno'))}</b></div>
+      <div class="otto-worker-detail"><span>${words('Next job', 'Próximo trabajo')}</span><b>${esc(next ? `${next.title || t('job')} · ${fmtDate(next.scheduledDate)}` : words('None scheduled', 'Ninguno programado'))}</b></div>
+      <div class="otto-worker-detail"><span>${words('Time off', 'Tiempo libre')}</span><b>${esc(ptoText)}</b></div>
+    </div>`);
+  }
+
+  viewKpis = function () {
+    const title = words('Crew Hours', 'Horas del equipo');
+    const sub = words('Actual recorded work time for the whole field crew.', 'Tiempo de trabajo registrado para toda la cuadrilla.');
+    const main = document.getElementById('main');
+    if (!main) return;
+    main.innerHTML = `${pageHead(title, sub)}${crewHoursMarkup(false)}`;
+  };
+
+  viewWorkerProfile = function () {
+    const worker = list('users').find(u => u.id === route.id);
+    if (!worker) return nav('kpis');
+    const time = workerTime(worker.id);
+    const pto = workerPto(worker.id);
+    const next = time.nextJob;
+    const ptoText = !pto ? words('None', 'Ninguno') : `${t(pto.status)} · ${pto.startDate || ''}${pto.endDate ? ` – ${pto.endDate}` : ''}`;
+    const main = document.getElementById('main');
+    if (!main) return;
+    main.innerHTML = `${pageHead(worker.name, words('Field worker', 'Trabajador de campo'), "nav('kpis')", '', words('Crew Hours', 'Horas del equipo'))}
+      <div class="otto-worker-page">
+        <div class="otto-worker-facts"><div><span>${words('Today', 'Hoy')}</span><b>${hoursText(time.today)}</b></div><div><span>${words('This week', 'Esta semana')}</span><b>${hoursText(time.week)}</b></div></div>
+        <div class="card otto-worker-page-card">
+          <div class="otto-worker-detail"><span>${words('Current job', 'Trabajo actual')}</span><b>${esc(time.currentJob ? (time.currentJob.title || t('job')) : words('Off clock', 'Fuera de turno'))}</b></div>
+          <div class="otto-worker-detail"><span>${words('Next job', 'Próximo trabajo')}</span><b>${esc(next ? `${next.title || t('job')} · ${fmtDate(next.scheduledDate)}` : words('None scheduled', 'Ninguno programado'))}</b></div>
+          <div class="otto-worker-detail"><span>${words('Time off', 'Tiempo libre')}</span><b>${esc(ptoText)}</b></div>
+        </div>
+      </div>`;
+  };
+
+  viewSettings = function () {
+    if (!session || session.role === 'field') return legacyViewSettings();
+    const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+    const main = document.getElementById('main');
+    if (!main) return;
+    const ownerSecurity = session.role === 'owner' ? `
+      <div class="section-title">${esc(words('Owner security', 'Seguridad del dueño'))}</div>
+      <div class="card otto-settings-card" style="padding:14px">
+        <div class="field"><label for="set-mfa">${esc(t('mfaOwner'))}</label><input id="set-mfa" type="password" inputmode="numeric" maxlength="4" placeholder="${hasPin(session, 'mfaPin') ? esc(words('Set — type to change', 'Configurado — escriba para cambiar')) : '••••'}"></div>
+        <div class="btnrow">
+          <button class="btn" type="button" onclick="saveMfa()"><i class="fas fa-shield-halved"></i> ${esc(t('save'))}</button>
+          ${hasPin(session, 'mfaPin') ? `<button class="btn ghost" type="button" onclick="clearMfa()"><i class="fas fa-xmark"></i> ${esc(words('Remove extra code', 'Quitar código extra'))}</button>` : ''}
+        </div>
+      </div>` : '';
+    main.innerHTML = `${pageHead(t('settings'), '')}
+      <div class="card otto-settings-card">
+        <div class="list-item" style="cursor:default"><div class="avatar" style="background:var(--action)">${esc(initials(session.name))}</div><div class="li-main"><div class="li-title">${esc(session.name)}</div><div class="li-sub">${esc(t(session.role))}</div></div></div>
+      </div>
+      <div class="section-title">${esc(words('Appearance', 'Apariencia'))}</div>
+      <div class="card otto-settings-card"><button class="otto-settings-row" type="button" data-otto-action="theme"><i class="fas fa-${dark ? 'sun' : 'moon'}"></i><span>${esc(dark ? words('Light mode', 'Modo claro') : words('Dark mode', 'Modo oscuro'))}</span></button></div>
+      ${can('team') ? `<div class="section-title">${esc(words('Team access', 'Acceso del equipo'))}</div><div class="card otto-settings-card"><button class="otto-settings-row" type="button"${navAttrs('team')}><i class="fas fa-user-gear"></i><span>${esc(t('team'))}</span></button></div>` : ''}
+      ${ownerSecurity}
+      <div class="section-title">${esc(words('Company email', 'Correo de la compañía'))}</div>
+      <div class="card otto-settings-card" style="padding:14px">
+        <div id="email-connection-status" role="status">${esc(words('Checking connection…', 'Comprobando la conexión…'))}</div>
+        <div class="muted" style="margin-top:8px;font-size:13px">${esc(words('Secure SendGrid delivery works with any mailbox provider. Email passwords are never stored in OTTO.', 'El envío seguro por SendGrid funciona con cualquier proveedor. OTTO nunca guarda contraseñas de correo.'))}</div>
+      </div>
+      <div class="section-title">${esc(words('Data safety', 'Seguridad de datos'))}</div>
+      <div class="card otto-settings-card">
+        <button class="otto-settings-row" type="button" data-otto-action="backup"><i class="fas fa-download"></i><span>${esc(words('Download backup', 'Descargar respaldo'))}</span></button>
+        <button class="otto-settings-row" type="button" data-otto-action="restore-backup"><i class="fas fa-upload"></i><span>${esc(words('Restore backup', 'Restaurar respaldo'))}</span></button>
+      </div>
+      <div class="btnrow"><button class="btn red block" data-otto-action="sign-out"><i class="fas fa-right-from-bracket"></i> ${esc(t('signOut'))}</button></div>`;
+    refreshIntegrationStatus();
+  };
+
   function renderSecondaryNav() {
     const bar = document.querySelector('.topbar');
     const show = isAdmin() && !onHome();
-    let btn = document.getElementById('otto-back-home');
+    let button = document.getElementById('otto-back-home');
     if (!show || !bar) {
-      if (btn) btn.remove();
+      if (button) button.remove();
       document.body.classList.remove('otto-secondary');
       return;
     }
-    if (!btn) {
-      btn = document.createElement('button');
-      btn.type = 'button';
-      btn.id = 'otto-back-home';
-      btn.className = 'otto-back-home';
-      btn.setAttribute('data-otto-action', 'go-home');
-      bar.insertBefore(btn, bar.firstChild);
+    if (!button) {
+      button = document.createElement('button');
+      button.type = 'button';
+      button.id = 'otto-back-home';
+      button.className = 'otto-back-home';
+      button.setAttribute('data-otto-action', 'go-home');
+      bar.insertBefore(button, bar.firstChild);
     }
-    btn.innerHTML = `<span class="otto-back-arrow" aria-hidden="true">←</span><span>${esc(words('Back to Home', 'Volver al inicio'))}</span>`;
+    button.innerHTML = `<span class="otto-back-arrow" aria-hidden="true">←</span><span>${esc(words('Back to Home', 'Volver al inicio'))}</span>`;
     document.body.classList.add('otto-secondary');
   }
 
   renderNav = function () {
     legacyRenderNav();
     const admin = isAdmin();
-    const minimalHome = admin && onHome();
     document.body.classList.toggle('admin-workspace', admin);
-    document.body.classList.toggle('admin-home', minimalHome);
-    if (!minimalHome) {
-      if (!admin) activePanelId = null;
-      document.body.classList.remove('otto-panel-open');
-    }
-    const bn = document.getElementById('bottomnav');
-    if (bn) bn.classList.toggle('admin-nav-hidden', admin);
+    document.body.classList.toggle('admin-home', admin && onHome());
+    const bottom = document.getElementById('bottomnav');
+    if (bottom) bottom.classList.toggle('admin-nav-hidden', admin);
+    if (!onHome()) document.body.classList.remove('otto-fullscreen-window');
     renderSecondaryNav();
   };
 
   startApp = function (...args) {
     document.body.classList.add('theme-app');
-    applySessionWallpaper();
+    applySessionIdentity();
     return legacyStartApp.apply(this, args);
-  };
-
-  /* Tools used to open a modal of its own. It is a rail panel now; keep the
-     name working so anything that still calls it lands in the right place. */
-  expandTools = function () {
-    activePanelId = 'panel-tools';
-    if (!onHome()) nav('home');
-    else renderStage(false);
   };
 
   viewInbox = function () {
@@ -511,11 +662,16 @@
     if (!main) return;
     const strip = document.createElement('section');
     strip.className = 'attention-strip';
-    strip.innerHTML = `<div class="attention-strip-title"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i><span>${esc(words('Needs attention', 'Requiere atención'))}</span><span class="pill">${attention.length}</span></div>
-      ${attention.slice(0, 8).map(item => `<button type="button" class="attention-item"${navAttrs(can(item.view) ? item.view : null)}><i class="fas ${item.icon}" aria-hidden="true"></i><span>${esc(item.text)}</span><small>${esc(item.meta)}</small></button>`).join('')}`;
+    strip.innerHTML = `<div class="attention-strip-title"><i class="fas fa-triangle-exclamation"></i><span>${esc(words('Needs attention', 'Requiere atención'))}</span><span class="pill">${attention.length}</span></div>
+      ${attention.slice(0, 8).map(item => rowMarkup(item.icon, item.text, item.meta, can(item.view) ? item.view : '')).join('')}`;
     const head = main.querySelector('.pagehead');
     if (head) head.insertAdjacentElement('afterend', strip);
     else main.prepend(strip);
+  };
+
+  expandTools = function () {
+    if (!onHome()) nav('home');
+    setTimeout(openTools, 0);
   };
 
   openPlumbBotModal = function () {
@@ -523,9 +679,9 @@
   };
 
   sendPlumbBotMsg = function () {
-    const inp = document.getElementById('plumbbot-input');
-    const text = (inp && inp.value || '').trim();
-    if (inp) inp.value = '';
+    const input = document.getElementById('plumbbot-input');
+    const text = (input && input.value || '').trim();
+    if (input) input.value = '';
     closePlumbBotModal();
     nav('assistant');
     if (!text) return;
@@ -537,40 +693,94 @@
     }, 0);
   };
 
-  /* One delegated listener for the whole home and its secondary-screen control.
-     Bound to the document once, so re-rendering #main can never leave a dead
-     control behind. */
-  document.addEventListener('click', function (e) {
-    const el = e.target && e.target.closest && e.target.closest('[data-otto-action]');
-    if (!el) return;
-    const action = el.getAttribute('data-otto-action');
-    if (action === 'open-panel') {
-      e.preventDefault();
-      openPanel(el.getAttribute('data-otto-panel'), true);
-    } else if (action === 'close-panel') {
-      e.preventDefault();
-      closePanel();
+  document.addEventListener('click', function (event) {
+    const target = event.target && event.target.closest && event.target.closest('[data-otto-action]');
+    if (!target) return;
+    const action = target.getAttribute('data-otto-action');
+
+    if (action === 'window-state') {
+      event.preventDefault();
+      setWindowState(target.getAttribute('data-otto-panel'), target.getAttribute('data-otto-state'), true);
+    } else if (action === 'restore-window') {
+      event.preventDefault();
+      const id = target.getAttribute('data-otto-panel');
+      if (!WINDOW_IDS.includes(id)) return;
+      if (windowStates[id] === 'minimized') {
+        setWindowState(id, 'normal', true);
+      } else if ((anyWindowState('maximized') || anyWindowState('fullscreen')) && windowStates[id] === 'normal') {
+        setWindowState(id, 'maximized', true);
+      } else {
+        const panel = document.getElementById(id);
+        if (panel) panel.focus({ preventScroll: true });
+      }
+    } else if (action === 'tools') {
+      event.preventDefault();
+      openTools();
+    } else if (action === 'plans-hub') {
+      event.preventDefault();
+      closeModal();
+      openPlansHub();
+    } else if (action === 'upload-plan') {
+      event.preventDefault();
+      const jobId = target.getAttribute('data-otto-job');
+      closeModal();
+      if (jobId) uploadDoc(jobId, 'cad');
+    } else if (action === 'import-plan') {
+      event.preventDefault();
+      closeModal();
+      if (window.ottoUnifiedIntake && typeof window.ottoUnifiedIntake.openPlan === 'function') window.ottoUnifiedIntake.openPlan();
+      else if (window.ottoUnifiedIntake && typeof window.ottoUnifiedIntake.open === 'function') window.ottoUnifiedIntake.open();
+    } else if (action === 'new-job') {
+      event.preventDefault();
+      closeModal();
+      if (typeof window.openJobForm === 'function') window.openJobForm();
+    } else if (action === 'open-plan') {
+      event.preventDefault();
+      const docId = target.getAttribute('data-otto-doc');
+      closeModal();
+      if (docId) openDoc(docId);
+    } else if (action === 'crew-hours') {
+      event.preventDefault();
+      closeModal();
+      openCrewHours();
+    } else if (action === 'worker-summary') {
+      event.preventDefault();
+      openWorkerSummary(target.getAttribute('data-otto-worker'));
     } else if (action === 'go-home') {
-      e.preventDefault();
-      goHome();
+      event.preventDefault();
+      nav('home');
     } else if (action === 'nav') {
-      e.preventDefault();
-      const view = el.getAttribute('data-otto-view');
-      if (!view) return;
-      nav(view, el.getAttribute('data-otto-id') || null);
+      event.preventDefault();
+      closeModal();
+      const view = target.getAttribute('data-otto-view');
+      if (view) nav(view, target.getAttribute('data-otto-id') || null);
+    } else if (action === 'theme') {
+      event.preventDefault();
+      toggleTheme();
+    } else if (action === 'backup') {
+      event.preventDefault();
+      exportAll();
+    } else if (action === 'restore-backup') {
+      event.preventDefault();
+      importAll();
+    } else if (action === 'sign-out') {
+      event.preventDefault();
+      signOut();
     }
   });
 
+  window.setWindowState = setWindowState;
   window.expandTools = expandTools;
+  window.openPlansHub = openPlansHub;
+  window.openCrewHours = openCrewHours;
+  window.openWorkerSummary = openWorkerSummary;
   window.openPlumbBotModal = openPlumbBotModal;
   window.sendPlumbBotMsg = sendPlumbBotMsg;
 
-  // The inline boot starts before this enhancement file loads. Re-apply the
-  // visual layer once it has had a chance to restore an existing session.
   setTimeout(() => {
     if (!session) return;
     document.body.classList.add('theme-app');
-    applySessionWallpaper();
+    applySessionIdentity();
     // The first-access policy gate owns the screen until the field worker has
     // read, signed and acknowledged it. Re-rendering Home here used to replace
     // the gate's contents while leaving its blocking shell active.

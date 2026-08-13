@@ -170,8 +170,8 @@ console.log('\noffline-first — the icons and fonts must survive losing signal'
   // the font files it points at were cached and left unusable.
   check('the API-host rule no longer swallows fonts.googleapis.com',
     /includes\(\s*['"]googleapis\.com['"]\s*\)/.test(sw), false);
-  check('the Gmail API host is still excluded from caching',
-    sw.includes('gmail.googleapis.com'), true);
+  check('retired Gmail hosts are absent from the worker',
+    !sw.includes('gmail.googleapis.com') && !sw.includes('accounts.google.com') && !sw.includes('apis.google.com'), true);
 
   // Cause 2: a cross-origin <link>/<script> without crossorigin is fetched in
   // no-cors mode and comes back opaque with status 0, so the service worker's
@@ -456,8 +456,8 @@ console.log('\nthe deployed build must be able to say which commit it is');
   const FIELDS = ['repository', 'sourceBranch', 'commit', 'shortCommit', 'builtAt', 'serverAuth'];
   check('the stamper writes every marker field',
     FIELDS.filter((f) => !stamper.includes(f)), []);
-  check('the marker records that the server gate is shut',
-    stamper.includes('fail-closed'), true);
+  check('the marker records provider-backed server authentication',
+    stamper.includes('supabase-provider'), true);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

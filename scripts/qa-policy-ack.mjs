@@ -4,6 +4,7 @@ import path from 'node:path';
 
 const BASE = process.env.QA_URL || 'http://127.0.0.1:8000';
 const OUT = process.env.QA_POLICY_DIR || path.join(process.cwd(), 'outputs', 'policy-ack');
+const QA_WORKER_ID = 'qa-policy-worker';
 fs.mkdirSync(OUT, { recursive: true });
 
 let passed = 0;
@@ -26,30 +27,20 @@ try {
   // worker record; otherwise its delayed safety save can overwrite the fixture.
   await page.waitForTimeout(1600);
 
-  await page.evaluate(async () => {
-    const request = indexedDB.open('otto-crm', 3);
-    const database = await new Promise((resolve, reject) => {
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-    const tx = database.transaction('kv', 'readwrite');
-    const store = tx.objectStore('kv');
-    const raw = await new Promise((resolve, reject) => {
-      const get = store.get('db');
-      get.onsuccess = () => resolve(get.result);
-      get.onerror = () => reject(get.error);
-    });
-    const db = JSON.parse(raw);
-    const worker = db.users.find(u => u.id === 'field-1');
+  await page.evaluate(async workerId => {
+    let worker = db.users.find(u => u.id === workerId);
+    if (!worker) {
+      worker = { id: workerId, name: 'QA Policy Worker', role: 'field', lang: 'en', active: true, created: nowISO() };
+      db.users.push(worker);
+    }
     worker.gpsAcknowledged = true;
     delete worker.policyAcknowledgment;
     db.consent_records = (db.consent_records || []).filter(c => c.userId !== worker.id);
-    store.put(JSON.stringify(db), 'db');
-    await new Promise((resolve, reject) => { tx.oncomplete = resolve; tx.onerror = () => reject(tx.error); });
-    localStorage.setItem('otto_session', worker.id);
-  });
-  await page.reload({ waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(700);
+    session = worker;
+    await idbPut('kv', 'db', JSON.stringify(db));
+    startApp();
+  }, QA_WORKER_ID);
+  await page.waitForTimeout(300);
   if (await page.locator('.policy-gate').count() === 0) {
     const diagnostic = await page.evaluate(async () => ({
       sessionId: localStorage.getItem('otto_session'),
@@ -87,42 +78,39 @@ try {
 
   await page.locator('#policy-acknowledge').click();
   await page.waitForFunction(() => !document.querySelector('#app')?.classList.contains('policy-gate-active'));
-  const stored = await page.evaluate(async () => {
+  const stored = await page.evaluate(async workerId => {
     const request = indexedDB.open('otto-crm', 3);
     const database = await new Promise((resolve, reject) => { request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); });
     const tx = database.transaction('kv', 'readonly');
     const raw = await new Promise((resolve, reject) => { const get = tx.objectStore('kv').get('db'); get.onsuccess = () => resolve(get.result); get.onerror = () => reject(get.error); });
     const db = JSON.parse(raw);
-    const record = db.consent_records.find(c => c.userId === 'field-1' && c.type === 'employee_code_of_conduct');
-    const worker = db.users.find(u => u.id === 'field-1');
+    const record = db.consent_records.find(c => c.userId === workerId && c.type === 'employee_code_of_conduct');
+    const worker = db.users.find(u => u.id === workerId);
     return { record, profile: worker.policyAcknowledgment };
-  });
+  }, QA_WORKER_ID);
   check('record is saved as acknowledged', stored.record?.status === 'acknowledged');
   check('record includes an ISO timestamp', !Number.isNaN(Date.parse(stored.record?.acknowledgedAt)));
   check('record includes the drawn signature', stored.record?.signatureDataUrl?.startsWith('data:image/png;base64,'));
   check('employee profile links to the record', stored.profile?.recordId === stored.record?.id && stored.profile?.status === 'acknowledged');
 
-  await page.reload({ waitUntil: 'domcontentloaded' });
-  await page.waitForTimeout(500);
+  await page.evaluate(workerId => {
+    session = db.users.find(u => u.id === workerId);
+    startApp();
+  }, QA_WORKER_ID);
+  await page.waitForTimeout(200);
   check('the same policy does not appear on later access', await page.locator('.policy-gate').count() === 0);
 
   // The feature is phone-first, but the same URL may be opened on a tablet or
   // desktop during setup. Verify the reading column stays bounded there too.
-  await page.evaluate(async () => {
-    const request = indexedDB.open('otto-crm', 3);
-    const database = await new Promise((resolve, reject) => { request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error); });
-    const tx = database.transaction('kv', 'readwrite');
-    const store = tx.objectStore('kv');
-    const raw = await new Promise((resolve, reject) => { const get = store.get('db'); get.onsuccess = () => resolve(get.result); get.onerror = () => reject(get.error); });
-    const db = JSON.parse(raw);
-    db.consent_records = db.consent_records.filter(c => !(c.userId === 'field-1' && c.type === 'employee_code_of_conduct'));
-    const worker = db.users.find(u => u.id === 'field-1');
+  await page.evaluate(async workerId => {
+    db.consent_records = db.consent_records.filter(c => !(c.userId === workerId && c.type === 'employee_code_of_conduct'));
+    const worker = db.users.find(u => u.id === workerId);
     delete worker.policyAcknowledgment;
-    store.put(JSON.stringify(db), 'db');
-    await new Promise((resolve, reject) => { tx.oncomplete = resolve; tx.onerror = () => reject(tx.error); });
-  });
+    session = worker;
+    await idbPut('kv', 'db', JSON.stringify(db));
+  }, QA_WORKER_ID);
   await page.setViewportSize({ width: 1280, height: 900 });
-  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.evaluate(() => startApp());
   await page.waitForSelector('.policy-gate');
   const desktop = await page.evaluate(() => ({
     docWidth: document.querySelector('.policy-document').getBoundingClientRect().width,

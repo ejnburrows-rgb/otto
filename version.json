@@ -1,8 +1,9 @@
 {
   "project": "OTTO Plumbing CRM",
   "repository": "ejnburrows-rgb/otto",
-  "sourceBranch": "main",
-  "baselineCommit": "118ce8df7c201e3b39d3b504634ec7230a72cc96",
-  "securityContainmentCommit": "d7492d15cd5c336156f87413eb6c3f2f5974dba0",
-  "generatedAt": "2026-07-29T21:56:00Z"
+  "sourceBranch": "fix/production-email-and-core-defects",
+  "commit": "bbc7af6d2b46353252d246a1b8d0aa4b3e223770",
+  "shortCommit": "bbc7af6",
+  "builtAt": "2026-08-12T11:31:31.421Z",
+  "serverAuth": "supabase-provider"
 }

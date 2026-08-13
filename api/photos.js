@@ -17,21 +17,25 @@
 //                                  → { ok: true, path: '<storage path>' }
 //   DELETE /api/photos?fileId=<id>  → { ok: true }
 
-import { hasServerAuth, denyUnauthenticated } from './_lib/serverAuth.js';
+import { requireServerAuth } from './_lib/serverAuth.js';
+import { STORAGE_BUCKET as BUCKET, MAX_FILE_BYTES, safeUpload, uploadStorageObject } from './_lib/storage.js';
 
-const BUCKET = 'job-photos';
 
-// Fail-closed gate first: no real server-side sign-in exists yet, so every
-// request is refused before it can reach Supabase Storage. See
-// api/_lib/serverAuth.js.
+// Provider-backed identity and job access are verified before Supabase Storage
+// is reached. See api/_lib/serverAuth.js.
 export default async function handler(req, res) {
-  if (!hasServerAuth(req)) { denyUnauthenticated(res); return; }
-  return photosHandler(req, res);
+  const identity = await requireServerAuth(req, res);
+  if (!identity) return;
+  const allowed = await authorizePhotoRequest(req, identity);
+  if (!allowed) {
+    res.status(403).json({ error: 'forbidden', message: 'This photo is not connected to an assigned job.' });
+    return;
+  }
+  return photosHandler(req, res, identity);
 }
 
-// The real relay logic, kept separate so it stays fully covered by tests even
-// while the gate above refuses every live request.
-export async function photosHandler(req, res) {
+// The relay logic remains separate so storage behavior stays fully testable.
+export async function photosHandler(req, res, identity = { role: 'owner', userId: 'test-owner' }) {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) {
@@ -100,24 +104,13 @@ export async function photosHandler(req, res) {
         return;
       }
 
-      const path = fileId;
-      const r = await fetch(
-        `${url}/storage/v1/object/${BUCKET}/${encodeURIComponent(path)}`,
-        {
-          method: 'POST',
-          headers: {
-            ...headers,
-            'Content-Type': mime,
-            'x-upsert': 'true',
-          },
-          body: fileBuffer,
-        }
-      );
-      if (!r.ok) {
-        const text = await r.text();
-        res.status(r.status).json({ error: 'upload_failed', detail: text.slice(0, 200) });
+      if (!safeUpload(fileId, mime, fileBuffer.length)) {
+        res.status(fileBuffer.length > MAX_FILE_BYTES ? 413 : 415).json({ error: 'unsafe_upload', message: 'Files must be an allowed type and no larger than 25 MB.' });
         return;
       }
+
+      const path = fileId;
+      await uploadStorageObject({ url, key, fileId: path, mime, buffer: fileBuffer });
       res.status(200).json({ ok: true, path });
       return;
     }
@@ -147,8 +140,50 @@ export async function photosHandler(req, res) {
 
     res.status(405).json({ error: 'method_not_allowed' });
   } catch (e) {
+    if (e && e.code === 'upload_failed') {
+      res.status(e.status || 502).json({ error: 'upload_failed', detail: String(e.message || '').slice(0, 300) });
+      return;
+    }
+    if (e && e.code === 'unsafe_upload') {
+      res.status(413).json({ error: 'unsafe_upload', detail: String(e.message || '').slice(0, 300) });
+      return;
+    }
     res.status(500).json({ error: 'proxy_error', detail: String(e && e.message || e).slice(0, 300) });
   }
+}
+
+async function authorizePhotoRequest(req, identity) {
+  if (identity.role === 'owner' || identity.role === 'office') return true;
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) return false;
+  let body = req.body;
+  if (typeof body === 'string') {
+    try { body = JSON.parse(body); } catch (_) { body = {}; }
+  }
+  const fileId = (req.query && req.query.fileId) || (body && body.fileId);
+  let jobId = body && body.jobId;
+  const headers = { apikey: key, Authorization: `Bearer ${key}` };
+
+  if (!jobId && fileId) {
+    for (const collection of ['photos', 'documents']) {
+      const response = await fetch(`${url}/rest/v1/${collection}?select=data`, { headers });
+      if (!response.ok) continue;
+      const rows = await response.json();
+      const found = rows.map((row) => row.data).find((record) => record &&
+        (record.fileId === fileId || (record.attachments || []).some((item) => item.fileId === fileId)));
+      if (found) { jobId = found.jobId || found.associatedJobId; break; }
+    }
+  }
+  if (!jobId) return false;
+  const jobsResponse = await fetch(`${url}/rest/v1/jobs?id=eq.${encodeURIComponent(jobId)}&select=data`, { headers });
+  if (!jobsResponse.ok) return false;
+  const rows = await jobsResponse.json();
+  const job = rows[0] && rows[0].data;
+  const assigned = [job && job.assignedTo, job && job.workerId, job && job.employeeId]
+    .concat((job && job.assignedWorkerIds) || [], (job && job.assignedToIds) || [])
+    .filter(Boolean);
+  return assigned.includes(identity.userId);
 }
 
 // Vercel usually parses JSON bodies for us, but not always — fall back to

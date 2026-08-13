@@ -1,11 +1,11 @@
 # OTTO QA Report
 
-**Run:** 2026-08-13T10:04:40.797Z
+**Run:** 2026-08-13T10:09:16.251Z
 **Overall:** PASS (with notes below)
 
 ## Button wiring
-- Functions in app: 401
-- Buttons checked: 124
+- Functions in app: 427
+- Buttons checked: 128
 - Broken buttons: NONE
 - New features not on window export list: NONE (browser still OK)
 
@@ -24,20 +24,20 @@
 - Production has urgent hub: true
 - Production has photo customer: true
 - Production dark default: true
-- QuickBooks removed from local build: true
+- QuickBooks removed from local build: false
 - Notify API responds: 401
 
 ## JSON
 ```json
 {
-  "ts": "2026-08-13T10:04:40.797Z",
-  "functions": 401,
-  "onclickCalls": 124,
+  "ts": "2026-08-13T10:09:16.251Z",
+  "functions": 427,
+  "onclickCalls": 128,
   "missingHandlers": [],
   "notOnWindowExport": [],
   "missingSpanishKeys": [],
   "missingSpanishCount": 0,
-  "collections": 42,
+  "collections": 41,
   "hasEmployeeMessages": true,
   "urls": {
     "prod": {
@@ -65,7 +65,7 @@
   "prodHasPhoto": true,
   "prodDarkDefault": true,
   "apiNotify": 401,
-  "quickBooksRemovedFromBuild": true,
+  "quickBooksRemovedFromBuild": false,
   "pass": true
 }
 ```

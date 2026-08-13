@@ -24,10 +24,13 @@ function check(name, actual, expected) {
 
 // Pull the real ROLE_VIEWS table and can() out of index.html rather than
 // restating them here — a copy would just drift.
+const adminStart = html.indexOf('const FULL_ADMIN_VIEWS = [');
+if (adminStart < 0) throw new Error('FULL_ADMIN_VIEWS not found in index.html');
+const adminEnd = html.indexOf(';', adminStart) + 1;
 const start = html.indexOf('const ROLE_VIEWS = {');
 if (start < 0) throw new Error('ROLE_VIEWS not found in index.html');
 const end = html.indexOf('};', start) + 2;
-const table = html.slice(start, end);
+const table = html.slice(adminStart, adminEnd) + '\n' + html.slice(start, end);
 
 const { ROLE_VIEWS, can } = new Function(`
   ${table}
@@ -37,11 +40,21 @@ const { ROLE_VIEWS, can } = new Function(`
   return { ROLE_VIEWS, can: (role, view) => { setSession({ role }); return can(view); } };
 `)();
 
-console.log('\nstaff admin — who can create accounts and set sign-in codes');
+console.log('\nstaff admin — only owners can change cloud identities or roles');
 check('an owner reaches Team', can('owner', 'team'), true);
-check('the office manager reaches Team', can('office', 'team'), true);
-check('the IT account reaches Team (it is an office role)', can('office', 'team'), true);
+check('the office manager cannot reach Team', can('office', 'team'), false);
+check('office cannot change user roles', can('office', 'team'), false);
 check('field crew do NOT reach Team', can('field', 'team'), false);
+check('Sarays is seeded as a full owner administrator', html.includes("id: 'ops-1', name: 'Sarays', role: 'owner'"), true);
+check('the IT administrator is protected from deletion', html.includes("'it-admin-ejn'") && html.includes("Only field workers can be deleted."), true);
+check('the Team delete action is limited to field workers', html.includes("u.role === 'field' && !protectedAdmin") && html.includes('deleteFieldWorker'), true);
+
+console.log('\nfull administrators — the entire CRM');
+for (const view of ['customers', 'jobs', 'inbox', 'emails', 'estimates', 'pricing', 'contracts', 'invoices', 'payments', 'checks', 'payroll', 'map', 'reports', 'backups', 'audit', 'team', 'settings']) {
+  check(`owner reaches ${view}`, can('owner', view), true);
+}
+check('Team explains complete business and file access', html.includes('Complete CRM access') && html.includes('documents, photos and settings'), true);
+check('document deletion removes both record and uploaded file', html.includes('deletePhotoFile(documentRecord.fileId)') && html.includes("remove('documents', id)"), true);
 
 console.log('\nthe money screens');
 for (const view of ['invoices', 'payments', 'estimates', 'checks', 'payroll']) {

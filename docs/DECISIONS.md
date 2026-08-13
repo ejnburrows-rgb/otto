@@ -1,152 +1,84 @@
 # DECISIONS — OTTO Plumbing CRM
 
-A dated log of technical choices and why they were made. Plain language. Add a
-new line here whenever a real decision is made — see the DOCUMENTATION DUTY
-section of [../AGENTS.md](../AGENTS.md).
+A concise dated log of decisions that still govern the product. Historical implementation detail remains in Git history; superseded choices are not kept here as if they were still active.
 
-- **2026-07-28** — Photo upload timing: queued, not immediate. Photos are stored
-  locally in IndexedDB the moment they are taken (instant offline display). A
-  persistent upload queue in IndexedDB (`photo_upload_queue` object store) retries
-  every 30 seconds and on every `online` event. The queue survives the app being
-  closed mid-upload. The plumber is never blocked or shown a spinner.
+## 2026-08-11 — premium UI refinement
 
-- **2026-07-28** — Photo resize before upload: longest edge capped at 1600 px,
-  JPEG quality 0.82, using the existing `downscale()` function already applied at
-  capture time. This is not silent — this decision log and the upload code
-  comments document it explicitly. A plumber who needs the original image for an
-  insurance or dispute matter can retrieve it from their device before the browser
-  cache is cleared, because the original blob remains in local IDB until the
-  upload succeeds.
+- **Refine the current workspace; do not redesign it again.** The three-window owner/office model, wallpapers, personal accents, logo and operational workflows remain the product foundation.
+- **Desktop and phone may present navigation differently.** Desktop keeps the left-side workspace rail; on phones the same primary actions move to a compact bottom dock so working content receives the full screen width instead of being squeezed beside a desktop rail.
+- **Hierarchy must be obvious and restrained.** Today receives subtle priority, secondary screens share the same typography/spacing/card/form language, and decorative motion, heavy shadows, excessive glass and unnecessary visual effects are reduced rather than expanded.
+- **Controls must be practical in the field.** Important desktop controls use at least 40px targets where appropriate; phone controls use at least 36px targets, action rows may stack for thumb use, and filters/tabs wrap instead of hiding choices offscreen.
+- **Accessibility is part of the finished UI.** Dynamic dialogs expose dialog semantics, keep keyboard focus inside while open, close predictably with Escape, and restore focus. Toasts announce status/errors, the logo is keyboard-accessible Home navigation, and window state is exposed to assistive technology.
 
-- **2026-07-28** — Photo fetch is lazy: images are downloaded only when a job is
-  opened, not on startup or during the 20-second sync poll. The signed URL is
-  fetched from `api/photos.js`; the blob is cached in IDB so the same image is
-  not re-downloaded on the next open. This keeps mobile data use in check for a
-  15-phone crew.
+## 2026-08-11 — unified file intake
 
-- **2026-07-28** — Photo storage bucket (`job-photos`) is private. The bucket
-  denies all anonymous access. The browser calls `api/photos.js` for both upload
-  and download; the Supabase service-role key never appears in `index.html` or any
-  browser-visible file. This repeats the pattern established 2026-07-21 for
-  `api/data.js` and avoids repeating the Firebase exposure that was closed the
-  same day.
+- **One Upload / Import front door is the required file-intake model.** Do not restore separate competing spreadsheet, OCR, scan, and CAD upload experiences.
+- **Spreadsheets are parsed directly.** `.xlsx`, `.xls`, and `.csv` use their structured cells; OCR is not used on real spreadsheet files.
+- **Photos and scans use bilingual browser OCR.** English + Spanish OCR runs locally in the browser and leaves extracted text visible for review before anything is saved or imported.
+- **PDF is explicitly routed because the format is ambiguous.** Ask whether it is a text/scanned document or a plan/drawing instead of guessing silently.
+- **Plans reuse the existing job drawing pipeline.** DWG, DXF, DWF, DGN and plan PDFs remain attached to the selected job and use existing document storage plus drawing analysis rather than a second file system.
+- **All employee intake is review-first and least-privilege.** Spreadsheet/OCR employee intake ends in the same editable review table; imported people are Field Worker only, PINs are never imported, and attendance is never fabricated.
+- **The old provider-key/Claude OCR path is retired as the normal user workflow.** Historical code may remain where unrelated legacy features still depend on it, but it must not appear as a competing file-intake experience or be described as the current process.
 
-- **2026-07-28** — Offline photo display is preserved exactly as before. A photo
-  just taken is stored by `storeFile()` into IndexedDB before any upload attempt.
-  `getFileURL()` returns the local blob URL instantly (fast path). The cloud fetch
-  only runs when IDB has no blob — i.e., on a different device. The plumber never
-  sees a spinner where their own photo should be.
+## 2026-08-10 — owner / office workspace
 
-- **2026-07-21** — Cloud sync updates by checking every 20 seconds rather than
-  staying permanently connected for instant updates. Instant updates require each
-  phone to hold an open connection straight to the database, which means the
-  browser must carry a database key — the exact thing whose removal closed the
-  Firebase breach. Twenty seconds is indistinguishable from instant when
-  dispatching a plumber, and it survives basements and crawlspaces where a
-  permanent connection would drop constantly. Worth revisiting once sign-in is
-  enforced on a server rather than in the browser; until then "restrict access to
-  whoever is signed in" does not mean much here.
+- **Three simultaneous primary windows are the required home model.** Today, Field Workers, and Inbox open together over the wallpaper. A prior one-panel-at-a-time redesign is superseded.
+- **Window controls stay.** Each primary window supports minimize/restore, maximize inside the workspace, and full screen. Desktop restores minimized windows from the left rail; phone uses the bottom dock defined by the 2026-08-11 refinement.
+- **Generic drag/reorder stays out.** An earlier drag implementation attached to scrollable cards and interfered with normal phone scrolling. Window controls are useful; draggable content is not.
+- **Personal accents are functional identity, not a different product.** Julio uses green accents, Saray pink accents, Otto the blue OTTO identity. Permissions and workflows stay the same.
+- **The supplied OTTO Plumbing wordmark remains the CRM logo.** The app icon is not a substitute for the approved brand mark.
 
-- **2026-07-21** — Deleting a record hides it instead of destroying it. An
-  accidental delete stays recoverable, invoice history survives for accounting,
-  and a phone that was offline when a delete happened cannot bring the record
-  back to life. Cost: the database keeps rows nobody can see any more.
+## 2026-08-10 — worker information and hours
 
-- **2026-07-21** — Conflicts are settled per whole record by "most recently
-  edited wins", not by merging individual fields. The crew almost always work on
-  different records, so the clash is rare; field-level merging would add real
-  complexity to handle something that seldom happens.
+- **Worker information is intentionally small.** The owner needs current job, next job, actual today/week hours, and time-off status. Random heatmaps, login-history presentation, vanity location counts, fake KPI formulas, and mock charts add noise and are not approved worker information.
+- **Crew hours come from job check-in/check-out records.** Do not derive hours from placeholder multipliers or random/demo chart values.
+- **The whole crew must be visible together.** Crew Hours shows total recorded time today, total recorded time this week, currently clocked-in count, and per-worker today/week totals.
 
-- **2026-07-21** — The cloud sync merge rules exist in two places on purpose:
-  `scripts/sync-merge.mjs` (where they are tested) and inside `index.html` (where
-  they run). The app is deliberately one file with no build step, so it cannot
-  import anything. `scripts/test-inpage-merge.mjs` pulls the rules back out of
-  `index.html` and runs the same tests against them, so the two copies cannot
-  quietly drift apart.
+## 2026-08-10 — Plans & AutoCAD
 
-- **2026-07-21** — Replaced the GitHub Pages deploy workflow with one that runs
-  the tests. Pages was never switched on, so that workflow had failed on every
-  push since it was written. A permanently red tick teaches everyone to ignore
-  failures, which is worse than having no check at all. The live site is on
-  Vercel and deploys itself.
+- **Plans & AutoCAD is a first-class entry point.** It is visible from the owner/office primary launcher and in Tools instead of being buried only inside Job → Documents.
+- **Reuse the existing drawing pipeline.** PDF, DWG, DXF, DWF and DGN uploads continue through the existing job document/drawing-analysis flow rather than creating a second competing file system.
+- **A drawing belongs to a job folder.** The upload hub asks for the job first so plans remain attached to the correct customer/work context.
 
-- **2026-07-21** — Migrated backend from Firebase to Supabase; old Firebase DB
-  pending shutdown. The Firebase database was publicly readable and the owner
-  could not get into its console to lock it, so the project moved to Supabase,
-  which the owner controls. All 44 stored collections were exported to local
-  backups first, before anything was changed.
+## 2026-08-10 — simplified navigation and Settings
 
-- **2026-07-21** — The browser no longer talks to the database directly. It calls
-  a small server-side function (`api/data.js`) that holds the secret key in
-  Vercel's settings, the same pattern already used for the Anthropic and NVIDIA
-  keys. The alternative — letting the browser use Supabase's public key with
-  "anonymous sign-in" turned on — was rejected because it would have repeated
-  the Firebase mistake: a key in the page source that grants database access.
-  Every table denies the public key outright instead.
+- **Tools is a launcher, not another dashboard.** Promote daily operational modules only. Secondary technical/admin screens may remain reachable where appropriate without occupying prime workspace space.
+- **Owner/office Settings is restrained.** Keep appearance, team access, owner extra-code security, data safety, and sign out. Do not expose provider keys or unfinished integration setup merely to fill the page.
+- **Field Settings keeps the existing worker actions.** Time-off and urgent-contact workflows are operational worker features and are not removed by the owner/office simplification.
 
-- **2026-07-21** — Full sweep completed; execution plan created. Every claim was
-  re-checked against `origin/main` and the live site rather than a local copy,
-  after an earlier sweep was found to have run against out-of-date code and
-  reported already-fixed problems. Remaining work was written up as numbered
-  tasks in `docs/issues/`.
+## 2026-08-10 — documentation and regression control
 
-- **2026-07-21** — Kept the existing `README.md`, `SPEC.md` and `.gitignore` from
-  `main` instead of overwriting them with an older session's versions. The
-  versions on `main` had already been corrected against the shipped code
-  (including the live URL, `otto-kohl.vercel.app`), so overwriting them would
-  have reintroduced stale claims.
+- **The repository must remember the owner’s UI contract.** `docs/REPO-CONTROL.md`, README, the user guide, paste-in brief, status, and automated home checks all describe the same three-window model so a future agent cannot silently simplify it back to one panel.
+- **Do not treat infrastructure failures as code failures.** A GitHub Actions job that never starts because of account billing, or a Vercel deployment rejected for a platform build-rate limit, is recorded as an external verification blocker. It does not become a passing test, but it also must not be misreported as an application defect.
 
-- **2026-07-20** — Adopted AGENTS.md documentation standard. One rules file
-  (`AGENTS.md`) is now the single source of truth for any AI agent working in
-  this repo; `CLAUDE.md` and `GEMINI.md` just point to it, so the rules never
-  drift apart between different AI tools.
+## Active platform / security decisions
 
-The decisions below were already made in the code before this log started;
-they are recorded here from the codebase and git history so the reasoning
-isn't lost.
+- **Offline-first data remains the primary operating mode.** IndexedDB holds the working data with a localStorage mirror; cloud access is an additional layer, not a requirement for field use.
+- **Sensitive server routes stay fail-closed until issue #70.** Local PIN unlock is not sufficient server authorization. The replacement must use provider-backed identity plus explicit role and record/job-level authorization.
+- **Do not resurrect the older PR #103 authentication attempt wholesale.** It was reviewed and closed because its scope and authorization model were stale.
+- **No live-data deletion without backup and exact approval.** Duplicate/demo reconciliation is tracked under issue #111.
+- **QuickBooks is out of scope.** OTTO keeps its native estimates, invoices, payments, checks, payroll intake, and generic exports. Intuit routes/UI/credentials are not restored without a new explicit requirement.
+- **AI/provider keys belong server-side.** Do not commit or expose paid provider credentials in browser-visible files.
 
-- Single-file app, no build step. `index.html` holds the entire application —
-  no compiling, bundling, or framework install needed. Anyone can open the
-  file directly or drop it on any web host and it works. Trade-off: the file
-  is large (about 300 KB) and everyone editing it touches the same file.
+## Photo and file decisions
 
-- IndexedDB (with a localStorage mirror) as the data store, instead of
-  requiring a server. A plumbing crew works in the field with unreliable
-  internet, so the app had to work fully offline; the data lives on the
-  device first, with cloud sync as an optional add-on rather than a
-  requirement.
+- **Job photos save locally first.** Field work must remain usable with poor signal.
+- **Failed photo uploads remain queued.** The app must never silently remove a retry entry and leave the worker believing a photo reached the office.
+- **Cloud photo access must remain private.** Browser code does not receive the Supabase service-role key.
+- **Documents and drawings remain job-context files.** Do not create a second unrelated storage workflow for the AutoCAD hub.
 
-- Progressive Web App (PWA) with a service worker, instead of a native
-  iOS/Android app. Installs to a phone's home screen like a real app, works
-  offline, and needs no app-store approval or per-device install process —
-  much simpler to roll out to a 15-person field crew.
+## Data / sync decisions
 
-- Bilingual (English/Spanish) from day one, not added later. The crew
-  includes Spanish-speaking field workers; every UI string exists in both
-  languages so no one is left out of any screen.
+- **Record conflicts use most-recently-edited whole-record resolution.** Field-level merge complexity is not justified for the current small-team workflow.
+- **Deletes are recoverable/soft at the local CRM layer.** An accidental delete should not immediately destroy business history.
+- **Cloud polling is deliberately modest rather than permanently connected.** Reliable offline field operation and safe authorization matter more than pretending every update is instant.
 
-- AI API keys (Anthropic, NVIDIA) live only in server-side Vercel functions
-  (`api/claude.js`, `api/nvidia.js`), never in the browser. This keeps paid
-  API keys from being visible to anyone who opens the browser's developer
-  tools, while still giving every worker's device AI features with nothing
-  to configure per-device.
+## Product foundations that remain active
 
-- Firebase Firestore chosen for optional multi-device cloud sync, over
-  running a full custom backend server — it's a managed, low-maintenance
-  database that fits a small team's budget and needs no server to operate.
-  (See `docs/STATUS.md` Known Issue #1 for the security follow-up this
-  choice still needs.)
+- Progressive Web App rather than native app-store builds.
+- English/Spanish parity.
+- Vercel as the application host.
+- Supabase as the current managed database/storage platform behind server-side access controls.
+- One existing CRM codebase rather than parallel replacement applications.
 
-- Vercel chosen as the production host (serverless functions + static
-  hosting in one place), with GitHub Pages kept as a secondary/static-only
-  deploy target via `.github/workflows/deploy.yml`.
-
-- "Miami Luxe" visual design system with glassmorphism (a frosted-glass
-  translucent look) adopted for the interface (commit `7b0e9ff`), replacing
-  earlier UI passes, to give the app a premium, branded feel matching a
-  Miami-based business.
-
-- The previous product — a Dream Cooling (HVAC) CRM — was kept as
-  `legacy/dream-cooling-crm.html`, explicitly for rollback reference only,
-  rather than deleted, when the business pivoted to OTTO Plumbing.
-- **2026-07-22** — Addressed a prototype pollution vulnerability in `api/inbound-email.js`'s `safeParse` function by using `Object.create(null)` and explicitly filtering out `__proto__`, `constructor`, and `prototype` keys.
+When a future decision supersedes one of these, add the new dated decision and update `docs/REPO-CONTROL.md` at the same time.

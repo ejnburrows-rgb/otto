@@ -57,6 +57,7 @@ function resetEnv() {
   delete process.env.TWILIO_AUTH;
   delete process.env.TWILIO_FROM;
   delete process.env.SENDGRID_API_KEY;
+  delete process.env.SENDGRID_FROM;
 }
 
 async function runTests() {
@@ -121,6 +122,7 @@ async function runTests() {
   // Test 8: Email success
   resetEnv();
   process.env.SENDGRID_API_KEY = 'SG123';
+  process.env.SENDGRID_FROM = 'verified@example.com';
   fetchCalls = [];
   nextFetchResponse = { ok: true, status: 202 };
   res = createRes();
@@ -146,6 +148,7 @@ async function runTests() {
   // Test 11: Stringified body (common with some webhooks or old fetch calls)
   resetEnv();
   process.env.SENDGRID_API_KEY = 'SG123';
+  process.env.SENDGRID_FROM = 'verified@example.com';
   fetchCalls = [];
   nextFetchResponse = { ok: true, status: 202 };
   res = createRes();

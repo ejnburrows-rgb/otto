@@ -1,12 +1,15 @@
 /* OTTO Plumbing CRM — service worker
    Offline-first shell cache. App data lives in IndexedDB, not here. */
-const CACHE = 'otto-crm-v10';
+const CACHE = 'otto-crm-v12';
 // landing.html and guide.html ship too. Without them here, an installed phone
 // with no signal that opened /guide.html was served the CRM instead, because the
 // navigate handler below falls back to index.html for anything it cannot fetch.
 const SHELL = [
   './', './index.html', './landing.html', './guide.html', './manifest.json', './logo.jpg',
   './otto-home.css', './otto-home.js',
+  './otto-ui-polish.css', './otto-ui-polish.js',
+  './otto-quickbooks-handoff.css', './otto-quickbooks-handoff.js',
+  './otto-client-visible-polish.css',
   './design-assets/wallpapers/julio-pablo.avif', './design-assets/wallpapers/sarays.avif'
 ];
 
@@ -113,11 +116,8 @@ self.addEventListener('fetch', (e) => {
   // offline — while the font files it points at were cached and unusable.
   const API_HOSTS = [
     'api.anthropic.com',
-    'gmail.googleapis.com',
     'www.googleapis.com',
     'oauth2.googleapis.com',
-    'accounts.google.com',
-    'apis.google.com',
   ];
   if (API_HOSTS.includes(url.hostname) ||
       url.hostname.endsWith('.intuit.com') ||

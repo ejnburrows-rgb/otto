@@ -21,7 +21,7 @@ check('a current version controls whether the gate appears',
   /const EMPLOYEE_POLICY_VERSION = \d+;/.test(html)
   && /c\.version === EMPLOYEE_POLICY_VERSION/.test(html));
 check('only field workers missing the current acknowledgment are gated',
-  /session\.role === 'field' && !hasConsent\(session\.id\)/.test(html));
+  /session\.role === 'field' && !hasEmployeePolicyAcknowledgment\(session\.id\)/.test(html));
 check('the gate uses the real local OTTO logo',
   /class="policy-brand"><img src="\.\/logo\.jpg"/.test(html));
 check('the policy content is inside its own scroll container',
@@ -44,7 +44,7 @@ check('the saved record carries status, timestamp, version, and signature',
   && /acknowledgedAt/.test(html)
   && /signatureDataUrl: canvas\.toDataURL\('image\/png'\)/.test(html));
 check('the record is durable before the gate releases',
-  /async function acceptConsent\(\)/.test(html)
+  /async function acknowledgeEmployeePolicy\(\)/.test(html)
   && /await idbPut\('kv', 'db', snapshot\)/.test(html)
   && /localStorage\.setItem\('otto_db_backup', snapshot\)/.test(html));
 check('the employee profile is linked to the acknowledgment record',

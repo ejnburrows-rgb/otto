@@ -15,12 +15,12 @@ docs/
 .cursorrules
 .mcp.json
 
-# Test and tooling source. Only the three build-time scripts below are sent to
-# Vercel; vercel.json removes them again before deployment output is published.
+# Vercel needs the Node test/tool scripts during the build so it can run the full
+# suite. The build wrapper removes the entire scripts/ directory after verification
+# and before the deployment output is published.
 scripts/*
-!scripts/apply-otto-home-patch.mjs
-!scripts/test-otto-home.mjs
-!scripts/stamp-version.mjs
+!scripts/vercel-build.mjs
+!scripts/*.mjs
 evidence/
 outputs/
 
