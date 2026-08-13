@@ -1,6 +1,6 @@
 # STATUS — OTTO Plumbing CRM
 
-Last updated: 2026-08-12.
+Last updated: 2026-08-13.
 
 This file is the current factual snapshot. Historical incident detail remains in Git history and issue/PR discussions; stale status narratives must not be used to restore superseded behavior.
 
@@ -79,6 +79,15 @@ The current authenticated preview renders the premium sign-in screen in English 
 
 ## Verified engineering evidence
 
+- The `feat/employee-policy-ack` branch adds a versioned first-access Code of
+  Conduct gate for field employees. The phone layout uses the approved OTTO
+  logo, requires the employee to reach the end, capture a finger signature,
+  check the confirmation, and tap Acknowledge. It stores the signature,
+  timestamp, policy version, acknowledgment status, and employee-profile link
+  before releasing the screen. The dedicated browser exercise passed 16/16 at
+  390x844 and 1280x900 with no JavaScript errors or horizontal overflow. This
+  branch has not been deployed; cross-device production proof still requires
+  the real authenticated multi-account workflow.
 - The merged three-window workspace has previously completed its repository regression and QA chain on Vercel with zero failures.
 - The merged unified file-intake production build completed its current regression/QA chain successfully on Vercel.
 - PR #126 preview builds have run the full current source/unit suite, including dedicated UI-polish checks, and `qa-check` after the deployment layers were applied.

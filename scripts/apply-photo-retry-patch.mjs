@@ -91,7 +91,7 @@ export function validatePhotoRetrySource(source) {
     ['pending retry records last attempt time', retryFn.includes('lastTry: nowISO()')],
     ['long-pending photo is marked visibly pending', retryFn.includes('rec.uploadPending = true')],
     ['long-pending photo warns the user once at threshold', retryFn.includes('retries === PHOTO_RETRY_WARN_AFTER') && retryFn.includes("toast(t('photoNotSentYet'), 'error')")],
-    ['successful upload is the only path that clears the retry queue entry', source.includes("if (r.ok) {\n          await idbDel('photo_upload_queue', fileId);")],
+    ['successful upload is the only path that clears the retry queue entry', /if \(r\.ok\) \{\r?\n\s+await idbDel\('photo_upload_queue', fileId\);/.test(source)],
     ['successful upload clears the visible pending marker', source.includes('if (rec && rec.uploadPending)') && source.includes('delete rec.uploadPending')],
     ['English pending-photo message exists', source.includes("photoNotSentYet: 'A photo has not reached the office yet. It is safe on this phone and will keep trying.'")],
     ['Spanish pending-photo message exists', source.includes("photoNotSentYet: 'Una foto todavía no ha llegado a la oficina. Está segura en este teléfono y seguirá intentando enviarse.'")],
