@@ -88,14 +88,40 @@ process.env.SUPABASE_SERVICE_ROLE_KEY = 'sk-test';
 // ── GET signed URL ────────────────────────────────────────────────────────────
 console.log('\nGET signed URL');
 {
+  // This is the real shape Supabase Storage returns: a path relative to
+  // `${SUPABASE_URL}/storage/v1`, not a fully-qualified URL. The previous
+  // version of this test used an already-absolute mock value, which is why
+  // the browser being handed a bare path — and every photo 404ing against the
+  // app's own origin instead of Supabase — shipped unnoticed.
   fetchCalls = [];
-  mockFetchResponse = { ok: true, status: 200, data: { signedURL: 'https://cdn.supabase.co/signed' }, text: '' };
+  mockFetchResponse = { ok: true, status: 200, data: { signedURL: '/object/sign/job-photos/f_abc123?token=xyz' }, text: '' };
   const res = createRes();
   await handler(req('GET', { fileId: 'f_abc123' }), res);
   check('GET returns 200', res.statusCode, 200);
-  check('GET returns url', res.body.url, 'https://cdn.supabase.co/signed');
+  check('GET returns an absolute URL, not the bare relative path Supabase sent',
+    res.body.url, 'https://test.supabase.co/storage/v1/object/sign/job-photos/f_abc123?token=xyz');
   check('GET calls supabase sign endpoint', fetchCalls[0].url.includes('/sign/'), true);
   check('GET path includes fileId', fetchCalls[0].url.includes('f_abc123'), true);
+}
+{
+  // A relative path missing its leading slash — seen from some Supabase
+  // client versions — must still resolve to the same origin, not the app's.
+  fetchCalls = [];
+  mockFetchResponse = { ok: true, status: 200, data: { signedURL: 'object/sign/job-photos/f_noslash?token=xyz' }, text: '' };
+  const res = createRes();
+  await handler(req('GET', { fileId: 'f_noslash' }), res);
+  check('a path missing its leading slash is still made absolute',
+    res.body.url, 'https://test.supabase.co/storage/v1/object/sign/job-photos/f_noslash?token=xyz');
+}
+{
+  // If a future Supabase version starts returning a fully-qualified URL, it
+  // must be passed through unchanged rather than double-prefixed.
+  fetchCalls = [];
+  mockFetchResponse = { ok: true, status: 200, data: { signedURL: 'https://cdn.supabase.co/already/absolute' }, text: '' };
+  const res = createRes();
+  await handler(req('GET', { fileId: 'f_abc123' }), res);
+  check('an already-absolute URL is passed through unchanged',
+    res.body.url, 'https://cdn.supabase.co/already/absolute');
 }
 {
   const res = createRes();
