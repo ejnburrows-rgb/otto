@@ -77,7 +77,7 @@
             <kbd>⌘K</kbd>
           </button>
           <button type="button" class="otto-enterprise-quick" data-otto-action="plans-hub"><i class="fas fa-drafting-compass"></i><span>${copy('Plans', 'Planos')}</span></button>
-          <button type="button" class="otto-enterprise-quick" data-otto-action="tools"><i class="fas fa-grid-2"></i><span>${copy('More', 'Más')}</span></button>
+          <button type="button" class="otto-enterprise-quick" data-otto-action="tools"><i class="fas fa-grip"></i><span>${copy('More', 'Más')}</span></button>
           <button type="button" class="otto-enterprise-primary" data-otto-action="new-job"><i class="fas fa-plus"></i><span>${copy('New job', 'Nuevo trabajo')}</span></button>
         </div>`;
       home.insertBefore(header, stage);
@@ -89,9 +89,10 @@
     });
     const summary = header.querySelector('.otto-enterprise-summary');
     if (summary) {
-      summary.textContent = spanish()
+      const nextSummary = spanish()
         ? `${counts[0]} trabajos hoy · ${counts[1]} trabajadores · ${counts[2]} pendientes`
         : `${counts[0]} jobs today · ${counts[1]} field workers · ${counts[2]} items need attention`;
+      if (summary.textContent !== nextSummary) summary.textContent = nextSummary;
     }
 
     const nav = home.querySelector('.otto-primary-nav');
@@ -131,7 +132,7 @@
       <div class="otto-enterprise-secondary-bottom">
         <button type="button" data-enterprise-open-command><i class="fas fa-magnifying-glass"></i><span>${copy('Search', 'Buscar')}</span></button>
         <button type="button" data-otto-action="plans-hub"><i class="fas fa-drafting-compass"></i><span>${copy('Plans', 'Planos')}</span></button>
-        <button type="button" data-otto-action="tools"><i class="fas fa-grid-2"></i><span>${copy('More', 'Más')}</span></button>
+        <button type="button" data-otto-action="tools"><i class="fas fa-grip"></i><span>${copy('More', 'Más')}</span></button>
       </div>`;
     document.body.appendChild(nav);
   }
@@ -174,7 +175,7 @@
     if (!q) {
       results.push(
         { icon: 'fa-drafting-compass', title: copy('Plans & AutoCAD', 'Planos y AutoCAD'), meta: copy('Tool', 'Herramienta'), action: 'plans-hub' },
-        { icon: 'fa-grid-2', title: copy('All tools', 'Todas las herramientas'), meta: copy('Tool', 'Herramienta'), action: 'tools' }
+        { icon: 'fa-grip', title: copy('All tools', 'Todas las herramientas'), meta: copy('Tool', 'Herramienta'), action: 'tools' }
       );
       return results.slice(0, 12);
     }
@@ -200,8 +201,8 @@
 
     addRecords('customers', 'customers', 'customer', 'fa-user', 'Customer', 'Cliente', ['name', 'phone', 'email', 'address']);
     addRecords('jobs', 'jobs', 'job', 'fa-screwdriver-wrench', 'Job', 'Trabajo', ['title', 'address', 'status', 'description']);
-    addRecords('estimates', 'estimates', 'estimate', 'fa-file-signature', 'Estimate', 'Estimado', ['number', 'title', 'status']);
-    addRecords('invoices', 'invoices', 'invoice', 'fa-file-invoice-dollar', 'Invoice', 'Factura', ['number', 'status', 'description']);
+    addRecords('estimates', 'estimates', '', 'fa-file-signature', 'Estimate', 'Estimado', ['number', 'title', 'status']);
+    addRecords('invoices', 'invoices', '', 'fa-file-invoice-dollar', 'Invoice', 'Factura', ['number', 'status', 'description']);
 
     return results.slice(0, 14);
   }
