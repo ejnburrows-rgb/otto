@@ -71,7 +71,7 @@ export async function photosHandler(req, res, identity = { role: 'owner', userId
       const data = await r.json();
       // Supabase returns the signed URL under different keys depending on version.
       const signedURL = data.signedURL || data.signedUrl || (data.data && data.data.signedURL);
-      res.status(200).json({ url: signedURL });
+      res.status(200).json({ url: toAbsoluteStorageUrl(url, signedURL) });
       return;
     }
 
@@ -184,6 +184,21 @@ async function authorizePhotoRequest(req, identity) {
     .concat((job && job.assignedWorkerIds) || [], (job && job.assignedToIds) || [])
     .filter(Boolean);
   return assigned.includes(identity.userId);
+}
+
+// Supabase's sign endpoint returns signedURL as a path relative to
+// `${SUPABASE_URL}/storage/v1` — e.g. "/object/sign/job-photos/f_xyz?token=…" —
+// not a fully-qualified URL. Handing that straight to the browser meant an
+// <img src> or fetch resolved it against the app's own origin instead of
+// Supabase, so every photo 404'd at
+// otto-kohl.vercel.app/object/sign/job-photos/… while the real file sat on
+// Supabase Storage the whole time. Already-absolute values (a future Supabase
+// version, or a differently-shaped test double) are returned unchanged.
+function toAbsoluteStorageUrl(supabaseUrl, signedURL) {
+  if (!signedURL) return signedURL;
+  if (/^https?:\/\//i.test(signedURL)) return signedURL;
+  const path = signedURL.startsWith('/') ? signedURL : `/${signedURL}`;
+  return `${supabaseUrl}/storage/v1${path}`;
 }
 
 // Vercel usually parses JSON bodies for us, but not always — fall back to
