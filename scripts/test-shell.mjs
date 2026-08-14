@@ -149,7 +149,29 @@ const checks = [
   ['closing it is keyed to a route change, not to every render',
     js.includes('if (view === lastRouteView) return;')],
   ['the assistant route itself still opens the panel',
-    js.includes("if (view === 'assistant') return;")]
+    js.includes("if (view === 'assistant') return;")],
+
+  // ── the command palette's "Ask OTTO: <query>" result must actually work ──
+  /* askOtto() called nav('assistant') then wrote into #chat-in and called
+     askAssistant() — the entry points of the assistant UI this shell replaced.
+     Once otto-assistant.js owned the panel, `#chat-in` no longer existed, so
+     the panel opened empty and the typed question was silently dropped; the
+     owner had to reopen Ask OTTO and retype it. Proven live: typing a question
+     and pressing Enter now carries it into #otto-assistant-input and the panel
+     shows a real result — a local search or, for an action-intent question the
+     local patterns can't resolve, a real /api/nvidia proposal. */
+  ["the command palette hands the question to the assistant's own API",
+    js.includes('window.__ottoAssistant') && js.includes('assistant.submit(text)')],
+  ['it does not target the retired chat-in element',
+    (() => {
+      const fn = /function askOtto\([\s\S]*?\n  \}/.exec(js)?.[0] || '';
+      return !fn.includes('chat-in');
+    })()],
+  ["otto-assistant.js exposes submit so the shell can reach it",
+    (() => {
+      const assistantJs = fs.readFileSync(new URL('../otto-assistant.js', import.meta.url), 'utf8');
+      return assistantJs.includes('open: openPanel, close: closePanel, search, currentContext, allowed: isAllowed, submit');
+    })()],
 ];
 
 let passed = 0;

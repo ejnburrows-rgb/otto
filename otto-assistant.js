@@ -657,7 +657,7 @@
   window.openPlumbBotModal = openPanel;
   window.toggleFloatingChat = openPanel;
   window.viewAssistant = openPanel;
-  window.__ottoAssistant = { open: openPanel, close: closePanel, search, currentContext, allowed: isAllowed };
+  window.__ottoAssistant = { open: openPanel, close: closePanel, search, currentContext, allowed: isAllowed, submit };
 
   let mountQueued = false;
   const observer = new MutationObserver(() => {

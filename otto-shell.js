@@ -609,17 +609,19 @@
     nav(item.view, item.id || null);
   }
 
-  /* Reuses the existing Ask OTTO screen and backend; this only carries the
-     typed question across so the command entry actually leads somewhere. */
+  /* Reuses the existing Ask OTTO panel and backend; this only carries the
+     typed question across so the command entry actually leads somewhere.
+     `#chat-in` / `askAssistant()` were the entry points of the assistant UI
+     this shell replaced. That UI is gone — otto-assistant.js now owns the
+     panel and exposes `open`/`submit` on `window.__ottoAssistant` — so the old
+     call found nothing, opened the panel, and silently dropped the typed
+     question. The owner had to open Ask OTTO and retype it. */
   function askOtto(text) {
-    nav('assistant');
+    const assistant = window.__ottoAssistant;
+    if (assistant && typeof assistant.open === 'function') assistant.open();
+    else nav('assistant');
     if (!text) return;
-    setTimeout(() => {
-      const input = document.getElementById('chat-in');
-      if (!input) return;
-      input.value = text;
-      if (typeof askAssistant === 'function') askAssistant();
-    }, 0);
+    if (assistant && typeof assistant.submit === 'function') assistant.submit(text);
   }
 
   function openCommand() {
