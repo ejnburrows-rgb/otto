@@ -1954,7 +1954,21 @@
   function _syncableRecords(col) {
     const all = _allRecords(col);
     if (!Array.isArray(all)) return all;
-    return all.filter(r => r && r.demo !== true);
+    const real = all.filter(r => r && r.demo !== true);
+    /* A field device's local `users` table is not just its own record: a
+       brand-new device seeds the three default owners via blankDB(), and a
+       pull only adds to that — it has no reason to ever remove them, because
+       every other role legitimately keeps the whole roster. The server
+       refuses a field account's users write outright unless every record in
+       it is their own, and rejects the whole batch on the first one that
+       is not — so bundling the seeded owner rows here did not just fail to
+       sync them, it permanently blocked the field worker's own real write
+       riding along in the same request. Only the caller's own record is
+       theirs to send; nothing else in this array ever could be. */
+    if (col === 'users' && session && session.role === 'field') {
+      return real.filter(r => r.id === session.id);
+    }
+    return real;
   }
 
   /* True when every record this device would upload is already on the server at

@@ -577,6 +577,23 @@ console.log('\nno provider key may live in the browser');
     dataApi.includes("record.role !== existing.role"), true);
   check('and may not create a user record',
     dataApi.includes('A field account cannot create user records.'), true);
+
+  // A brand-new device seeds the three default owners locally before its
+  // first pull ever completes, and a pull only adds to that — nothing ever
+  // removes them for a field session. The server refuses a field account's
+  // users write outright unless every record in it is their own, and
+  // rejects the whole batch on the first one that is not — so without this,
+  // the field worker's own real write (their location acknowledgement)
+  // never got through, permanently, because it always rode along with rows
+  // that were never theirs to send in the first place. Proven live: a fresh
+  // field account's local db.users held Otto, Julio and Sarays alongside its
+  // own row, and every push of the users collection 403'd on the first of
+  // those before its own record was ever considered.
+  const syncableFn = /function _syncableRecords\([\s\S]*?\n  \}/.exec(html)?.[0] || '';
+  check('a field device narrows its own users push to its own record',
+    /if \(col === 'users' && session && session\.role === 'field'\) \{\s*\n\s*return real\.filter\(r => r\.id === session\.id\);/.test(syncableFn), true);
+  check('every other role and collection still falls through to the full set',
+    /\n\s*return real;\s*\n\s*\}$/.test(syncableFn), true);
 }
 
 console.log(`\n${passed} passed, ${failed} failed\n`);
