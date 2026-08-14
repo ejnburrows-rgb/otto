@@ -1069,6 +1069,9 @@
 <!-- Loaded last so the owner reference shell wins over the superseded
        wallpaper/floating-window presentation instead of fighting it. -->
   <link rel="stylesheet" href="./otto-shell.css?v=1" data-otto-shell-styles />
+  <!-- The field workspace, after the owner shell for the same reason: it must
+       win over the superseded field presentation rather than compete with it. -->
+  <link rel="stylesheet" href="./otto-field.css?v=1" data-otto-field-styles />
   <link rel="stylesheet" href="./otto-assistant.css?v=1" data-otto-assistant-style />
 </head>
 
@@ -1156,8 +1159,39 @@
     });
     const result = await cloudAuth.auth.getSession();
     cloudAuthSession = result.data && result.data.session;
-    cloudAuth.auth.onAuthStateChange((_event, nextSession) => { cloudAuthSession = nextSession; });
+    cloudAuth.auth.onAuthStateChange((event, nextSession) => {
+      cloudAuthSession = nextSession;
+      /* The identity can land after boot has already given up and drawn the
+         sign-in screen — a magic link resolved late, or a refresh completed a
+         moment after a cold start. Without this the app sat on the sign-in form
+         holding a perfectly good session, and the employee's only visible
+         option was to request yet another link. */
+      if (!session && nextSession && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
+        resumeCloudSession();
+      }
+    });
     return cloudAuth;
+  }
+
+  /* Second chance at the profile lookup, used when the provider hands us an
+     identity after boot finished. Deliberately quiet on failure: boot has
+     already explained itself on screen. */
+  let _resumingCloudSession = false;
+  async function resumeCloudSession() {
+    if (_resumingCloudSession || session) return;
+    _resumingCloudSession = true;
+    try {
+      const outcome = await establishCloudSession();
+      if (outcome.status !== 'signed-in' || !session) {
+        const why = cloudSessionMessage(outcome);
+        if (why) { const el = $('#cloud-login-status'); if (el) el.textContent = why; }
+        return;
+      }
+      try { _cloudAvailable = await cloudPull(); } catch (_) { }
+      startCloudPolling();
+      startPhotoQueueDrainer();
+      startApp();
+    } finally { _resumingCloudSession = false; }
   }
 
   async function serverFetch(url, options = {}) {
@@ -2237,10 +2271,51 @@
     owner: FULL_ADMIN_VIEWS,
     // Office accounts manage operations but never user accounts or roles.
     office: ['home', 'hub', 'urgent', 'customers', 'jobs', 'calls', 'inbox', 'emails', 'estimates', 'pricing', 'contracts', 'invoices', 'payments', 'checks', 'payroll', 'alerts', 'followups', 'workflows', 'knowledge', 'map', 'reports', 'backups', 'settings', 'assistant'],
-    field: ['home', 'jobs', 'customers', 'followups', 'knowledge', 'assistant', 'settings'],
+    // Ask OTTO is deliberately absent for field. It is an owner/office tool, the
+    // server refuses the provider call for field accounts anyway (api/nvidia.js
+    // is owner/office only), and a button that can only ever fail is worse than
+    // no button. Removing it from the role is what makes it unreachable
+    // everywhere at once — navigation, command entry and a typed route alike —
+    // rather than hiding one control at a time.
+    field: ['home', 'jobs', 'customers', 'followups', 'knowledge', 'settings'],
     accounting: ['home', 'customers', 'inbox', 'emails', 'invoices', 'payments', 'checks', 'payroll', 'estimates', 'reports', 'knowledge', 'assistant', 'settings'],
   };
   function can(view) { return session && (ROLE_VIEWS[session.role] || []).includes(view); }
+
+  /* ---- one authoritative role router ----
+     Which workspace a signed-in account gets, decided in exactly one place and
+     from the role alone. Every surface that needs to know — the shells, the
+     navigation, the router, the assistant — asks this rather than testing the
+     role itself, so there is no second opinion that can send a field employee
+     into the owner presentation or back into the legacy one. It is keyed to
+     role and nothing else: no name, no email, no id. Every current and future
+     role=field account gets the field workspace automatically. */
+  function ottoWorkspace(user) {
+    const who = user || session;
+    if (!who) return null;
+    return who.role === 'field' ? 'field' : 'owner';
+  }
+  function isFieldWorkspace(user) { return ottoWorkspace(user) === 'field'; }
+
+  /* Turning a Supabase identity back into the SAME OTTO profile.
+
+     This used to answer true/false and nothing else, and every failure was
+     treated identically: back to the "send me a link" screen, with the local
+     session marker deleted and no message. So an employee whose profile lookup
+     hit a cold serverless function, a rate limit, or an access token that had
+     simply gone stale was told nothing, requested another link, and landed in
+     exactly the same place — a returning-login loop on an account that was
+     perfectly valid the whole time.
+
+     The three outcomes are genuinely different and are now reported as such:
+       'signed-in'  — the provider identity resolved to an OTTO profile;
+       'no-session' — nobody is signed in on this device (show sign-in);
+       'rejected'   — the provider verified the caller but OTTO has no active
+                      profile for them (show sign-in, say why);
+       'unavailable'— OTTO could not be reached or answered a temporary error.
+                      The Supabase session stays exactly where it is, because
+                      the identity is not the thing that failed. */
+  const SESSION_LOOKUP_ATTEMPTS = 3;
 
   async function establishCloudSession() {
     await initCloudAuth();
@@ -2248,16 +2323,65 @@
       const result = await cloudAuth.auth.getSession();
       cloudAuthSession = result.data && result.data.session;
     }
-    if (!cloudAuthSession) return false;
-    try {
-      const response = await serverFetch('/api/data?session=1');
-      if (!response.ok) return false;
-      const result = await response.json();
-      if (!result.profile || !result.profile.id) return false;
-      session = result.profile;
-      localStorage.setItem('otto_session', session.id);
-      return true;
-    } catch (_) { return false; }
+    if (!cloudAuthSession) return { status: 'no-session' };
+
+    let lastStatus = 0;
+    for (let attempt = 0; attempt < SESSION_LOOKUP_ATTEMPTS; attempt++) {
+      if (attempt) await new Promise(r => setTimeout(r, 400 * attempt));
+      let response;
+      try {
+        response = await serverFetch('/api/data?session=1');
+      } catch (_) {
+        continue;                                  // offline or dropped — retry
+      }
+      lastStatus = response.status;
+
+      if (response.ok) {
+        let result = null;
+        try { result = await response.json(); } catch (_) { result = null; }
+        if (result && result.profile && result.profile.id) {
+          session = result.profile;
+          localStorage.setItem('otto_session', session.id);
+          return { status: 'signed-in' };
+        }
+        return { status: 'rejected', code: 200 };
+      }
+
+      /* 401 can mean the access token expired between getSession() and the
+         request. Ask the provider for a fresh one and try again before
+         concluding anything about the account. */
+      if (response.status === 401 && attempt === 0 && cloudAuth) {
+        try {
+          const refreshed = await cloudAuth.auth.refreshSession();
+          const next = refreshed && refreshed.data && refreshed.data.session;
+          if (next) { cloudAuthSession = next; continue; }
+        } catch (_) { /* fall through to the verdict below */ }
+      }
+      // 401 after a refresh, or 403, is OTTO's answer about the account itself.
+      if (response.status === 401 || response.status === 403) {
+        return { status: 'rejected', code: response.status };
+      }
+      // 5xx / 503 no_server_key / anything else: temporary, keep retrying.
+    }
+    return { status: 'unavailable', code: lastStatus };
+  }
+
+  /* What to tell someone whose identity is fine but whose profile lookup is
+     not. Never silently return them to an empty sign-in form. */
+  function cloudSessionMessage(outcome) {
+    const es = lang === 'es';
+    if (!outcome) return '';
+    if (outcome.status === 'rejected') {
+      return es
+        ? 'Su correo se verificó, pero no hay una cuenta activa de OTTO para él. Pida al dueño que revise su cuenta.'
+        : 'Your email was verified, but OTTO has no active account for it. Ask the owner to check your account.';
+    }
+    if (outcome.status === 'unavailable') {
+      return es
+        ? 'Su sesión sigue activa, pero OTTO no responde en este momento. Vuelva a intentarlo en un momento.'
+        : 'You are still signed in, but OTTO is not responding right now. Try again in a moment.';
+    }
+    return '';
   }
 
   function showCloudLogin(message = '') {
@@ -2385,9 +2509,17 @@
 
   /* ---- PlumbBot assistant + draggable dashboard (top level: the inline
      onclick handlers and the window export below both need these). ---- */
+  /* This modal used to be a second, fake assistant. It never contacted a
+     server: it echoed the question back after a 500ms timer and, for anything
+     mentioning margin/estimate/price or job/crew/schedule, produced a canned
+     sentence that looked like an answer and was not derived from a single CRM
+     record. There is one real assistant path — the `assistant` screen, which
+     calls /api/nvidia through serverFetch — so this opens that instead of
+     imitating it. Kept as a function because inline handlers still call it. */
   function openPlumbBotModal() {
-    const el = document.getElementById('plumbbot-modal');
-    if (el) el.classList.remove('hidden');
+    closePlumbBotModal();
+    if (!can('assistant')) return;
+    nav('assistant');
   }
   function closePlumbBotModal() {
     const el = document.getElementById('plumbbot-modal');
@@ -2395,32 +2527,18 @@
   }
   function sendPlumbBotMsg() {
     const inp = document.getElementById('plumbbot-input');
-    const hist = document.getElementById('plumbbot-chat-history');
-    if (!inp || !hist) return;
-    const txt = inp.value.trim();
+    const txt = inp ? inp.value.trim() : '';
+    if (inp) inp.value = '';
+    closePlumbBotModal();
+    if (!can('assistant')) return;
+    nav('assistant');
     if (!txt) return;
-    inp.value = '';
-
-    const userMsg = document.createElement('div');
-    userMsg.style.cssText = 'align-self:flex-end;max-width:88%;background:var(--action);color:#fff;border-radius:14px 14px 2px 14px;padding:12px 16px;font-size:14px;box-shadow:var(--shadow-sm);';
-    userMsg.textContent = txt;
-    hist.appendChild(userMsg);
-    hist.scrollTop = hist.scrollHeight;
-
     setTimeout(() => {
-      let reply = `OTTO received "${txt}". I will use the information available in OTTO and will not invent operational status.`;
-      const lower = txt.toLowerCase();
-      if (lower.includes('margin') || lower.includes('estimate') || lower.includes('price')) {
-        reply = `For estimates, I recommend applying our +5% or +10% Quick Margin buttons to maintain optimal profit margins across jobs!`;
-      } else if (lower.includes('job') || lower.includes('crew') || lower.includes('schedule') || lower.includes('dispatch')) {
-        reply = `Open Field Workers to see the current information OTTO actually has for the crew.`;
-      }
-      const botMsg = document.createElement('div');
-      botMsg.style.cssText = 'align-self:flex-start;max-width:88%;background:var(--card-elevated);border:1px solid var(--line);border-radius:14px 14px 14px 2px;padding:12px 16px;font-size:14px;color:var(--text);box-shadow:var(--shadow-sm);';
-      botMsg.textContent = reply;
-      hist.appendChild(botMsg);
-      hist.scrollTop = hist.scrollHeight;
-    }, 500);
+      const field = $('#chat-in');
+      if (!field) return;
+      field.value = txt;
+      askAssistant();
+    }, 0);
   }
 
   /* Dragging dashboard cards around was removed on 2026-07-31.
@@ -2464,9 +2582,12 @@
     }
   }
   function nav(view, id = null, tab = null) {
-    if (view !== 'settings' && view !== 'assistant' && !can(view) && !['customer', 'job'].includes(view)) {
-      // entity detail views allowed if their list is allowed
-    }
+    /* The assistant route is the one screen a role can be denied outright, so
+       it is refused here rather than merely hidden. Hiding a button still
+       leaves nav('assistant') reachable from a stale bookmark, a cached
+       service-worker page, a restored history entry, or the console — which is
+       not "absent", it is "hard to find". */
+    if (view === 'assistant' && !can('assistant')) view = 'home';
     route = { view, id, tab }; recordRoute(); window.scrollTo(0, 0); render();
   }
   window.addEventListener('popstate', function (event) {
@@ -2485,7 +2606,7 @@
   });
 
   const NAVBAR = {
-    field: ['home', 'jobs', 'customers', 'followups', 'assistant'],
+    field: ['home', 'jobs', 'customers', 'followups'],
     default: ['home', 'jobs', 'inbox', 'more'],
   };
   function renderNav() {
@@ -2507,6 +2628,10 @@
   /* ============================ MAIN RENDER ============================ */
   function render() {
     if (!session) return;
+    /* popstate and the shells set `route` directly rather than going through
+       nav(), so the assistant refusal is enforced at the point of drawing too.
+       This is the line that makes a restored history entry harmless. */
+    if (route.view === 'assistant' && !can('assistant')) route = { view: 'home', id: null, tab: null };
     const main = $('#main');
     if (main) { main.style.transition = 'opacity .15s ease'; main.style.opacity = '0.6'; setTimeout(()=>{ main.style.opacity='1'; }, 10); }
     renderNav();
@@ -2528,7 +2653,12 @@
 
     const existingBanner = $('#open-job-banner');
     if (existingBanner) existingBanner.remove();
-    if (session.role === 'field') {
+    /* The floating red "you have an open job" strip belongs to the superseded
+       field presentation: it is appended to document.body and nudges the legacy
+       top bar down by 48px. The redesigned field workspace states the checked-in
+       job and its time on Today and on the job itself, so the strip would be a
+       duplicate floating control over the new header. */
+    if (session.role === 'field' && !document.body.classList.contains('otto-field')) {
       const openJob = db.jobs.find(j => j.assignedTo === session.id && j.activeCheckIn);
       if (openJob && (route.view !== 'job' || route.id !== openJob.id)) {
         const banner = document.createElement('div');
@@ -4056,18 +4186,49 @@
   // unavailable — offline, no server key (503), or not owner/office (401).
   // Every caller already treats null as "fall back to local records".
   // The model is chosen server-side, so no model name is sent from here.
+  /* Why the last provider call did not produce an answer. The assistant used to
+     swallow this entirely: every failure became `null`, and the screen printed
+     matching records in a chat bubble with no indication that the assistant had
+     not run. That reads as an answer. Callers that show a person an answer are
+     expected to read this and say what actually happened. */
+  let _lastAiFailure = null;
+  function aiFailureMessage() {
+    const es = lang === 'es';
+    switch (_lastAiFailure) {
+      case 'offline':
+        return es ? 'El asistente no se pudo contactar (sin conexión).' : 'The assistant could not be reached (no connection).';
+      case 'not_configured':
+        return es ? 'El asistente no está configurado en el servidor.' : 'The assistant is not configured on the server.';
+      case 'forbidden':
+        return es ? 'Esta cuenta no tiene acceso al asistente.' : 'This account does not have access to the assistant.';
+      case 'empty':
+        return es ? 'El asistente respondió sin contenido.' : 'The assistant returned an empty response.';
+      case null:
+        return '';
+      default:
+        return es ? `El asistente falló (${_lastAiFailure}).` : `The assistant failed (${_lastAiFailure}).`;
+    }
+  }
   async function callAI(body) {
     const payload = { messages: toProviderMessages(body || {}) };
     if (body && body.max_tokens) payload.max_tokens = body.max_tokens;
+    _lastAiFailure = null;
     try {
       const r = await serverFetch('/api/nvidia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      if (!r.ok) return null;
+      if (!r.ok) {
+        _lastAiFailure = r.status === 503 ? 'not_configured'
+          : (r.status === 401 || r.status === 403) ? 'forbidden'
+          : `HTTP ${r.status}`;
+        return null;
+      }
       const d = await r.json();
       const choice = d && d.choices && d.choices[0];
       const text = choice && choice.message && choice.message.content;
-      return text ? { content: [{ type: 'text', text: String(text) }] } : null;
+      if (!text) { _lastAiFailure = 'empty'; return null; }
+      return { content: [{ type: 'text', text: String(text) }] };
     } catch (e) {
-      return null; // no function or offline — the caller answers from local data
+      _lastAiFailure = 'offline'; // no function or offline
+      return null;
     }
   }
   // Former name. Kept so a service-worker-cached otto-assistant.js from before
@@ -4760,22 +4921,44 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     let d = null;
     try { d = await callAI({max_tokens: 700, system: sys, messages: [{ role: 'user', content: q }] }); } catch (e) { d = null; }
     const typingEl = $('#typing-indicator'); if (typingEl) typingEl.remove();
-    if (d && d.content) { 
-      chatHistory.push({ role: 'bot', text: d.content[0].text, ts: Date.now() }); 
-    } else { 
-      const a = localAnswer(q, ctx); 
-      chatHistory.push({ role: 'bot', text: a.text, src: a.src, ts: Date.now() }); 
+    if (d && d.content) {
+      chatHistory.push({ role: 'bot', text: d.content[0].text, ts: Date.now() });
+    } else {
+      const a = localAnswer(q, ctx);
+      chatHistory.push({ role: 'bot', text: a.text, src: a.src, error: a.error, ts: Date.now() });
     }
     viewAssistant();
   }
+  /* What to say when the provider call did not return an answer. The rule is
+     that nothing here may look like the assistant answering: the failure is
+     stated first, in the person's own language, and anything shown underneath
+     is labelled as raw matching records rather than a reply. Records are still
+     worth showing — they are real, they came out of the CRM — but the owner has
+     to be able to tell a real answer from a lookup that ran instead of one. */
   function localAnswer(q, ctx) {
-    if (ctx) return { text: (lang === 'es' ? 'Esto encontré en los registros:' : 'Here is what I found in the records:') + '\n\n' + ctx, src: lang === 'es' ? 'Datos de la empresa' : 'Company records' };
-    return { text: lang === 'es' ? 'No encontré nada sobre eso en los registros. Pregunta a la oficina o al dueño.' : "I couldn't find anything about that in the records. Please ask the office or owner.", src: '' };
+    const es = lang === 'es';
+    const why = aiFailureMessage() || (es ? 'El asistente no respondió.' : 'The assistant did not respond.');
+    if (ctx) {
+      return {
+        text: `${why}\n\n${es ? 'Registros de OTTO que coinciden con su pregunta:' : 'OTTO records matching your question:'}\n\n${ctx}`,
+        src: es ? 'Registros de la empresa (sin respuesta del asistente)' : 'Company records (no assistant answer)',
+        error: true
+      };
+    }
+    return {
+      text: `${why}\n\n${es ? 'Tampoco hay registros en OTTO que coincidan con esa pregunta.' : 'There are also no OTTO records matching that question.'}`,
+      src: '',
+      error: true
+    };
   }
 
   /* ============================ PREMIUM FLOATING AI CHAT BOX (EN/ES) ============================ */
   let floatingChatOpen = false;
   function createFloatingChat() {
+    // A floating assistant button is still an Ask OTTO entry point, and it is
+    // appended to document.body, so no amount of shell markup hides it. Refuse
+    // to build it for a role that does not have the assistant at all.
+    if (!can('assistant')) return;
     if (document.getElementById('ai-float-btn')) return;
     // Floating button - premium glass + micro interaction
     const floatBtn = document.createElement('div');
@@ -4866,6 +5049,12 @@ Rules: Never invent precise counts you cannot support from the data — instead 
   // Add floating AI button + premium chat when app boots (after login)
   function ensureFloatingAI() {
     setTimeout(() => {
+      if (!can('assistant')) {
+        // Also clear one left over from a previous owner session on this device.
+        const stale = document.getElementById('ai-float-btn'); if (stale) stale.remove();
+        const popup = document.getElementById('ai-chat-popup'); if (popup) popup.remove();
+        return;
+      }
       if (document.getElementById('app') && !document.getElementById('ai-float-btn')) {
         createFloatingChat();
         // subtle haptics on tap for mobile PWA
@@ -5912,14 +6101,18 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     backfillUpdatedStamps();
     await migratePlainPins();
     await initCloudAuth();
-    let signedIn = await establishCloudSession();
+    const cloudOutcome = await establishCloudSession();
+    let signedIn = cloudOutcome.status === 'signed-in';
     if (!signedIn) {
       const localSessionId = localStorage.getItem('otto_session');
       const localUser = localSessionId ? get('users', localSessionId) : null;
       if (localUser && hasPin(localUser, 'pin')) {
         session = localUser;
         signedIn = true;
-      } else if (localSessionId) {
+      } else if (localSessionId && cloudOutcome.status !== 'unavailable') {
+        /* Only forget the profile marker when we actually know this device is
+           signed out or refused. Deleting it because OTTO was briefly
+           unreachable threw away the one hint about who was using the phone. */
         localStorage.removeItem('otto_session');
       }
     }
@@ -5943,7 +6136,8 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     }
     if (session) startApp(); else {
       const hasLocalUsers = (db.users || []).some(u => hasPin(u, 'pin'));
-      if (hasLocalUsers) showLocalLogin(); else showLogin();
+      const why = cloudSessionMessage(cloudOutcome);
+      if (hasLocalUsers && !why) showLocalLogin(); else showCloudLogin(why);
     }
     if ('serviceWorker' in navigator) { try { navigator.serviceWorker.register('./sw.js'); } catch (e) { } }
   }
@@ -6450,6 +6644,10 @@ Return ONLY valid JSON: { "fixtures": [], "pipes": [], "fittings": [], "notes": 
 
 <script src="./otto-quickbooks-handoff.js?v=1" data-otto-quickbooks-handoff-runtime></script>
 <script src="./otto-shell.js?v=1" data-otto-shell-runtime></script>
+<!-- After the owner shell: both wrap viewHome/renderNav, and the field
+     workspace has to be the outermost wrapper so a role=field session can never
+     fall through to the owner shell or to the superseded field presentation. -->
+<script src="./otto-field.js?v=1" data-otto-field-runtime></script>
 <script data-otto-unified-intake-bridge>
 window.__ottoUnifiedIntakeBridge = {
   getDb: () => db,

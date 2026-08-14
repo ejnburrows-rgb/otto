@@ -69,9 +69,16 @@ for (const view of ['kpis', 'audit']) {
 }
 
 console.log('\nfield crew keep what they need on site');
-for (const view of ['home', 'jobs', 'customers', 'followups', 'assistant']) {
+for (const view of ['home', 'jobs', 'customers', 'followups']) {
   check(`field sees ${view}`, can('field', view), true);
 }
+
+/* Ask OTTO used to be granted to field and is now deliberately withheld, so
+   this assertion is inverted rather than deleted: the role table is the single
+   place that decision is made, and a future change that hands the assistant
+   back to the crew has to fail here first. api/nvidia.js only accepts
+   owner/office, so the button could never have produced an answer anyway. */
+check('field does not see assistant', can('field', 'assistant'), false);
 
 console.log('\nno role is empty or missing');
 for (const role of ['owner', 'office', 'field']) {

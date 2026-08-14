@@ -47,10 +47,21 @@ export async function getServerIdentity(req) {
 
   // A verified email may claim exactly one pre-authorized OTTO profile. This
   // makes invitations/magic links usable without trusting editable metadata.
+  //
+  // The email match deliberately ignores whatever auth_uid is already stored.
+  // Requiring auth_uid to be null locked an accepted employee out for good the
+  // moment their provider identity changed — a deleted-and-recreated Supabase
+  // user gets a new uid, so the uid lookup missed and the email lookup was
+  // skipped, and the only way back in was a duplicate employee record. The
+  // profile's email is server-controlled (only an owner can set it) and the
+  // provider has verified the caller owns that mailbox, so re-pointing the row
+  // at the identity that just authenticated resolves the SAME OTTO profile and
+  // role instead of minting a second one. "Exactly one match" still holds, so
+  // an ambiguous address can never claim a profile.
   if (!row) {
     const email = String(authUser.email).trim().toLowerCase();
     const matches = rows.filter((candidate) =>
-      candidate && candidate.data && candidate.auth_uid == null &&
+      candidate && candidate.data &&
       String(candidate.data.email || '').trim().toLowerCase() === email
     );
     if (matches.length === 1) {
