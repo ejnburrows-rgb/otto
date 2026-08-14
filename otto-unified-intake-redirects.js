@@ -3,6 +3,22 @@
   'use strict';
   const tx = (en, es) => { try { return window.__ottoUnifiedIntakeBridge?.getLang() === 'es' ? es : en; } catch (_) { return en; } };
 
+  function ensureEnterpriseUi() {
+    if (!document.querySelector('link[data-otto-enterprise-ui]')) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = './otto-enterprise-ui.css?v=1';
+      link.setAttribute('data-otto-enterprise-ui', 'runtime');
+      document.head.appendChild(link);
+    }
+    if (!document.querySelector('script[data-otto-enterprise-ui]')) {
+      const script = document.createElement('script');
+      script.src = './otto-enterprise-ui.js?v=1';
+      script.setAttribute('data-otto-enterprise-ui', 'runtime');
+      document.body.appendChild(script);
+    }
+  }
+
   function openForJob(jobId) {
     if (!window.ottoUnifiedIntake?.open) return;
     window.ottoUnifiedIntake.open();
@@ -45,6 +61,7 @@
     if (shortcut) { e.preventDefault(); e.stopImmediatePropagation(); openForJob(shortcut.dataset.ottoIntakeJob || ''); }
   }, true);
 
+  ensureEnterpriseUi();
   const observer = new MutationObserver(() => queueMicrotask(retireLegacyButtons));
   observer.observe(document.documentElement, { childList: true, subtree: true });
   setTimeout(retireLegacyButtons, 0);
