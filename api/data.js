@@ -188,6 +188,20 @@ async function authorizeWrite(url, headers, identity, body) {
     }
     return { ok: true };
   }
+  // A field employee may append audit entries for their own actions. Every
+  // action they take calls audit(), so refusing this rejected the whole
+  // collection on every check-in, checklist tick and note — and the browser
+  // treated that rejection as a successful upload, so the entries were lost
+  // rather than retried. They still cannot read the trail: audit_log is absent
+  // from FIELD_COLLECTIONS, so a read returns null for them.
+  if (collection === 'audit_log') {
+    const entries = (Array.isArray(body.records) ? body.records : [body.records]).filter(Boolean);
+    const foreign = entries.find((entry) => entry.by && entry.by !== identity.userId);
+    if (foreign) {
+      return { ok: false, message: 'Audit entries must be recorded under the signed-in employee.' };
+    }
+    return { ok: true };
+  }
   if (!FIELD_COLLECTIONS.has(collection) || collection === 'users' || collection === 'customers') {
     return { ok: false, message: 'Field accounts can only update their assigned work.' };
   }
