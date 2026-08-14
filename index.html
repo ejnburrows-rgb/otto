@@ -1895,6 +1895,11 @@
   let _cloudTimer = null;
   let _pollTimer = null;
   let _lastCloudState = {};
+  /* The exact payload the server refused on authorization grounds. Retrying the
+     same bytes cannot start succeeding, so it is skipped until the content
+     actually changes — that keeps a refusal from turning into a request every
+     save without ever pretending the records were stored. */
+  let _rejectedCloudState = {};
   let _cloudAvailable = false;   // true once a cloud pull has actually succeeded
   const POLL_MS = 20000;         // how often to check for other people's changes
 
@@ -1984,15 +1989,22 @@
           const value = _syncableRecords(col);
           const currentStr = JSON.stringify(value);
           if (currentStr === _lastCloudState[col]) continue;   // nothing changed
+          if (currentStr === _rejectedCloudState[col]) continue; // refused, unchanged since
           promises.push(serverFetch('/api/data', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ collection: col, records: value })
           }).then((r) => {
-            if (r && r.ok) { _lastCloudState[col] = currentStr; return; }
-            // Leave the marker unset so the next save tries this collection
-            // again instead of dropping the records silently.
+            if (r && r.ok) {
+              _lastCloudState[col] = currentStr;
+              delete _rejectedCloudState[col];
+              return;
+            }
+            // Leave the synced marker unset so these records are never counted
+            // as stored. A refusal is remembered against its exact payload so
+            // it is not resent every save; anything genuinely new is retried.
             delete _lastCloudState[col];
+            if (r && (r.status === 401 || r.status === 403)) _rejectedCloudState[col] = currentStr;
             console.warn('push rejected', col, r && r.status);
           }).catch(e => { delete _lastCloudState[col]; console.warn('push error', col, e); }));
         }

@@ -202,7 +202,28 @@ async function authorizeWrite(url, headers, identity, body) {
     }
     return { ok: true };
   }
-  if (!FIELD_COLLECTIONS.has(collection) || collection === 'users' || collection === 'customers') {
+  // A field employee owns a few settings on their own record — the location
+  // acknowledgement written when they accept or decline sharing is the one the
+  // app depends on. They may save that record and no other, and may not change
+  // what it grants: role, active and deleted must match what is already stored.
+  if (collection === 'users') {
+    const records = (Array.isArray(body.records) ? body.records : [body.records]).filter(Boolean);
+    const stored = await readRows(url, headers, 'users') || [];
+    const storedById = new Map(stored.map((user) => [user.id, user]));
+    for (const record of records) {
+      if (record.id !== identity.userId) {
+        return { ok: false, message: 'A field account can only update its own profile.' };
+      }
+      const existing = storedById.get(record.id);
+      if (!existing) return { ok: false, message: 'A field account cannot create user records.' };
+      if (record.role !== existing.role || record.deleted === true ||
+        (record.active === false && existing.active !== false)) {
+        return { ok: false, message: 'A field account cannot change its own role or access.' };
+      }
+    }
+    return { ok: true };
+  }
+  if (!FIELD_COLLECTIONS.has(collection) || collection === 'customers') {
     return { ok: false, message: 'Field accounts can only update their assigned work.' };
   }
   const records = (Array.isArray(body.records) ? body.records : [body.records]).filter(Boolean);

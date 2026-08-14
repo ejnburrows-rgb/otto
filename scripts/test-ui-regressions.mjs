@@ -543,7 +543,7 @@ console.log('\nno provider key may live in the browser');
   check('the sync marker is not stamped before the request is made',
     /_lastCloudState\[col\] = currentStr;\s*\n\s*promises\.push/.test(html), false);
   check('a confirmed response is what records the upload',
-    /if \(r && r\.ok\) \{ _lastCloudState\[col\] = currentStr; return; \}/.test(html), true);
+    /if \(r && r\.ok\) \{\s*\n\s*_lastCloudState\[col\] = currentStr;/.test(html), true);
   check('a rejected upload clears the marker so it is retried',
     (html.match(/delete _lastCloudState\[col\]/g) || []).length >= 3, true);
   check('a pull only trusts records the server actually returned',
@@ -558,6 +558,25 @@ console.log('\nno provider key may live in the browser');
     dataApi.includes("entry.by && entry.by !== identity.userId"), true);
   check('the audit trail still is not readable by a field account',
     /const FIELD_COLLECTIONS = new Set\(\[[\s\S]*?\]\);/.exec(dataApi)?.[0].includes('audit_log'), false);
+
+  // Retrying is right; retrying the identical refused payload on every save is
+  // a request storm. A refusal is remembered against the exact bytes refused.
+  check('a refused payload is not resent unchanged',
+    html.includes('if (currentStr === _rejectedCloudState[col]) continue;'), true);
+  check('only an authorization refusal is remembered that way',
+    /if \(r && \(r\.status === 401 \|\| r\.status === 403\)\) _rejectedCloudState\[col\] = currentStr;/.test(html), true);
+  check('a later success clears the refusal',
+    /_lastCloudState\[col\] = currentStr;\s*\n\s*delete _rejectedCloudState\[col\];/.test(html), true);
+
+  // The employee saves their own location acknowledgement onto their own user
+  // record. Without this the write was refused forever and the owner could
+  // never be shown where anyone checked in.
+  check('a field employee may save their own profile',
+    dataApi.includes("record.id !== identity.userId"), true);
+  check('but may not grant themselves anything',
+    dataApi.includes("record.role !== existing.role"), true);
+  check('and may not create a user record',
+    dataApi.includes('A field account cannot create user records.'), true);
 }
 
 console.log(`\n${passed} passed, ${failed} failed\n`);
