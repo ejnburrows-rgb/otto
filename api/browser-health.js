@@ -1,5 +1,4 @@
 import { chromium as playwrightChromium } from 'playwright';
-import chromium from '@sparticuz/chromium';
 
 const PROD = 'https://otto-kohl.vercel.app';
 
@@ -7,6 +6,7 @@ export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ ok: false, error: 'method_not_allowed' });
   let browser;
   try {
+    const chromium = (await import('@sparticuz/chromium')).default;
     browser = await playwrightChromium.launch({
       args: chromium.args,
       executablePath: await chromium.executablePath(),
