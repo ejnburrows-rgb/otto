@@ -104,7 +104,52 @@ const checks = [
   ['the shell adds no data, auth or storage behaviour',
     !/supabase|localStorage|indexedDB|serverFetch/i.test(code)],
   ['navigation reuses the existing router and permission checks',
-    js.includes('data-otto-action="nav"') && js.includes('function allowed(item)') && js.includes('can(item.perm)')]
+    js.includes('data-otto-action="nav"') && js.includes('function allowed(item)') && js.includes('can(item.perm)')],
+
+  // ── the design reaches every screen, not only the ones it rewrote ───────
+  /* The screens that predate the shell keep their own markup and logic; these
+     assert that their vocabulary is restyled rather than left as foreign cards
+     inside a new frame. */
+  ['legacy screen surfaces are restyled inside the shell',
+    ['#main .card', '#main .list-item', '#main .tile'].every(s => css.includes(s))],
+  ['legacy controls are restyled inside the shell',
+    ['#main .btn', '#main .iconbtn', '#main .tabs button', '#main .pill'].every(s => css.includes(s))],
+  ['legacy forms are restyled inside the shell',
+    css.includes('#main .field label') && css.includes('#main .searchbar') && css.includes('body.otto-shell .overlay select')],
+  ['legacy empty states and page heads are restyled',
+    css.includes('#main .empty') && css.includes('#main .pagehead .back') && css.includes('#main .section-title')],
+
+  // ── light / dark ────────────────────────────────────────────────────────
+  /* The theme control used to be inert while the shell was active. Dark now
+     re-tones the same shell; it must never become a second application. */
+  ['dark mode re-tones the shell tokens', css.includes('html[data-theme="dark"] body.otto-shell')],
+  ['dark mode also remaps the app tokens the legacy screens read',
+    css.includes('html[data-theme="dark"] body.otto-shell[data-theme]')],
+  ['dark mode gives the status badges their own ground rather than a light wash',
+    css.includes('html[data-theme="dark"] body.otto-shell .ot-badge.is-active')],
+  ['light remains the baseline — dark applies only on an explicit choice',
+    !css.includes('prefers-color-scheme')],
+
+  // ── responsive ──────────────────────────────────────────────────────────
+  ['dense tables restack on small screens instead of shrinking',
+    css.includes('table td[data-label]::before') && css.includes('table thead { display: none; }')],
+  ['phone breakpoints raise the tap targets',
+    css.includes('@media (max-width: 900px)') && css.includes('min-height: 44px')],
+  ['status filters wrap rather than scrolling out of sight',
+    css.includes('#main .tabs { flex-wrap: wrap; overflow-x: visible; }')],
+  ['landscape phone and large desktop are both handled',
+    css.includes('orientation: landscape') && css.includes('@media (min-width: 1600px)')],
+  ['no screen may scroll the page sideways', css.includes('#main { overflow-x: hidden; }')],
+
+  // ── Ask OTTO is a dialog, not a permanent overlay ───────────────────────
+  /* `viewAssistant` is "open the panel", so nothing ever closed it: it followed
+     the owner onto every later screen with its trigger hidden by the shell. */
+  ['the assistant panel closes when the route changes',
+    js.includes('closeAssistantOnRouteChange') && js.includes('__ottoAssistant')],
+  ['closing it is keyed to a route change, not to every render',
+    js.includes('if (view === lastRouteView) return;')],
+  ['the assistant route itself still opens the panel',
+    js.includes("if (view === 'assistant') return;")]
 ];
 
 let passed = 0;

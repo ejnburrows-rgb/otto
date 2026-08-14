@@ -676,8 +676,26 @@
       : todayScreen();
   };
 
+  /* Ask OTTO is a floating dialog, and `viewAssistant` is simply "open it", so
+     the route that opens it never closes it: it stayed on top of every screen
+     the owner moved to afterwards, at z-index 9801, with its own trigger hidden
+     by the shell and Escape the only way out. Closing it on an actual route
+     change puts it back to behaving like a dialog. It is deliberately keyed to a
+     change of route rather than to every render, so opening it from ⌘K on some
+     other screen — where the route legitimately stays put — is left alone. */
+  let lastRouteView = route && route.view;
+  function closeAssistantOnRouteChange() {
+    const view = route && route.view;
+    if (view === lastRouteView) return;
+    lastRouteView = view;
+    if (view === 'assistant') return;
+    const assistant = window.__ottoAssistant;
+    if (assistant && typeof assistant.close === 'function') assistant.close();
+  }
+
   renderNav = function (...args) {
     priorRenderNav.apply(this, args);
+    closeAssistantOnRouteChange();
     mountChrome();
   };
 

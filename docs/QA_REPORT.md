@@ -1,6 +1,6 @@
 # OTTO QA Report
 
-**Run:** 2026-08-14T15:07:54.815Z
+**Run:** 2026-08-14T15:58:27.361Z
 **Overall:** PASS (with notes below)
 
 ## Button wiring
@@ -17,7 +17,7 @@
 
 ## Live checks
 - prod: OK 200
-- local: FAIL connect ECONNREFUSED 127.0.0.1:8000
+- local: OK 200
 - guide: OK 200
 - manifest: OK 200
 - sw: OK 200
@@ -30,7 +30,7 @@
 ## JSON
 ```json
 {
-  "ts": "2026-08-14T15:07:54.815Z",
+  "ts": "2026-08-14T15:58:27.361Z",
   "functions": 437,
   "onclickCalls": 131,
   "missingHandlers": [],
@@ -45,9 +45,8 @@
       "ok": true
     },
     "local": {
-      "status": 0,
-      "ok": false,
-      "error": "connect ECONNREFUSED 127.0.0.1:8000"
+      "status": 200,
+      "ok": true
     },
     "guide": {
       "status": 200,

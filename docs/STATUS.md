@@ -31,7 +31,10 @@ This file is the current factual snapshot. Historical incident detail remains in
 - **Phone:** a bottom bar with Today, Schedule, Jobs, Customers, More. Content uses the full phone width.
 - **Home is Today:** a three-number summary, today's jobs as the dominant section, Needs attention, and Recent activity. Every number comes from `db`; no records are invented and each section has a real empty state.
 - **Superseded and removed from the shell:** wallpaper behind operational content, floating windows, and the minimize / maximize / full-screen window controls.
-- Fixed palette (`#F7F7F8` page, `#FFFFFF` surface, `#111214` sidebar, `#2563EB` accent), one typeface (Geist, falling back to Inter), thin borders, no gradients or glass. Owner/office screens are light-only while the shell is active, so the theme control in Settings has no visible effect for those roles.
+- Fixed palette (`#F7F7F8` page, `#FFFFFF` surface, `#111214` sidebar, `#2563EB` accent), one typeface (Geist, falling back to Inter), thin borders, no gradients or glass.
+- The approved design is propagated across every owner screen, not only the ones the shell rewrote. Screens that predate the shell keep their own markup and business logic; their component vocabulary (`.card`, `.list-item`, `.btn`, `.field`, `.tabs`, `.pill`, `.empty`, tables) is restyled in place, so the product reads as one application without putting working logic at risk for a presentation change.
+- Light remains the baseline. Dark is a re-tone of the same shell — same markup, same information architecture, only the surface and ink roles swap — and applies only on an explicit choice, which is persisted. The theme control in Settings previously had no visible effect for owner/office; it now works.
+- Dense tables restack into per-row blocks below 900px rather than being scaled down; status filters wrap instead of scrolling out of sight.
 - **Julio, Saray and Otto** keep their identity data; the per-person accent and wallpaper treatment does not apply inside the shell, which uses one neutral palette.
 - **No generic drag/reorder.** The previous drag implementation interfered with ordinary scrolling.
 
