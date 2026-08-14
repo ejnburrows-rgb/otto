@@ -9,6 +9,10 @@
     "api/browser-health.js": {
       "includeFiles": "node_modules/playwright-core/.local-browsers/**",
       "maxDuration": 60
+    },
+    "api/qa-inspect.js": {
+      "includeFiles": "node_modules/playwright-core/.local-browsers/**",
+      "maxDuration": 60
     }
   },
   "headers": [
