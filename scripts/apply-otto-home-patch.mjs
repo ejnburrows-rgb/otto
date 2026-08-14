@@ -9,7 +9,7 @@ const HOME_RUNTIME = new URL('../otto-home.js', import.meta.url);
    page cannot end up asking for one version of the stylesheet and another of
    the runtime. The service worker resolves same-origin hits with the query
    ignored, so a bump never costs an offline device its home screen. */
-export const HOME_ASSET_VERSION = '4';
+export const HOME_ASSET_VERSION = '5';
 
 export function patchSource(source) {
   let out = source;
@@ -88,9 +88,22 @@ export function patchSource(source) {
 }
 
 export function patchRuntime(source) {
-  return source
+  let out = source
     .split("${L ? 'QuickBooks, idioma, apariencia y equipo' : 'QuickBooks, language, appearance and team'}")
     .join("${L ? 'Idioma, apariencia y equipo' : 'Language, appearance and team'}");
+
+  /* Modal content stops click propagation before bubble-phase document handlers
+     see it. The workspace uses one delegated data-otto-action listener for all
+     navigation and modal controls, so put that single listener in capture phase.
+     This fixes Tools plus every nested modal action without duplicating handlers. */
+  const handlerEnd = "      signOut();\n    }\n  });\n\n  window.setWindowState";
+  const capturedHandlerEnd = "      signOut();\n    }\n  }, true);\n\n  window.setWindowState";
+  if (!out.includes(capturedHandlerEnd)) {
+    if (!out.includes(handlerEnd)) throw new Error('OTTO runtime is missing delegated click handler end');
+    out = out.replace(handlerEnd, capturedHandlerEnd);
+  }
+
+  return out;
 }
 
 export function validatePatchedSource(source) {
@@ -118,7 +131,12 @@ export function validatePatchedSource(source) {
 }
 
 export function validatePatchedRuntime(source) {
-  return [['QuickBooks removed from workspace runtime', !source.includes('QuickBooks')]];
+  return [
+    ['QuickBooks removed from workspace runtime', !source.includes('QuickBooks')],
+    ['all delegated OTTO actions run in capture phase', source.includes("event.target.closest && event.target.closest('[data-otto-action]')") && source.includes("      signOut();\n    }\n  }, true);\n\n  window.setWindowState")],
+    ['modal action handler still covers navigation and Plans actions', source.includes("action === 'nav'") && source.includes("action === 'plans-hub'") && source.includes("action === 'upload-plan'") && source.includes("action === 'import-plan'")],
+    ['modal action handler still covers Crew Hours and worker actions', source.includes("action === 'crew-hours'") && source.includes("action === 'worker-summary'")]
+  ];
 }
 
 function run() {

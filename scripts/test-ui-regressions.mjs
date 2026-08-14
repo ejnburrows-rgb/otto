@@ -493,5 +493,91 @@ console.log('\nseeded company profile — only confirmed facts reach a printed d
   check('website is left for the owner to fill', field('website'), '');
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+console.log('\nno provider key may live in the browser');
+{
+  // WHAT HAPPENED: Settings carried two provider key fields. The NVIDIA one
+  // saved into the local database, so the key travelled inside every export and
+  // backup. The Anthropic one saved into localStorage and was sent straight from
+  // the browser to api.anthropic.com. Each was a second path around the server
+  // proxy, which exists precisely so that no key ever reaches a device.
+  check('no NVIDIA key field in Settings', html.includes('set-nvi-key'), false);
+  check('no Anthropic key field in Settings', html.includes('set-aikey'), false);
+  check('nothing writes the retired localStorage key',
+    /setItem\('otto_ai_key'/.test(html), false);
+  // Two references remain and both belong to the purge: the guard that decides
+  // whether a device had one, and the removal itself. Nothing reads the value.
+  check('the retired key is only touched in order to delete it',
+    (html.match(/otto_ai_key/g) || []).length, 2);
+  check('a device that already stored one has it purged',
+    /localStorage\.removeItem\('otto_ai_key'\)/.test(html), true);
+  check('the browser never contacts a provider directly',
+    /api\.anthropic\.com|integrate\.api\.nvidia\.com/.test(html), false);
+  check('AI goes through the server proxy', html.includes("serverFetch('/api/nvidia'"), true);
+  // The model is chosen server-side so it can be swapped in the Vercel settings
+  // without a deploy. A model name sent from the browser silently overrides that.
+  check('no model name is hard-coded in the browser', /claude-sonnet|meta\/llama/.test(html), false);
+
+  // Nine call sites still speak the block shape and read d.content[0].text, so
+  // callAI is the only place that translates and must keep doing both halves.
+  check('image parts are converted for an OpenAI-compatible endpoint',
+    html.includes("type: 'image_url'"), true);
+  check('the reply is returned in the shape the call sites read',
+    /content: \[\{ type: 'text', text: String\(text\) \}\]/.test(html), true);
+  // An otto-assistant.js still cached from before the rename must resolve a
+  // bridge function, or an updated phone loses AI with no error anywhere.
+  check('the former bridge name still resolves', /const callClaude = callAI;/.test(html), true);
+  check('the bridge offers both names',
+    ['callAI: body => callAI(body)', 'callClaude: body => callAI(body)']
+      .every(s => readFileSync(new URL('../scripts/apply-assistant-patch.mjs', import.meta.url), 'utf8').includes(s)), true);
+}
+
+// ── a rejected upload must be retried, never recorded as sent ───────────────
+// A field employee's location consent and audit entries stayed on one phone
+// forever: the push marked the collection as synced before the server answered,
+// and an HTTP 403 resolves normally so the failure was never seen. The pull then
+// stamped the merged local state as "already uploaded", which permanently
+// excluded any record the server had not actually received.
+{
+  console.log('\nuploads may only be marked sent once the server confirms');
+  check('the sync marker is not stamped before the request is made',
+    /_lastCloudState\[col\] = currentStr;\s*\n\s*promises\.push/.test(html), false);
+  check('a confirmed response is what records the upload',
+    /if \(r && r\.ok\) \{\s*\n\s*_lastCloudState\[col\] = currentStr;/.test(html), true);
+  check('a rejected upload clears the marker so it is retried',
+    (html.match(/delete _lastCloudState\[col\]/g) || []).length >= 3, true);
+  check('a pull only trusts records the server actually returned',
+    html.includes('serverHasEveryLocalRecord(col, serverRows)'), true);
+  check('a collection the server withheld keeps its existing marker',
+    /if \(!Array\.isArray\(serverRows\) && col !== 'companyProfile'\) continue;/.test(html), true);
+
+  const dataApi = readFileSync(new URL('../api/data.js', import.meta.url), 'utf8');
+  check('a field employee may record audit entries for their own actions',
+    /if \(collection === 'audit_log'\)/.test(dataApi), true);
+  check('they may not record one under somebody else',
+    dataApi.includes("entry.by && entry.by !== identity.userId"), true);
+  check('the audit trail still is not readable by a field account',
+    /const FIELD_COLLECTIONS = new Set\(\[[\s\S]*?\]\);/.exec(dataApi)?.[0].includes('audit_log'), false);
+
+  // Retrying is right; retrying the identical refused payload on every save is
+  // a request storm. A refusal is remembered against the exact bytes refused.
+  check('a refused payload is not resent unchanged',
+    html.includes('if (currentStr === _rejectedCloudState[col]) continue;'), true);
+  check('only an authorization refusal is remembered that way',
+    /if \(r && \(r\.status === 401 \|\| r\.status === 403\)\) _rejectedCloudState\[col\] = currentStr;/.test(html), true);
+  check('a later success clears the refusal',
+    /_lastCloudState\[col\] = currentStr;\s*\n\s*delete _rejectedCloudState\[col\];/.test(html), true);
+
+  // The employee saves their own location acknowledgement onto their own user
+  // record. Without this the write was refused forever and the owner could
+  // never be shown where anyone checked in.
+  check('a field employee may save their own profile',
+    dataApi.includes("record.id !== identity.userId"), true);
+  check('but may not grant themselves anything',
+    dataApi.includes("record.role !== existing.role"), true);
+  check('and may not create a user record',
+    dataApi.includes('A field account cannot create user records.'), true);
+}
+
 console.log(`\n${passed} passed, ${failed} failed\n`);
 process.exit(failed ? 1 : 0);

@@ -1062,7 +1062,7 @@
     }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js" crossorigin="anonymous"></script>
-  <link rel="stylesheet" href="./otto-home.css?v=4" data-otto-home-styles />
+  <link rel="stylesheet" href="./otto-home.css?v=5" data-otto-home-styles />
   <link rel="stylesheet" href="./otto-ui-polish.css?v=2" data-otto-ui-polish-styles />
   <link rel="stylesheet" href="./otto-client-visible-polish.css?v=2" data-otto-client-visible-polish />
   <link rel="stylesheet" href="./otto-quickbooks-handoff.css?v=1" data-otto-quickbooks-handoff-styles />
@@ -1210,7 +1210,7 @@
       addCustomer: 'Add Customer', addJob: 'Add Job', linkCustomer: 'Customer', jobFolder: 'Job Folder',
       activity: 'Activity', overview: 'Overview', cadFile: 'CAD / AutoCAD file',
       sop: 'SOP / How-to', question: 'Question', answer: 'Answer', escalate: 'Ask the owner',
-      noKey: 'Add an AI key in Settings to use voice text, scanning, and the assistant fully.',
+      noKey: 'Scanning and written answers need a signal. Nothing to set up — try again when you are back online.',
       saved: 'Saved', deleted: 'Deleted', confirmDelete: 'Delete this? This cannot be undone.',
       checkNumber: 'Check #', memo: 'Memo', payer: 'Payer', linkInvoice: 'Link to invoice',
       addCheck: 'Add Check', addEstimate: 'Add Estimate', addInvoice: 'Add Invoice', addPayment: 'Add Payment',
@@ -1296,7 +1296,7 @@
       addCustomer: 'Agregar Cliente', addJob: 'Agregar Trabajo', linkCustomer: 'Cliente', jobFolder: 'Carpeta del Trabajo',
       activity: 'Actividad', overview: 'Resumen', cadFile: 'Archivo CAD / AutoCAD',
       sop: 'Guía / Cómo hacer', question: 'Pregunta', answer: 'Respuesta', escalate: 'Preguntar al dueño',
-      noKey: 'Agrega una clave de IA en Ajustes para usar voz a texto, escaneo y el asistente completos.',
+      noKey: 'El escaneo y las respuestas escritas necesitan señal. No hay nada que configurar; inténtelo de nuevo con conexión.',
       saved: 'Guardado', deleted: 'Eliminado', confirmDelete: '¿Eliminar esto? No se puede deshacer.',
       checkNumber: 'Cheque #', memo: 'Memo', payer: 'Pagador', linkInvoice: 'Vincular a factura',
       addCheck: 'Agregar Cheque', addEstimate: 'Agregar Presupuesto', addInvoice: 'Agregar Factura', addPayment: 'Agregar Pago',
@@ -1639,6 +1639,21 @@
         delete db.meta.gmailHistoryId;
         db.meta.emailCollectionsUnified = nowISO();
       }
+      // A retired Settings field used to store an NVIDIA key in this local
+      // database, which carried it into exports and backups. The provider is
+      // reached only through the server proxy now, so drop any saved copy.
+      if (db.meta.nvidiaKey !== undefined) {
+        delete db.meta.nvidiaKey;
+        db.meta.nvidiaKeyPurged = nowISO();
+      }
+      // The same applies to the retired personal Anthropic key, which lived in
+      // localStorage and was sent straight from the browser to the provider.
+      try {
+        if (localStorage.getItem('otto_ai_key') !== null) {
+          localStorage.removeItem('otto_ai_key');
+          db.meta.anthropicKeyPurged = nowISO();
+        }
+      } catch (e) { /* private mode — nothing stored to remove */ }
       if (!db.meta.deterministicDefaultTemplates) {
         const defaults = blankDB();
         for (const collection of ['workflows', 'sops']) {
@@ -1883,6 +1898,11 @@
   let _cloudTimer = null;
   let _pollTimer = null;
   let _lastCloudState = {};
+  /* The exact payload the server refused on authorization grounds. Retrying the
+     same bytes cannot start succeeding, so it is skipped until the content
+     actually changes — that keeps a refusal from turning into a request every
+     save without ever pretending the records were stored. */
+  let _rejectedCloudState = {};
   let _cloudAvailable = false;   // true once a cloud pull has actually succeeded
   const POLL_MS = 20000;         // how often to check for other people's changes
 
@@ -1937,6 +1957,31 @@
     return all.filter(r => r && r.demo !== true);
   }
 
+  /* True when every record this device would upload is already on the server at
+     the same revision. Identity is id + updated stamp, which is what the merge
+     itself compares, so a record edited locally counts as missing until the
+     server confirms the newer version. */
+  function serverHasEveryLocalRecord(col, serverRows) {
+    const local = _syncableRecords(col);
+    const stamp = (r) => `${r && r.id}@${(r && r.updated) || ''}`;
+    if (col === 'companyProfile') {
+      const remote = Array.isArray(serverRows) ? serverRows[0] : serverRows;
+      if (!local) return true;
+      return !!remote && stamp(local) === stamp(remote);
+    }
+    if (!Array.isArray(local)) return true;
+    if (!Array.isArray(serverRows)) return false;
+    const known = new Set(serverRows.filter(Boolean).map(stamp));
+    return local.every((r) => known.has(stamp(r)));
+  }
+
+  /* `_lastCloudState` is the answer to "what does the server already have?", so
+     it may only be written once the server has actually confirmed it. It used to
+     be stamped the moment a push was queued, and the push result was never
+     looked at beyond a network throw — an HTTP 403 or 500 resolves normally, so
+     a rejected collection was recorded as synced and then skipped by every later
+     push. That is how a field employee's location consent and audit entries
+     stayed on one phone forever: rejected once, never retried, invisible. */
   function cloudPush() {
     if (!cloudAuthSession) return;
     clearTimeout(_cloudTimer);
@@ -1947,12 +1992,24 @@
           const value = _syncableRecords(col);
           const currentStr = JSON.stringify(value);
           if (currentStr === _lastCloudState[col]) continue;   // nothing changed
-          _lastCloudState[col] = currentStr;
+          if (currentStr === _rejectedCloudState[col]) continue; // refused, unchanged since
           promises.push(serverFetch('/api/data', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ collection: col, records: value })
-          }).catch(e => console.warn('push error', col, e)));
+          }).then((r) => {
+            if (r && r.ok) {
+              _lastCloudState[col] = currentStr;
+              delete _rejectedCloudState[col];
+              return;
+            }
+            // Leave the synced marker unset so these records are never counted
+            // as stored. A refusal is remembered against its exact payload so
+            // it is not resent every save; anything genuinely new is retried.
+            delete _lastCloudState[col];
+            if (r && (r.status === 401 || r.status === 403)) _rejectedCloudState[col] = currentStr;
+            console.warn('push rejected', col, r && r.status);
+          }).catch(e => { delete _lastCloudState[col]; console.warn('push error', col, e); }));
         }
         if (promises.length) await Promise.all(promises);
       } catch (e) { console.warn('cloud push failed', e); }
@@ -2000,7 +2057,20 @@
       if (!db.companyProfile) { db.companyProfile = defaults.companyProfile; }
       await idbPut('kv', 'db', JSON.stringify(db));
 
-      for (const col of SYNCED_COLLECTIONS) _lastCloudState[col] = JSON.stringify(_syncableRecords(col));
+      /* Only the collections the server proved it already holds may be marked
+         as synced. This line used to stamp the *merged* local state, which
+         includes records the server has never seen — anything created while a
+         pull was in flight, or written offline, was instantly classified as
+         "already uploaded" and skipped by every later push. */
+      for (const col of SYNCED_COLLECTIONS) {
+        const serverRows = d[col];
+        // null means "the server would not tell us", not "the server is empty".
+        // Leave whatever we already knew rather than forcing a needless re-push.
+        if (!Array.isArray(serverRows) && col !== 'companyProfile') continue;
+        if (serverHasEveryLocalRecord(col, serverRows)) _lastCloudState[col] = JSON.stringify(_syncableRecords(col));
+        else delete _lastCloudState[col];
+      }
+      window.db = db;
       return true;
     } catch (e) { console.warn('cloud pull failed', e); }
     return false;
@@ -2174,6 +2244,10 @@
 
   async function establishCloudSession() {
     await initCloudAuth();
+    if (cloudAuth) {
+      const result = await cloudAuth.auth.getSession();
+      cloudAuthSession = result.data && result.data.session;
+    }
     if (!cloudAuthSession) return false;
     try {
       const response = await serverFetch('/api/data?session=1');
@@ -2197,8 +2271,81 @@
       <p class="muted">${es ? 'Use el correo autorizado de su cuenta. OTTO enviará un enlace seguro.' : 'Use the authorized email for your account. OTTO will send a secure sign-in link.'}</p>
       <div class="field"><label for="cloud-email">${es ? 'Correo electrónico' : 'Email'}</label><input id="cloud-email" type="email" autocomplete="email" placeholder="name@company.com"></div>
       <button class="btn block" onclick="sendCloudSignIn()"><i class="fas fa-envelope"></i> ${es ? 'Enviar enlace seguro' : 'Send secure link'}</button>
+      <div style="text-align:center;margin-top:16px">
+        <button class="btn ghost sm" onclick="showLocalSetup()" style="width:100%"><i class="fas fa-mobile-screen"></i> ${es ? 'Configurar este dispositivo' : 'Set up this device'}</button>
+      </div>
       <div id="cloud-login-status" class="muted" style="margin-top:14px" role="status">${esc(message)}</div>
       <div class="langtoggle"><button class="${lang === 'en' ? 'on' : ''}" onclick="setLang('en');showCloudLogin()">EN</button><button class="${lang === 'es' ? 'on' : ''}" onclick="setLang('es');showCloudLogin()">ES</button></div>`;
+  }
+
+  function showLocalSetup() {
+    const es = lang === 'es';
+    $('#login').innerHTML = `
+      <div style="text-align:center;margin-bottom:24px"><img src="./logo.jpg" alt="OTTO Plumbing" style="width:190px;border-radius:12px"></div>
+      <h2 style="margin-top:0">${es ? 'Configurar este dispositivo' : 'Set up this device'}</h2>
+      <p class="muted">${es ? 'Cree el primer perfil de dueño. Elija un PIN de 4 dígitos para acceder.' : 'Create the first owner profile. Choose a 4-digit PIN to sign in.'}</p>
+      <div class="field"><label for="setup-name">${es ? 'Nombre' : 'Name'}</label><input id="setup-name" type="text" placeholder="${es ? 'Su nombre' : 'Your name'}"></div>
+      <div class="field"><label for="setup-email">${es ? 'Correo electrónico' : 'Email'}</label><input id="setup-email" type="email" placeholder="name@company.com"></div>
+      <div class="field"><label for="setup-pin">${es ? 'PIN (4 dígitos)' : 'PIN (4 digits)'}</label><input id="setup-pin" type="password" inputmode="numeric" maxlength="4" pattern="\\d{4}" placeholder="••••"></div>
+      <div class="field"><label for="setup-pin2">${es ? 'Confirmar PIN' : 'Confirm PIN'}</label><input id="setup-pin2" type="password" inputmode="numeric" maxlength="4" pattern="\\d{4}" placeholder="••••"></div>
+      <button class="btn block" onclick="completeLocalSetup()"><i class="fas fa-check"></i> ${es ? 'Guardar y entrar' : 'Save and sign in'}</button>
+      <div style="text-align:center;margin-top:16px">
+        <button class="btn ghost sm" onclick="showCloudLogin()" style="width:100%"><i class="fas fa-arrow-left"></i> ${es ? 'Volver' : 'Back'}</button>
+      </div>
+      <div id="setup-status" class="muted" style="margin-top:14px" role="status"></div>`;
+  }
+
+  async function completeLocalSetup() {
+    const es = lang === 'es';
+    const name = ($('#setup-name') && $('#setup-name').value || '').trim();
+    const email = ($('#setup-email') && $('#setup-email').value || '').trim().toLowerCase();
+    const pin = ($('#setup-pin') && $('#setup-pin').value || '').trim();
+    const pin2 = ($('#setup-pin2') && $('#setup-pin2').value || '').trim();
+    const status = $('#setup-status');
+    if (!name) { if (status) status.textContent = es ? 'Escriba su nombre.' : 'Enter your name.'; return; }
+    if (!/^\S+@\S+\.\S+$/.test(email)) { if (status) status.textContent = es ? 'Escriba un correo válido.' : 'Enter a valid email.'; return; }
+    if (!/^\d{4}$/.test(pin)) { if (status) status.textContent = es ? 'El PIN debe ser de 4 dígitos.' : 'PIN must be 4 digits.'; return; }
+    if (pin !== pin2) { if (status) status.textContent = es ? 'Los PIN no coinciden.' : 'PINs do not match.'; return; }
+    if (db.users.some(u => u.email === email)) { if (status) status.textContent = es ? 'Ese correo ya está en uso.' : 'That email is already in use.'; return; }
+    const id = 'owner-' + uid();
+    const user = { id, name, role: 'owner', email, lang: 'en', active: true, created: nowISO() };
+    await setUserPin(user, pin, 'pin');
+    db.users.push(user);
+    save();
+    localStorage.setItem('otto_session', id);
+    session = user;
+    if (status) status.textContent = es ? 'Configuración guardada.' : 'Setup saved.';
+    startApp();
+  }
+
+  function showLocalLogin() {
+    const es = lang === 'es';
+    $('#login').innerHTML = `
+      <div style="text-align:center;margin-bottom:24px"><img src="./logo.jpg" alt="OTTO Plumbing" style="width:190px;border-radius:12px"></div>
+      <h2 style="margin-top:0">${es ? 'Entrar con PIN' : 'Sign in with PIN'}</h2>
+      <p class="muted">${es ? 'Escriba el PIN de 4 dígitos para este dispositivo.' : 'Enter the 4-digit PIN for this device.'}</p>
+      <div class="field"><label for="local-pin">PIN</label><input id="local-pin" type="password" inputmode="numeric" maxlength="4" pattern="\\d{4}" placeholder="••••" autofocus></div>
+      <button class="btn block" onclick="signInLocal()"><i class="fas fa-right-to-bracket"></i> ${es ? 'Entrar' : 'Sign in'}</button>
+      <div style="text-align:center;margin-top:16px">
+        <button class="btn ghost sm" onclick="showCloudLogin()" style="width:100%"><i class="fas fa-envelope"></i> ${es ? 'Correo electrónico' : 'Email link'}</button>
+      </div>
+      <div id="local-login-status" class="muted" style="margin-top:14px" role="status"></div>`;
+    setTimeout(() => { const inp = $('#local-pin'); if (inp) inp.focus(); }, 100);
+  }
+
+  async function signInLocal() {
+    const es = lang === 'es';
+    const pin = ($('#local-pin') && $('#local-pin').value || '').trim();
+    const status = $('#local-login-status');
+    if (!/^\d{4}$/.test(pin)) { if (status) status.textContent = es ? 'Escriba 4 dígitos.' : 'Enter 4 digits.'; return; }
+    const sessionId = localStorage.getItem('otto_session');
+    const user = sessionId ? get('users', sessionId) : null;
+    if (!user || !hasPin(user, 'pin')) { if (status) status.textContent = es ? 'Configure este dispositivo primero.' : 'Set up this device first.'; return; }
+    const ok = await verifyPin(user, pin, 'pin');
+    if (!ok) { recordFailedPin(user.id); if (status) status.textContent = es ? 'PIN incorrecto.' : 'Wrong PIN.'; return; }
+    clearFailedPins(user.id);
+    session = user;
+    startApp();
   }
 
   async function sendCloudSignIn() {
@@ -3601,10 +3748,7 @@
 
     html += `<div class="section-title"><i class="fas fa-wand-magic-sparkles"></i> Ask OTTO</div>
       <div class="card" style="padding:14px">
-        <div class="muted" style="margin-bottom:10px">${lang === 'es' ? 'Clave de Anthropic Claude y NVIDIA para usar el asistente y OCR.' : 'Anthropic Claude & NVIDIA keys for assistant & OCR.'}</div>
-        <div class="field"><label for="set-aikey">${lang === 'es' ? 'Clave Anthropic (opcional, este dispositivo)' : 'Anthropic API Key (optional, this device)'}</label><input id="set-aikey" type="password" value="${esc(localStorage.getItem('otto_ai_key') || '')}" placeholder="sk-ant-..."></div>
-        <div class="field"><label for="set-nvi-key">${lang === 'es' ? 'Clave NVIDIA (para estimado de planos)' : 'NVIDIA API Key (for floor plan takeoff)'}</label><input id="set-nvi-key" type="password" value="${esc(db.meta?.nvidiaKey || '')}" placeholder="nvapi-..."></div>
-        <button class="btn block" onclick="saveAIKey()"><i class="fas fa-check"></i> ${t('save')}</button>
+        <div class="muted">${lang === 'es' ? 'El asistente, los resúmenes y la lectura de fotos ya vienen configurados en el servidor. No hay ninguna clave que escribir en este dispositivo. Sin señal, OTTO sigue buscando en los registros guardados.' : 'The assistant, the summaries, and photo reading are already set up on the server. There is no key to enter on this device. With no signal, OTTO still searches your saved records.'}</div>
       </div>`;
 
     if (session.role === 'owner') {
@@ -3881,35 +4025,58 @@
     try { rec.start(); } catch (e) { }
   }
 
-  /* ============================ OCR (Claude vision) ============================ */
-  function aiKey() { return localStorage.getItem('otto_ai_key') || ''; }
-  // Calls Claude through the server proxy first (key in Vercel env, nothing in
-  // the browser). Falls back to a personal key from Settings, then to nothing.
-  // Returns the parsed Anthropic message object, or null if AI is unavailable.
-  async function callClaude(body) {
-    // 1) Server-side proxy — preferred. 503 = no server key configured.
-    try {
-      const r = await serverFetch('/api/claude', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-      if (r.ok) { const d = await r.json(); if (d && d.content) return d; }
-    } catch (e) { /* no function / offline — fall through */ }
-    // 2) Personal key entered in Settings (direct browser call).
-    const key = aiKey();
-    if (key) {
-      try {
-        const r = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-          body: JSON.stringify(body)
-        });
-        if (r.ok) { const d = await r.json(); if (d && d.content) return d; }
-      } catch (e) { /* fall through */ }
+  /* ======================= AI (NVIDIA, through the server) ======================= */
+  // Every AI feature goes through /api/nvidia. The key lives in the Vercel
+  // project settings and never reaches the browser, so there is nothing for
+  // anyone to paste, export, or leak, and nothing to set up on a phone.
+  //
+  // Call sites speak a block shape — { system, max_tokens, messages: [{ role,
+  // content }] } where content is a string or an array of text/image parts — and
+  // read the answer back as d.content[0].text. NVIDIA's endpoint is
+  // OpenAI-compatible, so both translations happen here instead of in the nine
+  // places that ask for an answer.
+  function toProviderMessages(body) {
+    const out = [];
+    if (body.system) out.push({ role: 'system', content: String(body.system) });
+    for (const m of (body.messages || [])) {
+      if (typeof m.content === 'string') { out.push({ role: m.role, content: m.content }); continue; }
+      const parts = [];
+      for (const p of (m.content || [])) {
+        if (!p) continue;
+        if (p.type === 'text') parts.push({ type: 'text', text: p.text || '' });
+        else if (p.type === 'image' && p.source && p.source.data) {
+          parts.push({ type: 'image_url', image_url: { url: `data:${p.source.media_type || 'image/jpeg'};base64,${p.source.data}` } });
+        }
+      }
+      out.push({ role: m.role, content: parts });
     }
-    return null;
+    return out;
   }
+  // Returns { content: [{ type:'text', text }] }, or null when AI is
+  // unavailable — offline, no server key (503), or not owner/office (401).
+  // Every caller already treats null as "fall back to local records".
+  // The model is chosen server-side, so no model name is sent from here.
+  async function callAI(body) {
+    const payload = { messages: toProviderMessages(body || {}) };
+    if (body && body.max_tokens) payload.max_tokens = body.max_tokens;
+    try {
+      const r = await serverFetch('/api/nvidia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      if (!r.ok) return null;
+      const d = await r.json();
+      const choice = d && d.choices && d.choices[0];
+      const text = choice && choice.message && choice.message.content;
+      return text ? { content: [{ type: 'text', text: String(text) }] } : null;
+    } catch (e) {
+      return null; // no function or offline — the caller answers from local data
+    }
+  }
+  // Former name. Kept so a service-worker-cached otto-assistant.js from before
+  // this change still resolves its bridge call instead of silently losing AI.
+  const callClaude = callAI;
   async function aiVision(dataUrl, prompt) {
     const mt = dataUrl.startsWith('data:image/png') ? 'image/png' : 'image/jpeg';
     const b64 = dataUrl.split(',')[1];
-    const d = await callClaude({ model: 'claude-sonnet-4-6', max_tokens: 1024, messages: [{ role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: mt, data: b64 } }, { type: 'text', text: prompt }] }] });
+    const d = await callAI({max_tokens: 1024, messages: [{ role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: mt, data: b64 } }, { type: 'text', text: prompt }] }] });
     if (!d) { toast(t('noKey'), 'error'); return null; }
     try { const txt = d.content[0].text; const m = txt.match(/\{[\s\S]*\}/); return m ? JSON.parse(m[0]) : null; }
     catch (e) { return null; }
@@ -4204,7 +4371,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
   // language. Uses the Claude proxy; returns null if AI is unavailable.
   async function aiSummarize(text, kind) {
     const langName = lang === 'es' ? 'Spanish' : 'English';
-    const d = await callClaude({ model: 'claude-sonnet-4-6', max_tokens: 400,
+    const d = await callAI({max_tokens: 400,
       system: `You summarize a ${kind} for a busy plumbing company owner in 2-3 short, plain sentences. Call out any money, dates, or action needed. Reply in ${langName}.`,
       messages: [{ role: 'user', content: (text || '').slice(0, 6000) }] });
     return d && d.content ? d.content[0].text.trim() : null;
@@ -4591,7 +4758,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     }
     const sys = `You are OTTO, the in-house assistant for a plumbing company. Answer briefly and practically in ${lang === 'es' ? 'Spanish' : 'English'} using ONLY the company data below. If the answer isn't in the data and isn't general plumbing how-to, say the office/owner should be asked. Data:\n\n${ctx || '(no matching records)'}`;
     let d = null;
-    try { d = await callClaude({ model: 'claude-sonnet-4-6', max_tokens: 700, system: sys, messages: [{ role: 'user', content: q }] }); } catch (e) { d = null; }
+    try { d = await callAI({max_tokens: 700, system: sys, messages: [{ role: 'user', content: q }] }); } catch (e) { d = null; }
     const typingEl = $('#typing-indicator'); if (typingEl) typingEl.remove();
     if (d && d.content) { 
       chatHistory.push({ role: 'bot', text: d.content[0].text, ts: Date.now() }); 
@@ -4603,7 +4770,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
   }
   function localAnswer(q, ctx) {
     if (ctx) return { text: (lang === 'es' ? 'Esto encontré en los registros:' : 'Here is what I found in the records:') + '\n\n' + ctx, src: lang === 'es' ? 'Datos de la empresa' : 'Company records' };
-    return { text: lang === 'es' ? 'No encontré nada sobre eso. Pregunta a la oficina o al dueño. (Agrega una clave de IA en Ajustes para respuestas más inteligentes.)' : "I couldn't find anything about that. Please ask the office or owner. (Add an AI key in Settings for smarter answers.)", src: '' };
+    return { text: lang === 'es' ? 'No encontré nada sobre eso en los registros. Pregunta a la oficina o al dueño.' : "I couldn't find anything about that in the records. Please ask the office or owner.", src: '' };
   }
 
   /* ============================ PREMIUM FLOATING AI CHAT BOX (EN/ES) ============================ */
@@ -4684,7 +4851,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     }
     const ctx = buildContext(q);
     const sys = `You are OTTO, the in-house assistant for a plumbing company. Answer briefly and practically in ${lang === 'es' ? 'Spanish' : 'English'} using ONLY the company data below. If the answer isn't in the data and isn't general plumbing how-to, say the office/owner should be asked. Data:\n\n${ctx || '(no matching records)'}`;
-    callClaude({ model: 'claude-sonnet-4-6', max_tokens: 650, system: sys, messages: [{ role: 'user', content: q }] }).then(d => {
+    callAI({max_tokens: 650, system: sys, messages: [{ role: 'user', content: q }] }).then(d => {
       const tdiv = log ? log.querySelector('.bubble.bot:last-child') : null; if (tdiv) tdiv.remove();
       if (d && d.content) chatHistory.push({ role: 'bot', text: d.content[0].text, ts: Date.now() });
       else { const a = localAnswer(q, ctx); chatHistory.push({ role: 'bot', text: a.text, src: a.src, ts: Date.now() }); }
@@ -5470,7 +5637,7 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     const sys = `You are the project assistant for THIS specific plumbing job, answering as the owner would, using ONLY this job's data. Reply in ${langName}, briefly. Return STRICT JSON only: {"answer":"...","confident":true|false,"clarify":""}. Answer from the job data first. If you cannot answer confidently from it, set "confident" false and put ONE short clarifying question in "clarify". Never invent specifics.
 JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     let parsed = null;
-    const d = await callClaude({ model: 'claude-sonnet-4-6', max_tokens: 500, system: sys, messages: [{ role: 'user', content: q }] });
+    const d = await callAI({max_tokens: 500, system: sys, messages: [{ role: 'user', content: q }] });
     if (d && d.content) { try { const m = d.content[0].text.match(/\{[\s\S]*\}/); parsed = m ? JSON.parse(m[0]) : { answer: d.content[0].text, confident: true, clarify: '' }; } catch (e) { parsed = { answer: d.content[0].text, confident: true, clarify: '' }; } }
     if (!parsed) { escalateProjectAI(jobId, q, lang === 'es' ? 'IA no disponible' : 'AI unavailable'); return; }
     if (parsed.confident === false && parsed.clarify) { add('ai_conversations', { jobId, role: 'assistant', text: parsed.clarify, clarify: true }); render(); return; }
@@ -5745,7 +5912,17 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
     backfillUpdatedStamps();
     await migratePlainPins();
     await initCloudAuth();
-    const signedIn = await establishCloudSession();
+    let signedIn = await establishCloudSession();
+    if (!signedIn) {
+      const localSessionId = localStorage.getItem('otto_session');
+      const localUser = localSessionId ? get('users', localSessionId) : null;
+      if (localUser && hasPin(localUser, 'pin')) {
+        session = localUser;
+        signedIn = true;
+      } else if (localSessionId) {
+        localStorage.removeItem('otto_session');
+      }
+    }
     if (signedIn) {
       try { _cloudAvailable = await cloudPull(); } catch (e) { }
     }
@@ -5764,16 +5941,13 @@ JOB DATA:\n${ctx}\nRECENT NOTES:\n${notes || '(none)'}`;
       startCloudPolling();
       startPhotoQueueDrainer();
     }
-    if (session) startApp(); else showLogin();
+    if (session) startApp(); else {
+      const hasLocalUsers = (db.users || []).some(u => hasPin(u, 'pin'));
+      if (hasLocalUsers) showLocalLogin(); else showLogin();
+    }
     if ('serviceWorker' in navigator) { try { navigator.serviceWorker.register('./sw.js'); } catch (e) { } }
   }
   function setSearch(key, val) { _search[key] = val; render(); }
-  function saveAIKey() { 
-    localStorage.setItem('otto_ai_key', ($('#set-aikey').value || '').trim()); 
-    db.meta.nvidiaKey = ($('#set-nvi-key').value || '').trim();
-    save();
-    toast(t('saved'), 'success'); 
-  }
   async function saveMfa() {
     const v = ($('#set-mfa').value || '').trim();
     if (v === '') return toast(lang === 'es' ? 'Escribe 4 dígitos' : 'Type 4 digits', 'error');
@@ -6153,21 +6327,10 @@ Return ONLY valid JSON: { "fixtures": [], "pipes": [], "fittings": [], "notes": 
           text = data.choices?.[0]?.message?.content;
         }
       } catch (e) { /* fall through */ }
-      if (!text && db.meta?.nvidiaKey) {
-        const res = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${db.meta.nvidiaKey}` },
-          body: JSON.stringify({
-            model: 'nvidia/llama-3.1-nemotron-nano-vl-8b-v1',
-            messages: [{ role: 'user', content: prompt + ` <img src="data:image/jpeg;base64,${imgB64}" />` }],
-            temperature: 0.2,
-          }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          text = data.choices[0].message.content;
-        }
-      }
+      // The server proxy at /api/nvidia is the only path to the provider. It
+      // holds the key in NVIDIA_API_KEY and returns 503 when none is set, so
+      // takeoff degrades to manual entry rather than sending a key from the
+      // browser to a third party.
       if (!text) throw new Error('no_ai');
       const jmatch = text.match(/\{[\s\S]*\}/);
       const parsed = JSON.parse(jmatch ? jmatch[0] : text);
@@ -6240,7 +6403,7 @@ Return ONLY valid JSON: { "fixtures": [], "pipes": [], "fittings": [], "notes": 
     toast(t('saved'), 'success');
   }
 
-  Object.assign(window, { __db: () => db, setSearch, saveAIKey, saveMfa, clearMfa, t, toast, closeModal, modal,
+  Object.assign(window, { __db: () => db, setSearch, saveMfa, clearMfa, t, toast, closeModal, modal,
     setLang, nav, signOut, deletePayment, quickAdd, openMore, get, remove, update, confirmDel, render,
     newCall, saveCall, jobFromCall, openCallView, openCustomerForm, saveCustomer, openJobForm, saveJob, changeJobStatus, setJobStatus,
     openNoteForm, saveNote, quickPhoto, chooseJob, runJobAction, uploadDoc, openDoc, quickVoiceNote, voiceInto,
@@ -6281,7 +6444,7 @@ Return ONLY valid JSON: { "fixtures": [], "pipes": [], "fittings": [], "notes": 
     if (!$('#app').classList.contains('policy-gate-active')) render();
   });
   </script>
-  <script src="./otto-home.js?v=4" data-otto-home-runtime></script>
+  <script src="./otto-home.js?v=5" data-otto-home-runtime></script>
 
 <script src="./otto-ui-polish.js?v=2" data-otto-ui-polish-runtime></script>
 
@@ -6312,7 +6475,8 @@ window.__ottoAssistantBridge = {
   update: (col, id, patch) => update(col, id, patch),
   save: () => save(),
   render: () => render(),
-  callClaude: body => callClaude(body),
+  callAI: body => callAI(body),
+  callClaude: body => callAI(body),
   openResult: (type, id, source, employeeId) => {
     if (type === 'contract' && typeof openContractForm === 'function' && source === 'contracts') return openContractForm(id);
     if (type === 'employee' && typeof viewWorkerProfile === 'function') return viewWorkerProfile(employeeId || id);

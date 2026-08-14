@@ -1,6 +1,6 @@
 /* OTTO Plumbing CRM — service worker
    Offline-first shell cache. App data lives in IndexedDB, not here. */
-const CACHE = 'otto-crm-v13';
+const CACHE = 'otto-crm-v16';
 // landing.html and guide.html ship too. Without them here, an installed phone
 // with no signal that opened /guide.html was served the CRM instead, because the
 // navigate handler below falls back to index.html for anything it cannot fetch.
@@ -111,13 +111,15 @@ self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
-  // Never cache API calls (Anthropic, Gmail, QuickBooks, etc.).
+  // Never cache API calls (Gmail, QuickBooks, etc.). The AI provider is reached
+  // through the same-origin /api/nvidia proxy, which is POST and so never
+  // reaches this GET-only handler.
   // Match the API hosts exactly. This used to be a substring test, which also
   // caught fonts.googleapis.com, so the stylesheet that declares every webfont
   // was never stored and the app lost its headings the moment a phone went
   // offline — while the font files it points at were cached and unusable.
   const API_HOSTS = [
-    'api.anthropic.com',
+    'integrate.api.nvidia.com',
     'www.googleapis.com',
     'oauth2.googleapis.com',
   ];

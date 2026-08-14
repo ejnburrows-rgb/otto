@@ -834,7 +834,7 @@
       if (dock) dock.remove();
       signOut();
     }
-  });
+  }, true);
 
   window.setWindowState = setWindowState;
   window.expandTools = expandTools;

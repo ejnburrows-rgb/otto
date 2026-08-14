@@ -82,6 +82,50 @@ async function runTests() {
     bodyOut = JSON.parse(fetchCalls[0]?.options.body || '{}');
     check('Uses NVIDIA_MODEL env if model not provided', bodyOut.model, 'custom-model-456');
 
+    // Reading a photo needs a vision model. The browser sends no model name, so
+    // the choice is made here from whether the request actually carries an image.
+    const withImage = () => ({
+      messages: [{ role: 'user', content: [
+        { type: 'text', text: 'read this' },
+        { type: 'image_url', image_url: { url: 'data:image/jpeg;base64,AAAA' } },
+      ] }],
+    });
+
+    delete process.env.NVIDIA_MODEL;
+    delete process.env.NVIDIA_VISION_MODEL;
+    fetchCalls = [];
+    res = createRes();
+    await handler(createReq({ body: withImage() }), res);
+    bodyOut = JSON.parse(fetchCalls[0]?.options.body || '{}');
+    check('Picks the default vision model when a request carries an image',
+      bodyOut.model, 'meta/llama-3.2-90b-vision-instruct');
+
+    process.env.NVIDIA_VISION_MODEL = 'custom-vision-789';
+    fetchCalls = [];
+    res = createRes();
+    await handler(createReq({ body: withImage() }), res);
+    bodyOut = JSON.parse(fetchCalls[0]?.options.body || '{}');
+    check('Respects NVIDIA_VISION_MODEL env', bodyOut.model, 'custom-vision-789');
+
+    // A text-only request must not be sent to the vision model, which is slower
+    // and priced differently.
+    fetchCalls = [];
+    res = createRes();
+    await handler(createReq({ body: { messages: [{ role: 'user', content: 'plain text' }] } }), res);
+    bodyOut = JSON.parse(fetchCalls[0]?.options.body || '{}');
+    check('Text-only request still uses the text model',
+      bodyOut.model, 'meta/llama-3.3-70b-instruct');
+
+    // An explicit model always wins, image or not.
+    fetchCalls = [];
+    res = createRes();
+    await handler(createReq({ body: { ...withImage(), model: 'explicit-model' } }), res);
+    bodyOut = JSON.parse(fetchCalls[0]?.options.body || '{}');
+    check('An explicit model still wins over vision selection', bodyOut.model, 'explicit-model');
+
+    process.env.NVIDIA_MODEL = 'custom-model-456';
+    delete process.env.NVIDIA_VISION_MODEL;
+
     fetchCalls = [];
     res = createRes();
     await handler(createReq({ body: '{"messages": [{"role":"user"}]}' }), res);
