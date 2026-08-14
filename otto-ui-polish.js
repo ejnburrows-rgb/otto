@@ -14,6 +14,23 @@
     document.head.appendChild(link);
   }
 
+  function ensureEnterpriseUi() {
+    if (!document.querySelector('link[data-otto-enterprise-ui]')) {
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = './otto-enterprise-ui.css?v=1';
+      link.setAttribute('data-otto-enterprise-ui', 'runtime');
+      document.head.appendChild(link);
+    }
+
+    if (!document.querySelector('script[data-otto-enterprise-ui]')) {
+      const script = document.createElement('script');
+      script.src = './otto-enterprise-ui.js?v=1';
+      script.setAttribute('data-otto-enterprise-ui', 'runtime');
+      document.body.appendChild(script);
+    }
+  }
+
   function isEditable(target) {
     if (!target) return false;
     const tag = target.tagName;
@@ -166,6 +183,7 @@
 
   function start() {
     ensureClientVisiblePolish();
+    ensureEnterpriseUi();
     enhance(document);
     observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-state', 'class'] });
   }
