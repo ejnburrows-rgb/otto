@@ -143,8 +143,8 @@ const checks = [
   ['wrench-person icon is not restored as the CRM logo', !/<img[^>]*icon-192\.png[^>]*class="crystal-logo"/.test(patched)],
 
   // ── offline update ────────────────────────────────────────────────────────
-  ['workspace assets use the new cache-busting version', HOME_ASSET_VERSION === '4' && patched.includes('otto-home.css?v=4') && patched.includes('otto-home.js?v=4')],
-  ['offline cache is bumped for the new workspace', sw.includes("const CACHE = 'otto-crm-v14'")],
+  ['workspace assets use the new cache-busting version', HOME_ASSET_VERSION === '5' && patched.includes('otto-home.css?v=5') && patched.includes('otto-home.js?v=5')],
+  ['offline cache is bumped for the new workspace', sw.includes("const CACHE = 'otto-crm-v15'")],
   ['both personal wallpapers remain precached', sw.includes('julio-pablo.avif') && sw.includes('sarays.avif')],
   ['cache-busted same-origin assets still resolve offline', sw.includes('ignoreSearch: sameOrigin')]
 ];

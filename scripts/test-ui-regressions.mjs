@@ -532,5 +532,33 @@ console.log('\nno provider key may live in the browser');
       .every(s => readFileSync(new URL('../scripts/apply-assistant-patch.mjs', import.meta.url), 'utf8').includes(s)), true);
 }
 
+// ── a rejected upload must be retried, never recorded as sent ───────────────
+// A field employee's location consent and audit entries stayed on one phone
+// forever: the push marked the collection as synced before the server answered,
+// and an HTTP 403 resolves normally so the failure was never seen. The pull then
+// stamped the merged local state as "already uploaded", which permanently
+// excluded any record the server had not actually received.
+{
+  console.log('\nuploads may only be marked sent once the server confirms');
+  check('the sync marker is not stamped before the request is made',
+    /_lastCloudState\[col\] = currentStr;\s*\n\s*promises\.push/.test(html), false);
+  check('a confirmed response is what records the upload',
+    /if \(r && r\.ok\) \{ _lastCloudState\[col\] = currentStr; return; \}/.test(html), true);
+  check('a rejected upload clears the marker so it is retried',
+    (html.match(/delete _lastCloudState\[col\]/g) || []).length >= 3, true);
+  check('a pull only trusts records the server actually returned',
+    html.includes('serverHasEveryLocalRecord(col, serverRows)'), true);
+  check('a collection the server withheld keeps its existing marker',
+    /if \(!Array\.isArray\(serverRows\) && col !== 'companyProfile'\) continue;/.test(html), true);
+
+  const dataApi = readFileSync(new URL('../api/data.js', import.meta.url), 'utf8');
+  check('a field employee may record audit entries for their own actions',
+    /if \(collection === 'audit_log'\)/.test(dataApi), true);
+  check('they may not record one under somebody else',
+    dataApi.includes("entry.by && entry.by !== identity.userId"), true);
+  check('the audit trail still is not readable by a field account',
+    /const FIELD_COLLECTIONS = new Set\(\[[\s\S]*?\]\);/.exec(dataApi)?.[0].includes('audit_log'), false);
+}
+
 console.log(`\n${passed} passed, ${failed} failed\n`);
 process.exit(failed ? 1 : 0);

@@ -1949,6 +1949,31 @@
     return all.filter(r => r && r.demo !== true);
   }
 
+  /* True when every record this device would upload is already on the server at
+     the same revision. Identity is id + updated stamp, which is what the merge
+     itself compares, so a record edited locally counts as missing until the
+     server confirms the newer version. */
+  function serverHasEveryLocalRecord(col, serverRows) {
+    const local = _syncableRecords(col);
+    const stamp = (r) => `${r && r.id}@${(r && r.updated) || ''}`;
+    if (col === 'companyProfile') {
+      const remote = Array.isArray(serverRows) ? serverRows[0] : serverRows;
+      if (!local) return true;
+      return !!remote && stamp(local) === stamp(remote);
+    }
+    if (!Array.isArray(local)) return true;
+    if (!Array.isArray(serverRows)) return false;
+    const known = new Set(serverRows.filter(Boolean).map(stamp));
+    return local.every((r) => known.has(stamp(r)));
+  }
+
+  /* `_lastCloudState` is the answer to "what does the server already have?", so
+     it may only be written once the server has actually confirmed it. It used to
+     be stamped the moment a push was queued, and the push result was never
+     looked at beyond a network throw — an HTTP 403 or 500 resolves normally, so
+     a rejected collection was recorded as synced and then skipped by every later
+     push. That is how a field employee's location consent and audit entries
+     stayed on one phone forever: rejected once, never retried, invisible. */
   function cloudPush() {
     if (!cloudAuthSession) return;
     clearTimeout(_cloudTimer);
@@ -1959,12 +1984,17 @@
           const value = _syncableRecords(col);
           const currentStr = JSON.stringify(value);
           if (currentStr === _lastCloudState[col]) continue;   // nothing changed
-          _lastCloudState[col] = currentStr;
           promises.push(serverFetch('/api/data', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ collection: col, records: value })
-          }).catch(e => console.warn('push error', col, e)));
+          }).then((r) => {
+            if (r && r.ok) { _lastCloudState[col] = currentStr; return; }
+            // Leave the marker unset so the next save tries this collection
+            // again instead of dropping the records silently.
+            delete _lastCloudState[col];
+            console.warn('push rejected', col, r && r.status);
+          }).catch(e => { delete _lastCloudState[col]; console.warn('push error', col, e); }));
         }
         if (promises.length) await Promise.all(promises);
       } catch (e) { console.warn('cloud push failed', e); }
@@ -2012,7 +2042,19 @@
       if (!db.companyProfile) { db.companyProfile = defaults.companyProfile; }
       await idbPut('kv', 'db', JSON.stringify(db));
 
-      for (const col of SYNCED_COLLECTIONS) _lastCloudState[col] = JSON.stringify(_syncableRecords(col));
+      /* Only the collections the server proved it already holds may be marked
+         as synced. This line used to stamp the *merged* local state, which
+         includes records the server has never seen — anything created while a
+         pull was in flight, or written offline, was instantly classified as
+         "already uploaded" and skipped by every later push. */
+      for (const col of SYNCED_COLLECTIONS) {
+        const serverRows = d[col];
+        // null means "the server would not tell us", not "the server is empty".
+        // Leave whatever we already knew rather than forcing a needless re-push.
+        if (!Array.isArray(serverRows) && col !== 'companyProfile') continue;
+        if (serverHasEveryLocalRecord(col, serverRows)) _lastCloudState[col] = JSON.stringify(_syncableRecords(col));
+        else delete _lastCloudState[col];
+      }
       window.db = db;
       return true;
     } catch (e) { console.warn('cloud pull failed', e); }
