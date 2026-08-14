@@ -16,7 +16,8 @@
   },
   "dependencies": {
     "busboy": "^1.6.0",
-    "jspdf": "^2.5.2"
+    "jspdf": "^2.5.2",
+    "@sparticuz/chromium": "latest"
   },
   "devDependencies": {
     "playwright": "^1.61.1"

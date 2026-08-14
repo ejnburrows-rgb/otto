@@ -1,7 +1,16 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "outputDirectory": ".",
-  "buildCommand": "node scripts/vercel-build.mjs scripts/*.mjs",
+  "buildCommand": "PLAYWRIGHT_BROWSERS_PATH=0 npx playwright install chromium && node scripts/vercel-build.mjs scripts/*.mjs",
+  "env": {
+    "PLAYWRIGHT_BROWSERS_PATH": "0"
+  },
+  "functions": {
+    "api/browser-health.js": {
+      "includeFiles": "node_modules/playwright-core/.local-browsers/**",
+      "maxDuration": 60
+    }
+  },
   "headers": [
     {
       "source": "/(.*)",
