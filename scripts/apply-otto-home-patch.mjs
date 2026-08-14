@@ -10,6 +10,7 @@ const HOME_RUNTIME = new URL('../otto-home.js', import.meta.url);
    the runtime. The service worker resolves same-origin hits with the query
    ignored, so a bump never costs an offline device its home screen. */
 export const HOME_ASSET_VERSION = '5';
+export const ENTERPRISE_ASSET_VERSION = '1';
 
 export function patchSource(source) {
   let out = source;
@@ -71,6 +72,8 @@ export function patchSource(source) {
 
   const link = `<link rel="stylesheet" href="./otto-home.css?v=${HOME_ASSET_VERSION}" data-otto-home-styles />`;
   const script = `<script src="./otto-home.js?v=${HOME_ASSET_VERSION}" data-otto-home-runtime></script>`;
+  const enterpriseLink = `<link rel="stylesheet" href="./otto-enterprise-ui.css?v=${ENTERPRISE_ASSET_VERSION}" data-otto-enterprise-styles />`;
+  const enterpriseScript = `<script src="./otto-enterprise-ui.js?v=${ENTERPRISE_ASSET_VERSION}" data-otto-enterprise-runtime></script>`;
 
   if (out.includes('data-otto-home-styles')) out = out.replace(/<link\b[^>]*\bdata-otto-home-styles\b[^>]*>/, link);
   else {
@@ -78,10 +81,22 @@ export function patchSource(source) {
     out = out.replace('</head>', `  ${link}\n</head>`);
   }
 
+  if (out.includes('data-otto-enterprise-styles')) out = out.replace(/<link\b[^>]*\bdata-otto-enterprise-styles\b[^>]*>/, enterpriseLink);
+  else {
+    if (!out.includes('</head>')) throw new Error('index.html is missing </head>');
+    out = out.replace('</head>', `  ${enterpriseLink}\n</head>`);
+  }
+
   if (out.includes('data-otto-home-runtime')) out = out.replace(/<script\b[^>]*\bdata-otto-home-runtime\b[^>]*><\/script>/, script);
   else {
     if (!out.includes('</body>')) throw new Error('index.html is missing </body>');
     out = out.replace('</body>', `  ${script}\n</body>`);
+  }
+
+  if (out.includes('data-otto-enterprise-runtime')) out = out.replace(/<script\b[^>]*\bdata-otto-enterprise-runtime\b[^>]*><\/script>/, enterpriseScript);
+  else {
+    if (!out.includes('</body>')) throw new Error('index.html is missing </body>');
+    out = out.replace('</body>', `  ${enterpriseScript}\n</body>`);
   }
 
   return out;
@@ -114,6 +129,8 @@ export function validatePatchedSource(source) {
     ['Sarays owner migration', source.includes("fixUser('ops-1', 'Sarays', 'owner');")],
     ['workspace stylesheet wired', source.includes(`href="./otto-home.css?v=${HOME_ASSET_VERSION}" data-otto-home-styles`)],
     ['workspace runtime wired', source.includes(`src="./otto-home.js?v=${HOME_ASSET_VERSION}" data-otto-home-runtime`)],
+    ['enterprise UX stylesheet wired', source.includes(`href="./otto-enterprise-ui.css?v=${ENTERPRISE_ASSET_VERSION}" data-otto-enterprise-styles`)],
+    ['enterprise UX runtime wired', source.includes(`src="./otto-enterprise-ui.js?v=${ENTERPRISE_ASSET_VERSION}" data-otto-enterprise-runtime`)],
     ['home assets share one cache-busting version', (source.match(/otto-home\.(?:css|js)\?v=/g) || []).length === 2],
     ['PTO dashboard reads current requests', source.includes("...(db.pto_requests || [])") && source.includes("const pendingPTO = [")],
     ['PTO approval updates current requests', source.includes("get('pto_requests', id) ? 'pto_requests' : 'time_off'")],
