@@ -144,7 +144,9 @@ const checks = [
 
   // ── offline update ────────────────────────────────────────────────────────
   ['workspace assets use the new cache-busting version', HOME_ASSET_VERSION === '5' && patched.includes('otto-home.css?v=5') && patched.includes('otto-home.js?v=5')],
-  ['offline cache is bumped for the new workspace', sw.includes("const CACHE = 'otto-crm-v15'")],
+  /* Bumped past main's v15 because this branch adds otto-shell.css/js, and an
+     installed device only picks new assets up when the cache name changes. */
+  ['offline cache is bumped for the new workspace', sw.includes("const CACHE = 'otto-crm-v16'")],
   ['both personal wallpapers remain precached', sw.includes('julio-pablo.avif') && sw.includes('sarays.avif')],
   ['cache-busted same-origin assets still resolve offline', sw.includes('ignoreSearch: sameOrigin')]
 ];

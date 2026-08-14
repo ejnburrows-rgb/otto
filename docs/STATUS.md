@@ -1,6 +1,6 @@
 # STATUS — OTTO Plumbing CRM
 
-Last updated: 2026-08-13.
+Last updated: 2026-08-14.
 
 This file is the current factual snapshot. Historical incident detail remains in Git history and issue/PR discussions; stale status narratives must not be used to restore superseded behavior.
 
@@ -25,16 +25,22 @@ This file is the current factual snapshot. Historical incident detail remains in
 
 ## Current owner / office UI contract
 
-The required UI is a wallpaper-first operational workspace, not a generic SaaS dashboard.
+2026-08-14 — the director replaced the wallpaper-and-floating-windows presentation with a minimal application shell. The change is presentation only; no business logic, data model, permission or backend was altered, and the previous workspace runtime (`otto-home.js` / `otto-home.css`) is retained rather than deleted.
 
-- **Three primary windows open together:** Today, Field Workers, Inbox.
-- Each primary window supports **minimize, restore, maximize inside the workspace, and full screen**.
-- **Desktop:** primary launch/minimized state uses the left-side rail.
-- **Phone:** the same primary actions use a compact bottom dock so working content receives the full phone width.
+- **Desktop:** a dark left sidebar with five primary destinations — Today, Schedule, Jobs, Customers, Money — plus one Search / Ask OTTO command entry (⌘K) and a **More** menu holding every secondary feature.
+- **Phone:** a bottom bar with Today, Schedule, Jobs, Customers, More. Content uses the full phone width.
+- **Home is Today:** a three-number summary, today's jobs as the dominant section, Needs attention, and Recent activity. Every number comes from `db`; no records are invented and each section has a real empty state.
+- **Superseded and removed from the shell:** wallpaper behind operational content, floating windows, and the minimize / maximize / full-screen window controls.
+- Fixed palette (`#F7F7F8` page, `#FFFFFF` surface, `#111214` sidebar, `#2563EB` accent), one typeface (Geist, falling back to Inter), thin borders, no gradients or glass.
+- The approved design is propagated across every owner screen, not only the ones the shell rewrote. Screens that predate the shell keep their own markup and business logic; their component vocabulary (`.card`, `.list-item`, `.btn`, `.field`, `.tabs`, `.pill`, `.empty`, tables) is restyled in place, so the product reads as one application without putting working logic at risk for a presentation change.
+- Light remains the baseline. Dark is a re-tone of the same shell — same markup, same information architecture, only the surface and ink roles swap — and applies only on an explicit choice, which is persisted. The theme control in Settings previously had no visible effect for owner/office; it now works.
+- Dense tables restack into per-row blocks below 900px rather than being scaled down; status filters wrap instead of scrolling out of sight.
+- **Julio, Saray and Otto** keep their identity data; the per-person accent and wallpaper treatment does not apply inside the shell, which uses one neutral palette.
 - **No generic drag/reorder.** The previous drag implementation interfered with ordinary scrolling.
-- **Julio:** green interface accents + Julio wallpaper.
-- **Saray:** pink interface accents + Saray wallpaper.
-- **Otto:** blue OTTO identity; no wallpaper is invented.
+
+### Verified 2026-08-14
+
+Full test suite green (`npm test`, exit 0; includes 48 new owner-shell checks) and `node scripts/qa-check.mjs` reports `pass: true`. Opened in Chromium at 1440×900 and 390×844 signed in as an owner: sidebar on desktop, bottom bar on phone, Geist rendering, `#F7F7F8` page and `#2563EB` accent measured in the browser, zero horizontal overflow on Today, Schedule, Money, Jobs, Customers, Inbox, Team and Settings, no broken images, and no JavaScript errors from this change. Screenshots in `outputs/shell/`. Cloud sign-in could not complete in the verification sandbox (no Supabase project configured), so the owner session was started locally against the same seeded data.
 - **Plans & AutoCAD:** PDF and DXF are analyzable. DWG/DWF/DGN remain stored with the job and explicitly require a PDF or DXF export for reliable takeoff.
 - **Crew Hours:** whole-team today/week totals and currently clocked-in count derived from real job check-in/check-out records.
 - Worker detail remains limited to current job, next job, today/week hours, and time-off status.

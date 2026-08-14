@@ -17,23 +17,23 @@ No other Markdown file may silently become a competing source of truth. Historic
 
 Finish OTTO as a dependable, demo-ready and production-ready plumbing CRM without redoing completed work.
 
-The current UI objective is explicit: owner and office users use a wallpaper-first workspace with **three primary windows open together** — Today, Field Workers, and Inbox. Each window may minimize, restore, maximize inside the workspace, and enter full screen. Desktop uses the left-side workspace rail; phones present the same primary actions in a compact bottom dock so working content receives the full phone width. Drag/reorder is intentionally excluded because the earlier drag implementation interfered with normal scrolling. The remaining UI work is refinement, not another redesign: clearer hierarchy, consistent secondary screens, restrained effects, practical touch targets, and accessible interaction.
+The current UI objective is explicit, and the director changed it on 2026-08-14. Owner and office users use a **minimal application shell**: a dark left sidebar on desktop carrying five primary destinations — Today, Schedule, Jobs, Customers, Money — one Search / Ask OTTO command entry (⌘K), and a **More** menu that holds every secondary feature; phones use a bottom bar with Today, Schedule, Jobs, Customers, More so working content receives the full phone width. Home is a Today screen: a short summary, today's jobs as the dominant section, Needs attention, and Recent activity, all read from real records. The wallpaper-first workspace with three floating windows and minimize/maximize/full-screen controls is **superseded** and must not be restored as the default; its runtime is retained in `otto-home.js` / `otto-home.css` and must not be deleted. Drag/reorder stays excluded because the earlier drag implementation interfered with normal scrolling. The remaining UI work is refinement, not another redesign, and the shell has not yet been propagated to secondary screens beyond inheriting its palette and typography.
 
 For file handling, use one **Upload / Import** intake model. Spreadsheets are parsed directly, photos/scans use bilingual browser OCR, CAD files reuse the existing job drawing pipeline, and PDF asks one simple document-vs-plan choice because it is ambiguous. All applicable flows end in review before save. Do not restore separate provider-key OCR or competing upload systems.
 
 ## Current product truth
 
-- The owner/office UI contract is the three-window workspace described above. A previous one-panel-at-a-time redesign is superseded and must not be restored as the default.
-- Desktop keeps the left-side primary launcher. On phones the same primary workspace actions use a bottom dock; do not squeeze the working windows beside a narrow desktop rail.
-- Julio (`owner-2`) uses green interface accents and his committed wallpaper. Saray (`ops-1`) uses pink interface accents and her committed wallpaper. Otto keeps the blue OTTO identity. These accents follow the signed-in person; workflow and permissions do not change by colour.
+- The owner/office UI contract is the minimal application shell described above.
+- Desktop keeps a left sidebar; phones use a bottom bar. Do not force the desktop sidebar into the narrow phone width.
+- The shell uses one fixed neutral palette (`#F7F7F8` page, `#FFFFFF` surface, `#111214` sidebar, `#2563EB` accent) and one typeface (Geist, falling back to Inter). Owner/office screens are light-only while the shell is active. Julio (`owner-2`), Saray (`ops-1`) and Otto keep their identity data and wallpaper assets, but the per-person accent and wallpaper treatment does not apply inside the shell.
 - The supplied OTTO Plumbing wordmark (`logo.jpg`) remains the CRM logo. Do not substitute the wrench/person app icon as the top-bar brand.
 - Today has subtle operational priority, but the interface remains restrained. Do not add excessive glass, animation, heavy shadows, neon effects, or decorative dashboards to make the app look more “premium.”
-- Secondary screens must feel like the same product as Home: consistent Hanken Grotesk hierarchy, spacing, cards, lists, forms, focus treatment, buttons, wrapped filters/tabs, and intentional empty/error/confirmation states.
+- Secondary screens must feel like the same product as Home: consistent Geist hierarchy, spacing, cards, lists, forms, focus treatment, buttons, wrapped filters/tabs, and intentional empty/error/confirmation states.
 - Worker information is intentionally operational and compact: current job, next job, actual hours recorded from job check-in/check-out, and time-off status. Do not restore random heatmaps, fabricated KPI hours, vanity location counts, login-history cards, or fake charts as worker performance information.
 - The whole field crew has a Crew Hours view showing real recorded hours today, real recorded hours this week, and how many workers are currently clocked in.
 - Plans & AutoCAD is a first-class work entry point. It accepts PDF, DWG, DXF, DWF and DGN through the existing job-document/drawing pipeline; do not bury this capability only inside a job tab.
 - Upload/import/OCR follows `docs/UNIFIED-FILE-INTAKE.md`: one front door, direct spreadsheet parsing, browser bilingual OCR for images/scans, existing CAD analysis for plans, explicit PDF routing, review before save, Field Worker-only employee imports, no PIN import, and no fabricated attendance.
-- Tools stays a restrained launcher for core daily modules. Secondary technical screens must not be promoted merely because they exist in code.
+- More stays a restrained launcher for everything outside the five primary destinations. Secondary technical screens must not be promoted into primary navigation merely because they exist in code.
 - Admin Settings is intentionally simplified. Keep appearance, team access, owner security, data safety and sign-out visible. Provider keys and unfinished setup stubs do not belong in the normal owner/office settings experience.
 - The local/offline CRM and built-in demo are present.
 - Supabase-backed identity and server-controlled OTTO roles are implemented on current `main`. Anonymous requests fail before provider/business access, and field records are restricted to the employee and assigned work.
@@ -45,7 +45,7 @@ For file handling, use one **Upload / Import** intake model. Spreadsheets are pa
 
 ## Priority order
 
-1. **Finish and prove the owner/office UI refinement** — preserve three simultaneous windows and identity treatment while proving desktop left rail, phone bottom dock, minimize/restore/maximize/full-screen behavior, restrained hierarchy, consistent secondary screens, practical touch targets, bilingual parity and accessibility.
+1. **Finish and prove the owner/office UI refinement** — keep the minimal shell while proving the desktop sidebar, the phone bottom bar, the Search / Ask OTTO command entry, restrained hierarchy, consistent secondary screens, practical touch targets, bilingual parity and accessibility.
 2. **Unified file intake** — one Upload / Import surface for spreadsheet employee import, bilingual OCR, and job-linked plans; no conflicting old user-facing scan/upload flows; prove review-before-save behavior.
 3. **Photo-upload reliability** — never silently abandon a locally stored job photo; keep retrying and show a clear pending/not-sent state.
 4. **Production release** — publish the current provider-authenticated build and prove anonymous denial plus authorized owner access.
@@ -74,12 +74,12 @@ Agents may investigate, recommend, implement approved work on branches, verify i
 
 The following are product requirements, not optional design suggestions:
 
-1. Do not replace the three-window owner/office home with a single active panel.
-2. Do not remove minimize, restore, maximize, or full-screen behavior unless the owner explicitly changes the requirement.
-3. Desktop uses the left-side primary launcher; phone uses the compact bottom dock. Do not force the desktop rail into the narrow phone workspace.
+1. Do not restore the wallpaper-first workspace, the floating windows, or the desktop-window controls as the owner/office home. They were superseded by the director on 2026-08-14.
+2. Do not delete `otto-home.js` or `otto-home.css`; the superseded runtime is retained so its information and behavior stay recoverable.
+3. Desktop uses the left sidebar; phone uses the bottom bar. Do not force the desktop sidebar into the narrow phone width.
 4. Do not reintroduce generic drag/reorder behavior on scrollable cards or lists.
-5. Do not change Julio away from green accents or Saray away from pink accents.
-6. Do not invent an Otto wallpaper; Otto may use the finished base surface unless a real approved asset is supplied.
+5. Keep primary navigation to five destinations. Secondary features belong in More; do not promote them back into the sidebar.
+6. Do not invent an Otto wallpaper; no wallpaper sits behind operational content in the shell.
 7. Do not hide Plans & AutoCAD solely inside a job detail screen.
 8. Do not calculate hours from placeholder formulas. Crew hours come from recorded check-in/check-out time.
 9. Do not present random/demo chart values as worker performance.
@@ -97,9 +97,8 @@ A task is complete only when all applicable evidence exists:
 - the real app is opened and exercised in a browser,
 - no new JavaScript errors, broken images, or mobile overflow appear,
 - UI work is checked at desktop and phone widths,
-- desktop left-rail and phone bottom-dock behavior are both exercised,
-- Julio, Saray and Otto are each checked for correct identity treatment,
-- minimize/restore/maximize/full-screen is exercised for all three home windows,
+- desktop sidebar and phone bottom-bar behavior are both exercised,
+- the Search / Ask OTTO command entry is opened and used,
 - representative secondary screens, forms, tabs, empty states, dialogs and confirmations are checked for consistent hierarchy and keyboard/touch usability,
 - Plans & AutoCAD upload is opened through the dedicated hub and linked to a job,
 - unified intake is exercised with a spreadsheet, an image/scan, a PDF in both routing modes, and a plan format; review-before-save is verified,
