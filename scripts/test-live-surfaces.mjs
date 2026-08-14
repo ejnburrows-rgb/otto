@@ -48,7 +48,8 @@ check('guide documents photo retry truthfully', guide.includes('Failed cloud upl
 
 check('PWA metadata has no retired marketing claim', !String(manifest.description || '').includes("Miami's Elite"));
 check('PWA metadata describes the actual CRM', manifest.description === 'Bilingual offline-first plumbing CRM for OTTO Plumbing Inc.');
-check('offline cache is current for the workspace', /const CACHE = 'otto-crm-v(\d+)'/.exec(sw)?.[1] === '12');
+check('offline cache is current for the workspace', /const CACHE = 'otto-crm-v(\d+)'/.exec(sw)?.[1] === '13');
+check('offline cache ships the owner shell', sw.includes("'./otto-shell.css'") && sw.includes("'./otto-shell.js'"));
 
 console.log(`Live surface checks: ${passed} passed, ${failed} failed`);
 if (failed) process.exit(1);

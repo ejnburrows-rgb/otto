@@ -14,7 +14,7 @@
        whose status reads 0, so the service worker's `status === 200` test never
        matches and nothing is stored. All four hosts send `access-control-allow-origin: *`. -->
   <link rel="stylesheet" crossorigin="anonymous" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&display=swap" rel="stylesheet" crossorigin="anonymous" />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Hanken+Grotesk:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&display=swap" rel="stylesheet" crossorigin="anonymous" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous"></script>
   <script src="./vendor/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
@@ -1066,6 +1066,9 @@
   <link rel="stylesheet" href="./otto-ui-polish.css?v=2" data-otto-ui-polish-styles />
   <link rel="stylesheet" href="./otto-client-visible-polish.css?v=2" data-otto-client-visible-polish />
   <link rel="stylesheet" href="./otto-quickbooks-handoff.css?v=1" data-otto-quickbooks-handoff-styles />
+<!-- Loaded last so the owner reference shell wins over the superseded
+       wallpaper/floating-window presentation instead of fighting it. -->
+  <link rel="stylesheet" href="./otto-shell.css?v=1" data-otto-shell-styles />
   <link rel="stylesheet" href="./otto-assistant.css?v=1" data-otto-assistant-style />
 </head>
 
@@ -6283,8 +6286,8 @@ Return ONLY valid JSON: { "fixtures": [], "pipes": [], "fittings": [], "notes": 
 <script src="./otto-ui-polish.js?v=2" data-otto-ui-polish-runtime></script>
 
 <script src="./otto-quickbooks-handoff.js?v=1" data-otto-quickbooks-handoff-runtime></script>
-
-  <script data-otto-unified-intake-bridge>
+<script src="./otto-shell.js?v=1" data-otto-shell-runtime></script>
+<script data-otto-unified-intake-bridge>
 window.__ottoUnifiedIntakeBridge = {
   getDb: () => db,
   getSession: () => session,
