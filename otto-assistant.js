@@ -12,7 +12,13 @@
     const fn = (b || {}).callAI || (b || {}).callClaude;
     return typeof fn === 'function' ? fn : null;
   };
-  const ALLOWED_IDS = new Set(['owner-1', 'owner-2', 'ops-1', 'it-admin-ejn']);
+  /* Ask OTTO is an owner/office tool, decided by role. It used to be an
+     allowlist of four account ids, which meant a newly created owner silently
+     had no assistant at all and the only fix was editing this file. The server
+     enforces the same boundary independently — api/nvidia.js accepts owner and
+     office and refuses everything else — so this is presentation matching the
+     server's rule, not a security control in its own right. */
+  const ASSISTANT_ROLES = new Set(['owner', 'office']);
   const MAX_RESULTS = 5;
   const SEARCH_TYPES = new Set(['paystub', 'contract', 'email', 'note', 'payroll', 'schedule', 'employee']);
   const ACTIONS = new Set(['create_note', 'create_email_draft', 'create_contract', 'create_paystub', 'create_payroll_summary', 'schedule_change', 'update_employee']);
@@ -26,6 +32,11 @@
     proposal: null,
     busy: false,
     status: '',
+    /* The written answer for a question, and the reason there isn't one. These
+       are separate on purpose: a record list is not an answer, and the owner has
+       to be able to tell which of the two they are looking at. */
+    answer: '',
+    answerError: '',
     lastFocus: null
   };
 
@@ -59,7 +70,7 @@
 
   function isAllowed() {
     const s = session();
-    return Boolean(s && ALLOWED_IDS.has(s.id) && (s.role === 'owner' || s.role === 'office'));
+    return Boolean(s && ASSISTANT_ROLES.has(s.role));
   }
 
   function employeeName(id) {
@@ -513,9 +524,48 @@
     }
   }
 
+  /* A question, answered by the server assistant against the records this
+     search already matched.
+
+     Asking a question used to run a local search and stop there — no server was
+     ever contacted, so "Ask OTTO" only ever listed records and could not answer
+     anything. This is the one real path: it posts to /api/nvidia through the
+     app's authenticated proxy, shows the model's answer, and when the call does
+     not succeed it says so in plain words. It never writes an answer of its own,
+     and the matched records stay on screen either way — they are real, and they
+     are labelled as records rather than as a reply. */
+  async function answerQuestion(query, results) {
+    const ask = bridgeAI(bridge());
+    if (!ask) {
+      state.answerError = tx('The assistant is not available in this build.', 'El asistente no está disponible en esta versión.');
+      return;
+    }
+    if (navigator.onLine === false) {
+      state.answerError = tx('No connection, so the assistant could not be asked.', 'Sin conexión, no se pudo consultar al asistente.');
+      return;
+    }
+    const facts = results.slice(0, MAX_RESULTS).map(r =>
+      `- ${typeLabel(r.type)}: ${r.title}${r.meta ? ` (${r.meta})` : ''}${r.snippet ? ` — ${String(r.snippet).slice(0, 400)}` : ''}`
+    ).join('\n');
+    const system = `You are OTTO, the assistant for a plumbing company. Answer the owner's question briefly and factually in ${currentLang() === 'es' ? 'Spanish' : 'English'}, using ONLY the OTTO records below. If the records do not contain the answer, say so plainly. Never invent a job, employee, time, note or photo.\n\nRECORDS:\n${facts || '(no matching records)'}`;
+    let response = null;
+    try {
+      response = await ask({ max_tokens: 500, system, messages: [{ role: 'user', content: q9(query) }] });
+    } catch (_) {
+      response = null;
+    }
+    const text = response && response.content && response.content[0] && response.content[0].text;
+    if (text) { state.answer = String(text).trim(); return; }
+    const why = (() => { try { return bridge().aiFailure?.() || ''; } catch (_) { return ''; } })();
+    state.answerError = why || tx('The assistant did not respond.', 'El asistente no respondió.');
+  }
+
+  const q9 = (query) => String(query || '').slice(0, 1600);
+
   async function submit(query) {
     const q = String(query || '').trim(); if (!q || !isAllowed()) return;
-    state.query = q; state.preview = null; state.proposal = null; state.status = ''; state.busy = true; render();
+    state.query = q; state.preview = null; state.proposal = null; state.status = '';
+    state.answer = ''; state.answerError = ''; state.busy = true; render();
     try {
       if (actionIntent(q)) {
         let proposal = sanitizeProposal(localProposal(q));
@@ -533,6 +583,9 @@
       } else {
         state.results = search(q);
         state.status = state.results.length ? tx(`Showing ${state.results.length} result${state.results.length === 1 ? '' : 's'}.`, `Mostrando ${state.results.length} resultado${state.results.length === 1 ? '' : 's'}.`) : tx('No matching records found.', 'No se encontraron registros.');
+        // The records are on screen; now actually ask, and report either way.
+        render();
+        await answerQuestion(q, state.results);
       }
     } finally { state.busy = false; render(); }
   }
@@ -556,6 +609,21 @@
     const online = navigator.onLine !== false;
     const contextChip = ctx.employee ? `<span class="otto-assistant-context"><i class="fas fa-crosshairs"></i>${esc(ctx.employee.name || ctx.employee.name_en || '')}</span>` : '';
     const status = state.status ? `<p class="otto-assistant-status" role="status">${esc(state.status)}</p>` : '';
+    /* Two visually distinct things, never interchangeable: an answer the server
+       actually returned, or the reason there is no answer. The record list below
+       is labelled "Search results" in both cases, so a failed call can never be
+       mistaken for a reply. */
+    const answer = state.answer
+      ? `<section class="otto-assistant-answer" role="status" aria-label="${esc(tx('Answer', 'Respuesta'))}">
+          <span class="otto-assistant-answer-kicker"><i class="fas fa-wrench" aria-hidden="true"></i>${esc(tx('OTTO answer', 'Respuesta de OTTO'))}</span>
+          <p>${esc(state.answer)}</p>
+        </section>`
+      : state.answerError
+        ? `<section class="otto-assistant-answer is-error" role="alert" aria-label="${esc(tx('Assistant unavailable', 'Asistente no disponible'))}">
+            <span class="otto-assistant-answer-kicker"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i>${esc(tx('No answer from the assistant', 'Sin respuesta del asistente'))}</span>
+            <p>${esc(state.answerError)}</p>
+          </section>`
+        : '';
     const busy = state.busy ? `<div class="otto-assistant-loading" aria-label="${esc(tx('Working','Procesando'))}"><span></span><span></span><span></span></div>` : '';
     const proposal = state.proposal ? `<section class="otto-assistant-proposal" aria-label="${esc(tx('Proposed change','Cambio propuesto'))}">
       <div class="otto-assistant-proposal-kicker"><i class="fas fa-shield-check"></i>${esc(tx('Proposed change — nothing has changed yet','Cambio propuesto — todavía no se ha cambiado nada'))}</div>
@@ -579,7 +647,7 @@
       <div class="otto-assistant-subhead">${contextChip}<span class="otto-assistant-connectivity ${online ? 'online' : 'offline'}"><i class="fas fa-circle"></i>${esc(online ? tx('Online','En línea') : tx('Offline search','Búsqueda sin conexión'))}</span></div>
       <form class="otto-assistant-form" data-assistant-form><label for="otto-assistant-input">${esc(tx('What do you need?','¿Qué necesitas?'))}</label><div class="otto-assistant-input-row"><input id="otto-assistant-input" autocomplete="off" placeholder="${esc(tx('Search OTTO…','Buscar en OTTO…'))}" value="${esc(state.query)}"><button type="submit" aria-label="${esc(tx('Search','Buscar'))}"><i class="fas fa-arrow-right"></i></button></div></form>
       <div class="otto-assistant-chips" aria-label="${esc(tx('Quick searches','Búsquedas rápidas'))}"><button type="button" data-assistant-query="${esc(tx('Paystubs','Comprobantes de pago'))}">${esc(tx('Paystubs','Comprobantes'))}</button><button type="button" data-assistant-query="${esc(tx('Schedules','Horarios'))}">${esc(tx('Schedule','Horario'))}</button><button type="button" data-assistant-query="${esc(tx('Employee records','Expedientes de empleados'))}">${esc(tx('Employees','Empleados'))}</button></div>
-      ${busy}${status}${proposal}${results}${preview}
+      ${busy}${answer}${status}${proposal}${results}${preview}
       ${!state.busy && !state.proposal && !state.results.length && !state.preview ? `<div class="otto-assistant-empty"><i class="fas fa-magnifying-glass"></i><p>${esc(tx('Search paystubs, contracts, emails, notes, payroll, schedules, or employee records. Changes always require confirmation.','Busca comprobantes, contratos, correos, notas, nómina, horarios o expedientes. Los cambios siempre requieren confirmación.'))}</p></div>` : ''}
       <footer class="otto-assistant-foot">${esc(tx('Results first · No voice · Changes require confirmation','Resultados primero · Sin voz · Los cambios requieren confirmación'))}</footer>`;
   }

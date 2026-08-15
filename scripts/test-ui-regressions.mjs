@@ -47,13 +47,17 @@ console.log('\nevery exported name must actually exist');
   // definition throws the moment the page loads, and nothing on the page runs.
   const start = html.indexOf('Object.assign(window, {');
   const block = html.slice(start, html.indexOf('});', start));
-  const names = [...block.matchAll(/(?:^|[\s,{])([A-Za-z_$][\w$]*)\s*(?:,|\}|$)/gm)]
+  // Comment lines are not exports. Without this, a prose word ending a comment
+  // line inside the export list is read as an exported name and reported
+  // missing, which says nothing about the page.
+  const code = block.replace(/^[ \t]*\/\/.*$/gm, '');
+  const names = [...code.matchAll(/(?:^|[\s,{])([A-Za-z_$][\w$]*)\s*(?:,|\}|$)/gm)]
     .map(m => m[1])
     .filter(n => !['Object', 'assign', 'window', 'true', 'false', 'null'].includes(n));
   const missing = names.filter(n =>
     !new RegExp(`function\\s+${n}\\s*\\(`).test(html) &&
     !new RegExp(`(const|let|var)\\s+${n}\\s*=`).test(html) &&
-    !new RegExp(`${n}\\s*:\\s*`).test(block)
+    !new RegExp(`${n}\\s*:\\s*`).test(code)
   );
   check('no exported name is undefined', missing, []);
 }

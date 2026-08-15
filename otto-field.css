@@ -1,0 +1,955 @@
+/* OTTO CRM — field worker workspace.
+
+   The same design system as the owner shell: identical palette, identical
+   typeface, identical card/row/button/pill vocabulary. This is not a second
+   visual language for the crew — it is the same product, laid out for one
+   person holding a phone on a job site.
+
+   Scoped to `body.otto-field`, which otto-field.js adds only for role=field.
+   The legacy field presentation (top bar, bottom navigation, floating add
+   button, wallpaper) is switched off here rather than overridden piecemeal, so
+   no part of it can show through underneath.
+
+   Primary target viewport is 390 × 844. Nothing scrolls sideways, no control is
+   clipped, and the dock never sits on top of content. */
+
+body.otto-field {
+  /* surfaces */
+  --of-bg: #F7F7F8;
+  --of-surface: #FFFFFF;
+  --of-header: #111214;
+
+  /* type */
+  --of-text: #15171A;
+  --of-text-2: #626872;
+  --of-muted: #8A9099;
+
+  /* lines and accents */
+  --of-border: #E5E7EA;
+  --of-accent: #2563EB;
+  --of-accent-hover: #1D4ED8;
+  --of-success: #17803D;
+  --of-warning: #B76A00;
+  --of-error: #C93737;
+  --of-tint: #EEF4FF;
+
+  /* radius */
+  --of-r-control: 8px;
+  --of-r-panel: 10px;
+
+  /* metrics */
+  --of-header-h: 60px;
+  --of-dock-h: 62px;
+  --of-tap: 44px;
+
+  --of-font: 'Geist', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+/* Dark is a re-tone of the same workspace: same markup, same layout, only the
+   surface and ink roles swap. It is not the old field UI kept around under
+   another name. */
+html[data-theme="dark"] body.otto-field {
+  --of-bg: #0F1113;
+  --of-surface: #16181C;
+  --of-header: #0A0B0D;
+
+  --of-text: #F2F4F6;
+  --of-text-2: #A8AEB8;
+  --of-muted: #79808A;
+
+  --of-border: #292D33;
+  --of-accent: #5B8DEF;
+  --of-accent-hover: #7BA5F5;
+  --of-success: #4ADE80;
+  --of-warning: #F0B355;
+  --of-error: #F07171;
+  --of-tint: #1B2334;
+}
+
+/* The app's own tokens are remapped so any shared component the field screens
+   borrow — modals, toasts, form fields — reads as the same product. */
+body.otto-field,
+body.otto-field[data-theme],
+html[data-theme] body.otto-field {
+  --bg: #F7F7F8;
+  --bg2: #FFFFFF;
+  --card: #FFFFFF;
+  --card-hover: #FAFAFB;
+  --card-elevated: #FFFFFF;
+  --line: #E5E7EA;
+  --glass-bg: #FFFFFF;
+  --glass-border: #E5E7EA;
+  --text: #15171A;
+  --text2: #626872;
+  --text3: #8A9099;
+  --blue: #2563EB;
+  --accent: #2563EB;
+  --accent-hover: #1D4ED8;
+  --action: #2563EB;
+  --action-hover: #1D4ED8;
+  --accent-fill: #2563EB;
+  --green: #17803D;
+  --green-fill: #17803D;
+  --amber: #B76A00;
+  --amber-fill: #B76A00;
+  --red: #C93737;
+  --red-fill: #C93737;
+  --neutral-fill: #8A9099;
+  --radius: 10px;
+  --radius-sm: 8px;
+  --shadow-sm: 0 1px 2px rgba(17, 18, 20, 0.04);
+  --shadow: 0 2px 8px rgba(17, 18, 20, 0.06);
+  --shadow2: 0 12px 32px rgba(17, 18, 20, 0.12);
+}
+
+html[data-theme="dark"] body.otto-field,
+html[data-theme="dark"] body.otto-field[data-theme] {
+  --bg: #0F1113;
+  --bg2: #16181C;
+  --card: #16181C;
+  --card-hover: #1C1F24;
+  --card-elevated: #1C1F24;
+  --line: #292D33;
+  --glass-bg: #16181C;
+  --glass-border: #292D33;
+  --text: #F2F4F6;
+  --text2: #A8AEB8;
+  --text3: #79808A;
+  --blue: #5B8DEF;
+  --accent: #5B8DEF;
+  --accent-hover: #7BA5F5;
+  --action: #5B8DEF;
+  --action-hover: #7BA5F5;
+  --accent-fill: #5B8DEF;
+  --green: #4ADE80;
+  --green-fill: #1F6F3D;
+  --amber: #F0B355;
+  --amber-fill: #7A5316;
+  --red: #F07171;
+  --red-fill: #7A2E2E;
+  --neutral-fill: #3A4048;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+  --shadow2: 0 12px 32px rgba(0, 0, 0, 0.55);
+}
+
+/* ── retire the legacy field presentation ─────────────────────────────────
+   The old blue dashboard, its top bar, its bottom navigation, the floating add
+   button and the wallpaper are removed from the layout, not merely covered.
+   Anything that renders on document.body outside #main is named here, because
+   a shell cannot hide what is not inside it. */
+body.otto-field .topbar,
+body.otto-field .bottomnav,
+body.otto-field #fab,
+body.otto-field #wallpaper-bg,
+body.otto-field #open-job-banner,
+body.otto-field #ai-float-btn,
+body.otto-field #ai-chat-popup,
+body.otto-field #plumbbot-modal,
+body.otto-field #otto-sidebar,
+body.otto-field #otto-dock,
+body.otto-field #otto-back-dock,
+body.otto-field .otto-window-controls {
+  display: none !important;
+}
+
+body.otto-field {
+  background: var(--of-bg);
+  color: var(--of-text);
+  font-family: var(--of-font);
+  margin: 0;
+}
+
+body.otto-field #app {
+  background: var(--of-bg);
+  min-height: 100dvh;
+}
+
+body.otto-field #main.wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: calc(var(--of-header-h) + env(safe-area-inset-top) + 16px) 16px
+           calc(var(--of-dock-h) + env(safe-area-inset-bottom) + 24px);
+  background: transparent;
+  overflow-x: hidden;
+}
+
+/* ── header ───────────────────────────────────────────────────────────────
+   Left: OTTO, the worker's name, and the role. Right: EN / ES with the
+   light-dark control immediately beside them — one control group, not a
+   language switch here and a theme setting buried in a menu. */
+body.otto-field .of-header {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: calc(var(--of-header-h) + env(safe-area-inset-top));
+  padding: env(safe-area-inset-top) 14px 0;
+  background: var(--of-header);
+  color: #FFFFFF;
+}
+
+body.otto-field .of-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  /* Takes the width the controls do not need. Without this the brand block
+     stayed at its content width and the role line was the first thing to be
+     ellipsised — which is exactly the line a technician has to be able to
+     read. "Trabajador de Campo" is the longest case and sets the budget. */
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+body.otto-field .of-wordmark {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #FFFFFF;
+  flex: 0 0 auto;
+}
+
+body.otto-field .of-who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding-left: 10px;
+  border-left: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+body.otto-field .of-who-name {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: #FFFFFF;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.otto-field .of-who-role {
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.78);
+  white-space: nowrap;
+}
+
+body.otto-field .of-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+body.otto-field .of-lang {
+  display: flex;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: var(--of-r-control);
+  overflow: hidden;
+}
+
+body.otto-field .of-lang button {
+  min-width: 36px;
+  min-height: 34px;
+  padding: 0 6px;
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.72);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+body.otto-field .of-lang button.is-on {
+  background: rgba(255, 255, 255, 0.16);
+  color: #FFFFFF;
+}
+
+body.otto-field .of-theme {
+  min-width: 38px;
+  min-height: 34px;
+  padding: 0 8px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: var(--of-r-control);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+body.otto-field .of-theme:hover,
+body.otto-field .of-lang button:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #FFFFFF;
+}
+
+/* ── dock ─────────────────────────────────────────────────────────────────
+   Four destinations, and only four. No Ask OTTO, no owner administration, and
+   no disabled placeholders standing in for screens this role cannot open. */
+body.otto-field .of-dock {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 60;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  height: calc(var(--of-dock-h) + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--of-surface);
+  border-top: 1px solid var(--of-border);
+}
+
+body.otto-field .of-dock-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: var(--of-tap);
+  border: 0;
+  background: transparent;
+  color: var(--of-text-2);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+body.otto-field .of-dock-item i {
+  font-size: 17px;
+}
+
+body.otto-field .of-dock-item.is-active {
+  color: var(--of-accent);
+}
+
+/* ── page furniture ───────────────────────────────────────────────────────── */
+
+body.otto-field .of-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+body.otto-field .of-hello,
+body.otto-field .of-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 2px 0;
+}
+
+body.otto-field .of-hello-name {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--of-text);
+}
+
+body.otto-field .of-hello-role {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--of-accent);
+}
+
+body.otto-field .of-hello-date {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--of-text-2);
+}
+
+body.otto-field .of-head h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--of-text);
+}
+
+body.otto-field .of-head p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--of-text-2);
+}
+
+body.otto-field .of-back {
+  align-self: flex-start;
+  min-height: 36px;
+  margin-bottom: 4px;
+  padding: 0 10px 0 4px;
+  border: 0;
+  background: transparent;
+  color: var(--of-text-2);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+body.otto-field .of-back:hover { color: var(--of-text); }
+
+/* ── panels ───────────────────────────────────────────────────────────────── */
+
+body.otto-field .of-panel {
+  background: var(--of-surface);
+  border: 1px solid var(--of-border);
+  border-radius: var(--of-r-panel);
+  overflow: hidden;
+}
+
+body.otto-field .of-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--of-border);
+}
+
+body.otto-field .of-panel-head h2 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--of-text-2);
+}
+
+body.otto-field .of-empty {
+  padding: 20px 14px;
+  color: var(--of-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+/* ── current job ──────────────────────────────────────────────────────────── */
+
+body.otto-field .of-current {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+}
+
+body.otto-field .of-current-title {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--of-text);
+  font: inherit;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.3;
+  text-align: left;
+  cursor: pointer;
+}
+
+body.otto-field .of-checked,
+body.otto-field .of-notchecked {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+body.otto-field .of-checked { color: var(--of-success); }
+body.otto-field .of-notchecked { color: var(--of-text-2); }
+
+body.otto-field .of-nojob {
+  padding: 22px 14px;
+  text-align: center;
+}
+
+body.otto-field .of-nojob-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--of-text);
+}
+
+body.otto-field .of-nojob-sub {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--of-text-2);
+}
+
+body.otto-field .of-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 14px;
+}
+
+body.otto-field .of-current .of-facts,
+body.otto-field .of-work .of-facts { padding: 0; }
+
+body.otto-field .of-facts > div {
+  display: grid;
+  grid-template-columns: 104px 1fr;
+  gap: 10px;
+  align-items: baseline;
+}
+
+body.otto-field .of-facts dt {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--of-muted);
+}
+
+body.otto-field .of-facts dd {
+  margin: 0;
+  font-size: 14px;
+  color: var(--of-text);
+  overflow-wrap: anywhere;
+}
+
+/* ── buttons ──────────────────────────────────────────────────────────────── */
+
+body.otto-field .of-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: var(--of-tap);
+  padding: 0 16px;
+  border: 1px solid transparent;
+  border-radius: var(--of-r-control);
+  background: transparent;
+  color: var(--of-text);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+body.otto-field .of-btn.is-block { width: 100%; }
+
+body.otto-field .of-btn.is-small {
+  min-height: 34px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+body.otto-field .of-btn.is-primary {
+  background: var(--of-accent);
+  border-color: var(--of-accent);
+  color: #FFFFFF;
+}
+
+body.otto-field .of-btn.is-primary:hover { background: var(--of-accent-hover); border-color: var(--of-accent-hover); }
+
+body.otto-field .of-btn.is-quiet {
+  border-color: var(--of-border);
+  color: var(--of-text-2);
+}
+
+body.otto-field .of-btn.is-quiet:hover { color: var(--of-text); }
+
+body.otto-field .of-btn.is-danger {
+  border-color: var(--of-border);
+  color: var(--of-error);
+}
+
+/* ── rows ─────────────────────────────────────────────────────────────────── */
+
+body.otto-field .of-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+body.otto-field .of-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 14px;
+  border: 0;
+  border-bottom: 1px solid var(--of-border);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+body.otto-field .of-row:last-child { border-bottom: 0; }
+body.otto-field .of-row:hover { background: var(--card-hover); }
+
+body.otto-field .of-row-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--of-r-control);
+  background: var(--of-tint);
+  color: var(--of-accent);
+  font-size: 14px;
+}
+
+body.otto-field .of-row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+body.otto-field .of-row-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--of-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.otto-field .of-row-sub {
+  font-size: 12px;
+  color: var(--of-text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.otto-field .of-row-end { flex: 0 0 auto; }
+
+/* ── pills ────────────────────────────────────────────────────────────────── */
+
+body.otto-field .of-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+body.otto-field .of-pill.is-ok { background: var(--of-tint); color: var(--of-success); }
+body.otto-field .of-pill.is-info { background: var(--of-tint); color: var(--of-accent); }
+body.otto-field .of-pill.is-warn { background: var(--of-tint); color: var(--of-warning); }
+body.otto-field .of-pill.is-mute { background: var(--of-tint); color: var(--of-text-2); }
+
+/* ── work block ───────────────────────────────────────────────────────────── */
+
+body.otto-field .of-work {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+}
+
+/* ── checklist ────────────────────────────────────────────────────────────── */
+
+body.otto-field .of-checks {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+body.otto-field .of-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--of-border);
+}
+
+body.otto-field .of-check:last-child { border-bottom: 0; }
+
+body.otto-field .of-check-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--of-border);
+  border-radius: var(--of-r-control);
+  background: transparent;
+  color: var(--of-muted);
+  cursor: pointer;
+}
+
+body.otto-field .of-check.is-done .of-check-box {
+  border-color: var(--of-success);
+  color: var(--of-success);
+}
+
+body.otto-field .of-check.is-flag .of-check-box {
+  border-color: var(--of-warning);
+  color: var(--of-warning);
+}
+
+body.otto-field .of-check-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+body.otto-field .of-check-title {
+  font-size: 14px;
+  color: var(--of-text);
+}
+
+body.otto-field .of-check-note {
+  font-size: 12px;
+  color: var(--of-warning);
+}
+
+/* ── notes ────────────────────────────────────────────────────────────────── */
+
+body.otto-field .of-notes {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+body.otto-field .of-notes li {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--of-border);
+}
+
+body.otto-field .of-notes li:last-child { border-bottom: 0; }
+
+body.otto-field .of-note-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--of-text);
+  overflow-wrap: anywhere;
+}
+
+body.otto-field .of-note-meta {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--of-muted);
+}
+
+/* ── photos ───────────────────────────────────────────────────────────────── */
+
+body.otto-field .of-photos {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 8px;
+  padding: 14px;
+}
+
+body.otto-field .of-photo {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  padding: 0;
+  border: 1px solid var(--of-border);
+  border-radius: var(--of-r-control);
+  background: var(--of-tint);
+  overflow: hidden;
+  cursor: pointer;
+}
+
+body.otto-field .of-photo.is-small {
+  width: 56px;
+  height: 56px;
+  flex: 0 0 auto;
+}
+
+body.otto-field .of-photo-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+body.otto-field .of-photo-img img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+body.otto-field .of-photo-img.is-missing::after {
+  content: '';
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(45deg, transparent, transparent 6px, var(--of-border) 6px, var(--of-border) 12px);
+}
+
+body.otto-field .of-photo-tag,
+body.otto-field .of-photo-pending {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(17, 18, 20, 0.72);
+  color: #FFFFFF;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+body.otto-field .of-photo-pending {
+  left: auto;
+  right: 4px;
+  background: var(--of-warning);
+}
+
+/* ── uploads ──────────────────────────────────────────────────────────────── */
+
+body.otto-field .of-uploads {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+body.otto-field .of-uploads li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--of-border);
+}
+
+body.otto-field .of-uploads li:last-child { border-bottom: 0; }
+
+body.otto-field .of-upload-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+body.otto-field .of-upload-job {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--of-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.otto-field .of-upload-meta {
+  font-size: 12px;
+  color: var(--of-text-2);
+}
+
+body.otto-field .of-upload-pending {
+  font-size: 12px;
+  color: var(--of-warning);
+}
+
+/* ── activity feed ────────────────────────────────────────────────────────── */
+
+body.otto-field .of-feed {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+body.otto-field .of-feed li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--of-border);
+}
+
+body.otto-field .of-feed li:last-child { border-bottom: 0; }
+
+body.otto-field .of-feed-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  background: var(--of-tint);
+  color: var(--of-accent);
+  font-size: 12px;
+}
+
+body.otto-field .of-feed-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+body.otto-field .of-feed-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--of-text);
+}
+
+body.otto-field .of-feed-meta {
+  font-size: 12px;
+  color: var(--of-text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.otto-field .of-feed-time {
+  flex: 0 0 auto;
+  font-size: 12px;
+  color: var(--of-muted);
+  white-space: nowrap;
+}
+
+/* ── photo preview ────────────────────────────────────────────────────────── */
+
+body.otto-field .of-preview h2 {
+  margin: 0 0 12px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--of-text);
+}
+
+body.otto-field .of-preview img {
+  display: block;
+  width: 100%;
+  border-radius: var(--of-r-panel);
+}
+
+body.otto-field .of-preview-meta {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--of-text-2);
+}
+
+/* ── focus ────────────────────────────────────────────────────────────────── */
+
+body.otto-field button:focus-visible {
+  outline: 2px solid var(--of-accent);
+  outline-offset: 2px;
+}
+
+body.otto-field .of-header button:focus-visible {
+  outline-color: #FFFFFF;
+}
+
+/* ── wider screens ────────────────────────────────────────────────────────── */
+
+@media (min-width: 720px) {
+  body.otto-field .of-facts > div { grid-template-columns: 140px 1fr; }
+  body.otto-field #main.wrap { padding-left: 24px; padding-right: 24px; }
+}

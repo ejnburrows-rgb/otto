@@ -68,12 +68,15 @@ async function runTests() {
     check('Returns 200', res.statusCode, 200);
     check('Returns text body', res.body, '{"reply":"hello"}');
 
+    /* The caller does not get to name the model. It used to: whatever the
+       browser put in `model` was forwarded, so an authenticated account could
+       run any model on the owner's key. The server picks, always. */
     process.env.NVIDIA_MODEL = 'custom-model-456';
     fetchCalls = [];
     res = createRes();
     await handler(createReq({ body: { model: 'passed-model', stream: true } }), res);
     bodyOut = JSON.parse(fetchCalls[0]?.options.body || '{}');
-    check('Respects passed model if provided', bodyOut.model, 'passed-model');
+    check('A caller-supplied model is ignored for the server-approved one', bodyOut.model, 'custom-model-456');
     check('Forces stream to false', bodyOut.stream, false);
 
     fetchCalls = [];
@@ -116,12 +119,15 @@ async function runTests() {
     check('Text-only request still uses the text model',
       bodyOut.model, 'meta/llama-3.3-70b-instruct');
 
-    // An explicit model always wins, image or not.
+    // Naming a model cannot be used to escape vision selection either.
     fetchCalls = [];
     res = createRes();
     await handler(createReq({ body: { ...withImage(), model: 'explicit-model' } }), res);
     bodyOut = JSON.parse(fetchCalls[0]?.options.body || '{}');
-    check('An explicit model still wins over vision selection', bodyOut.model, 'explicit-model');
+    // NVIDIA_VISION_MODEL is still set from the check above, so the server's
+    // configured vision model is the correct expectation here.
+    check('A caller-supplied model cannot override vision selection',
+      bodyOut.model, 'custom-vision-789');
 
     process.env.NVIDIA_MODEL = 'custom-model-456';
     delete process.env.NVIDIA_VISION_MODEL;
@@ -134,9 +140,45 @@ async function runTests() {
 
     fetchCalls = [];
     res = createRes();
-    await handler(createReq({ body: undefined, rawBody: '{"test":"raw"}' }), res);
+    await handler(createReq({ body: undefined, rawBody: '{"messages":[{"role":"user","content":"raw"}]}' }), res);
     bodyOut = JSON.parse(fetchCalls[0]?.options.body || '{}');
-    check('Reads from req stream when body is missing', bodyOut.test, 'raw');
+    check('Reads from req stream when body is missing', bodyOut.messages, [{ role: 'user', content: 'raw' }]);
+
+    /* The upstream request is rebuilt from known fields rather than forwarded,
+       so a caller cannot smuggle provider parameters through this proxy. */
+    fetchCalls = [];
+    res = createRes();
+    await handler(createReq({ body: { messages: [], tools: [{ name: 'x' }], api_key: 'sneaky', n: 50 } }), res);
+    bodyOut = JSON.parse(fetchCalls[0]?.options.body || '{}');
+    check('Unknown caller fields are not forwarded upstream',
+      [bodyOut.tools, bodyOut.api_key, bodyOut.n], [undefined, undefined, undefined]);
+
+    // Output length is capped server-side; a caller asking for more gets the cap.
+    fetchCalls = [];
+    res = createRes();
+    await handler(createReq({ body: { messages: [], max_tokens: 999999 } }), res);
+    bodyOut = JSON.parse(fetchCalls[0]?.options.body || '{}');
+    check('max_tokens is capped at the server maximum', bodyOut.max_tokens, 1500);
+
+    fetchCalls = [];
+    res = createRes();
+    await handler(createReq({ body: { messages: [], max_tokens: 200 } }), res);
+    bodyOut = JSON.parse(fetchCalls[0]?.options.body || '{}');
+    check('A smaller max_tokens is respected', bodyOut.max_tokens, 200);
+
+    // Oversized input is refused before the provider is paid to read it.
+    fetchCalls = [];
+    res = createRes();
+    await handler(createReq({ body: { messages: [{ role: 'user', content: 'x'.repeat(120001) }] } }), res);
+    check('Oversized input returns 413', res.statusCode, 413);
+    check('Oversized input never reaches the provider', fetchCalls.length, 0);
+
+    // Malformed JSON is a client error, not a provider error.
+    fetchCalls = [];
+    res = createRes();
+    await handler(createReq({ body: '{not json' }), res);
+    check('Malformed JSON returns 400', res.statusCode, 400);
+    check('Malformed JSON never reaches the provider', fetchCalls.length, 0);
 
     fetchCalls = [];
     res = createRes();
@@ -145,7 +187,46 @@ async function runTests() {
     await handler(createReq({ body: {} }), res);
     global.fetch = origFetch;
     check('Upstream error returns 502', res.statusCode, 502);
-    check('Includes error detail', res.body.error, 'upstream_error');
+    check('Includes error class', res.body.error, 'upstream_error');
+    /* The prompt is the owner's business data. A provider error message is an
+       easy place for it to leak into a log, so only the class is returned. */
+    check('Upstream error carries no prompt detail', res.body.detail, undefined);
+
+    // A provider that stops responding must fail as a timeout, not hang.
+    process.env.NVIDIA_TIMEOUT_MS = '20';
+    const { nvidiaHandler: timeoutHandler } = await import(`../api/nvidia.js?timeout=${Date.now()}`);
+    global.fetch = async (url, options) => new Promise((resolve, reject) => {
+      options.signal.addEventListener('abort', () => {
+        const err = new Error('aborted'); err.name = 'AbortError'; reject(err);
+      });
+    });
+    res = createRes();
+    await timeoutHandler(createReq({ body: { messages: [] } }), res, { userId: 'timeout-user' });
+    global.fetch = origFetch;
+    check('A provider that never answers returns 504', res.statusCode, 504);
+    check('Timeout is reported as a timeout', res.body.error, 'upstream_timeout');
+    delete process.env.NVIDIA_TIMEOUT_MS;
+
+    /* Rate limiting is per OTTO user id, so one account cannot spend the key by
+       looping, and a second account is unaffected by the first one's limit. */
+    process.env.NVIDIA_RATE_LIMIT_MAX = '3';
+    const { nvidiaHandler: limitHandler } = await import(`../api/nvidia.js?limit=${Date.now()}`);
+    global.fetch = async () => ({ status: 200, text: async () => '{"ok":true}' });
+    const statuses = [];
+    for (let i = 0; i < 4; i++) {
+      res = createRes();
+      await limitHandler(createReq({ body: { messages: [] } }), res, { userId: 'owner-1' });
+      statuses.push(res.statusCode);
+    }
+    check('A user is limited after the configured number of requests', statuses, [200, 200, 200, 429]);
+    check('The refusal names the reason', res.body.error, 'rate_limited');
+    check('The refusal tells the caller when to retry', typeof res.headers['Retry-After'], 'string');
+
+    res = createRes();
+    await limitHandler(createReq({ body: { messages: [] } }), res, { userId: 'owner-2' });
+    check('A different user is not affected by another user rate limit', res.statusCode, 200);
+    delete process.env.NVIDIA_RATE_LIMIT_MAX;
+    global.fetch = origFetch;
   } finally {
     for (const key of Object.keys(process.env)) delete process.env[key];
     Object.assign(process.env, originalEnv);

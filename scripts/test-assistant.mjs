@@ -7,6 +7,7 @@ const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
 const runtime = fs.readFileSync(new URL('../otto-assistant.js', import.meta.url), 'utf8');
 const css = fs.readFileSync(new URL('../otto-assistant.css', import.meta.url), 'utf8');
 const vercelBuild = fs.readFileSync(new URL('./vercel-build.mjs', import.meta.url), 'utf8');
+const nvidiaApi = fs.readFileSync(new URL('../api/nvidia.js', import.meta.url), 'utf8');
 const patchedIndex = patchIndex(index);
 const patchedSw = patchServiceWorker(sw);
 
@@ -16,7 +17,22 @@ assert.equal(patchServiceWorker(patchedSw), patchedSw, 'service-worker patch is 
 assert.match(patchedIndex, new RegExp(`otto-assistant\\.js\\?v=${ASSISTANT_VERSION}`));
 assert.match(vercelBuild, /apply-assistant-patch\.mjs/, 'Vercel materializes the assistant into the deployed index and service worker');
 assert.match(vercelBuild, /apply-assistant-patch\.mjs[\s\S]*qa-check\.mjs/, 'Vercel applies assistant before final QA');
-assert.match(runtime, /owner-1.*owner-2.*ops-1.*it-admin-ejn/s, 'assistant is limited to four approved administrator ids');
+/* This previously pinned the assistant to four hardcoded account ids. That made
+   a newly created owner silently assistant-less, fixable only by editing the
+   runtime, so the gate is now the role. The authoritative check is the server's:
+   api/nvidia.js refuses anything that is not owner/office, so the client rule is
+   presentation matching it rather than a control in its own right — which is why
+   both halves are asserted here. */
+assert.match(runtime, /ASSISTANT_ROLES = new Set\(\['owner', 'office'\]\)/, 'the assistant is gated by role, not by a hardcoded account list');
+assert.match(runtime, /ASSISTANT_ROLES\.has\(s\.role\)/, 'the role gate is the one isAllowed() actually applies');
+assert.doesNotMatch(runtime, /it-admin-ejn/, 'no individual account is special-cased any more');
+assert.match(nvidiaApi, /requireServerAuth\(req, res, \{ roles: \['owner', 'office'\] \}\)/, 'the server independently refuses any role but owner/office');
+
+/* Ask OTTO used to run a local search and stop, so it listed records but could
+   never answer a question. These assert the one real path and the absence of a
+   fabricated one. */
+assert.match(runtime, /async function answerQuestion/, 'a question reaches a real server answer path');
+assert.match(runtime, /state\.answerError/, 'a failed call reports the failure instead of inventing an answer');
 assert.doesNotMatch(runtime, /webkitSpeechRecognition|SpeechRecognition|speechSynthesis/i, 'no voice assistant code');
 assert.match(runtime, /MAX_RESULTS\s*=\s*5/, 'results are capped for low-cognitive-load UI');
 assert.match(runtime, /create_note.*create_email_draft.*create_contract.*create_paystub.*create_payroll_summary.*schedule_change.*update_employee/s, 'approved create/change actions exist');

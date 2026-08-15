@@ -120,3 +120,42 @@ body.otto-assistant-enabled [onclick*="openPlumbBotModal"] { display:none !impor
 @media (prefers-reduced-motion: reduce) {
   .otto-assistant-trigger,.otto-assistant-loading span { transition:none; animation:none; }
 }
+
+/* The written answer, and the reason there isn't one.
+
+   These are deliberately different objects on the page. A record list is not an
+   answer, and a failed provider call must never be able to read as a reply, so
+   the failure gets its own alert treatment rather than a quiet grey line. */
+.otto-assistant-answer {
+  margin: 12px 16px 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--action);
+  border-radius: 10px;
+  background: var(--card);
+}
+
+.otto-assistant-answer.is-error {
+  border-left-color: var(--red, #C93737);
+}
+
+.otto-assistant-answer-kicker {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--action);
+}
+
+.otto-assistant-answer.is-error .otto-assistant-answer-kicker { color: var(--red, #C93737); }
+
+.otto-assistant-answer p {
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  color: var(--text);
+}
