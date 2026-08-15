@@ -46,10 +46,17 @@ const checks = [
   /* The reported failure was an accepted employee who could not sign back in.
      Every one of these is a way that used to end at an empty sign-in form with
      no explanation, on an account that was valid the whole time. */
+  /* Recovery behavior itself — recreated identities, ambiguity, disabled and
+     deleted profiles — is proven against the real function in
+     scripts/test-returning-login.mjs. These two stay as source checks only to
+     pin the shape of the fix: the stale-uid requirement is gone, and recovery
+     is still keyed on the stored email. */
   ['a verified email resolves an existing profile even when a stale auth_uid is stored',
     !serverAuth.includes('candidate.auth_uid == null &&')
-    && serverAuth.includes("String(candidate.data.email || '').trim().toLowerCase() === email")],
+    && /candidate\.data\.email/.test(serverAuth)],
   ['an ambiguous email still cannot claim a profile', serverAuth.includes('matches.length === 1')],
+  ['a disabled or deleted profile is never rebound on its way to being refused',
+    serverAuth.includes('usableProfile(matches[0])')],
   ['a rebind updates the same row rather than creating a second employee',
     serverAuth.includes("method: 'PATCH'") && serverAuth.includes('auth_uid: authUser.id')],
   ['the profile lookup retries instead of failing on the first bad response',

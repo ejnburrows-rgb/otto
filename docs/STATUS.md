@@ -1,6 +1,6 @@
 # STATUS — OTTO Plumbing CRM
 
-Last updated: 2026-08-14.
+Last updated: 2026-08-15.
 
 This file is the current factual snapshot. Historical incident detail remains in Git history and issue/PR discussions; stale status narratives must not be used to restore superseded behavior.
 
@@ -22,6 +22,15 @@ This file is the current factual snapshot. Historical incident detail remains in
 - All 43 current public document-store tables have an explicit direct-client deny policy, and the private upload bucket enforces a 25 MB limit plus an allowlist.
 - EJN, Julio, Otto and Sarays are protected Owner profiles. Owner is the complete CRM role across users, customers, jobs, schedules, financial records, communications, documents, photos, plans, settings, backups and audit history. Uploaded-document deletion removes both the CRM record and its stored file.
 - QuickBooks is a manual handoff only: copy/export details and open QuickBooks separately, with no OAuth or synchronization.
+
+## 2026-08-15 — returning login, assistant limits, estimate unit safety
+
+Four defects fixed together. Suite: 947 passed / 0 failed; `qa-check` pass; the estimate guard was also exercised against the running app in a browser.
+
+- **Returning login.** A user whose Supabase Auth account is recreated arrives with a new auth UUID. The stored `auth_uid` no longer matched, and the email fallback was skipped for any profile that had ever been bound, so an accepted employee was locked out and the only route back in was a duplicate employee record. Identity now prefers the stored `auth_uid`, and when that is stale or missing it recovers by verified email, requires exactly one matching profile across all rows, and relinks that row to the new UUID. A disabled or deleted profile is refused *before* it is relinked, and a blank stored address is never a join key — previously a caller presenting a whitespace-only email could claim an owner profile that had no email set, which is the state Otto, Julio and Sarays are in.
+- **Ask OTTO limits.** The proxy forwarded the caller's request object as-is, so a browser could name any model and ask for unlimited output on the owner's provider key. The upstream request is now rebuilt from known fields only: the model is chosen server-side (text or vision, by whether the request carries an image), output tokens are capped, input size is capped, the call has a timeout, and each OTTO user id is rate limited. Authorization still runs before anything is parsed or forwarded. Timeout, rate-limit and provider failures return distinct, truthful errors, and provider error text is no longer echoed back because the prompt is business data.
+- **Estimate unit safety.** The rate card prices pipe per `Pipe Unit` — one confirmed run, $2,000 — while a drawing takeoff extracts pipe as linear feet. Nothing compared the two, so 250 LF was multiplied by the per-run rate and the estimate read $500,000. Units are now compared by what they measure before they are multiplied; an incompatible pair produces no total and a bilingual review message naming both units and the rate involved. The guard is deliberately narrow: it fires when OTTO would apply its *own* rate-card rate to an incompatible quantity, so a price the estimator typed is still their own arithmetic. Unrecognized units are not treated as conflicts.
+- **Owner profiles awaiting activation.** Otto (`owner-1`), Julio (`owner-2`) and Sarays (`ops-1`) hold real profiles with no sign-in address. Saving an address used to send an invitation as an unavoidable side effect, so recording someone's email and granting them access were one irreversible action. They are separate now: the employee form asks whether sign-in access is required, and the invitation is sent only when the answer is yes. Absent means yes, so every existing invite path is unchanged. The profile row is `jsonb` and the invite endpoint already accepts any employee id and address, so activation needs no further engineering — add the email, answer the access question, send the invite.
 
 ## Current owner / office UI contract
 

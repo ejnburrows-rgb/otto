@@ -2188,6 +2188,67 @@
     }
     return null;
   }
+  /* ---- Unit safety on priced lines ----
+     A rate is a price per something, and the something matters. The rate card
+     prices pipe per 'Pipe Unit' — one confirmed branch or run, $2,000 — while a
+     drawing takeoff extracts pipe as linear feet. Multiplying 250 LF by a
+     per-run rate produced a $500,000 line for a job worth a fraction of that,
+     and nothing on screen said the two numbers described different things.
+
+     So units are compared by dimension before they are multiplied. Naming is
+     inconsistent by nature ('ea', 'Each', 'EA'), so each spelling maps to what
+     it measures and only the measurement is compared. An unrecognized unit is
+     left alone rather than guessed at: refusing to price something OTTO simply
+     has no opinion about would block real work. */
+  const UNIT_DIMENSIONS = (() => {
+    const groups = {
+      count: ['ea', 'each', 'ct', 'count', 'unit', 'units', 'pipe unit', 'pipe units', 'fixture', 'fixtures', 'fitting', 'fittings', 'run', 'runs', 'branch', 'branches', 'pc', 'pcs', 'piece', 'pieces'],
+      length: ['lf', 'ft', 'feet', 'foot', 'linear foot', 'linear feet', 'linear ft', 'in', 'inch', 'inches', 'yd', 'yard', 'yards', 'm', 'meter', 'meters', 'metre', 'metres', 'cm', 'mm'],
+      area: ['sf', 'sq ft', 'sqft', 'square foot', 'square feet', 'sy', 'square yard', 'm2', 'sq m'],
+      volume: ['gal', 'gallon', 'gallons', 'cf', 'cubic foot', 'cubic feet', 'cy', 'cubic yard', 'l', 'liter', 'liters'],
+      time: ['hr', 'hrs', 'hour', 'hours', 'day', 'days', 'week', 'weeks'],
+      weight: ['lb', 'lbs', 'pound', 'pounds', 'kg', 'ton', 'tons'],
+    };
+    const map = new Map();
+    for (const [dimension, names] of Object.entries(groups)) for (const name of names) map.set(name, dimension);
+    return map;
+  })();
+  function unitDimension(unit) {
+    const key = String(unit || '').trim().toLowerCase().replace(/\.$/, '').replace(/\s+/g, ' ');
+    return key ? (UNIT_DIMENSIONS.get(key) || '') : '';
+  }
+  // false only when both units are understood and measure different things.
+  function unitsCompatible(a, b) {
+    const da = unitDimension(a), db_ = unitDimension(b);
+    if (!da || !db_) return true;
+    return da === db_;
+  }
+  /* Price one line, refusing the multiplication when the quantity's unit and the
+     rate card's unit disagree.
+
+     The refusal is deliberately narrow: it applies when the price being used IS
+     the rate-card rate. A price the estimator typed themselves is their own
+     arithmetic — flagging it would second-guess a correct per-foot price the
+     card simply does not carry — so a hand-entered price is multiplied as
+     given. What must never happen silently is OTTO applying its own per-run
+     rate to a length. */
+  function priceLine(line, matched) {
+    const quantity = Number(line.quantity ?? line.qty ?? 0) || 0;
+    const cardRate = matched && Number(matched.rate);
+    const unitPrice = Number(line.unitPrice ?? (Number.isFinite(cardRate) ? cardRate : 0)) || 0;
+    const unit = line.unit || (matched && matched.unit) || '';
+    const fromCard = Boolean(matched) && Number.isFinite(cardRate) && unitPrice === cardRate;
+    if (fromCard && !unitsCompatible(unit, matched.unit)) {
+      return { quantity, unit, unitPrice, lineTotal: 0, unitIssue: { quantityUnit: unit, rateUnit: matched.unit, itemId: matched.itemId } };
+    }
+    return { quantity, unit, unitPrice, lineTotal: Math.round(quantity * unitPrice * 100) / 100, unitIssue: null };
+  }
+  function unitIssueText(issue) {
+    return lang === 'es'
+      ? `Unidades incompatibles: la cantidad está en “${issue.quantityUnit}” y la tarifa ${issue.itemId || ''} es por “${issue.rateUnit}”. Confirme la tarifa o la unidad antes de continuar.`
+      : `Unit mismatch: the quantity is in “${issue.quantityUnit}” but rate ${issue.itemId || ''} is priced per “${issue.rateUnit}”. Confirm the rate or the unit before continuing.`;
+  }
+
   function matchRateItem(label) {
     const needle = String(label || '').trim().toLowerCase();
     const card = getActiveRateCard();
@@ -3202,7 +3263,7 @@
     return `<div class="estimate-line" style="display:grid;grid-template-columns:2fr 72px 92px 110px 40px;gap:8px;margin-bottom:8px">
       <input class="el-desc" placeholder="${lang === 'es' ? 'Material / descripción' : 'Material / description'}" value="${esc(line.description || line.item || '')}" oninput="recalculateEstimateForm()">
       <input class="el-qty" type="number" min="0" step="any" value="${line.quantity ?? line.qty ?? 1}" oninput="recalculateEstimateForm()">
-      <input class="el-unit" value="${esc(line.unit || 'Each')}">
+      <input class="el-unit" value="${esc(line.unit || 'Each')}" oninput="recalculateEstimateForm()">
       <input class="el-price" type="number" min="0" step="0.01" value="${line.unitPrice ?? line.rate ?? 0}" oninput="recalculateEstimateForm()">
       <button type="button" class="iconbtn" aria-label="${t('delete')}" onclick="this.closest('.estimate-line').remove();recalculateEstimateForm()"><i class="fas fa-xmark"></i></button>
     </div>`;
@@ -3210,15 +3271,32 @@
   function addEstimateLine(line) { $('#estimate-lines')?.insertAdjacentHTML('beforeend', estimateLineHTML(line || {})); recalculateEstimateForm(); }
   function estimateLinesFromForm() {
     return [...document.querySelectorAll('#estimate-lines .estimate-line')].map(row => {
-      const quantity = Number(row.querySelector('.el-qty').value || 0);
-      const unitPrice = Number(row.querySelector('.el-price').value || 0);
-      return { description: row.querySelector('.el-desc').value.trim(), quantity, unit: row.querySelector('.el-unit').value.trim(), unitPrice, lineTotal: Math.round(quantity * unitPrice * 100) / 100 };
+      const description = row.querySelector('.el-desc').value.trim();
+      const matched = matchRateItem(description);
+      const priced = priceLine({
+        quantity: row.querySelector('.el-qty').value,
+        unit: row.querySelector('.el-unit').value.trim(),
+        unitPrice: row.querySelector('.el-price').value,
+      }, matched);
+      return { description, quantity: priced.quantity, unit: priced.unit, unitPrice: priced.unitPrice, lineTotal: priced.lineTotal, unitIssue: priced.unitIssue };
     }).filter(line => line.description);
   }
   function setEstimateAdjustment(pct) { _estimateAdjustment = Number(pct) || 0; recalculateEstimateForm(); }
   function adjustEstimateMargin(pct) { setEstimateAdjustment(pct); }
   function recalculateEstimateForm() {
-    const base = estimateLinesFromForm().reduce((sum, line) => sum + line.lineTotal, 0);
+    const lines = estimateLinesFromForm();
+    /* A line whose units disagree contributes nothing to the total and says why.
+       Showing $0.00 with no explanation would read as a bug; showing the
+       nonsense product would read as a price. */
+    const issues = lines.filter(line => line.unitIssue);
+    const warn = $('#e-unit-warning');
+    if (warn) {
+      warn.innerHTML = issues.length
+        ? issues.map(line => `<div style="margin:2px 0"><i class="fas fa-triangle-exclamation"></i> ${esc(line.description)} — ${esc(unitIssueText(line.unitIssue))}</div>`).join('')
+        : '';
+      warn.style.display = issues.length ? 'block' : 'none';
+    }
+    const base = lines.reduce((sum, line) => sum + line.lineTotal, 0);
     const adjustmentAmount = Math.round(base * _estimateAdjustment * 100) / 100;
     const final = Math.round((base + adjustmentAmount) * 100) / 100;
     if ($('#e-base')) $('#e-base').textContent = money(base);
@@ -3237,6 +3315,7 @@
       <div class="field"><label for="e-title">${t('title')}</label><input id="e-title" value="${esc(e.title || (job ? job.title : ''))}"></div>
       <div class="field"><label for="e-desc">${t('description')}</label><div class="with-voice"><textarea id="e-desc">${esc(e.description || '')}</textarea>${voiceBtn('e-desc')}</div></div>
       <div class="field"><label>${lang === 'es' ? 'Líneas del estimado' : 'Estimate line items'}</label><div id="estimate-lines">${lines.map(estimateLineHTML).join('')}</div><button type="button" class="btn ghost sm" onclick="addEstimateLine()"><i class="fas fa-plus"></i> ${t('addItem')}</button></div>
+      <div id="e-unit-warning" class="card" style="display:none;padding:12px;margin-bottom:12px;border-left:3px solid var(--red);font-size:13px"></div>
       <div class="field"><label>${lang === 'es' ? 'Ajuste' : 'Adjustment'}</label><div class="tabs">${[[0,'Base'],[.05,'+5%'],[-.05,'-5%'],[.10,'+10%'],[-.10,'-10%']].map(([value,label]) => `<button type="button" data-adjustment="${value}" onclick="setEstimateAdjustment(${value})">${label}</button>`).join('')}</div></div>
       <div class="card" style="padding:14px;margin-bottom:14px">${kv(lang === 'es' ? 'Subtotal original' : 'Original subtotal', '<b id="e-base">$0.00</b>')}${kv(lang === 'es' ? 'Ajuste seleccionado' : 'Selected adjustment', '<b id="e-adjustment">0%</b>')}${kv(lang === 'es' ? 'Total final' : 'Final total', '<b id="e-final">$0.00</b>')}</div>
       <input id="e-amount" type="hidden" value="${e.amount || 0}">
@@ -3813,6 +3892,16 @@
       <div class="field"><label for="u-name">${t('name')}</label><input id="u-name" value="${esc(u.name || '')}"></div>
       <div class="row2"><div class="field"><label for="u-phone">${lang === 'es' ? 'Teléfono' : 'Phone'}</label><input id="u-phone" type="tel" value="${esc(u.phone || '')}"></div>
       <div class="field"><label for="u-email">${lang === 'es' ? 'Correo de acceso' : 'Sign-in email'}</label><input id="u-email" type="email" value="${esc(u.email || '')}"></div></div>
+      ${/* Otto, Julio and Sarays are real people on the team who have no sign-in
+            address yet. Saving an email used to send an invitation as an
+            unavoidable side effect, so recording someone's address and deciding
+            whether they should be able to sign in were the same irreversible
+            action. They are separate now: the address is a fact about the
+            person, the invitation is a decision about access. Existing accounts
+            answer yes, which is what every current invite already does. */''}
+      <div class="field"><label for="u-login">${lang === 'es' ? '¿Necesita acceso para iniciar sesión?' : 'Sign-in access required?'}</label>
+        <select id="u-login"><option value="yes" ${u.loginAccess !== false ? 'selected' : ''}>${lang === 'es' ? 'Sí — enviar invitación' : 'Yes — send invitation'}</option><option value="no" ${u.loginAccess === false ? 'selected' : ''}>${lang === 'es' ? 'No — solo guardar el correo' : 'No — save the email only'}</option></select>
+        <div class="muted" style="font-size:12px;margin-top:4px">${lang === 'es' ? 'Elija “No” para registrar el correo sin dar acceso todavía.' : 'Choose “No” to record the email without granting access yet.'}</div></div>
       <div class="field"><label for="u-role">${t('role')}</label>${protectedAdmin
         ? `<input id="u-role" type="hidden" value="owner"><div class="muted" style="padding:10px 0"><i class="fas fa-shield-halved"></i> ${lang === 'es' ? 'Administrador completo — acceso a todos los usuarios, clientes, trabajos, facturas y archivos' : 'Full administrator — access to every user, customer, job, invoice and file'}</div>`
         : `<select id="u-role"><option value="field" selected>${t('field')}</option></select>`}</div>
@@ -3836,16 +3925,21 @@
     if (email && !/^\S+@\S+\.\S+$/.test(email)) return toast(lang === 'es' ? 'Correo inválido' : 'Invalid email', 'error');
     const existing = id ? get('users', id) : null;
     const protectedAdmin = isProtectedAdmin(existing);
-    const data = { name, phone: ($('#u-phone').value || '').trim(), email,
+    const loginAccess = ($('#u-login') || {}).value !== 'no';
+    const data = { name, phone: ($('#u-phone').value || '').trim(), email, loginAccess,
       role: protectedAdmin ? 'owner' : 'field', lang: $('#u-lang').value,
       hourlyRate: Number($('#u-rate').value || 0), active: protectedAdmin ? true : $('#u-status').value === 'active',
       notes: ($('#u-notes').value || '').trim() };
     const user = id ? update('users', id, data) : add('users', data);
-    if (email) {
+    if (email && loginAccess) {
       const response = await serverFetch('/api/invite', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: user.id, email }) });
       if (!response.ok) return toast(lang === 'es' ? 'Guardado; no se pudo enviar la invitación.' : 'Saved; invitation could not be sent.', 'error');
     }
-    closeModal(); toast(email ? (lang === 'es' ? 'Guardado. Invitación enviada.' : 'Saved. Invitation sent.') : t('saved'), 'success'); render();
+    closeModal();
+    toast(email && loginAccess ? (lang === 'es' ? 'Guardado. Invitación enviada.' : 'Saved. Invitation sent.')
+      : email ? (lang === 'es' ? 'Guardado. Sin acceso todavía.' : 'Saved. No sign-in access yet.')
+      : t('saved'), 'success');
+    render();
   }
 
   /* ============================ SETTINGS ============================ */
@@ -4495,17 +4589,23 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     const d = get('documents', docId); if (!d) return;
     const summary = ($('#est-summary').value || '').trim();
     const scope = ($('#est-scope').value || '').split('\n').map(s => s.trim()).filter(Boolean);
-    const materials = [...document.querySelectorAll('#mat-rows .mat-row')].map(r => ({
-      item: (r.querySelector('.m-item').value || '').trim(),
-      qty: parseFloat(r.querySelector('.m-qty').value) || 0,
-      unit: (r.querySelector('.m-unit').value || '').trim(),
-      itemId: r.querySelector('.m-price').dataset.itemId || null,
-      unitPrice: parseFloat(r.querySelector('.m-price').value) || 0,
-      lineTotal: Math.round((parseFloat(r.querySelector('.m-qty').value) || 0) * (parseFloat(r.querySelector('.m-price').value) || 0) * 100) / 100,
-    })).filter(m => m.item);
+    const materials = [...document.querySelectorAll('#mat-rows .mat-row')].map(r => {
+      const itemId = r.querySelector('.m-price').dataset.itemId || null;
+      const item = (r.querySelector('.m-item').value || '').trim();
+      const matched = itemId ? getRateCardItem(itemId) : matchRateItem(item);
+      const priced = priceLine({
+        quantity: r.querySelector('.m-qty').value,
+        unit: (r.querySelector('.m-unit').value || '').trim(),
+        unitPrice: r.querySelector('.m-price').value,
+      }, matched);
+      return { item, qty: priced.quantity, unit: priced.unit, itemId, unitPrice: priced.unitPrice, lineTotal: priced.lineTotal, unitIssue: priced.unitIssue };
+    }).filter(m => m.item);
     const cur = d.estimate || {};
     update('documents', docId, { estimate: Object.assign({}, cur, { jobSummary: summary, scope, materials, finalized: true, lang }) });
-    closeModal(); toast(t('saved'), 'success'); render();
+    closeModal();
+    const mismatched = materials.find(m => m.unitIssue);
+    toast(mismatched ? unitIssueText(mismatched.unitIssue) : t('saved'), mismatched ? 'error' : 'success');
+    render();
   }
   // Turn the reviewed draft into a real Estimate record on the job.
   function estimateFromDrawing(docId) {
@@ -4517,14 +4617,15 @@ Rules: Never invent precise counts you cannot support from the data — instead 
     ].filter(Boolean).join('\n');
     const lineItems = (e.materials || []).map(material => {
       const matched = material.itemId ? getRateCardItem(material.itemId) : matchRateItem(material.item);
-      const quantity = Number(material.qty || 0);
-      const unitPrice = Number(material.unitPrice ?? (matched && matched.rate) ?? 0);
-      return { itemId: (matched && matched.itemId) || material.itemId || null, description: material.item, quantity, unit: material.unit || (matched && matched.unit) || '', unitPrice, lineTotal: Math.round(quantity * unitPrice * 100) / 100, unmatched: !matched };
+      const priced = priceLine({ quantity: material.qty, unit: material.unit, unitPrice: material.unitPrice }, matched);
+      return { itemId: (matched && matched.itemId) || material.itemId || null, description: material.item, quantity: priced.quantity, unit: priced.unit, unitPrice: priced.unitPrice, lineTotal: priced.lineTotal, unmatched: !matched, unitIssue: priced.unitIssue };
     });
     const estimate = add('estimates', { jobId: d.jobId, customerId: get('jobs', d.jobId)?.customerId || '', title: (e.jobSummary || d.name || '').slice(0, 80), description: desc, lineItems, baseSubtotal: lineItems.reduce((sum, line) => sum + line.lineTotal, 0), adjustmentPct: 0, adjustmentAmount: 0, amount: lineItems.reduce((sum, line) => sum + line.lineTotal, 0), status: 'draft', sourceDocumentId: docId, date: todayISO() });
     closeModal();
     openEstimateForm(estimate.id);
-    if (lineItems.some(line => line.unmatched)) toast(lang === 'es' ? 'Revise los materiales sin precio antes de finalizar.' : 'Review unmatched materials before finalizing.', 'error');
+    const mismatched = lineItems.find(line => line.unitIssue);
+    if (mismatched) toast(unitIssueText(mismatched.unitIssue), 'error');
+    else if (lineItems.some(line => line.unmatched)) toast(lang === 'es' ? 'Revise los materiales sin precio antes de finalizar.' : 'Review unmatched materials before finalizing.', 'error');
   }
 
   /* ==================== AI plain-language summaries ==================== */
@@ -6616,6 +6717,9 @@ Return ONLY valid JSON: { "fixtures": [], "pipes": [], "fittings": [], "notes": 
     photoScanCreateCustomer, viewUrgentHub, openUrgentForm, submitUrgentMessage, replyUrgent, resolveUrgent, deletePhotoFile,
     saveNotifyPrefs, refreshIntegrationStatus,
     openPlumbBotModal, closePlumbBotModal, sendPlumbBotMsg, adjustEstimateMargin, setEstimateAdjustment, recalculateEstimateForm, addEstimateLine,
+    // Exposed so the unit guard can be exercised against the running app rather
+    // than only against the source it was lifted from.
+    priceLine, unitDimension, unitsCompatible,
     viewPriceBook, openMaterialForm, saveMaterial, sendCloudSignIn, showCloudLogin, openQuickBooks, exportQuickBooksCSV, shareEstimate, emailEstimate, emailInvoice,
     viewContracts, openContractForm, saveContract });
 

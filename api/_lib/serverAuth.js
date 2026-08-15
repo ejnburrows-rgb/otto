@@ -28,6 +28,19 @@ async function fetchBusinessUsers(url) {
   return response.json();
 }
 
+// A profile may act only when it exists, has not been deleted or deactivated,
+// and carries a role OTTO recognizes. This is checked before the account is
+// relinked as well as after, so a disabled or deleted profile is never rebound
+// to a new provider identity on its way to being refused.
+const ROLES = ['owner', 'office', 'field'];
+function usableProfile(row) {
+  const profile = row && row.data;
+  if (!profile) return null;
+  if (profile.deleted === true || profile.active === false) return null;
+  if (!ROLES.includes(profile.role)) return null;
+  return profile;
+}
+
 export async function getServerIdentity(req) {
   const url = process.env.SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -60,11 +73,16 @@ export async function getServerIdentity(req) {
   // an ambiguous address can never claim a profile.
   if (!row) {
     const email = String(authUser.email).trim().toLowerCase();
-    const matches = rows.filter((candidate) =>
-      candidate && candidate.data &&
-      String(candidate.data.email || '').trim().toLowerCase() === email
-    );
-    if (matches.length === 1) {
+    // Otto, Julio and Sarays are real profiles that carry no sign-in email yet.
+    // A blank address must never be a join key, or the first caller with an
+    // empty-looking email would claim one of them.
+    const matches = email ? rows.filter((candidate) => {
+      const stored = candidate && candidate.data && String(candidate.data.email || '').trim().toLowerCase();
+      return stored && stored === email;
+    }) : [];
+    // Exactly one, counted across every profile: an address held by two rows is
+    // ambiguous and claims neither, even if only one of them could be used.
+    if (matches.length === 1 && usableProfile(matches[0])) {
       const candidate = matches[0];
       const bind = await fetch(`${url}/rest/v1/users?id=eq.${encodeURIComponent(candidate.id)}`, {
         method: 'PATCH',
@@ -75,10 +93,9 @@ export async function getServerIdentity(req) {
     }
   }
 
-  const profile = row && row.data;
-  if (!profile || profile.deleted === true || profile.active === false) return null;
+  const profile = usableProfile(row);
+  if (!profile) return null;
   const role = profile.role;
-  if (!['owner', 'office', 'field'].includes(role)) return null;
   return {
     authUserId: authUser.id,
     email: authUser.email,
