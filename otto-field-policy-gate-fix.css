@@ -1,0 +1,9 @@
+/* OTTO CRM — field policy gate interaction fix.
+   The employee Code of Conduct owns the entire viewport until it is accepted.
+   The field workspace's fixed chrome must not cover or intercept the gate's
+   required controls. Once policy-gate-active is removed, normal field chrome
+   becomes visible again automatically. */
+body.otto-field #app.policy-gate-active > .of-header,
+body.otto-field #app.policy-gate-active > .of-dock {
+  display: none !important;
+}
