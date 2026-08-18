@@ -88,7 +88,7 @@ export function patchSource(source) {
 }
 
 export function patchRuntime(source) {
-  let out = source
+  let out = source.replace(/\r\n/g, '\n')
     .split("${L ? 'QuickBooks, idioma, apariencia y equipo' : 'QuickBooks, language, appearance and team'}")
     .join("${L ? 'Idioma, apariencia y equipo' : 'Language, appearance and team'}");
 
