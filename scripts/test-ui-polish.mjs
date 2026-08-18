@@ -5,6 +5,7 @@ const index = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8')
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
 const css = fs.readFileSync(new URL('../otto-ui-polish.css', import.meta.url), 'utf8');
 const finishCss = fs.readFileSync(new URL('../otto-client-visible-polish.css', import.meta.url), 'utf8');
+const fieldPolicyCss = fs.readFileSync(new URL('../otto-field-policy-gate-fix.css', import.meta.url), 'utf8');
 const js = fs.readFileSync(new URL('../otto-ui-polish.js', import.meta.url), 'utf8');
 const patchedIndex = patchIndex(index);
 const patchedSw = patchServiceWorker(sw);
@@ -12,7 +13,8 @@ const patchedSw = patchServiceWorker(sw);
 const checks = [
   ...validate(patchedIndex, patchedSw),
   ['polish patch is idempotent', patchIndex(patchedIndex) === patchedIndex && patchServiceWorker(patchedSw) === patchedSw],
-  ['polish assets share one version', UI_POLISH_VERSION === '2' && patchedIndex.includes('otto-ui-polish.css?v=2') && patchedIndex.includes('otto-client-visible-polish.css?v=2') && patchedIndex.includes('otto-ui-polish.js?v=2')],
+  ['polish assets share one version', UI_POLISH_VERSION === '3' && patchedIndex.includes('otto-ui-polish.css?v=3') && patchedIndex.includes('otto-client-visible-polish.css?v=3') && patchedIndex.includes('otto-field-policy-gate-fix.css?v=3') && patchedIndex.includes('otto-ui-polish.js?v=3')],
+  ['field policy gate hides fixed worker chrome', fieldPolicyCss.includes('#app.policy-gate-active > .of-header') && fieldPolicyCss.includes('#app.policy-gate-active > .of-dock') && fieldPolicyCss.includes('display: none !important')],
   ['desktop touch targets are at least 40px', css.includes('body.admin-home .topbar .iconbtn') && css.includes('min-width: 40px') && css.includes('min-height: 40px')],
   ['window controls are at least 36px', css.includes('.otto-window-control') && css.includes('min-width: 36px') && css.includes('min-height: 36px')],
   ['Today receives restrained priority treatment', css.includes('#panel-today') && css.includes('inset 0 2px 0')],
