@@ -5,7 +5,7 @@
   "env": {"PLAYWRIGHT_BROWSERS_PATH": "0"},
   "functions": {
     "api/browser-health.js": {"includeFiles": "node_modules/playwright-core/.local-browsers/**","maxDuration": 60},
-    "api/qa-inspect.js": {"includeFiles": "node_modules/playwright-core/.local-browsers/**","maxDuration": 60},
+    "api/qa-ask-current.js": {"includeFiles": "node_modules/playwright-core/.local-browsers/**","maxDuration": 60},
     "api/qa-setup.js": {"includeFiles": "node_modules/playwright-core/.local-browsers/**","maxDuration": 60},
     "api/qa-setup-fixed.js": {"includeFiles": "node_modules/playwright-core/.local-browsers/**","maxDuration": 60},
     "api/qa-full.js": {"includeFiles": "node_modules/playwright-core/.local-browsers/**","maxDuration": 60},
