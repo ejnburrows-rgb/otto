@@ -1,7 +1,7 @@
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('X-Robots-Tag', 'noindex');
-  if (req.method !== 'POST' || String(req.query?.run || '') !== '154') return res.status(404).json({ error: 'not_found' });
+  if (req.method !== 'GET' || String(req.query?.run || '') !== '154') return res.status(404).json({ error: 'not_found' });
   if (process.env.VERCEL_ENV !== 'production') return res.status(404).json({ error: 'not_found' });
 
   const url = process.env.SUPABASE_URL;
