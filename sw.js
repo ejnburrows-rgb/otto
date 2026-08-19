@@ -127,6 +127,13 @@ self.addEventListener('fetch', (e) => {
   if (API_HOSTS.includes(url.hostname) ||
       url.hostname.endsWith('.intuit.com') ||
       url.hostname === 'intuit.com') return;
+  const sameOrigin = url.origin === self.location.origin;
+  // Same-origin API traffic is never stored. These responses are authenticated
+  // and per-caller — a signed photo URL issued for one fileId must never be
+  // replayed for another — and the query string is the whole request, which the
+  // same-origin asset lookup below is built to ignore. App data lives in
+  // IndexedDB, so there is nothing here worth keeping offline.
+  if (sameOrigin && url.pathname.startsWith('/api/')) return;
   // Network-first for the app shell so updates land; fall back to cache offline.
   if (req.mode === 'navigate' || url.pathname.endsWith('index.html')) {
     e.respondWith(
@@ -146,15 +153,42 @@ self.addEventListener('fetch', (e) => {
     );
     return;
   }
-  // Cache-first for static CDN assets and app assets.
+  // Same-origin app assets are network-first.
   //
-  // Same-origin lookups ignore the query string: otto-home.css and otto-home.js
-  // are requested with a cache-busting `?v=` that changes whenever they change,
-  // and an exact-match lookup would miss the precached copy and leave an
-  // offline phone with an unstyled home screen.
-  const sameOrigin = url.origin === self.location.origin;
+  // They were cache-first, and the lookup ignores the query string on purpose:
+  // otto-home.css and otto-home.js are requested with a cache-busting `?v=`
+  // that changes whenever they change, and an exact-match lookup would miss the
+  // precached copy and leave an offline phone with an unstyled home screen.
+  //
+  // The cost was that `?v=` stopped meaning anything for as long as a cache
+  // generation lived. A deployment that changed otto-shell.js published it to
+  // the origin, every installed device went on executing the copy already
+  // stored under CACHE, and the only thing that dislodged it was bumping CACHE
+  // by hand. Miss that bump and current HTML runs an older deployment's
+  // JavaScript indefinitely — the shell and its assets disagreeing about what
+  // the application is, with nothing on the server to show for it.
+  //
+  // The network answer now wins whenever there is one and replaces what is
+  // stored. The cache, still matched with ignoreSearch: sameOrigin, is the
+  // offline fallback rather than the default answer, so a field phone with no
+  // signal is unaffected.
+  if (sameOrigin) {
+    e.respondWith(
+      fetch(req).then((res) => {
+        if (res && res.status === 200) {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+        }
+        return res;
+      }).catch(() => caches.match(req, { ignoreSearch: sameOrigin }).then((m) => m || Response.error()))
+    );
+    return;
+  }
+  // Cache-first for static CDN assets: those URLs carry version hashes, the
+  // files are large, and re-fetching them on every load costs a field phone
+  // bandwidth for no correctness gain.
   e.respondWith(
-    caches.match(req, { ignoreSearch: sameOrigin }).then((m) => m || fetch(req).then((res) => {
+    caches.match(req).then((m) => m || fetch(req).then((res) => {
       if (res && res.status === 200 && (url.hostname.includes('cdnjs') || url.hostname.includes('fonts') || url.hostname.includes('cdn-icons') || url.hostname.includes('jsdelivr'))) {
         const copy = res.clone();
         caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
