@@ -117,6 +117,7 @@ export default async function handler(req, res) {
     signedPhotoStatus: null,
     renderedPhotoCount: 0,
     renderedPhotoDimensions: [],
+    renderedPhotoSources: [],
     photoUiRequests: 0,
     photoUiStatuses: [],
   };
@@ -237,13 +238,14 @@ export default async function handler(req, res) {
 
     await page.evaluate((jobId) => window.nav('job', jobId), fixture.jobId);
     await page.waitForFunction((fileId) => Array.from(document.images).some((img) =>
-      img.src.includes(fileId) && img.complete && img.naturalWidth > 0 && img.naturalHeight > 0), fixture.fileId, { timeout: 15000 }).catch(() => {});
+      (img.src.includes(fileId) || img.src.startsWith('blob:')) && img.complete && img.naturalWidth > 0 && img.naturalHeight > 0), fixture.fileId, { timeout: 15000 }).catch(() => {});
     await sleep(500);
     const rendered = await page.evaluate((fileId) => Array.from(document.images)
-      .filter((img) => img.src.includes(fileId))
-      .map((img) => ({ complete: img.complete, width: img.naturalWidth, height: img.naturalHeight, broken: !img.complete || img.naturalWidth === 0 || img.naturalHeight === 0 })), fixture.fileId);
+      .filter((img) => img.src.includes(fileId) || img.src.startsWith('blob:'))
+      .map((img) => ({ complete: img.complete, width: img.naturalWidth, height: img.naturalHeight, source: img.src.startsWith('blob:') ? 'blob' : 'signed', broken: !img.complete || img.naturalWidth === 0 || img.naturalHeight === 0 })), fixture.fileId);
     proof.renderedPhotoCount = rendered.length;
     proof.renderedPhotoDimensions = rendered.map((img) => `${img.width}x${img.height}`);
+    proof.renderedPhotoSources = rendered.map((img) => img.source);
     proof.renderedPhotosHealthy = rendered.length > 0 && rendered.every((img) => !img.broken);
     proof.photoUiRequests = photoResponses.length;
     proof.photoUiStatuses = photoResponses.map((item) => item.status);
