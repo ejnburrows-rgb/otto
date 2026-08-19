@@ -18,7 +18,6 @@
     "verify:live": "node scripts/verify-live.mjs"
   },
   "dependencies": {
-    "@sparticuz/chromium": "latest",
     "busboy": "^1.6.0",
     "jspdf": "^2.5.2"
   },
