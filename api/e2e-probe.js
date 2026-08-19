@@ -1,6 +1,3 @@
-import { chromium as playwrightChromium } from 'playwright';
-import chromium from '@sparticuz/chromium';
-
 const PROD = 'https://otto-kohl.vercel.app';
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const random = () => Math.random().toString(36).slice(2, 10);
@@ -77,6 +74,9 @@ export default async function handler(req, res) {
     const session = await passwordSession(sb, service, email, password);
     if (!session?.access_token || !session?.refresh_token) throw new Error('Supabase did not return an authenticated session.');
 
+    const { chromium: playwrightChromium } = await import('playwright');
+    const chromiumModule = await import('@sparticuz/chromium');
+    const chromium = chromiumModule.default || chromiumModule;
     browser = await playwrightChromium.launch({ args: chromium.args, executablePath: await chromium.executablePath(), headless: true });
     const context = await browser.newContext({ viewport: { width: 1440, height: 960 } });
     const projectRef = new URL(sb).hostname.split('.')[0];
