@@ -48,6 +48,18 @@ async function cleanup(sb, key, profileId, authId) {
   }
 }
 
+function findExistingPhoto(data) {
+  const photos = Array.isArray(data?.photos) ? data.photos : [];
+  const direct = photos.find((p) => p && p.fileId && (p.jobId || p.associatedJobId));
+  if (direct) return { fileId: direct.fileId, jobId: direct.jobId || direct.associatedJobId, source: 'photos' };
+  for (const doc of (Array.isArray(data?.documents) ? data.documents : [])) {
+    const jobId = doc && (doc.jobId || doc.associatedJobId);
+    const item = jobId && (doc.attachments || []).find((a) => a && a.fileId && /^image\//i.test(a.mime || a.type || ''));
+    if (item) return { fileId: item.fileId, jobId, source: 'documents' };
+  }
+  return null;
+}
+
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('X-Robots-Tag', 'noindex');
@@ -64,7 +76,7 @@ export default async function handler(req, res) {
   const password = `Q!${random()}${random()}9aA`;
   let authId = '';
   let browser = null;
-  const proof = { production: PROD, ownerAuthenticated: false, askOttoOpened: false, questionSubmitted: false, nvidiaCalled: false, nvidiaStatus: null, answerShown: false, providerErrorShown: false, photoRecordFound: false, photoApiStatus: null, signedPhotoStatus: null, renderedPhotoCount: 0, renderedPhotoDimensions: [] };
+  const proof = { production: PROD, ownerAuthenticated: false, askOttoOpened: false, questionSubmitted: false, nvidiaCalled: false, nvidiaStatus: null, answerShown: false, providerErrorShown: false, dataApiStatus: null, cloudPhotoCount: 0, photoRecordFound: false, photoVisibleInBrowserDb: false, photoApiStatus: null, signedPhotoStatus: null, renderedPhotoCount: 0, renderedPhotoDimensions: [] };
 
   try {
     const auth = await createAuthUser(sb, service, email, password);
@@ -73,6 +85,14 @@ export default async function handler(req, res) {
     await createOwnerProfile(sb, service, profileId, authId, email);
     const session = await passwordSession(sb, service, email, password);
     if (!session?.access_token || !session?.refresh_token) throw new Error('Supabase did not return an authenticated session.');
+
+    const dataResponse = await fetch(`${PROD}/api/data`, { headers: { Authorization: `Bearer ${session.access_token}` } });
+    proof.dataApiStatus = dataResponse.status;
+    const cloudData = await dataResponse.json().catch(() => ({}));
+    proof.cloudPhotoCount = Array.isArray(cloudData?.photos) ? cloudData.photos.length : 0;
+    const photo = dataResponse.ok ? findExistingPhoto(cloudData) : null;
+    proof.photoRecordFound = Boolean(photo?.fileId && photo?.jobId);
+    proof.photoSource = photo?.source || '';
 
     const { chromium: playwrightChromium } = await import('playwright');
     const chromiumModule = await import('@sparticuz/chromium');
@@ -124,20 +144,18 @@ export default async function handler(req, res) {
     proof.providerErrorShown = Boolean(answerState.text && answerState.error);
     proof.askOttoText = answerState.text ? answerState.text.slice(0, 220) : '';
 
-    const photo = await page.evaluate(() => {
-      const db = window.__db();
-      const direct = (db.photos || []).find((p) => p && p.fileId && (p.jobId || p.associatedJobId));
-      if (direct) return { fileId: direct.fileId, jobId: direct.jobId || direct.associatedJobId };
-      for (const doc of (db.documents || [])) {
-        const jobId = doc && (doc.jobId || doc.associatedJobId);
-        const item = jobId && (doc.attachments || []).find((a) => a && a.fileId && /^image\//i.test(a.mime || a.type || ''));
-        if (item) return { fileId: item.fileId, jobId };
-      }
-      return null;
-    });
-    proof.photoRecordFound = Boolean(photo?.fileId && photo?.jobId);
-
     if (photo?.fileId && photo?.jobId) {
+      await page.waitForFunction(({ fileId, jobId }) => {
+        const db = window.__db();
+        return (db.photos || []).some((p) => p && p.fileId === fileId && (p.jobId === jobId || p.associatedJobId === jobId)) ||
+          (db.documents || []).some((d) => d && (d.jobId === jobId || d.associatedJobId === jobId) && (d.attachments || []).some((a) => a?.fileId === fileId));
+      }, { fileId: photo.fileId, jobId: photo.jobId }, { timeout: 20000 }).catch(() => {});
+      proof.photoVisibleInBrowserDb = await page.evaluate(({ fileId, jobId }) => {
+        const db = window.__db();
+        return (db.photos || []).some((p) => p && p.fileId === fileId && (p.jobId === jobId || p.associatedJobId === jobId)) ||
+          (db.documents || []).some((d) => d && (d.jobId === jobId || d.associatedJobId === jobId) && (d.attachments || []).some((a) => a?.fileId === fileId));
+      }, { fileId: photo.fileId, jobId: photo.jobId });
+
       const photoApi = await fetch(`${PROD}/api/photos?fileId=${encodeURIComponent(photo.fileId)}`, { headers: { Authorization: `Bearer ${session.access_token}` } });
       proof.photoApiStatus = photoApi.status;
       let photoJson = {};
@@ -149,10 +167,10 @@ export default async function handler(req, res) {
 
       await page.evaluate((jobId) => window.nav('job', jobId), photo.jobId);
       await page.waitForTimeout(500);
-      await page.waitForFunction(() => Array.from(document.images).some((img) => img.complete && img.naturalWidth > 0 && img.naturalHeight > 0 && (/job-photos/i.test(img.src) || /blob:/i.test(img.src))), null, { timeout: 15000 }).catch(() => {});
+      await page.waitForFunction(() => Array.from(document.images).some((img) => img.complete && img.naturalWidth > 0 && img.naturalHeight > 0 && (/\/storage\/v1\/object\/sign\//i.test(img.src) || /blob:/i.test(img.src))), null, { timeout: 15000 }).catch(() => {});
       await sleep(500);
       const rendered = await page.evaluate(() => Array.from(document.images)
-        .filter((img) => /job-photos/i.test(img.src) || /blob:/i.test(img.src))
+        .filter((img) => /\/storage\/v1\/object\/sign\//i.test(img.src) || /blob:/i.test(img.src))
         .map((img) => ({ complete: img.complete, width: img.naturalWidth, height: img.naturalHeight, broken: !img.complete || img.naturalWidth === 0 || img.naturalHeight === 0 })));
       proof.renderedPhotoCount = rendered.length;
       proof.renderedPhotoDimensions = rendered.slice(0, 6).map((img) => `${img.width}x${img.height}`);
@@ -162,7 +180,7 @@ export default async function handler(req, res) {
     }
 
     const askPass = proof.ownerAuthenticated && proof.askOttoOpened && proof.questionSubmitted && proof.nvidiaCalled && (proof.answerShown || proof.providerErrorShown);
-    const photosPass = proof.photoRecordFound && proof.photoApiStatus === 200 && proof.signedPhotoStatus === 200 && proof.renderedPhotosHealthy === true && proof.photoUiRequests > 0 && proof.photoUiStatuses.every((status) => status === 200);
+    const photosPass = proof.dataApiStatus === 200 && proof.photoRecordFound && proof.photoVisibleInBrowserDb && proof.photoApiStatus === 200 && proof.signedPhotoStatus === 200 && proof.renderedPhotosHealthy === true && proof.photoUiRequests > 0 && proof.photoUiStatuses.every((status) => status === 200);
     return res.status(200).json({ askOtto: askPass ? 'PASS' : 'FAIL', photos: photosPass ? 'PASS' : 'FAIL', proof });
   } catch (error) {
     return res.status(200).json({ askOtto: 'FAIL', photos: 'FAIL', proof, error: String(error?.message || error).slice(0, 800) });
