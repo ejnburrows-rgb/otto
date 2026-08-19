@@ -1,6 +1,7 @@
 const PROD = 'https://otto-kohl.vercel.app';
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const random = () => Math.random().toString(36).slice(2, 10);
+const TEST_PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl8zGQAAAAASUVORK5CYII=';
 
 function serverHeaders(key) {
   return { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' };
@@ -39,25 +40,42 @@ async function passwordSession(sb, key, email, password) {
   });
 }
 
-async function cleanup(sb, key, profileId, authId) {
-  if (profileId) {
-    await fetch(`${sb}/rest/v1/users?id=eq.${encodeURIComponent(profileId)}`, { method: 'DELETE', headers: serverHeaders(key) }).catch(() => {});
-  }
+async function authenticatedJson(path, accessToken, options = {}) {
+  return jsonFetch(`${PROD}${path}`, {
+    ...options,
+    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json', ...(options.headers || {}) },
+  });
+}
+
+async function saveRecord(accessToken, collection, record) {
+  return authenticatedJson('/api/data', accessToken, {
+    method: 'POST',
+    body: JSON.stringify({ collection, records: [record] }),
+  });
+}
+
+async function deleteRow(sb, key, collection, id) {
+  if (!id) return;
+  await fetch(`${sb}/rest/v1/${encodeURIComponent(collection)}?id=eq.${encodeURIComponent(id)}`, {
+    method: 'DELETE', headers: serverHeaders(key),
+  }).catch(() => {});
+}
+
+async function deleteStorageObject(sb, key, fileId) {
+  if (!fileId) return;
+  await fetch(`${sb}/storage/v1/object/job-photos`, {
+    method: 'DELETE', headers: serverHeaders(key), body: JSON.stringify({ prefixes: [fileId] }),
+  }).catch(() => {});
+}
+
+async function cleanup(sb, key, profileId, authId, fixture = {}) {
+  await deleteStorageObject(sb, key, fixture.fileId);
+  await deleteRow(sb, key, 'photos', fixture.photoId);
+  await deleteRow(sb, key, 'jobs', fixture.jobId);
+  await deleteRow(sb, key, 'users', profileId);
   if (authId) {
     await fetch(`${sb}/auth/v1/admin/users/${encodeURIComponent(authId)}`, { method: 'DELETE', headers: serverHeaders(key) }).catch(() => {});
   }
-}
-
-function findExistingPhoto(data) {
-  const photos = Array.isArray(data?.photos) ? data.photos : [];
-  const direct = photos.find((p) => p && p.fileId && (p.jobId || p.associatedJobId));
-  if (direct) return { fileId: direct.fileId, jobId: direct.jobId || direct.associatedJobId, source: 'photos' };
-  for (const doc of (Array.isArray(data?.documents) ? data.documents : [])) {
-    const jobId = doc && (doc.jobId || doc.associatedJobId);
-    const item = jobId && (doc.attachments || []).find((a) => a && a.fileId && /^image\//i.test(a.mime || a.type || ''));
-    if (item) return { fileId: item.fileId, jobId, source: 'documents' };
-  }
-  return null;
 }
 
 export default async function handler(req, res) {
@@ -74,9 +92,34 @@ export default async function handler(req, res) {
   const profileId = `qa-prod154-${run}`;
   const email = `${profileId}@example.com`;
   const password = `Q!${random()}${random()}9aA`;
+  const fixture = {
+    jobId: `qa-job-${run}`,
+    photoId: `qa-photo-${run}`,
+    fileId: `qa-photo-${run}.png`,
+  };
   let authId = '';
   let browser = null;
-  const proof = { production: PROD, ownerAuthenticated: false, askOttoOpened: false, questionSubmitted: false, nvidiaCalled: false, nvidiaStatus: null, answerShown: false, providerErrorShown: false, dataApiStatus: null, cloudPhotoCount: 0, photoRecordFound: false, photoVisibleInBrowserDb: false, photoApiStatus: null, signedPhotoStatus: null, renderedPhotoCount: 0, renderedPhotoDimensions: [] };
+  const proof = {
+    production: PROD,
+    ownerAuthenticated: false,
+    askOttoOpened: false,
+    questionSubmitted: false,
+    nvidiaCalled: false,
+    nvidiaStatus: null,
+    answerShown: false,
+    providerErrorShown: false,
+    preexistingPhotoCount: null,
+    fixtureJobSaved: false,
+    fixturePhotoUploaded: false,
+    fixturePhotoSaved: false,
+    photoVisibleInBrowserDb: false,
+    photoApiStatus: null,
+    signedPhotoStatus: null,
+    renderedPhotoCount: 0,
+    renderedPhotoDimensions: [],
+    photoUiRequests: 0,
+    photoUiStatuses: [],
+  };
 
   try {
     const auth = await createAuthUser(sb, service, email, password);
@@ -86,13 +129,39 @@ export default async function handler(req, res) {
     const session = await passwordSession(sb, service, email, password);
     if (!session?.access_token || !session?.refresh_token) throw new Error('Supabase did not return an authenticated session.');
 
-    const dataResponse = await fetch(`${PROD}/api/data`, { headers: { Authorization: `Bearer ${session.access_token}` } });
-    proof.dataApiStatus = dataResponse.status;
-    const cloudData = await dataResponse.json().catch(() => ({}));
-    proof.cloudPhotoCount = Array.isArray(cloudData?.photos) ? cloudData.photos.length : 0;
-    const photo = dataResponse.ok ? findExistingPhoto(cloudData) : null;
-    proof.photoRecordFound = Boolean(photo?.fileId && photo?.jobId);
-    proof.photoSource = photo?.source || '';
+    const before = await authenticatedJson('/api/data', session.access_token);
+    proof.preexistingPhotoCount = Array.isArray(before?.photos) ? before.photos.length : null;
+
+    const now = new Date().toISOString();
+    await saveRecord(session.access_token, 'jobs', {
+      id: fixture.jobId,
+      title: 'PR 154 production photo verification',
+      status: 'completed',
+      scheduledDate: now.slice(0, 10),
+      created: now,
+      updated: now,
+      qa: true,
+    });
+    proof.fixtureJobSaved = true;
+
+    const upload = await authenticatedJson('/api/photos', session.access_token, {
+      method: 'POST',
+      body: JSON.stringify({ fileId: fixture.fileId, mime: 'image/png', data: TEST_PNG, jobId: fixture.jobId }),
+    });
+    proof.fixturePhotoUploaded = Boolean(upload?.ok);
+
+    await saveRecord(session.access_token, 'photos', {
+      id: fixture.photoId,
+      jobId: fixture.jobId,
+      fileId: fixture.fileId,
+      caption: 'PR 154 production verification',
+      phase: 'after',
+      created: now,
+      createdBy: profileId,
+      uploadPending: false,
+      qa: true,
+    });
+    proof.fixturePhotoSaved = true;
 
     const { chromium: playwrightChromium } = await import('playwright');
     const chromiumModule = await import('@sparticuz/chromium');
@@ -109,8 +178,8 @@ export default async function handler(req, res) {
     const photoResponses = [];
     page.on('response', (response) => {
       const url = response.url();
-      if (url.includes('/api/nvidia')) nvidiaResponses.push({ status: response.status(), url });
-      if (url.includes('/api/photos?fileId=')) photoResponses.push({ status: response.status(), url });
+      if (url.includes('/api/nvidia')) nvidiaResponses.push({ status: response.status() });
+      if (url.includes('/api/photos?fileId=')) photoResponses.push({ status: response.status() });
     });
 
     await page.goto(PROD, { waitUntil: 'domcontentloaded', timeout: 30000 });
@@ -144,48 +213,48 @@ export default async function handler(req, res) {
     proof.providerErrorShown = Boolean(answerState.text && answerState.error);
     proof.askOttoText = answerState.text ? answerState.text.slice(0, 220) : '';
 
-    if (photo?.fileId && photo?.jobId) {
-      await page.waitForFunction(({ fileId, jobId }) => {
-        const db = window.__db();
-        return (db.photos || []).some((p) => p && p.fileId === fileId && (p.jobId === jobId || p.associatedJobId === jobId)) ||
-          (db.documents || []).some((d) => d && (d.jobId === jobId || d.associatedJobId === jobId) && (d.attachments || []).some((a) => a?.fileId === fileId));
-      }, { fileId: photo.fileId, jobId: photo.jobId }, { timeout: 20000 }).catch(() => {});
-      proof.photoVisibleInBrowserDb = await page.evaluate(({ fileId, jobId }) => {
-        const db = window.__db();
-        return (db.photos || []).some((p) => p && p.fileId === fileId && (p.jobId === jobId || p.associatedJobId === jobId)) ||
-          (db.documents || []).some((d) => d && (d.jobId === jobId || d.associatedJobId === jobId) && (d.attachments || []).some((a) => a?.fileId === fileId));
-      }, { fileId: photo.fileId, jobId: photo.jobId });
+    await page.waitForFunction(({ photoId, jobId, fileId }) => {
+      const db = window.__db();
+      return (db.photos || []).some((p) => p?.id === photoId && p.fileId === fileId && p.jobId === jobId) &&
+        (db.jobs || []).some((j) => j?.id === jobId);
+    }, fixture, { timeout: 20000 }).catch(() => {});
+    proof.photoVisibleInBrowserDb = await page.evaluate(({ photoId, jobId, fileId }) => {
+      const db = window.__db();
+      return (db.photos || []).some((p) => p?.id === photoId && p.fileId === fileId && p.jobId === jobId) &&
+        (db.jobs || []).some((j) => j?.id === jobId);
+    }, fixture);
 
-      const photoApi = await fetch(`${PROD}/api/photos?fileId=${encodeURIComponent(photo.fileId)}`, { headers: { Authorization: `Bearer ${session.access_token}` } });
-      proof.photoApiStatus = photoApi.status;
-      let photoJson = {};
-      try { photoJson = await photoApi.json(); } catch {}
-      if (photoApi.ok && photoJson?.url) {
-        const imageResponse = await fetch(photoJson.url);
-        proof.signedPhotoStatus = imageResponse.status;
-      }
-
-      await page.evaluate((jobId) => window.nav('job', jobId), photo.jobId);
-      await page.waitForTimeout(500);
-      await page.waitForFunction(() => Array.from(document.images).some((img) => img.complete && img.naturalWidth > 0 && img.naturalHeight > 0 && (/\/storage\/v1\/object\/sign\//i.test(img.src) || /blob:/i.test(img.src))), null, { timeout: 15000 }).catch(() => {});
-      await sleep(500);
-      const rendered = await page.evaluate(() => Array.from(document.images)
-        .filter((img) => /\/storage\/v1\/object\/sign\//i.test(img.src) || /blob:/i.test(img.src))
-        .map((img) => ({ complete: img.complete, width: img.naturalWidth, height: img.naturalHeight, broken: !img.complete || img.naturalWidth === 0 || img.naturalHeight === 0 })));
-      proof.renderedPhotoCount = rendered.length;
-      proof.renderedPhotoDimensions = rendered.slice(0, 6).map((img) => `${img.width}x${img.height}`);
-      proof.renderedPhotosHealthy = rendered.length > 0 && rendered.every((img) => !img.broken);
-      proof.photoUiRequests = photoResponses.length;
-      proof.photoUiStatuses = photoResponses.slice(-6).map((item) => item.status);
+    const photoApi = await fetch(`${PROD}/api/photos?fileId=${encodeURIComponent(fixture.fileId)}`, {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    proof.photoApiStatus = photoApi.status;
+    let photoJson = {};
+    try { photoJson = await photoApi.json(); } catch {}
+    if (photoApi.ok && photoJson?.url) {
+      const imageResponse = await fetch(photoJson.url);
+      proof.signedPhotoStatus = imageResponse.status;
     }
 
-    const askPass = proof.ownerAuthenticated && proof.askOttoOpened && proof.questionSubmitted && proof.nvidiaCalled && (proof.answerShown || proof.providerErrorShown);
-    const photosPass = proof.dataApiStatus === 200 && proof.photoRecordFound && proof.photoVisibleInBrowserDb && proof.photoApiStatus === 200 && proof.signedPhotoStatus === 200 && proof.renderedPhotosHealthy === true && proof.photoUiRequests > 0 && proof.photoUiStatuses.every((status) => status === 200);
+    await page.evaluate((jobId) => window.nav('job', jobId), fixture.jobId);
+    await page.waitForFunction((fileId) => Array.from(document.images).some((img) =>
+      img.src.includes(fileId) && img.complete && img.naturalWidth > 0 && img.naturalHeight > 0), fixture.fileId, { timeout: 15000 }).catch(() => {});
+    await sleep(500);
+    const rendered = await page.evaluate((fileId) => Array.from(document.images)
+      .filter((img) => img.src.includes(fileId))
+      .map((img) => ({ complete: img.complete, width: img.naturalWidth, height: img.naturalHeight, broken: !img.complete || img.naturalWidth === 0 || img.naturalHeight === 0 })), fixture.fileId);
+    proof.renderedPhotoCount = rendered.length;
+    proof.renderedPhotoDimensions = rendered.map((img) => `${img.width}x${img.height}`);
+    proof.renderedPhotosHealthy = rendered.length > 0 && rendered.every((img) => !img.broken);
+    proof.photoUiRequests = photoResponses.length;
+    proof.photoUiStatuses = photoResponses.map((item) => item.status);
+
+    const askPass = proof.ownerAuthenticated && proof.askOttoOpened && proof.questionSubmitted && proof.nvidiaCalled && proof.nvidiaStatus === 200 && (proof.answerShown || proof.providerErrorShown);
+    const photosPass = proof.fixtureJobSaved && proof.fixturePhotoUploaded && proof.fixturePhotoSaved && proof.photoVisibleInBrowserDb && proof.photoApiStatus === 200 && proof.signedPhotoStatus === 200 && proof.renderedPhotosHealthy === true && proof.photoUiRequests > 0 && proof.photoUiStatuses.every((status) => status === 200);
     return res.status(200).json({ askOtto: askPass ? 'PASS' : 'FAIL', photos: photosPass ? 'PASS' : 'FAIL', proof });
   } catch (error) {
     return res.status(200).json({ askOtto: 'FAIL', photos: 'FAIL', proof, error: String(error?.message || error).slice(0, 800) });
   } finally {
     if (browser) await browser.close().catch(() => {});
-    await cleanup(sb, service, profileId, authId);
+    await cleanup(sb, service, profileId, authId, fixture);
   }
 }
