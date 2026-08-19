@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   const headers = { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' };
   const list = async () => {
     const r = await fetch(`${url}/storage/v1/object/list/job-photos`, {
-      method: 'POST', headers, body: JSON.stringify({ prefix: 'qa-photo-', limit: 1000, offset: 0, sortBy: { column: 'name', order: 'asc' } }),
+      method: 'POST', headers, body: JSON.stringify({ prefix: '', limit: 1000, offset: 0, sortBy: { column: 'name', order: 'asc' } }),
     });
     if (!r.ok) throw new Error(`storage list failed: ${r.status}`);
     const rows = await r.json();
