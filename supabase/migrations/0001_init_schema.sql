@@ -15,8 +15,8 @@
 -- alone gets you nothing.
 --
 -- The app reaches its data through a small server-side function on Vercel
--- (api/data.js) that holds a secret key, exactly the way api/claude.js already
--- holds the Anthropic key. That secret never reaches the browser. This is the
+-- (api/data.js) that holds a secret key, exactly the way api/nvidia.js already
+-- holds the AI provider key. That secret never reaches the browser. This is the
 -- fix for the old Firebase setup, where the key in the page source was enough
 -- for anyone on the internet to read every customer record.
 
