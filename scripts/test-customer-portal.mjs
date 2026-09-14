@@ -2,6 +2,8 @@ import fs from 'node:fs';
 const auth=fs.readFileSync(new URL('../api/_lib/serverAuth.js',import.meta.url),'utf8');
 const data=fs.readFileSync(new URL('../api/data.js',import.meta.url),'utf8');
 const invite=fs.readFileSync(new URL('../api/portal-invite.js',import.meta.url),'utf8');
+const photos=fs.readFileSync(new URL('../api/photos.js',import.meta.url),'utf8');
+const portal=fs.readFileSync(new URL('../otto-premium-ops.js',import.meta.url),'utf8');
 let pass=0,fail=0;
 function check(name,ok){if(ok){pass++;console.log('PASS',name)}else{fail++;console.error('FAIL',name)}}
 check('customer role is recognized',auth.includes("'customer'"));
@@ -16,5 +18,9 @@ check('customer writes are restricted to service requests',data.includes("collec
 check('portal invitation requires owner role',invite.includes("roles:['owner']"));
 check('portal invitation links a customer id',invite.includes("role:'customer',customerId"));
 check('portal invitation uses existing Supabase invite flow',invite.includes('/auth/v1/invite'));
+check('customer storage access is read-only',photos.includes("identity.role === 'customer' && req.method !== 'GET'"));
+check('protected route requires explicit customer approval',photos.includes("record.approvedForCustomer === true"));
+check('protected route verifies the file job belongs to the customer',photos.includes("job.customerId === identity.customerId"));
+check('portal opens files through the protected route',portal.includes("serverFetch('/api/photos?fileId='"));
 console.log(`customer portal checks: ${pass} passed / ${fail} failed`);
 if(fail)process.exit(1);
