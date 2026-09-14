@@ -154,6 +154,7 @@ export async function photosHandler(req, res, identity = { role: 'owner', userId
 
 async function authorizePhotoRequest(req, identity) {
   if (identity.role === 'owner' || identity.role === 'office') return true;
+  if (identity.role === 'customer' && req.method !== 'GET') return false;
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return false;
@@ -163,18 +164,35 @@ async function authorizePhotoRequest(req, identity) {
   }
   const fileId = (req.query && req.query.fileId) || (body && body.fileId);
   let jobId = body && body.jobId;
+  let fileRecord = null;
   const headers = { apikey: key, Authorization: `Bearer ${key}` };
 
-  if (!jobId && fileId) {
+  if (fileId) {
     for (const collection of ['photos', 'documents']) {
       const response = await fetch(`${url}/rest/v1/${collection}?select=data`, { headers });
       if (!response.ok) continue;
       const rows = await response.json();
       const found = rows.map((row) => row.data).find((record) => record &&
         (record.fileId === fileId || (record.attachments || []).some((item) => item.fileId === fileId)));
-      if (found) { jobId = found.jobId || found.associatedJobId; break; }
+      if (found) {
+        fileRecord = found;
+        jobId = found.jobId || found.associatedJobId || jobId;
+        break;
+      }
     }
   }
+
+  if (identity.role === 'customer') {
+    const approved = fileRecord && (fileRecord.customerVisible === true ||
+      fileRecord.visibleToCustomer === true || fileRecord.approvedForCustomer === true);
+    if (!approved || !jobId || !identity.customerId) return false;
+    const jobsResponse = await fetch(`${url}/rest/v1/jobs?id=eq.${encodeURIComponent(jobId)}&select=data`, { headers });
+    if (!jobsResponse.ok) return false;
+    const rows = await jobsResponse.json();
+    const job = rows[0] && rows[0].data;
+    return !!job && job.deleted !== true && job.customerId === identity.customerId;
+  }
+
   if (!jobId) return false;
   const jobsResponse = await fetch(`${url}/rest/v1/jobs?id=eq.${encodeURIComponent(jobId)}&select=data`, { headers });
   if (!jobsResponse.ok) return false;
