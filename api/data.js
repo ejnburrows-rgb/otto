@@ -1,23 +1,6 @@
 // Vercel serverless proxy for the Supabase database.
-//
-// WHY THIS EXISTS: the browser must never hold a key that can read the customer
-// database. The old Firebase setup put such a key straight into index.html, so
-// anyone who opened the site could copy it and read every customer record. This
-// function fixes that: the secret key lives only in Vercel's environment
-// variables (settings stored on the server, never in the code), exactly the way
-// api/nvidia.js already handles the AI provider key.
-//
-// The browser calls this function; this function talks to Supabase.
-//
-// Environment variables required (set in Vercel -> Settings -> Environment
-// Variables, and in a local .env file for development):
-//   SUPABASE_URL               - the project URL, e.g. https://xxxx.supabase.co
-//   SUPABASE_SERVICE_ROLE_KEY  - the secret key. NEVER put this in the browser
-//                                or in any file that gets committed to git.
-//
-// Requests:
-//   GET  /api/data                  -> returns every collection as one object
-//   POST /api/data { collection, records } -> saves records for one collection
+// Browser access is provider-authenticated, and business records are filtered
+// server-side by OTTO role before they reach a device.
 
 import { requireServerAuth } from './_lib/serverAuth.js';
 
@@ -33,22 +16,16 @@ const COLLECTIONS = ['customers', 'jobs', 'calls', 'notes', 'photos', 'documents
 const PROTECTED_ADMIN_IDS = new Set(['owner-1', 'owner-2', 'ops-1', 'it-admin-ejn']);
 const FULL_ADMIN_ROLES = new Set(['owner', 'office']);
 
-// Provider-backed identity is verified before any Supabase business data is
-// read or written. See api/_lib/serverAuth.js.
 export default async function handler(req, res) {
   const identity = await requireServerAuth(req, res);
   if (!identity) return;
   return dataHandler(req, res, identity);
 }
 
-// The real proxy logic, kept separate so it stays fully covered by tests even
-// while the gate above refuses every live request.
 export async function dataHandler(req, res, identity = { role: 'owner', userId: 'test-owner', profile: { id: 'test-owner', role: 'owner' } }) {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) {
-    // Not configured yet. The app keeps working offline on the device, so this
-    // is a soft failure, not a crash.
     res.status(503).json({ error: 'no_server_key' });
     return;
   }
@@ -87,15 +64,14 @@ export async function dataHandler(req, res, identity = { role: 'owner', userId: 
   }
 }
 
-// Downloads every collection. Asks for them all at once rather than one after
-// another, so a slow connection in the field does not make sign-in crawl.
-// A collection that fails comes back as null, which the app treats as "skip
-// this one" rather than "this collection is empty" — important, because
-// treating a failed read as empty would wipe good data off the device.
 const FIELD_COLLECTIONS = new Set([
   'users', 'customers', 'jobs', 'notes', 'photos', 'documents', 'followups', 'locations',
   'job_events', 'job_checklists', 'consent_records', 'checklist_submissions', 'pto_requests',
   'time_off', 'employee_messages',
+]);
+
+const CUSTOMER_COLLECTIONS = new Set([
+  'customers', 'jobs', 'calls', 'photos', 'documents', 'estimates', 'invoices', 'payments'
 ]);
 
 function isAssignedJob(job, userId) {
@@ -119,6 +95,22 @@ function fieldRecordVisible(collection, record, context) {
     [record.workerId, record.userId, record.employeeId, record.createdBy, record.assignedTo].filter(Boolean).includes(userId);
 }
 
+function customerVisibleFile(record) {
+  return !!(record && (record.customerVisible === true || record.visibleToCustomer === true || record.approvedForCustomer === true));
+}
+
+function customerRecordVisible(collection, record, context) {
+  if (!record || record.deleted === true || !context.customerId) return false;
+  const ownCustomer = record.customerId === context.customerId;
+  const ownJob = context.jobIds.has(record.jobId) || context.jobIds.has(record.associatedJobId);
+  if (collection === 'customers') return record.id === context.customerId;
+  if (collection === 'jobs') return ownCustomer;
+  if (collection === 'photos' || collection === 'documents') return ownJob && customerVisibleFile(record);
+  if (['estimates', 'invoices', 'payments'].includes(collection)) return ownCustomer || ownJob;
+  if (collection === 'calls') return ownCustomer && (record.source === 'customer_portal' || record.customerVisible === true);
+  return false;
+}
+
 async function readRows(url, headers, collection) {
   const response = await fetch(`${url}/rest/v1/${encodeURIComponent(collection)}?select=data`, { headers });
   if (!response.ok) return null;
@@ -137,11 +129,23 @@ async function fieldContext(url, headers, identity) {
   };
 }
 
+async function customerContext(url, headers, identity) {
+  const customerId = identity.customerId || (identity.profile && identity.profile.customerId);
+  const jobs = (await readRows(url, headers, 'jobs')) || [];
+  const ownJobs = jobs.filter((job) => job && job.deleted !== true && job.customerId === customerId);
+  return { customerId, jobIds: new Set(ownJobs.map((job) => job.id)) };
+}
+
 async function readEveryCollection(url, headers, identity) {
   const out = {};
-  const context = identity.role === 'field' ? await fieldContext(url, headers, identity) : null;
+  const fieldCtx = identity.role === 'field' ? await fieldContext(url, headers, identity) : null;
+  const customerCtx = identity.role === 'customer' ? await customerContext(url, headers, identity) : null;
   await Promise.all(COLLECTIONS.map(async (col) => {
-    if (context && !FIELD_COLLECTIONS.has(col)) {
+    if (fieldCtx && !FIELD_COLLECTIONS.has(col)) {
+      out[col] = null;
+      return;
+    }
+    if (customerCtx && !CUSTOMER_COLLECTIONS.has(col)) {
       out[col] = null;
       return;
     }
@@ -150,16 +154,33 @@ async function readEveryCollection(url, headers, identity) {
       out[col] = null;
       return;
     }
-    out[col] = context ? rows.filter((record) => fieldRecordVisible(col, record, context)) : rows;
+    if (fieldCtx) out[col] = rows.filter((record) => fieldRecordVisible(col, record, fieldCtx));
+    else if (customerCtx) out[col] = rows.filter((record) => customerRecordVisible(col, record, customerCtx));
+    else out[col] = rows;
   }));
   return out;
 }
 
 async function authorizeWrite(url, headers, identity, body) {
   const collection = body && body.collection;
-  // Full administrators can create, edit or soft-delete every business record.
-  // User-account writes receive extra safeguards so the four administrators
-  // cannot be accidentally removed or demoted.
+
+  if (identity.role === 'customer') {
+    if (collection !== 'calls') {
+      return { ok: false, message: 'Customer accounts may only submit service requests.' };
+    }
+    const customerId = identity.customerId || (identity.profile && identity.profile.customerId);
+    const records = (Array.isArray(body.records) ? body.records : [body.records]).filter(Boolean);
+    if (!customerId || !records.length) {
+      return { ok: false, message: 'Customer access is not linked to a customer record.' };
+    }
+    for (const record of records) {
+      if (record.customerId !== customerId || record.source !== 'customer_portal' || record.deleted === true || record.internalNotes || record.assignedTo) {
+        return { ok: false, message: 'Customer service requests must stay scoped to the signed-in customer.' };
+      }
+    }
+    return { ok: true };
+  }
+
   if (FULL_ADMIN_ROLES.has(identity.role)) {
     if (collection !== 'users') return { ok: true };
     if (identity.role !== 'owner') {
@@ -188,12 +209,7 @@ async function authorizeWrite(url, headers, identity, body) {
     }
     return { ok: true };
   }
-  // A field employee may append audit entries for their own actions. Every
-  // action they take calls audit(), so refusing this rejected the whole
-  // collection on every check-in, checklist tick and note — and the browser
-  // treated that rejection as a successful upload, so the entries were lost
-  // rather than retried. They still cannot read the trail: audit_log is absent
-  // from FIELD_COLLECTIONS, so a read returns null for them.
+
   if (collection === 'audit_log') {
     const entries = (Array.isArray(body.records) ? body.records : [body.records]).filter(Boolean);
     const foreign = entries.find((entry) => entry.by && entry.by !== identity.userId);
@@ -202,10 +218,7 @@ async function authorizeWrite(url, headers, identity, body) {
     }
     return { ok: true };
   }
-  // A field employee owns a few settings on their own record — the location
-  // acknowledgement written when they accept or decline sharing is the one the
-  // app depends on. They may save that record and no other, and may not change
-  // what it grants: role, active and deleted must match what is already stored.
+
   if (collection === 'users') {
     const records = (Array.isArray(body.records) ? body.records : [body.records]).filter(Boolean);
     const stored = await readRows(url, headers, 'users') || [];
@@ -223,6 +236,7 @@ async function authorizeWrite(url, headers, identity, body) {
     }
     return { ok: true };
   }
+
   if (!FIELD_COLLECTIONS.has(collection) || collection === 'customers') {
     return { ok: false, message: 'Field accounts can only update their assigned work.' };
   }
@@ -246,9 +260,6 @@ async function authorizeWrite(url, headers, identity, body) {
   return { ok: true };
 }
 
-// Saves the records of a single collection. Returns the status and body for
-// the caller to send, rather than writing to the response itself, so the
-// routing above stays easy to follow.
 async function saveOneCollection(url, headers, { collection, records }) {
   if (!COLLECTIONS.includes(collection)) {
     return { status: 400, body: { error: 'unknown_collection' } };
@@ -259,8 +270,6 @@ async function saveOneCollection(url, headers, { collection, records }) {
     .map((rec) => ({ id: String(rec.id), data: rec, updated_at: new Date().toISOString() }));
   if (!rows.length) return { status: 200, body: { saved: 0 } };
 
-  // "resolution=merge-duplicates" means: insert new records, and update any
-  // record whose id is already there, instead of failing.
   const r = await fetch(`${url}/rest/v1/${encodeURIComponent(collection)}`, {
     method: 'POST',
     headers: { ...headers, Prefer: 'resolution=merge-duplicates,return=minimal' },
@@ -273,8 +282,6 @@ async function saveOneCollection(url, headers, { collection, records }) {
   return { status: 200, body: { saved: rows.length } };
 }
 
-// Vercel usually parses JSON bodies for us, but not always — fall back to
-// reading the raw request when it hasn't.
 async function parseBody(req) {
   if (req.body != null && typeof req.body !== 'string') return req.body;
   const raw = typeof req.body === 'string' ? req.body : await readRaw(req);

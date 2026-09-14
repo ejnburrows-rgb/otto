@@ -269,7 +269,8 @@ const checks = [
   ['a field account cannot change its own role or access',
     dataApi.includes("message: 'A field account cannot change its own role or access.'")],
   ['the owner reads every collection, so worker records reach a fresh owner session',
-    dataApi.includes("const context = identity.role === 'field' ? await fieldContext(url, headers, identity) : null;")]
+    dataApi.includes("const fieldCtx = identity.role === 'field' ? await fieldContext(url, headers, identity) : null;")
+    && dataApi.includes("else out[col] = rows;")]
 ];
 
 let passed = 0;

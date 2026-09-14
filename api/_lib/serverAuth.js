@@ -32,12 +32,13 @@ async function fetchBusinessUsers(url) {
 // and carries a role OTTO recognizes. This is checked before the account is
 // relinked as well as after, so a disabled or deleted profile is never rebound
 // to a new provider identity on its way to being refused.
-const ROLES = ['owner', 'office', 'field'];
+const ROLES = ['owner', 'office', 'field', 'customer'];
 function usableProfile(row) {
   const profile = row && row.data;
   if (!profile) return null;
   if (profile.deleted === true || profile.active === false) return null;
   if (!ROLES.includes(profile.role)) return null;
+  if (profile.role === 'customer' && !profile.customerId) return null;
   return profile;
 }
 
@@ -60,28 +61,12 @@ export async function getServerIdentity(req) {
 
   // A verified email may claim exactly one pre-authorized OTTO profile. This
   // makes invitations/magic links usable without trusting editable metadata.
-  //
-  // The email match deliberately ignores whatever auth_uid is already stored.
-  // Requiring auth_uid to be null locked an accepted employee out for good the
-  // moment their provider identity changed — a deleted-and-recreated Supabase
-  // user gets a new uid, so the uid lookup missed and the email lookup was
-  // skipped, and the only way back in was a duplicate employee record. The
-  // profile's email is server-controlled (only an owner can set it) and the
-  // provider has verified the caller owns that mailbox, so re-pointing the row
-  // at the identity that just authenticated resolves the SAME OTTO profile and
-  // role instead of minting a second one. "Exactly one match" still holds, so
-  // an ambiguous address can never claim a profile.
   if (!row) {
     const email = String(authUser.email).trim().toLowerCase();
-    // Otto, Julio and Sarays are real profiles that carry no sign-in email yet.
-    // A blank address must never be a join key, or the first caller with an
-    // empty-looking email would claim one of them.
     const matches = email ? rows.filter((candidate) => {
       const stored = candidate && candidate.data && String(candidate.data.email || '').trim().toLowerCase();
       return stored && stored === email;
     }) : [];
-    // Exactly one, counted across every profile: an address held by two rows is
-    // ambiguous and claims neither, even if only one of them could be used.
     if (matches.length === 1 && usableProfile(matches[0])) {
       const candidate = matches[0];
       const bind = await fetch(`${url}/rest/v1/users?id=eq.${encodeURIComponent(candidate.id)}`, {
@@ -101,6 +86,7 @@ export async function getServerIdentity(req) {
     email: authUser.email,
     userId: row.id,
     role,
+    customerId: role === 'customer' ? profile.customerId : null,
     profile: { ...profile, id: row.id, email: profile.email || authUser.email },
   };
 }
