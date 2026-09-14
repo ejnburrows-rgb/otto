@@ -19,11 +19,20 @@ function patchSw(src){
  if(!src.includes(n))throw new Error('shell cache marker missing');
  return src.replace(n,`${n}\n  './otto-premium-ops.css', './otto-premium-ops.js',`);
 }
-function patchShell(src){return src.replace("return Boolean(session) && session.role !== 'field';","return Boolean(session) && ['owner', 'office'].includes(session.role);");}
+function patchShell(src){
+ let out=src.replace("return Boolean(session) && session.role !== 'field';","return Boolean(session) && ['owner', 'office'].includes(session.role);");
+ out=out.replace("if (item.view) return can(item.view) || item.view === 'settings' || item.view === 'assistant';","if (item.view) return can(item.view) || item.view === 'settings' || item.view === 'assistant' || item.view === 'otto_operations';");
+ if(!out.includes("en: 'Operations', es: 'Operaciones'")){
+   const needle="en: 'Business', es: 'Negocio', items: [\n        { view: 'reports', icon: 'fa-chart-line', en: 'Reports', es: 'Reportes' },";
+   if(!out.includes(needle))throw new Error('business More group marker missing');
+   out=out.replace(needle,"en: 'Business', es: 'Negocio', items: [\n        { view: 'otto_operations', icon: 'fa-gauge-high', en: 'Operations', es: 'Operaciones' },\n        { view: 'reports', icon: 'fa-chart-line', en: 'Reports', es: 'Reportes' },");
+ }
+ return out;
+}
 
 const paths=[INDEX,SW,SHELL].map(fileURLToPath);
 const before=paths.map(p=>fs.readFileSync(p,'utf8'));
 const after=[patchIndex(before[0]),patchSw(before[1]),patchShell(before[2])];
-if(!after[0].includes('data-otto-premium-ops-runtime')||!after[1].includes("'./otto-premium-ops.js'")||!after[2].includes("['owner', 'office'].includes(session.role)"))throw new Error('premium ops UI patch validation failed');
+if(!after[0].includes('data-otto-premium-ops-runtime')||!after[1].includes("'./otto-premium-ops.js'")||!after[2].includes("['owner', 'office'].includes(session.role)")||!after[2].includes("view: 'otto_operations'"))throw new Error('premium ops UI patch validation failed');
 after.forEach((txt,i)=>{if(txt!==before[i])fs.writeFileSync(paths[i],txt)});
 console.log('Premium operations UI patch applied and validated');
