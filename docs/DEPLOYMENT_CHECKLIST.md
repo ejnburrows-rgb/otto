@@ -33,8 +33,8 @@ Each crew member is assigned their own unique PIN inside the app under the Team 
 | `SUPABASE_URL` | Cloud sync (`/api/data`) — the database address | **Not yet set — blocks cloud sync** |
 | `SUPABASE_SERVICE_ROLE_KEY` | Cloud sync (`/api/data`) — the server-side secret key | **Not yet set — blocks cloud sync** |
 | `INBOUND_WEBHOOK_TOKEN` | Auth token required by `/api/inbound-email` | Set |
-| `NVIDIA_API_KEY` | Blueprint / PDF estimator | Set |
-| `ANTHROPIC_API_KEY` | Ask OTTO, OCR, photo→customer | Set |
+| `NVIDIA_API_KEY` | Every AI feature — Ask OTTO, OCR, photo→customer, blueprint / PDF estimator | Cannot be read from the repo — check the Vercel dashboard |
+| `NVIDIA_MODEL`, `NVIDIA_VISION_MODEL` | Optional model overrides; blank uses the built-in defaults | Optional |
 | `QB_CLIENT_ID` + `QB_CLIENT_SECRET` | QuickBooks connect (when ready) | Not connected |
 | `TWILIO_SID` + `TWILIO_AUTH` + `TWILIO_FROM` | Customer SMS | Not connected |
 | `SENDGRID_API_KEY` | Customer email | Not connected |

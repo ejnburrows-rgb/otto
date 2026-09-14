@@ -45,7 +45,7 @@ verify manually against the real production URL instead.
 - [ ] QuickBooks two-way live sync (export CSV works today)
 - [ ] Customer texts actually send (built, needs Twilio)
 - [ ] Customer emails actually send (built, needs SendGrid)
-- [ ] Smart assistant OCR without Anthropic key on server (needs key in hosting)
+- [ ] Ask OTTO and photo OCR (built; needs `NVIDIA_API_KEY` set in hosting)
 
 ## Re-run tests anytime
 

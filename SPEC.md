@@ -21,11 +21,13 @@
 >   (`api/inbound-email.js`, token-authenticated) for `.eml` import and
 >   provider webhooks (SendGrid/Mailgun/Postmark), not the Gmail OAuth push
 >   integration described in §5.2 and the `GMAIL_CLIENT_ID` env var in §10.
-> - **Env vars:** the shipped app reads `ANTHROPIC_API_KEY`, `NVIDIA_API_KEY`,
->   `NVIDIA_MODEL` (optional), `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, and
->   `INBOUND_WEBHOOK_TOKEN` — see README.md § AI features and § Inbox for the
->   current list; §10 below is stale. The Firebase variables named in earlier
->   drafts are retired; that project was deleted on 2026-07-21.
+> - **Env vars:** the shipped app reads `NVIDIA_API_KEY`, `NVIDIA_MODEL` and
+>   `NVIDIA_VISION_MODEL` (both optional), `SUPABASE_URL`,
+>   `SUPABASE_SERVICE_ROLE_KEY`, and `INBOUND_WEBHOOK_TOKEN` — `.env.example` is
+>   the current list, and each entry there says what it does; §10 below is stale.
+>   The Firebase variables named in earlier drafts are retired; that project was
+>   deleted on 2026-07-21. `ANTHROPIC_API_KEY` is retired too: every AI feature
+>   now goes through the single NVIDIA proxy, and `api/claude.js` was deleted.
 
 ---
 
