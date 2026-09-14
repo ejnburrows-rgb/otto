@@ -1,0 +1,20 @@
+import fs from 'node:fs';
+const auth=fs.readFileSync(new URL('../api/_lib/serverAuth.js',import.meta.url),'utf8');
+const data=fs.readFileSync(new URL('../api/data.js',import.meta.url),'utf8');
+const invite=fs.readFileSync(new URL('../api/portal-invite.js',import.meta.url),'utf8');
+let pass=0,fail=0;
+function check(name,ok){if(ok){pass++;console.log('PASS',name)}else{fail++;console.error('FAIL',name)}}
+check('customer role is recognized',auth.includes("'customer'"));
+check('customer identity requires a customer link',auth.includes("profile.role === 'customer' && !profile.customerId"));
+check('portal has an explicit collection allowlist',data.includes('CUSTOMER_COLLECTIONS'));
+check('portal records are filtered by customer context',data.includes('customerRecordVisible')&&data.includes('record.customerId === context.customerId'));
+check('customer files require approval',data.includes('customerVisibleFile(record)'));
+check('users are not in customer allowlist',!/CUSTOMER_COLLECTIONS[\s\S]{0,220}'users'/.test(data));
+check('payroll is not in customer allowlist',!/CUSTOMER_COLLECTIONS[\s\S]{0,220}'payroll'/.test(data));
+check('notes are not in customer allowlist',!/CUSTOMER_COLLECTIONS[\s\S]{0,220}'notes'/.test(data));
+check('customer writes are restricted to service requests',data.includes("collection !== 'calls'")&&data.includes("record.source !== 'customer_portal'"));
+check('portal invitation requires owner role',invite.includes("roles:['owner']"));
+check('portal invitation links a customer id',invite.includes("role:'customer',customerId"));
+check('portal invitation uses existing Supabase invite flow',invite.includes('/auth/v1/invite'));
+console.log(`customer portal checks: ${pass} passed / ${fail} failed`);
+if(fail)process.exit(1);
