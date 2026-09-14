@@ -19,7 +19,7 @@ check('portal invitation requires owner role',invite.includes("roles:['owner']")
 check('portal invitation links a customer id',invite.includes("role:'customer',customerId"));
 check('portal invitation uses existing Supabase invite flow',invite.includes('/auth/v1/invite'));
 check('customer storage access is read-only',photos.includes("identity.role === 'customer' && req.method !== 'GET'"));
-check('protected route requires explicit customer approval',photos.includes("record.approvedForCustomer === true"));
+check('protected route requires explicit customer approval',photos.includes("fileRecord.approvedForCustomer === true"));
 check('protected route verifies the file job belongs to the customer',photos.includes("job.customerId === identity.customerId"));
 check('portal opens files through the protected route',portal.includes("serverFetch('/api/photos?fileId='"));
 console.log(`customer portal checks: ${pass} passed / ${fail} failed`);
