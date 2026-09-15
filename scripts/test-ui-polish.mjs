@@ -7,6 +7,7 @@ const css = fs.readFileSync(new URL('../otto-ui-polish.css', import.meta.url), '
 const finishCss = fs.readFileSync(new URL('../otto-client-visible-polish.css', import.meta.url), 'utf8');
 const fieldPolicyCss = fs.readFileSync(new URL('../otto-field-policy-gate-fix.css', import.meta.url), 'utf8');
 const julioOwnerCss = fs.readFileSync(new URL('../otto-julio-owner.css', import.meta.url), 'utf8');
+const saraysOfficeCss = fs.readFileSync(new URL('../otto-sarays-office.css', import.meta.url), 'utf8');
 const js = fs.readFileSync(new URL('../otto-ui-polish.js', import.meta.url), 'utf8');
 const patchedIndex = patchIndex(index);
 const patchedSw = patchServiceWorker(sw);
@@ -14,8 +15,9 @@ const patchedSw = patchServiceWorker(sw);
 const checks = [
   ...validate(patchedIndex, patchedSw),
   ['polish patch is idempotent', patchIndex(patchedIndex) === patchedIndex && patchServiceWorker(patchedSw) === patchedSw],
-  ['polish assets share one version', UI_POLISH_VERSION === '4' && patchedIndex.includes('otto-ui-polish.css?v=4') && patchedIndex.includes('otto-client-visible-polish.css?v=4') && patchedIndex.includes('otto-field-policy-gate-fix.css?v=4') && patchedIndex.includes('otto-julio-owner.css?v=4') && patchedIndex.includes('otto-ui-polish.js?v=4')],
+  ['polish assets share one version', UI_POLISH_VERSION === '5' && patchedIndex.includes('otto-ui-polish.css?v=5') && patchedIndex.includes('otto-client-visible-polish.css?v=5') && patchedIndex.includes('otto-field-policy-gate-fix.css?v=5') && patchedIndex.includes('otto-julio-owner.css?v=5') && patchedIndex.includes('otto-sarays-office.css?v=5') && patchedIndex.includes('otto-ui-polish.js?v=5')],
   ['Julio owner background uses supplied artwork only for Julio', julioOwnerCss.includes('body.otto-shell[data-otto-user="julio"] #main') && julioOwnerCss.includes("url('./design-assets/wallpapers/julio-pablo.avif')") && !julioOwnerCss.includes('data-otto-user="otto"') && !julioOwnerCss.includes('data-otto-user="saray"')],
+  ['Sarays office background uses supplied artwork only for Sarays', saraysOfficeCss.includes('body.otto-shell[data-otto-user="saray"] #main') && saraysOfficeCss.includes("url('./design-assets/wallpapers/sarays.avif')") && !saraysOfficeCss.includes('data-otto-user="otto"') && !saraysOfficeCss.includes('data-otto-user="julio"')],
   ['field policy gate hides fixed worker chrome', fieldPolicyCss.includes('#app.policy-gate-active > .of-header') && fieldPolicyCss.includes('#app.policy-gate-active > .of-dock') && fieldPolicyCss.includes('display: none !important')],
   ['desktop touch targets are at least 40px', css.includes('body.admin-home .topbar .iconbtn') && css.includes('min-width: 40px') && css.includes('min-height: 40px')],
   ['window controls are at least 36px', css.includes('.otto-window-control') && css.includes('min-width: 36px') && css.includes('min-height: 36px')],
