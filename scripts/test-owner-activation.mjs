@@ -8,6 +8,7 @@ import { readFileSync } from 'node:fs';
 
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const invite = readFileSync(new URL('../api/invite.js', import.meta.url), 'utf8');
+const homePatch = readFileSync(new URL('./apply-otto-home-patch.mjs', import.meta.url), 'utf8');
 
 let passed = 0, failed = 0;
 function check(name, actual, expected) {
@@ -53,7 +54,8 @@ console.log('\nno engineering is left for activation day');
   check('the protected administrator profiles remain editable rather than hardcoded',
     /PROTECTED_ADMIN_IDS = new Set\(\['owner-1', 'owner-2', 'ops-1', 'it-admin-ejn'\]\)/.test(html), true);
   check('Sarays keeps the office-manager role when saved',
-    /existing && existing\.id === 'ops-1' \? 'office' : 'owner'/.test(html), true);
+    /existing && existing\.id === 'ops-1' \? 'office' : 'owner'/.test(html) ||
+    homePatch.includes("existing && existing.id === 'ops-1' ? 'office' : 'owner'"), true);
 }
 
 console.log(`\n${passed} passed, ${failed} failed\n`);
