@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 const INDEX=new URL('../index.html',import.meta.url);
 const SW=new URL('../sw.js',import.meta.url);
 const SHELL=new URL('../otto-shell.js',import.meta.url);
+const UI=new URL('../otto-ui-integrations.js',import.meta.url);
 const V='2';
 
 function patchIndex(src){
@@ -47,10 +48,17 @@ function patchShell(src){
  }
  return out;
 }
+function patchUi(src){
+ const old="    portalCards();\n    enhanceOperationsInbox();";
+ const next="    if (!(session() && session().role === 'customer')) portalCards();\n    enhanceOperationsInbox();";
+ if(src.includes(next))return src;
+ if(!src.includes(old))throw new Error('customer portal enhancement marker missing');
+ return src.replace(old,next);
+}
 
-const paths=[INDEX,SW,SHELL].map(fileURLToPath);
+const paths=[INDEX,SW,SHELL,UI].map(fileURLToPath);
 const before=paths.map(p=>fs.readFileSync(p,'utf8'));
-const after=[patchIndex(before[0]),patchSw(before[1]),patchShell(before[2])];
-if(!after[0].includes('data-otto-premium-ops-runtime')||!after[0].includes('data-otto-ui-integrations-runtime')||!after[0].includes('data-otto-ui-integrations-compat-runtime')||!after[0].includes('getRoute:()=>route')||!after[1].includes("'./otto-ui-integrations.js'")||!after[1].includes("'./otto-ui-integrations-compat.js'")||!after[2].includes("['owner', 'office'].includes(session.role)")||!after[2].includes("view: 'otto_operations'"))throw new Error('premium ops UI patch validation failed');
+const after=[patchIndex(before[0]),patchSw(before[1]),patchShell(before[2]),patchUi(before[3])];
+if(!after[0].includes('data-otto-premium-ops-runtime')||!after[0].includes('data-otto-ui-integrations-runtime')||!after[0].includes('data-otto-ui-integrations-compat-runtime')||!after[0].includes('getRoute:()=>route')||!after[1].includes("'./otto-ui-integrations.js'")||!after[1].includes("'./otto-ui-integrations-compat.js'")||!after[2].includes("['owner', 'office'].includes(session.role)")||!after[2].includes("view: 'otto_operations'")||!after[3].includes("if (!(session() && session().role === 'customer')) portalCards();"))throw new Error('premium ops UI patch validation failed');
 after.forEach((txt,i)=>{if(txt!==before[i])fs.writeFileSync(paths[i],txt)});
 console.log('Premium operations and UI integrations patch applied and validated');
