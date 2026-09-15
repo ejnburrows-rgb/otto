@@ -12,10 +12,12 @@ function patchIndex(src){
    .replace(/\s*<script\b[^>]*data-otto-premium-ops-runtime[^>]*><\/script>\s*/g,'\n')
    .replace(/\s*<link\b[^>]*data-otto-premium-ops-style[^>]*>\s*/g,'\n')
    .replace(/\s*<script\b[^>]*data-otto-ui-integrations-runtime[^>]*><\/script>\s*/g,'\n')
-   .replace(/\s*<link\b[^>]*data-otto-ui-integrations-style[^>]*>\s*/g,'\n');
- out=out.replace('</head>',`  <link rel="stylesheet" href="./otto-premium-ops.css?v=${V}" data-otto-premium-ops-style />\n  <link rel="stylesheet" href="./otto-ui-integrations.css?v=${V}" data-otto-ui-integrations-style />\n</head>`);
+   .replace(/\s*<link\b[^>]*data-otto-ui-integrations-style[^>]*>\s*/g,'\n')
+   .replace(/\s*<script\b[^>]*data-otto-ui-integrations-compat-runtime[^>]*><\/script>\s*/g,'\n')
+   .replace(/\s*<link\b[^>]*data-otto-ui-integrations-compat-style[^>]*>\s*/g,'\n');
+ out=out.replace('</head>',`  <link rel="stylesheet" href="./otto-premium-ops.css?v=${V}" data-otto-premium-ops-style />\n  <link rel="stylesheet" href="./otto-ui-integrations.css?v=${V}" data-otto-ui-integrations-style />\n  <link rel="stylesheet" href="./otto-ui-integrations-compat.css?v=${V}" data-otto-ui-integrations-compat-style />\n</head>`);
  const bridge=`<script data-otto-premium-ops-bridge>\nwindow.__ottoPremiumOpsBridge={\n  getDb:()=>db,\n  getSession:()=>session,\n  getLang:()=>lang,\n  getRoute:()=>route,\n  add:(c,o)=>add(c,o),\n  update:(c,i,p)=>update(c,i,p),\n  save:()=>save(),\n  nav:(v,i)=>nav(v,i),\n  render:()=>render(),\n  can:(v)=>can(v),\n  toast:(m,type)=>toast(m,type),\n  getFileURL:(id)=>getFileURL(id),\n  openJobForm:(id,customerId)=>typeof openJobForm==='function'?openJobForm(id,customerId):null,\n  openEstimateForm:(id,jobId)=>typeof openEstimateForm==='function'?openEstimateForm(id,jobId):null,\n  openInvoiceView:(id)=>typeof openInvoiceView==='function'?openInvoiceView(id):null\n};\n</script>`;
- out=out.replace('</body>',`  ${bridge}\n  <script src="./otto-premium-ops.js?v=${V}" data-otto-premium-ops-runtime></script>\n  <script src="./otto-ui-integrations.js?v=${V}" data-otto-ui-integrations-runtime></script>\n</body>`);
+ out=out.replace('</body>',`  ${bridge}\n  <script src="./otto-premium-ops.js?v=${V}" data-otto-premium-ops-runtime></script>\n  <script src="./otto-ui-integrations.js?v=${V}" data-otto-ui-integrations-runtime></script>\n  <script src="./otto-ui-integrations-compat.js?v=${V}" data-otto-ui-integrations-compat-runtime></script>\n</body>`);
  return out;
 }
 function patchSw(src){
@@ -27,6 +29,11 @@ function patchSw(src){
    const premium="'./otto-premium-ops.css', './otto-premium-ops.js',";
    if(!out.includes(premium))throw new Error('premium ops cache marker missing');
    out=out.replace(premium,`${premium}\n  './otto-ui-integrations.css', './otto-ui-integrations.js',`);
+ }
+ if(!out.includes("'./otto-ui-integrations-compat.js'")){
+   const ui="'./otto-ui-integrations.css', './otto-ui-integrations.js',";
+   if(!out.includes(ui))throw new Error('UI integration cache marker missing');
+   out=out.replace(ui,`${ui}\n  './otto-ui-integrations-compat.css', './otto-ui-integrations-compat.js',`);
  }
  return out;
 }
@@ -44,6 +51,6 @@ function patchShell(src){
 const paths=[INDEX,SW,SHELL].map(fileURLToPath);
 const before=paths.map(p=>fs.readFileSync(p,'utf8'));
 const after=[patchIndex(before[0]),patchSw(before[1]),patchShell(before[2])];
-if(!after[0].includes('data-otto-premium-ops-runtime')||!after[0].includes('data-otto-ui-integrations-runtime')||!after[0].includes('getRoute:()=>route')||!after[1].includes("'./otto-ui-integrations.js'")||!after[2].includes("['owner', 'office'].includes(session.role)")||!after[2].includes("view: 'otto_operations'"))throw new Error('premium ops UI patch validation failed');
+if(!after[0].includes('data-otto-premium-ops-runtime')||!after[0].includes('data-otto-ui-integrations-runtime')||!after[0].includes('data-otto-ui-integrations-compat-runtime')||!after[0].includes('getRoute:()=>route')||!after[1].includes("'./otto-ui-integrations.js'")||!after[1].includes("'./otto-ui-integrations-compat.js'")||!after[2].includes("['owner', 'office'].includes(session.role)")||!after[2].includes("view: 'otto_operations'"))throw new Error('premium ops UI patch validation failed');
 after.forEach((txt,i)=>{if(txt!==before[i])fs.writeFileSync(paths[i],txt)});
 console.log('Premium operations and UI integrations patch applied and validated');
