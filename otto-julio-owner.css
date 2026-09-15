@@ -1,5 +1,5 @@
-/* Julio owner identity — requested personal workspace background.
-   This applies only when Julio (owner-2) is the signed-in OTTO owner. */
+/* Personal OTTO workspace backgrounds.
+   Each background is scoped to the matching signed-in profile only. */
 
 body.otto-shell[data-otto-user="julio"] #main {
   background-image:
@@ -17,6 +17,24 @@ html[data-theme="dark"] body.otto-shell[data-otto-user="julio"] #main {
     url('./design-assets/wallpapers/julio-pablo.avif');
 }
 
+/* Sarays is the office manager. Her signed-in workspace uses the supplied
+   pink Miami/fireworks artwork already committed as sarays.avif. */
+body.otto-shell[data-otto-user="saray"] #main {
+  background-image:
+    linear-gradient(rgba(247, 247, 248, 0.66), rgba(247, 247, 248, 0.74)),
+    url('./design-assets/wallpapers/sarays.avif');
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+html[data-theme="dark"] body.otto-shell[data-otto-user="saray"] #main {
+  background-image:
+    linear-gradient(rgba(15, 17, 19, 0.62), rgba(15, 17, 19, 0.72)),
+    url('./design-assets/wallpapers/sarays.avif');
+}
+
 /* Keep the supplied artwork visible on phones while avoiding fixed-background
    rendering issues in mobile browsers. */
 @media (max-width: 900px) {
@@ -24,5 +42,11 @@ html[data-theme="dark"] body.otto-shell[data-otto-user="julio"] #main {
   html[data-theme="dark"] body.otto-shell[data-otto-user="julio"] #main {
     background-attachment: scroll;
     background-position: 58% top;
+  }
+
+  body.otto-shell[data-otto-user="saray"] #main,
+  html[data-theme="dark"] body.otto-shell[data-otto-user="saray"] #main {
+    background-attachment: scroll;
+    background-position: 62% top;
   }
 }
