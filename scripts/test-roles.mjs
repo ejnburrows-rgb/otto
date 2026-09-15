@@ -5,8 +5,7 @@
 // needs it on the job:
 //
 //   - owners see everything;
-//   - the office manager AND the IT account run staff admin, so both reach the
-//     Team screen where accounts are created and sign-in codes are set;
+//   - the office manager uses the office role;
 //   - field crew stay on their own small set of screens.
 //
 // Run with:  node scripts/test-roles.mjs
@@ -22,8 +21,6 @@ function check(name, actual, expected) {
   else { failed++; console.log(`  FAIL ${name}\n       expected ${e}\n       got      ${a}`); }
 }
 
-// Pull the real ROLE_VIEWS table and can() out of index.html rather than
-// restating them here — a copy would just drift.
 const adminStart = html.indexOf('const FULL_ADMIN_VIEWS = [');
 if (adminStart < 0) throw new Error('FULL_ADMIN_VIEWS not found in index.html');
 const adminEnd = html.indexOf(';', adminStart) + 1;
@@ -45,7 +42,7 @@ check('an owner reaches Team', can('owner', 'team'), true);
 check('the office manager cannot reach Team', can('office', 'team'), false);
 check('office cannot change user roles', can('office', 'team'), false);
 check('field crew do NOT reach Team', can('field', 'team'), false);
-check('Sarays is seeded as a full owner administrator', html.includes("id: 'ops-1', name: 'Sarays', role: 'owner'"), true);
+check('Sarays is seeded as office manager', html.includes("id: 'ops-1', name: 'Sarays', role: 'office'"), true);
 check('the IT administrator is protected from deletion', html.includes("'it-admin-ejn'") && html.includes("Only field workers can be deleted."), true);
 check('the Team delete action is limited to field workers', html.includes("u.role === 'field' && !protectedAdmin") && html.includes('deleteFieldWorker'), true);
 
@@ -73,11 +70,6 @@ for (const view of ['home', 'jobs', 'customers', 'followups']) {
   check(`field sees ${view}`, can('field', view), true);
 }
 
-/* Ask OTTO used to be granted to field and is now deliberately withheld, so
-   this assertion is inverted rather than deleted: the role table is the single
-   place that decision is made, and a future change that hands the assistant
-   back to the crew has to fail here first. api/nvidia.js only accepts
-   owner/office, so the button could never have produced an answer anyway. */
 check('field does not see assistant', can('field', 'assistant'), false);
 
 console.log('\nno role is empty or missing');
