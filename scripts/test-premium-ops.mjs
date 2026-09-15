@@ -2,6 +2,8 @@ import fs from 'node:fs';
 
 const js=fs.readFileSync(new URL('../otto-premium-ops.js',import.meta.url),'utf8');
 const css=fs.readFileSync(new URL('../otto-premium-ops.css',import.meta.url),'utf8');
+const ui=fs.readFileSync(new URL('../otto-ui-integrations.js',import.meta.url),'utf8');
+const uiCss=fs.readFileSync(new URL('../otto-ui-integrations.css',import.meta.url),'utf8');
 const auth=fs.readFileSync(new URL('../api/_lib/serverAuth.js',import.meta.url),'utf8');
 const data=fs.readFileSync(new URL('../api/data.js',import.meta.url),'utf8');
 const index=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
@@ -31,5 +33,31 @@ check('owner metrics are real-data metrics',js.includes('Outstanding invoices')&
 check('mobile touch layout included',css.includes('@media(max-width:800px)')&&css.includes('min-height:44px'));
 check('browser print/PDF path included',css.includes('@media print')&&js.includes('window.print()'));
 check('bilingual strings are present',js.includes("getLang()==='es'")&&js.includes('Requiere atención'));
+
+check('premium UI integration runtime wired',index.includes('data-otto-ui-integrations-runtime'));
+check('premium UI integration stylesheet wired',index.includes('data-otto-ui-integrations-style'));
+check('premium UI integrations are cached offline',sw.includes("'./otto-ui-integrations.js'")&&sw.includes("'./otto-ui-integrations.css'"));
+check('universal record drawer covers customer job estimate and invoice',ui.includes("openDrawer(type, rid)")&&['customer','job','estimate','invoice'].every(k=>ui.includes(`type === '${k}'`)));
+check('dispatch supports day and week modes',ui.includes("dispatchMode: 'day'")&&ui.includes("data-mode=\"week\"")&&ui.includes('ui-dispatch-lanes'));
+check('dispatch shows unassigned work and preparation alerts',ui.includes('ui-dispatch-unassigned')&&ui.includes('dispatchAttention(jobs)'));
+check('activity timeline combines real CRM collections',['notes','calls','emails','photos','documents','estimates','invoices','payments','job_events','audit_log'].every(k=>ui.includes(`arr('${k}')`)));
+check('field sticky actions reuse existing field business actions',ui.includes('data-of-action=\"check-in\"')&&ui.includes('data-of-action=\"check-out\"')&&ui.includes('data-of-action=\"add-photo\"')&&ui.includes('data-of-action=\"add-note\"'));
+check('smart record headers cover key records',ui.includes('smartHeaderMarkup(type, rid)')&&['customer','job','estimate','invoice'].every(k=>ui.includes(`type === '${k}'`)));
+check('command palette gets customer job estimate quick-create',ui.includes('data-ui-quick=\"customer\"')&&ui.includes('data-ui-quick=\"job\"')&&ui.includes('data-ui-quick=\"estimate\"'));
+check('personal Today uses supplied Julio and Sarays backgrounds',uiCss.includes('julio-pablo.avif')&&uiCss.includes('sarays.avif')&&ui.includes("['julio', 'sarays'].includes(key)"));
+check('Operations is presented as a work inbox',ui.includes('enhanceOperationsInbox()')&&ui.includes("'Operational inbox', 'Bandeja operativa'"));
+check('customer portal has premium cards and request service',ui.includes('ui-portal-grid')&&ui.includes("'Request service', 'Solicitar servicio'")&&ui.includes("source: 'customer_portal'"));
+check('offline and sync states are visible',ui.includes('navigator.onLine')&&ui.includes("'Offline · saved locally', 'Sin conexión · guardado local'")&&ui.includes("'Saved', 'Guardado'"));
+check('unified file viewer supports photos and documents',ui.includes("openFileViewer(kind, rid)")&&ui.includes("kind === 'photo'")&&ui.includes('ui-file-frame'));
+check('premium forms add sticky actions and validation',ui.includes('ui-sticky-form-actions')&&ui.includes("addEventListener('invalid'")&&ui.includes('reportValidity()'));
+check('new UI surfaces have paired English Spanish copy',[
+  ["'New customer', 'Nuevo cliente'"],["'New job', 'Nuevo trabajo'"],["'New estimate', 'Nuevo estimado'"],
+  ["'Schedule', 'Agenda'"],["'Activity', 'Actividad'"],["'Request service', 'Solicitar servicio'"],
+  ["'Quick view', 'Vista rápida'"],["'Job brief', 'Resumen'"],["'Saved', 'Guardado'"]
+].every(([needle])=>ui.includes(needle)));
+check('new UI runtime adds no external service call',!ui.includes('fetch(')&&!ui.includes('XMLHttpRequest')&&!ui.includes('/api/openai')&&!ui.includes('/api/anthropic')&&!ui.includes('/api/gemini')&&!ui.includes('/api/nvidia'));
+check('new UI is mobile responsive and honors reduced motion',uiCss.includes('@media (max-width:900px)')&&uiCss.includes('@media (prefers-reduced-motion:reduce)'));
+check('new UI maintains practical touch targets',uiCss.includes('min-height:48px')&&uiCss.includes('min-height:40px'));
+
 console.log(`premium operations: ${pass} passed / ${fail} failed`);
 if(fail)process.exit(1);
