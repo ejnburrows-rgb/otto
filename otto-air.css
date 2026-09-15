@@ -1,0 +1,372 @@
+/* OTTO Air — one calm, minimal design system for the entire CRM.
+   Light and dark share identical structure; only color tokens change.
+   Status semantics are fixed product language:
+   red = scheduled, blue = underway, green = completed, amber = needs attention. */
+
+:root,
+html[data-theme="light"] {
+  --air-bg: #F6F8FB;
+  --air-surface: #FFFFFF;
+  --air-surface-2: #F0F4F8;
+  --air-surface-3: #EAF0F6;
+  --air-sidebar: #F2F6FA;
+  --air-text: #182230;
+  --air-text-2: #667085;
+  --air-text-3: #8B95A5;
+  --air-border: #E3E8EF;
+  --air-border-strong: #D3DAE4;
+  --air-accent: #4E74C8;
+  --air-accent-hover: #3E63B5;
+  --air-selected: #EAF1FF;
+  --air-scheduled: #C84C4C;
+  --air-scheduled-bg: #FCEEEE;
+  --air-underway: #3C73D9;
+  --air-underway-bg: #EAF1FF;
+  --air-completed: #2F7D5A;
+  --air-completed-bg: #EAF6F0;
+  --air-attention: #A96A16;
+  --air-attention-bg: #FFF5E4;
+  --air-danger: #B54747;
+  --air-danger-bg: #FCEEEE;
+  --air-radius: 10px;
+  --air-radius-sm: 8px;
+  --air-radius-lg: 14px;
+  --air-shadow: 0 1px 2px rgba(16,24,40,.035);
+  --air-shadow-float: 0 14px 34px rgba(16,24,40,.10);
+  --air-motion: 150ms cubic-bezier(.2,0,0,1);
+  --air-font: 'Geist','Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+
+html[data-theme="dark"] {
+  --air-bg: #20262E;
+  --air-surface: #272E38;
+  --air-surface-2: #2E3742;
+  --air-surface-3: #35404C;
+  --air-sidebar: #232A33;
+  --air-text: #F2F5F8;
+  --air-text-2: #B6C0CC;
+  --air-text-3: #929EAC;
+  --air-border: #394553;
+  --air-border-strong: #465464;
+  --air-accent: #79A8FF;
+  --air-accent-hover: #98BCFF;
+  --air-selected: #33415A;
+  --air-scheduled: #F08080;
+  --air-scheduled-bg: #4A3033;
+  --air-underway: #82AEFF;
+  --air-underway-bg: #30405C;
+  --air-completed: #76C69A;
+  --air-completed-bg: #2F483D;
+  --air-attention: #E7B768;
+  --air-attention-bg: #4A402F;
+  --air-danger: #F08080;
+  --air-danger-bg: #4A3033;
+  --air-shadow: 0 1px 2px rgba(0,0,0,.12);
+  --air-shadow-float: 0 16px 36px rgba(0,0,0,.24);
+}
+
+/* Remap all existing product tokens so old and new screens look like one app. */
+html body,
+html body.otto-shell,
+html[data-theme] body,
+html[data-theme] body.otto-shell {
+  --bg: var(--air-bg) !important;
+  --bg2: var(--air-surface-2) !important;
+  --card: var(--air-surface) !important;
+  --card-hover: var(--air-surface-2) !important;
+  --card-elevated: var(--air-surface) !important;
+  --line: var(--air-border) !important;
+  --glass-bg: var(--air-surface) !important;
+  --glass-border: var(--air-border) !important;
+  --text: var(--air-text) !important;
+  --text2: var(--air-text-2) !important;
+  --text3: var(--air-text-3) !important;
+  --blue: var(--air-accent) !important;
+  --blue2: var(--air-accent-hover) !important;
+  --accent: var(--air-accent) !important;
+  --accent-hover: var(--air-accent-hover) !important;
+  --action: var(--air-accent) !important;
+  --action-hover: var(--air-accent-hover) !important;
+  --accent-fill: var(--air-accent) !important;
+  --accent-fill-hover: var(--air-accent-hover) !important;
+  --green: var(--air-completed) !important;
+  --green-fill: var(--air-completed) !important;
+  --amber: var(--air-attention) !important;
+  --amber-fill: var(--air-attention) !important;
+  --red: var(--air-danger) !important;
+  --red-fill: var(--air-danger) !important;
+  --radius: var(--air-radius) !important;
+  --radius-sm: var(--air-radius-sm) !important;
+  --shadow-sm: var(--air-shadow) !important;
+  --shadow: var(--air-shadow) !important;
+  --shadow2: var(--air-shadow-float) !important;
+  --ot-bg: var(--air-bg) !important;
+  --ot-surface: var(--air-surface) !important;
+  --ot-sidebar: var(--air-sidebar) !important;
+  --ot-sidebar-hover: var(--air-surface-3) !important;
+  --ot-text: var(--air-text) !important;
+  --ot-text-2: var(--air-text-2) !important;
+  --ot-muted: var(--air-text-3) !important;
+  --ot-border: var(--air-border) !important;
+  --ot-accent: var(--air-accent) !important;
+  --ot-accent-hover: var(--air-accent-hover) !important;
+  --ot-selected: var(--air-selected) !important;
+  --ot-success: var(--air-completed) !important;
+  --ot-warning: var(--air-attention) !important;
+  --ot-error: var(--air-danger) !important;
+  --ot-r-control: var(--air-radius-sm) !important;
+  --ot-r-panel: var(--air-radius) !important;
+  --ot-r-dialog: var(--air-radius-lg) !important;
+  --ot-font: var(--air-font) !important;
+}
+
+html,
+body,
+body.otto-shell,
+body.theme-app {
+  background: var(--air-bg) !important;
+  color: var(--air-text) !important;
+  font-family: var(--air-font) !important;
+  font-size: 15px;
+  line-height: 1.48;
+}
+
+body { background-image: none !important; }
+
+button,input,select,textarea { font-family: var(--air-font) !important; }
+
+/* Calm, consistent content width and hierarchy. */
+body.otto-shell #main,
+body.otto-shell #main.wrap {
+  background: var(--air-bg) !important;
+  padding-top: 28px !important;
+}
+
+body:not(.otto-shell) .wrap { max-width: 1120px; }
+.ot-page,.ui-dispatch-page,.ui-record-head,.ui-activity-card { max-width: 1120px !important; }
+
+.pagehead,.ot-head,.ui-dispatch-head {
+  margin-bottom: 22px !important;
+}
+
+.pagehead h1,.ot-head h1,.ui-dispatch-head h1,.ui-record-head h1,
+h1,h2,h3 {
+  font-family: var(--air-font) !important;
+  letter-spacing: -.018em !important;
+}
+.pagehead h1,.ot-head h1,.ui-dispatch-head h1 { font-size: clamp(22px,2.2vw,27px) !important; font-weight: 650 !important; }
+.pagehead .sub,.ot-head p,.ui-dispatch-head p { color: var(--air-text-2) !important; }
+
+/* Sidebar: bright in light mode, soft slate in dark mode. */
+.ot-sidebar {
+  background: var(--air-sidebar) !important;
+  border-right: 1px solid var(--air-border) !important;
+  box-shadow: none !important;
+}
+.ot-sidebar-brand { border-bottom: 0 !important; }
+.ot-nav-item,.ot-sidebar-user {
+  color: var(--air-text-2) !important;
+  border-radius: var(--air-radius-sm) !important;
+}
+.ot-nav-item:hover,.ot-sidebar-user:hover {
+  color: var(--air-text) !important;
+  background: var(--air-surface-2) !important;
+}
+.ot-nav-item.is-active {
+  color: var(--air-text) !important;
+  background: var(--air-selected) !important;
+  font-weight: 650 !important;
+}
+.ot-nav-count,.ot-sidebar-search,.ot-sidebar-search kbd { color: var(--air-text-3) !important; }
+.ot-sidebar-search,.ot-lang {
+  border-color: var(--air-border) !important;
+  background: var(--air-surface) !important;
+}
+.ot-lang button { color: var(--air-text-3) !important; }
+.ot-lang button.is-on { color: var(--air-text) !important; background: var(--air-selected) !important; }
+.ot-avatar { background: var(--air-accent) !important; color: #fff !important; }
+
+/* Cards are groups, not decoration: thin border, no glass, almost no shadow. */
+.card,.panel,.glass,.sheet,.modal,.modal-card,.drawer,.ui-activity-card,
+.ui-record-head,.ui-dispatch-lanes,.ui-dispatch-unassigned,.ui-drawer-inner,
+.ot-panel,.ot-command,.otto-tools-sheet,.otto-assistant-panel,
+.portal-card,.ui-portal-card,[class*="-card"] {
+  background: var(--air-surface) !important;
+  border-color: var(--air-border) !important;
+  box-shadow: var(--air-shadow) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+.card,.panel,.ot-panel,.ui-activity-card,.ui-record-head,.ui-dispatch-lanes,.ui-dispatch-unassigned {
+  border-radius: var(--air-radius) !important;
+}
+
+/* Remove nested-card visual noise. */
+.card .card,.panel .card,.ot-panel .card,.ui-drawer .card {
+  box-shadow: none !important;
+}
+
+/* Inputs and filters: one quiet language everywhere. */
+input,select,textarea,
+.search,input[type="search"],.field input,.field select,.field textarea,
+.ot-omni,.ui-segmented,.ui-button,.ui-icon,.ot-btn,.back {
+  background: var(--air-surface) !important;
+  color: var(--air-text) !important;
+  border-color: var(--air-border) !important;
+  border-radius: var(--air-radius-sm) !important;
+  box-shadow: none !important;
+}
+input::placeholder,textarea::placeholder { color: var(--air-text-3) !important; }
+input:focus,select:focus,textarea:focus,.ot-omni:focus-visible,.ui-button:focus-visible,.ui-icon:focus-visible {
+  outline: 2px solid color-mix(in srgb,var(--air-accent) 72%,transparent) !important;
+  outline-offset: 1px !important;
+  border-color: var(--air-accent) !important;
+}
+
+/* Primary action: one obvious action, secondary actions visually recede. */
+.btn.primary,.btn.btn-primary,.ot-btn-primary,.ui-button.primary,
+button.primary,[data-primary="true"] {
+  background: var(--air-accent) !important;
+  border-color: var(--air-accent) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+.btn:not(.primary):not(.btn-primary),.ot-btn:not(.ot-btn-primary),.ui-button:not(.primary) {
+  box-shadow: none !important;
+}
+
+/* Tables and dense records: readable without heavy grids. */
+table { border-collapse: separate; border-spacing: 0; width: 100%; }
+th {
+  color: var(--air-text-2) !important;
+  font-size: 11.5px !important;
+  font-weight: 650 !important;
+  letter-spacing: .015em;
+  background: var(--air-surface-2) !important;
+}
+td,th { border-color: var(--air-border) !important; }
+tbody tr:hover td { background: var(--air-surface-2) !important; }
+
+/* Fixed status language. Never rely on color alone: existing visible labels remain. */
+.ot-badge,.badge,.pill,.status-pill,[class*="status-"] {
+  box-shadow: none !important;
+  font-weight: 650 !important;
+}
+.ot-badge.is-scheduled,.status-scheduled,.badge.scheduled,.pill.scheduled,
+[data-status="scheduled"],[data-job-status="scheduled"] {
+  color: var(--air-scheduled) !important;
+  background: var(--air-scheduled-bg) !important;
+  border-color: color-mix(in srgb,var(--air-scheduled) 35%,var(--air-border)) !important;
+}
+.ot-badge.is-active,.status-inprogress,.status-in-progress,.badge.inprogress,.badge.in-progress,.pill.inprogress,
+[data-status="inProgress"],[data-status="in-progress"],[data-job-status="inProgress"] {
+  color: var(--air-underway) !important;
+  background: var(--air-underway-bg) !important;
+  border-color: color-mix(in srgb,var(--air-underway) 35%,var(--air-border)) !important;
+}
+.ot-badge.is-done,.status-completed,.badge.completed,.pill.completed,
+[data-status="completed"],[data-job-status="completed"] {
+  color: var(--air-completed) !important;
+  background: var(--air-completed-bg) !important;
+  border-color: color-mix(in srgb,var(--air-completed) 35%,var(--air-border)) !important;
+}
+.ot-badge.is-error,.ot-badge.is-warning,.needs-attention,.status-attention,.badge.attention,.pill.attention,
+[data-status="attention"],[data-needs-attention="true"] {
+  color: var(--air-attention) !important;
+  background: var(--air-attention-bg) !important;
+  border-color: color-mix(in srgb,var(--air-attention) 38%,var(--air-border)) !important;
+}
+
+/* Schedule/dispatch uses a narrow semantic edge instead of saturated cards. */
+.ui-job-block { background: var(--air-surface) !important; border-color: var(--air-border) !important; }
+.ui-job-block.status-scheduled { border-left-color: var(--air-scheduled) !important; }
+.ui-job-block.status-inprogress { border-left-color: var(--air-underway) !important; }
+.ui-job-block.status-completed { border-left-color: var(--air-completed) !important; opacity: .82 !important; }
+.ui-dispatch-alert { background: var(--air-attention-bg) !important; border-color: color-mix(in srgb,var(--air-attention) 35%,var(--air-border)) !important; }
+.ui-dispatch-alert strong,.ui-dispatch-alert span { color: var(--air-attention) !important; }
+.ui-segmented button[aria-pressed="true"] { background: var(--air-selected) !important; color: var(--air-accent) !important; }
+
+/* Attention rows are actionable, not alarm-like. */
+.ot-row,.ui-timeline-row,.row,.listrow,.list-row {
+  border-color: var(--air-border) !important;
+}
+.ot-row:hover,.row:hover,.listrow:hover,.list-row:hover { background: var(--air-surface-2) !important; }
+.ot-row-title,.ui-timeline-copy strong { color: var(--air-text) !important; }
+.ot-row-sub,.ui-timeline-copy span,.ot-row-tech,.ui-facts span { color: var(--air-text-2) !important; }
+
+/* Drawers preserve context; they should feel like part of the page, not a new app. */
+.ui-drawer { background: rgba(16,24,40,.20) !important; }
+.ui-drawer-inner { box-shadow: -16px 0 32px rgba(16,24,40,.10) !important; }
+html[data-theme="dark"] .ui-drawer { background: rgba(0,0,0,.30) !important; }
+.ui-drawer-actions { background: color-mix(in srgb,var(--air-surface) 96%,transparent) !important; border-color: var(--air-border) !important; }
+
+/* Personal Today artwork becomes atmosphere only, never a text background. */
+body.otto-shell.otto-personal-today #main {
+  position: relative !important;
+  background-image: none !important;
+  isolation: isolate;
+}
+body.otto-shell.otto-personal-today #main::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  left: 0; right: 0; top: 0;
+  height: 210px;
+  background-size: cover;
+  background-position: center 32%;
+  background-repeat: no-repeat;
+  opacity: .14;
+  filter: saturate(.75) contrast(.92);
+  mask-image: linear-gradient(#000 0%,#000 45%,transparent 100%);
+  pointer-events: none;
+}
+body.otto-shell.otto-personal-today[data-otto-user="julio"] #main::before {
+  background-image: url('./design-assets/wallpapers/julio-pablo.avif');
+}
+body.otto-shell.otto-personal-today[data-otto-user="sarays"] #main::before {
+  background-image: url('./design-assets/wallpapers/sarays.avif');
+}
+html[data-theme="dark"] body.otto-shell.otto-personal-today #main::before { opacity: .12; filter: saturate(.65) brightness(.82); }
+
+/* Customer portal: intentionally simpler and roomier than staff CRM. */
+body[data-otto-role="customer"] .card,
+body.customer-portal .card,
+.ui-portal-card,.portal-card {
+  padding: clamp(16px,2vw,22px) !important;
+  border-radius: var(--air-radius-lg) !important;
+}
+.ui-portal-card h2,.portal-card h2 { font-size: 16px !important; }
+
+/* Field/mobile: same system, bigger tap targets, no desktop squeezed onto a phone. */
+@media (max-width: 900px) {
+  body.otto-shell #main,body.otto-shell #main.wrap { padding: 20px 16px 92px !important; margin-left: 0 !important; }
+  .ot-mobile-nav { background: color-mix(in srgb,var(--air-surface) 96%,transparent) !important; border-color: var(--air-border) !important; box-shadow: 0 -4px 18px rgba(16,24,40,.07) !important; }
+  .ot-mobile-nav button { color: var(--air-text-2) !important; }
+  .ot-mobile-nav button.is-active { color: var(--air-accent) !important; }
+  .ui-field-actions { background: color-mix(in srgb,var(--air-surface) 96%,transparent) !important; border-color: var(--air-border) !important; box-shadow: 0 10px 24px rgba(16,24,40,.10) !important; }
+  .ui-drawer-inner { width: 100vw !important; }
+  .ui-dispatch-lane { grid-template-columns: 118px minmax(0,1fr) !important; }
+  .pagehead h1,.ot-head h1,.ui-dispatch-head h1 { font-size: 22px !important; }
+}
+
+/* Consistent empty states and save/sync feedback. */
+.ot-empty,.empty,.empty-state { color: var(--air-text-2) !important; }
+.ot-empty i,.empty-state i { color: var(--air-completed) !important; }
+[id*="sync" i],[class*="sync" i] { color: var(--air-text-2); }
+
+/* Make filters progressive rather than visually dominant. */
+.filters,.filterbar,.filter-bar,.toolbar,.page-actions { gap: 8px !important; }
+.filters select,.filterbar select,.filter-bar select { min-width: 0; }
+
+/* Accessibility: clear focus, reduced motion, no decorative pulsing. */
+:focus-visible { outline-color: var(--air-accent) !important; }
+@media (prefers-reduced-motion: reduce) {
+  *,*::before,*::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .001ms !important; }
+}
+
+/* Print stays clean and neutral. */
+@media print {
+  :root { --air-bg:#fff; --air-surface:#fff; --air-text:#111; --air-text-2:#444; --air-border:#ddd; }
+  .ot-sidebar,.ot-mobile-nav,.topbar,.bottomnav,.ui-field-actions { display:none !important; }
+  body.otto-shell #main { margin:0 !important; padding:0 !important; }
+}
