@@ -20,7 +20,8 @@ check('scheduled is red', css.includes('--air-scheduled: #C84C4C') && css.includ
 check('underway is blue', css.includes('--air-underway: #3C73D9') && css.includes('.ui-job-block.status-inprogress { border-left-color: var(--air-underway)'));
 check('completed is green', css.includes('--air-completed: #2F7D5A') && css.includes('.ui-job-block.status-completed { border-left-color: var(--air-completed)'));
 check('needs attention is amber', css.includes('--air-attention: #A96A16') && css.includes('.ot-badge.is-error,.ot-badge.is-warning'));
-check('light and dark use identical structural selectors', css.includes('html[data-theme="dark"]') && !css.includes('display: none') || true);
+const darkTokenBlock = css.match(/html\[data-theme="dark"\]\s*\{([\s\S]*?)\n\}/)?.[1] || '';
+check('light and dark keep identical structure', darkTokenBlock.length > 0 && !/\b(display|position|grid|flex|padding|margin|width|height|inset)\s*:/.test(darkTokenBlock));
 check('personal artwork is atmospheric only', css.includes('otto-personal-today #main::before') && css.includes("julio-pablo.avif") && css.includes("sarays.avif"));
 check('Spanish fallback dictionary covers primary navigation', ['Today','Schedule','Jobs','Customers','Money','Operations','Settings'].every(s => js.includes(`'${s}'`)));
 check('Spanish fallback covers core workflows', ['Invoice','Estimate','Payment','Customer portal','Service request','Job Brief','Finish closeout'].every(s => js.includes(`'${s}'`)));
