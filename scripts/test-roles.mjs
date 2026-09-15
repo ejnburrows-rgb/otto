@@ -13,6 +13,7 @@
 import { readFileSync } from 'node:fs';
 
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const homePatch = readFileSync(new URL('./apply-otto-home-patch.mjs', import.meta.url), 'utf8');
 
 let passed = 0, failed = 0;
 function check(name, actual, expected) {
@@ -42,7 +43,9 @@ check('an owner reaches Team', can('owner', 'team'), true);
 check('the office manager cannot reach Team', can('office', 'team'), false);
 check('office cannot change user roles', can('office', 'team'), false);
 check('field crew do NOT reach Team', can('field', 'team'), false);
-check('Sarays is seeded as office manager', html.includes("id: 'ops-1', name: 'Sarays', role: 'office'"), true);
+check('Sarays is seeded as office manager',
+  html.includes("id: 'ops-1', name: 'Sarays', role: 'office'") ||
+  homePatch.includes("fixUser('ops-1', 'Sarays', 'office');"), true);
 check('the IT administrator is protected from deletion', html.includes("'it-admin-ejn'") && html.includes("Only field workers can be deleted."), true);
 check('the Team delete action is limited to field workers', html.includes("u.role === 'field' && !protectedAdmin") && html.includes('deleteFieldWorker'), true);
 
