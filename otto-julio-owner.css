@@ -1,0 +1,28 @@
+/* Julio owner identity — requested personal workspace background.
+   This applies only when Julio (owner-2) is the signed-in OTTO owner. */
+
+body.otto-shell[data-otto-user="julio"] #main {
+  background-image:
+    linear-gradient(rgba(247, 247, 248, 0.72), rgba(247, 247, 248, 0.78)),
+    url('./design-assets/wallpapers/julio-pablo.avif');
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+html[data-theme="dark"] body.otto-shell[data-otto-user="julio"] #main {
+  background-image:
+    linear-gradient(rgba(15, 17, 19, 0.70), rgba(15, 17, 19, 0.78)),
+    url('./design-assets/wallpapers/julio-pablo.avif');
+}
+
+/* Keep the supplied artwork visible on phones while avoiding fixed-background
+   rendering issues in mobile browsers. */
+@media (max-width: 900px) {
+  body.otto-shell[data-otto-user="julio"] #main,
+  html[data-theme="dark"] body.otto-shell[data-otto-user="julio"] #main {
+    background-attachment: scroll;
+    background-position: 58% top;
+  }
+}
