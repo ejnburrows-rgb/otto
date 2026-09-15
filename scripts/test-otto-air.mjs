@@ -28,6 +28,7 @@ check('Spanish fallback covers core workflows', ['Invoice','Estimate','Payment',
 check('Spanish translation audit hook exists', js.includes('window.__ottoAirAudit'));
 check('sync language is plain English and Spanish', js.includes("'Sync successful':'Everything saved'") && js.includes("'Everything saved':'Todo guardado'"));
 check('status semantics never rely on color alone', js.includes("el.setAttribute('aria-label', labels[status])"));
+check('English fallback is mutation-idempotent', js.includes('const next = rewriteEnglish(node.nodeValue);') && js.includes('if (next !== node.nodeValue) node.nodeValue = next;') && !js.includes('node.nodeValue = rewriteEnglish(node.nodeValue);'));
 check('reduced motion is supported', css.includes('prefers-reduced-motion'));
 check('mobile shares the design system', css.includes('@media (max-width: 900px)'));
 check('customer portal shares the design system', css.includes('body[data-otto-role="customer"]'));
