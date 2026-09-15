@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 
 const INDEX = new URL('../index.html', import.meta.url);
 const SW = new URL('../sw.js', import.meta.url);
-export const UI_POLISH_VERSION = '4';
+export const UI_POLISH_VERSION = '5';
 
 export function patchIndex(source) {
   let out = source;
@@ -11,6 +11,7 @@ export function patchIndex(source) {
   const finishStyle = `<link rel="stylesheet" href="./otto-client-visible-polish.css?v=${UI_POLISH_VERSION}" data-otto-client-visible-polish />`;
   const fieldPolicyStyle = `<link rel="stylesheet" href="./otto-field-policy-gate-fix.css?v=${UI_POLISH_VERSION}" data-otto-field-policy-fix />`;
   const julioOwnerStyle = `<link rel="stylesheet" href="./otto-julio-owner.css?v=${UI_POLISH_VERSION}" data-otto-julio-owner-styles />`;
+  const saraysOfficeStyle = `<link rel="stylesheet" href="./otto-sarays-office.css?v=${UI_POLISH_VERSION}" data-otto-sarays-office-styles />`;
   const script = `<script src="./otto-ui-polish.js?v=${UI_POLISH_VERSION}" data-otto-ui-polish-runtime></script>`;
 
   if (out.includes('data-otto-ui-polish-styles')) {
@@ -39,6 +40,13 @@ export function patchIndex(source) {
   } else {
     if (!out.includes('</head>')) throw new Error('index.html is missing </head>');
     out = out.replace('</head>', `  ${julioOwnerStyle}\n</head>`);
+  }
+
+  if (out.includes('data-otto-sarays-office-styles')) {
+    out = out.replace(/<link\b[^>]*\bdata-otto-sarays-office-styles\b[^>]*>/, saraysOfficeStyle);
+  } else {
+    if (!out.includes('</head>')) throw new Error('index.html is missing </head>');
+    out = out.replace('</head>', `  ${saraysOfficeStyle}\n</head>`);
   }
 
   if (out.includes('data-otto-ui-polish-runtime')) {
@@ -73,6 +81,11 @@ export function patchServiceWorker(source) {
     if (!out.includes(needle)) throw new Error('field policy shell marker missing');
     out = out.replace(needle, `${needle}\n  './otto-julio-owner.css',`);
   }
+  if (!out.includes("'./otto-sarays-office.css'")) {
+    const needle = "'./otto-julio-owner.css',";
+    if (!out.includes(needle)) throw new Error('Julio owner shell marker missing');
+    out = out.replace(needle, `${needle}\n  './otto-sarays-office.css',`);
+  }
   return out;
 }
 
@@ -82,11 +95,13 @@ export function validate(index, sw) {
     ['client-visible stylesheet wired', index.includes(`href="./otto-client-visible-polish.css?v=${UI_POLISH_VERSION}" data-otto-client-visible-polish`)],
     ['field policy fix stylesheet wired', index.includes(`href="./otto-field-policy-gate-fix.css?v=${UI_POLISH_VERSION}" data-otto-field-policy-fix`)],
     ['Julio owner background stylesheet wired', index.includes(`href="./otto-julio-owner.css?v=${UI_POLISH_VERSION}" data-otto-julio-owner-styles`)],
+    ['Sarays office background stylesheet wired', index.includes(`href="./otto-sarays-office.css?v=${UI_POLISH_VERSION}" data-otto-sarays-office-styles`)],
     ['polish runtime wired', index.includes(`src="./otto-ui-polish.js?v=${UI_POLISH_VERSION}" data-otto-ui-polish-runtime`)],
     ['polish CSS cached offline', sw.includes("'./otto-ui-polish.css'")],
     ['client-visible CSS cached offline', sw.includes("'./otto-client-visible-polish.css'")],
     ['field policy fix CSS cached offline', sw.includes("'./otto-field-policy-gate-fix.css'")],
     ['Julio owner background CSS cached offline', sw.includes("'./otto-julio-owner.css'")],
+    ['Sarays office background CSS cached offline', sw.includes("'./otto-sarays-office.css'")],
     ['polish JS cached offline', sw.includes("'./otto-ui-polish.js'")]
   ];
 }
