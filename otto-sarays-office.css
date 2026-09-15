@@ -1,0 +1,29 @@
+/* Sarays office-manager identity — requested personal workspace background.
+   Applies only when Sarays (ops-1) is signed in. The artwork is the supplied
+   pink Miami skyline / Little Prince image already committed as sarays.avif. */
+
+body.otto-shell[data-otto-user="saray"] #main {
+  background-image:
+    linear-gradient(rgba(247, 247, 248, 0.70), rgba(247, 247, 248, 0.78)),
+    url('./design-assets/wallpapers/sarays.avif');
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+html[data-theme="dark"] body.otto-shell[data-otto-user="saray"] #main {
+  background-image:
+    linear-gradient(rgba(15, 17, 19, 0.68), rgba(15, 17, 19, 0.78)),
+    url('./design-assets/wallpapers/sarays.avif');
+}
+
+/* Keep the skyline and Little Prince visible on phones without using fixed
+   backgrounds, which are unreliable on mobile browsers. */
+@media (max-width: 900px) {
+  body.otto-shell[data-otto-user="saray"] #main,
+  html[data-theme="dark"] body.otto-shell[data-otto-user="saray"] #main {
+    background-attachment: scroll;
+    background-position: 62% top;
+  }
+}
