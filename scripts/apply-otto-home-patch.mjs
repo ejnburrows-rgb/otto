@@ -15,10 +15,16 @@ export function patchSource(source) {
   let out = source;
 
   const replacements = [
-    ["{ id: 'ops-1', name: 'Saray', role: 'office'", "{ id: 'ops-1', name: 'Sarays', role: 'owner'"],
-    ["{ id: 'ops-1', name: 'Sarays', role: 'office'", "{ id: 'ops-1', name: 'Sarays', role: 'owner'"],
-    ["fixUser('ops-1', 'Saray');", "fixUser('ops-1', 'Sarays', 'owner');"],
-    ["fixUser('ops-1', 'Sarays');", "fixUser('ops-1', 'Sarays', 'owner');"],
+    ["{ id: 'ops-1', name: 'Saray', role: 'owner'", "{ id: 'ops-1', name: 'Sarays', role: 'office'"],
+    ["{ id: 'ops-1', name: 'Sarays', role: 'owner'", "{ id: 'ops-1', name: 'Sarays', role: 'office'"],
+    ["{ id: 'ops-1', name: 'Saray', role: 'office'", "{ id: 'ops-1', name: 'Sarays', role: 'office'"],
+    ["fixUser('ops-1', 'Saray');", "fixUser('ops-1', 'Sarays', 'office');"],
+    ["fixUser('ops-1', 'Sarays');", "fixUser('ops-1', 'Sarays', 'office');"],
+    ["fixUser('ops-1', 'Sarays', 'owner');", "fixUser('ops-1', 'Sarays', 'office');"],
+    ["makeList('OPS & IT', mgrs)", "makeList(lang === 'es' ? 'GERENCIA DE OFICINA & IT' : 'OFFICE MANAGER & IT', mgrs)"],
+    ["? `<input id=\"u-role\" type=\"hidden\" value=\"owner\"><div", "? `<input id=\"u-role\" type=\"hidden\" value=\"${u.id === 'ops-1' ? 'office' : 'owner'}\"><div"],
+    ["${lang === 'es' ? 'Administrador completo — acceso a todos los usuarios, clientes, trabajos, facturas y archivos' : 'Full administrator — access to every user, customer, job, invoice and file'}", "${u.id === 'ops-1' ? (lang === 'es' ? 'Gerente de oficina — acceso operativo y administrativo de oficina' : 'Office Manager — office operational and administrative access') : (lang === 'es' ? 'Administrador completo — acceso a todos los usuarios, clientes, trabajos, facturas y archivos' : 'Full administrator — access to every user, customer, job, invoice and file')}"],
+    ["role: protectedAdmin ? 'owner' : 'field', lang: $('#u-lang').value,", "role: protectedAdmin ? (existing && existing.id === 'ops-1' ? 'office' : 'owner') : 'field', lang: $('#u-lang').value,"],
     ['PlumbBot AI Assistant', 'Ask OTTO'],
     ['Online · Boss-Level Intelligence', 'Assistant'],
     ["Hello Boss! I'm PlumbBot. How can I assist you with estimates, crew dispatch, margin calculation, or job analytics today?", "Hi. Ask OTTO about today's work, jobs, estimates, payroll, or company records."],
@@ -109,9 +115,10 @@ export function patchRuntime(source) {
 export function validatePatchedSource(source) {
   return [
     ['Julio canonical seed', source.includes("id: 'owner-2', name: 'Julio'")],
-    ['Sarays canonical owner seed', source.includes("id: 'ops-1', name: 'Sarays', role: 'owner'")],
+    ['Sarays canonical office-manager seed', source.includes("id: 'ops-1', name: 'Sarays', role: 'office'")],
     ['Julio migration', source.includes("fixUser('owner-2', 'Julio');")],
-    ['Sarays owner migration', source.includes("fixUser('ops-1', 'Sarays', 'owner');")],
+    ['Sarays office-manager migration', source.includes("fixUser('ops-1', 'Sarays', 'office');")],
+    ['Sarays protected profile preserves office role on save', source.includes("existing && existing.id === 'ops-1' ? 'office' : 'owner'")],
     ['workspace stylesheet wired', source.includes(`href="./otto-home.css?v=${HOME_ASSET_VERSION}" data-otto-home-styles`)],
     ['workspace runtime wired', source.includes(`src="./otto-home.js?v=${HOME_ASSET_VERSION}" data-otto-home-runtime`)],
     ['home assets share one cache-busting version', (source.match(/otto-home\.(?:css|js)\?v=/g) || []).length === 2],
