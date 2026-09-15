@@ -20,6 +20,33 @@
     return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || target.isContentEditable;
   }
 
+  function isOwnerSession() {
+    try {
+      return typeof session !== 'undefined' && Boolean(session && session.role === 'owner');
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function enhanceOwnerTools(root) {
+    if (!isOwnerSession()) return;
+    const scope = root || document;
+    let groups = scope.querySelector && scope.querySelector('.otto-tools-sheet .otto-tool-groups');
+    if (!groups) groups = document.querySelector('.otto-tools-sheet .otto-tool-groups');
+    if (!groups || groups.querySelector('[data-otto-owner-conduct]')) return;
+
+    const spanish = document.documentElement.lang === 'es' || (typeof lang !== 'undefined' && lang === 'es');
+    const section = document.createElement('section');
+    section.setAttribute('data-otto-owner-tools', '1');
+    section.innerHTML = `<h3>${spanish ? 'Propietarios' : 'Owners'}</h3>
+      <button type="button" class="otto-tool-item" data-otto-owner-conduct="1">
+        <span class="otto-tool-icon"><i class="fas fa-file-shield"></i></span>
+        <span><b>${spanish ? 'Código de Conducta del Empleado' : 'Employee Code of Conduct'}</b><small>${spanish ? 'Documento final 2026 · Solo propietarios' : 'Final 2026 document · Owners only'}</small></span>
+        <i class="fas fa-chevron-right"></i>
+      </button>`;
+    groups.appendChild(section);
+  }
+
   function labelDialog(sheet) {
     if (!sheet || sheet.dataset.ottoPolishedDialog === '1') return;
     sheet.dataset.ottoPolishedDialog = '1';
@@ -63,6 +90,7 @@
     enhanceLiveRegions(root);
     enhanceDialogs(root);
     enhanceWorkspace(root);
+    enhanceOwnerTools(root);
   }
 
   function closeTopDialog() {
@@ -108,7 +136,24 @@
     if (!event.target.closest('.overlay')) lastDialogOpener = document.activeElement;
   }, true);
 
-  document.addEventListener('click', function (event) {
+  document.addEventListener('click', async function (event) {
+    const ownerConduct = event.target.closest('[data-otto-owner-conduct]');
+    if (ownerConduct) {
+      event.preventDefault();
+      if (!isOwnerSession()) return;
+      ownerConduct.disabled = true;
+      try {
+        const ownerDocument = await import('./otto-owner-code-of-conduct-2026.js?v=1');
+        await ownerDocument.openOwnerCodeOfConduct();
+      } catch (error) {
+        if (window.console && console.error) console.error('OTTO owner document failed', error);
+        if (typeof toast === 'function') toast(document.documentElement.lang === 'es' ? 'No se pudo abrir el documento.' : 'The document could not be opened.', 'error');
+      } finally {
+        ownerConduct.disabled = false;
+      }
+      return;
+    }
+
     const logo = event.target.closest('.crystal-logo');
     if (logo && typeof window.nav === 'function') {
       window.nav('home');
@@ -162,6 +207,7 @@
       }
     }
     enhanceWorkspace(document);
+    enhanceOwnerTools(document);
   });
 
   function start() {
