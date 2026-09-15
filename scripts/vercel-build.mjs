@@ -12,6 +12,11 @@ function run(command, args) {
 // current source/unit suite here instead of a hand-picked subset.
 run('npm', ['test']);
 
+// Personal wallpaper binaries are reconstructed from their committed text
+// sources during the build. This lets the deployment serve the exact approved
+// artwork while keeping the repository update path deterministic.
+run(process.execPath, ['scripts/materialize-otto-wallpapers.mjs']);
+
 // Materialize every approved deployment layer before final QA so the checks run
 // against the exact HTML/service-worker surface Vercel will actually serve.
 run(process.execPath, ['scripts/apply-photo-retry-patch.mjs']);
