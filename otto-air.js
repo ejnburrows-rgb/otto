@@ -121,10 +121,12 @@
       }
     } else {
       if (changedText.has(node)) {
-        node.nodeValue = rewriteEnglish(changedText.get(node));
+        const next = rewriteEnglish(changedText.get(node));
+        if (next !== node.nodeValue) node.nodeValue = next;
         changedText.delete(node);
       } else {
-        node.nodeValue = rewriteEnglish(node.nodeValue);
+        const next = rewriteEnglish(node.nodeValue);
+        if (next !== node.nodeValue) node.nodeValue = next;
       }
     }
   }
