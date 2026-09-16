@@ -1,6 +1,6 @@
 /* OTTO CRM — HR / Payroll workspace.
-   This is the owner/office control center for payroll and the same mandatory
-   Employee Accountability Code of Conduct used by the field-policy gate. */
+   Single policy source: otto-employee-policy-final.js, generated from
+   OTTO_Codigo_de_Conducta_Empleado_Final_2026. No duplicate policy text lives here. */
 (function () {
   'use strict';
 
@@ -8,45 +8,11 @@
   const POLICY_VERSION = 2;
   let policyLanguage = null;
 
+  /* Canonical policy runtime loads immediately after this file and fills these shells.
+     Keeping the API stable lets the field gate + HR workspace share one document. */
   const POLICY = {
-    en: {
-      title: 'Employee Accountability Code of Conduct',
-      subtitle: 'OTTO Plumbing Inc. · Version 2',
-      intro: 'Every employee is expected to work safely, honestly, professionally, and accountably. These standards protect customers, coworkers, company property, accurate payroll records, and the quality of every job.',
-      sections: [
-        ['1. Attendance and punctuality', 'Report to assigned work on time and ready to work. Notify the office as early as possible if an emergency, illness, delay, or absence affects the schedule. Repeated unexcused lateness, missed shifts, or failure to communicate is not acceptable.'],
-        ['2. Accurate timekeeping', 'Clock in and out truthfully. Never record time for another employee, alter time to hide lateness, remain clocked in while not working, or misrepresent travel, break, or job time. Corrections must be reported promptly so payroll can be accurate.'],
-        ['3. Jobsite accountability and location', 'When assigned to field work, use OTTO check-in/check-out and work-location tools as required for the active job. Location information is for work accountability, dispatch, safety, and time-on-site records. Do not falsify, disable, or manipulate job-location records.'],
-        ['4. Quality of work', 'Perform plumbing work carefully, follow the approved scope, applicable codes, manufacturer instructions, and company procedures, and do not conceal mistakes. Report defects, callbacks, damage, missing parts, or work that cannot be completed correctly.'],
-        ['5. Customer conduct', 'Treat customers, occupants, vendors, and coworkers with respect. No harassment, threats, discriminatory conduct, intimidation, dishonesty, or inappropriate behavior. Protect the customer’s home or business and leave the work area orderly.'],
-        ['6. Safety', 'Follow safety procedures, use required protective equipment, and stop work when a condition is unsafe. Report injuries, vehicle incidents, property damage, hazards, and near misses promptly. Never work impaired by alcohol, illegal drugs, or any substance that makes the work unsafe.'],
-        ['7. Vehicles, tools, materials, and company property', 'Use company vehicles, tools, equipment, fuel, parts, cards, devices, and materials only for authorized business purposes. Keep assigned property secure and report loss, theft, misuse, damage, or shortages promptly.'],
-        ['8. Photos, documents, and job records', 'Create complete and truthful job records. Required photos, notes, checklists, signatures, receipts, plans, and closeout information must reflect the actual work performed. Do not fabricate, delete, or alter records to hide an error or missed requirement.'],
-        ['9. Communication and response', 'Read and respond to reasonable work communications, schedule changes, dispatch instructions, customer issues, and requests for missing job information. Escalate urgent issues instead of allowing them to sit unresolved.'],
-        ['10. Integrity, privacy, and confidentiality', 'Do not steal, falsify records, misuse customer or employee information, share passwords, expose confidential business information, or access records unrelated to your work. Use OTTO and company systems only for authorized work.'],
-        ['11. Accountability and corrective action', 'Employees are expected to correct mistakes, cooperate with reasonable reviews, and provide truthful information when an issue is investigated. Violations may result in coaching or corrective action consistent with company policy and applicable law. Retaliation for good-faith safety or compliance reporting is prohibited.'],
-        ['12. Acknowledgment', 'By acknowledging this policy, the employee confirms that the policy was made available in a language they can read, that they had an opportunity to review it, and that they understand they are expected to follow these standards and ask a supervisor when something is unclear.']
-      ]
-    },
-    es: {
-      title: 'Código de Conducta y Responsabilidad del Empleado',
-      subtitle: 'OTTO Plumbing Inc. · Versión 2',
-      intro: 'Se espera que cada empleado trabaje de manera segura, honesta, profesional y responsable. Estas normas protegen a los clientes, compañeros de trabajo, propiedad de la empresa, registros correctos de nómina y la calidad de cada trabajo.',
-      sections: [
-        ['1. Asistencia y puntualidad', 'Preséntese al trabajo asignado a tiempo y listo para trabajar. Avise a la oficina lo antes posible si una emergencia, enfermedad, demora o ausencia afecta el horario. Las tardanzas repetidas sin justificación, turnos perdidos o la falta de comunicación no son aceptables.'],
-        ['2. Registro exacto del tiempo', 'Marque entrada y salida con veracidad. Nunca registre tiempo por otro empleado, cambie horas para ocultar tardanzas, permanezca marcado mientras no trabaja ni tergiverse tiempo de viaje, descanso o trabajo. Cualquier corrección debe informarse de inmediato para que la nómina sea correcta.'],
-        ['3. Responsabilidad en el sitio y ubicación', 'Cuando se le asigne trabajo de campo, use las funciones de entrada/salida y ubicación laboral de OTTO según se requiera para el trabajo activo. La ubicación se usa para responsabilidad laboral, despacho, seguridad y registro del tiempo en el sitio. No falsifique, desactive ni manipule los registros de ubicación del trabajo.'],
-        ['4. Calidad del trabajo', 'Realice el trabajo de plomería cuidadosamente, siga el alcance aprobado, los códigos aplicables, las instrucciones del fabricante y los procedimientos de la empresa, y no oculte errores. Informe defectos, regresos por garantía, daños, piezas faltantes o trabajos que no puedan completarse correctamente.'],
-        ['5. Conducta con clientes', 'Trate con respeto a clientes, ocupantes, proveedores y compañeros. No se permite acoso, amenazas, conducta discriminatoria, intimidación, deshonestidad ni comportamiento inapropiado. Proteja la casa o negocio del cliente y deje el área de trabajo ordenada.'],
-        ['6. Seguridad', 'Siga los procedimientos de seguridad, use el equipo de protección requerido y detenga el trabajo cuando exista una condición insegura. Informe de inmediato lesiones, incidentes vehiculares, daños a propiedad, peligros y casi accidentes. Nunca trabaje afectado por alcohol, drogas ilegales o cualquier sustancia que haga inseguro el trabajo.'],
-        ['7. Vehículos, herramientas, materiales y propiedad de la empresa', 'Use vehículos, herramientas, equipos, combustible, piezas, tarjetas, dispositivos y materiales de la empresa únicamente para fines comerciales autorizados. Mantenga segura la propiedad asignada e informe rápidamente pérdidas, robos, uso indebido, daños o faltantes.'],
-        ['8. Fotos, documentos y registros de trabajo', 'Cree registros completos y verdaderos. Las fotos, notas, listas de verificación, firmas, recibos, planos e información de cierre requeridos deben reflejar el trabajo realmente realizado. No fabrique, elimine ni altere registros para ocultar un error o requisito incumplido.'],
-        ['9. Comunicación y respuesta', 'Lea y responda comunicaciones razonables de trabajo, cambios de horario, instrucciones de despacho, problemas de clientes y solicitudes de información faltante. Eleve los asuntos urgentes en vez de dejarlos sin resolver.'],
-        ['10. Integridad, privacidad y confidencialidad', 'No robe, falsifique registros, use indebidamente información de clientes o empleados, comparta contraseñas, divulgue información confidencial del negocio ni acceda a registros ajenos a su trabajo. Use OTTO y los sistemas de la empresa únicamente para trabajo autorizado.'],
-        ['11. Responsabilidad y acción correctiva', 'Se espera que los empleados corrijan errores, cooperen con revisiones razonables y proporcionen información veraz cuando se investigue un asunto. Las infracciones pueden resultar en orientación o acción correctiva de acuerdo con la política de la empresa y la ley aplicable. Se prohíben represalias por reportes de buena fe sobre seguridad o cumplimiento.'],
-        ['12. Acuse de recibo', 'Al aceptar esta política, el empleado confirma que la política estuvo disponible en un idioma que puede leer, que tuvo oportunidad de revisarla y que entiende que debe cumplir estas normas y consultar a un supervisor cuando algo no esté claro.']
-      ]
-    }
+    en: { title: '', subtitle: '', intro: '', sections: [] },
+    es: { title: '', subtitle: '', intro: '', sections: [] }
   };
 
   const text = (en, es) => {
@@ -60,26 +26,32 @@
     try { return Array.isArray(db && db[name]) ? db[name] : []; }
     catch (_) { return []; }
   };
+  const currentPolicyVersion = () => {
+    try { return Number(window.__ottoFinalEmployeePolicy?.version || window.__ottoEmployeePolicy?.version || POLICY_VERSION); }
+    catch (_) { return POLICY_VERSION; }
+  };
 
   function currentPolicyRecord(userId) {
+    const version = currentPolicyVersion();
     return data('consent_records')
-      .filter(r => r && r.userId === userId && r.type === 'employee_code_of_conduct' && Number(r.version) === POLICY_VERSION && r.status === 'acknowledged')
+      .filter(r => r && r.userId === userId && r.type === 'employee_code_of_conduct' && Number(r.version) === version && r.status === 'acknowledged')
       .sort((a, b) => String(b.acknowledgedAt || b.ts || '').localeCompare(String(a.acknowledgedAt || a.ts || '')))[0] || null;
   }
 
   function policyHtml(code) {
-    const p = POLICY[code === 'es' ? 'es' : 'en'];
-    return `<article class="hr-policy" lang="${code === 'es' ? 'es' : 'en'}">
-      <div class="hr-policy-heading"><h2>${safe(p.title)}</h2><span>${safe(p.subtitle)}</span></div>
-      <p class="hr-policy-intro">${safe(p.intro)}</p>
-      ${p.sections.map(([heading, body]) => `<section><h3>${safe(heading)}</h3><p>${safe(body)}</p></section>`).join('')}
-    </article>`;
+    const selected = code === 'es' ? 'es' : 'en';
+    try {
+      if (window.__ottoFinalEmployeePolicy && typeof window.__ottoFinalEmployeePolicy.render === 'function') {
+        return window.__ottoFinalEmployeePolicy.render(selected);
+      }
+    } catch (_) {}
+    return `<div class="hr-empty"><i class="fas fa-file-shield" aria-hidden="true"></i><div><strong>${text('Loading the current Code of Conduct…','Cargando el Código de Conducta vigente…')}</strong><span>${text('The canonical policy document is being prepared.','Se está preparando el documento canónico de políticas.')}</span></div></div>`;
   }
 
   function statusTable() {
     const workers = data('users').filter(u => u && u.role === 'field' && u.active !== false);
     if (!workers.length) {
-      return `<div class="hr-empty"><i class="fas fa-circle-check" aria-hidden="true"></i><div><strong>${text('No field employees currently require acknowledgment','No hay empleados de campo que requieran acuse actualmente')}</strong><span>${text('New field employees will be required to review and sign the current policy before entering the field workspace.','Los nuevos empleados de campo deberán revisar y firmar la política vigente antes de entrar al espacio de trabajo de campo.')}</span></div></div>`;
+      return `<div class="hr-empty"><i class="fas fa-circle-check" aria-hidden="true"></i><div><strong>${text('No field employees currently require acknowledgment','No hay empleados de campo que requieran acuse actualmente')}</strong><span>${text('New field employees must review and approve the current Code of Conduct before entering the field workspace.','Los nuevos empleados de campo deberán revisar y aprobar el Código de Conducta vigente antes de entrar al espacio de trabajo de campo.')}</span></div></div>`;
     }
     return `<div class="hr-table" role="table" aria-label="${safe(text('Code of Conduct acknowledgments','Acuses del Código de Conducta'))}">
       ${workers.map(worker => {
@@ -89,7 +61,7 @@
         return `<div class="hr-row" role="row">
           <div role="cell"><strong>${safe(worker.name || worker.name_en || worker.name_es || text('Unnamed employee','Empleado sin nombre'))}</strong><span>${safe(worker.employeeId || '')}</span></div>
           <div role="cell"><span class="hr-status ${ack ? 'is-ok' : 'is-pending'}">${ack ? text('Acknowledged','Aceptado') : text('Pending','Pendiente')}</span></div>
-          <div role="cell">${safe(date || text('Not signed yet','Aún no firmado'))}</div>
+          <div role="cell">${safe(date || text('Not approved yet','Aún no aprobado'))}</div>
         </div>`;
       }).join('')}
     </div>`;
@@ -125,7 +97,7 @@
       </section>
       <section class="hr-section">
         <div class="hr-section-head hr-policy-tools">
-          <div><h2>${text('Employee Accountability Code of Conduct','Código de Conducta y Responsabilidad del Empleado')}</h2><p>${text('The same current policy employees must acknowledge before field access.','La misma política vigente que los empleados deben aceptar antes del acceso de campo.')}</p></div>
+          <div><h2>${text('Employee Code of Conduct','Código de Conducta del Empleado')}</h2><p>${text('Canonical 2026 policy used for the mandatory employee acknowledgment.','Política canónica de 2026 utilizada para el reconocimiento obligatorio del empleado.')}</p></div>
           <div class="hr-language" role="group" aria-label="Policy language"><button type="button" data-hr-policy-lang="en" class="${code === 'en' ? 'is-on' : ''}">English</button><button type="button" data-hr-policy-lang="es" class="${code === 'es' ? 'is-on' : ''}">Español</button></div>
         </div>
         <div class="hr-policy-wrap">${policyHtml(code)}</div>
@@ -155,10 +127,9 @@
       .hr-table{border:1px solid var(--ot-border,var(--line,#e5e7ea));border-radius:10px;overflow:hidden}.hr-row{display:grid;grid-template-columns:minmax(220px,1fr) 150px minmax(180px,.8fr);gap:12px;align-items:center;padding:13px 15px;border-bottom:1px solid var(--ot-border,var(--line,#e5e7ea));font-size:15px}.hr-row:last-child{border-bottom:0}.hr-row>div:first-child{display:flex;flex-direction:column;gap:2px}.hr-row>div:first-child span{font-size:13px;color:var(--ot-text-2,var(--text2,#626872))}.hr-status{display:inline-flex;width:max-content;border-radius:999px;padding:5px 9px;font-weight:700;font-size:12px}.hr-status.is-ok{background:rgba(23,128,61,.12);color:var(--green,#17803D)}.hr-status.is-pending{background:rgba(183,106,0,.12);color:var(--amber,#B76A00)}
       .hr-empty{display:flex;gap:12px;align-items:flex-start;padding:16px;border:1px solid var(--ot-border,var(--line,#e5e7ea));border-radius:10px}.hr-empty i{color:var(--green,#17803D);margin-top:3px}.hr-empty div{display:flex;flex-direction:column;gap:4px}.hr-empty span{color:var(--ot-text-2,var(--text2,#626872));font-size:14px;line-height:1.45}
       .hr-language{display:inline-flex;border:1px solid var(--ot-border,var(--line,#e5e7ea));border-radius:9px;overflow:hidden;flex:0 0 auto}.hr-language button{border:0;background:transparent;color:var(--ot-text-2,var(--text2,#626872));padding:9px 12px;font-weight:700;cursor:pointer}.hr-language button.is-on{background:var(--ot-selected,rgba(37,99,235,.1));color:var(--ot-accent,#2563EB)}
-      .hr-policy-wrap{max-width:880px}.hr-policy-heading{display:flex;justify-content:space-between;gap:16px;align-items:baseline;border-bottom:1px solid var(--ot-border,var(--line,#e5e7ea));padding-bottom:12px;margin-bottom:14px}.hr-policy-heading h2{font-size:22px;margin:0}.hr-policy-heading span{color:var(--ot-text-2,var(--text2,#626872));font-size:13px;white-space:nowrap}.hr-policy-intro{font-size:16px;line-height:1.55;margin:0 0 18px}.hr-policy section{padding:14px 0;border-top:1px solid var(--ot-border,var(--line,#e5e7ea))}.hr-policy section:first-of-type{border-top:0}.hr-policy h3{font-size:17px;margin:0 0 6px}.hr-policy p{font-size:16px;line-height:1.55;color:var(--ot-text-2,var(--text2,#626872));margin:0}
-      .ot-nav-item[data-otto-hr-tab]{margin-top:2px}.ot-nav-item[data-otto-hr-tab].is-active{background:var(--ot-sidebar-hover,#1B1D21);color:#fff}
-      .hr-more-shortcut{width:100%;min-height:46px;display:flex;align-items:center;gap:10px;border:0;border-radius:9px;padding:0 12px;background:var(--card,#fff);color:var(--text,#15171A);font:600 15px/1.2 inherit;text-align:left;cursor:pointer}.hr-more-shortcut:hover{background:var(--card-hover,#f5f5f6)}
-      @media(max-width:900px){.hr-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.hr-policy-tools{flex-direction:column}.hr-row{grid-template-columns:1fr;gap:7px}.hr-section{padding:16px}.hr-policy-heading{flex-direction:column;align-items:flex-start}.hr-policy-heading span{white-space:normal}}
+      .hr-policy-wrap{max-width:920px}.hr-policy-heading{display:flex;justify-content:space-between;gap:16px;align-items:baseline;border-bottom:1px solid var(--ot-border,var(--line,#e5e7ea));padding-bottom:12px;margin-bottom:14px}.hr-policy-heading h1,.hr-policy-heading h2{font-size:22px;margin:0}.hr-policy-heading p,.hr-policy-heading span{color:var(--ot-text-2,var(--text2,#626872));font-size:13px}.hr-policy-major{padding:16px 0;border-top:1px solid var(--ot-border,var(--line,#e5e7ea))}.hr-policy-major h2{font-size:18px;margin:0 0 8px}.hr-policy p,.hr-policy li,.hr-policy td,.hr-policy th{font-size:16px;line-height:1.55}.hr-policy-toc{padding:10px 0 18px}.hr-policy-table{width:100%;border-collapse:collapse}.hr-policy-table th,.hr-policy-table td{padding:9px;border:1px solid var(--ot-border,var(--line,#e5e7ea));text-align:left}.hr-policy-callout{padding:12px 14px;border-radius:9px;background:var(--ot-selected,rgba(37,99,235,.08));margin:10px 0}.hr-policy-footer{padding:18px 0 4px;color:var(--ot-text-2,var(--text2,#626872));font-size:13px}
+      .ot-nav-item[data-otto-hr-tab]{margin-top:2px}.ot-nav-item[data-otto-hr-tab].is-active{background:var(--ot-sidebar-hover,#1B1D21);color:#fff}.hr-more-shortcut{width:100%;min-height:46px;display:flex;align-items:center;gap:10px;border:0;border-radius:9px;padding:0 12px;background:var(--card,#fff);color:var(--text,#15171A);font:600 15px/1.2 inherit;text-align:left;cursor:pointer}.hr-more-shortcut:hover{background:var(--card-hover,#f5f5f6)}
+      @media(max-width:900px){.hr-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.hr-policy-tools{flex-direction:column}.hr-row{grid-template-columns:1fr;gap:7px}.hr-section{padding:16px}.hr-policy-heading{flex-direction:column;align-items:flex-start}}
       @media(max-width:520px){.hr-stats{grid-template-columns:1fr 1fr}.hr-stats>div{padding:14px}.hr-actions{display:grid;grid-template-columns:1fr}.hr-actions .ot-btn{width:100%;justify-content:center}.hr-section-head h2{font-size:19px}}
     `;
     document.head.appendChild(style);
@@ -210,11 +181,15 @@
   }
 
   function applyPolicyToGate() {
-    const scroller = document.getElementById('policy-scroll');
-    if (!scroller || scroller.dataset.ottoAccountabilityPolicy === String(POLICY_VERSION)) return;
-    const code = (typeof lang !== 'undefined' && lang === 'es') ? 'es' : 'en';
-    scroller.dataset.ottoAccountabilityPolicy = String(POLICY_VERSION);
-    scroller.innerHTML = policyHtml(code);
+    const gate = document.getElementById('policy-scroll');
+    if (!gate) return;
+    try {
+      const code = (typeof lang !== 'undefined' && lang === 'es') ? 'es' : 'en';
+      if (window.__ottoFinalEmployeePolicy && typeof window.__ottoFinalEmployeePolicy.render === 'function') {
+        gate.dataset.ottoAccountabilityPolicy = String(currentPolicyVersion());
+        gate.innerHTML = window.__ottoFinalEmployeePolicy.render(code);
+      }
+    } catch (_) {}
   }
 
   function installView() {
@@ -240,6 +215,18 @@
     window.openMore = wrapped;
   }
 
+  function refreshCanonicalHosts() {
+    if (!(window.__ottoFinalEmployeePolicy && typeof window.__ottoFinalEmployeePolicy.render === 'function')) return;
+    const code = policyLanguage || ((typeof lang !== 'undefined' && lang === 'es') ? 'es' : 'en');
+    document.querySelectorAll('.hr-policy-wrap').forEach(host => {
+      if (!host.querySelector('.otto-final-employee-policy') || host.dataset.finalPolicyLang !== code) {
+        host.dataset.finalPolicyLang = code;
+        host.innerHTML = window.__ottoFinalEmployeePolicy.render(code);
+      }
+    });
+    applyPolicyToGate();
+  }
+
   function boot() {
     installStyles();
     installView();
@@ -251,7 +238,7 @@
       installMoreWrap();
       ensureDesktopTab();
       injectMoreShortcut();
-      applyPolicyToGate();
+      refreshCanonicalHosts();
       syncNavigation();
     }).observe(document.documentElement, { childList: true, subtree: true });
   }

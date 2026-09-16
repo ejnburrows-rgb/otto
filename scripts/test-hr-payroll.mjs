@@ -21,21 +21,27 @@ check('unchanged HR navigation does not retrigger the DOM observer', labelWrites
 context.text = (_, es) => es;
 vm.runInContext('ensureDesktopTab(); ensureDesktopTab();', context);
 check('HR navigation updates language exactly once', labelWrites === 1 && labelText === 'RR. HH. / Nómina');
+const policy = fs.readFileSync(new URL('../otto-employee-policy-final.js', import.meta.url), 'utf8');
 const index = patchHrPayrollIndex(rawIndex);
 const sw = patchHrPayrollSw(rawSw);
 
 console.log('HR / Payroll workspace');
-for (const [name, ok] of validateHrPayroll(index, sw, runtime)) check(name, ok);
-check('policy covers attendance', runtime.includes('Attendance and punctuality') && runtime.includes('Asistencia y puntualidad'));
-check('policy covers timekeeping', runtime.includes('Accurate timekeeping') && runtime.includes('Registro exacto del tiempo'));
-check('policy covers location accountability', runtime.includes('Jobsite accountability and location') && runtime.includes('Responsabilidad en el sitio y ubicación'));
-check('policy covers quality and customer conduct', runtime.includes('Quality of work') && runtime.includes('Customer conduct') && runtime.includes('Calidad del trabajo') && runtime.includes('Conducta con clientes'));
-check('policy covers safety and company property', runtime.includes("['6. Safety'") && runtime.includes("['7. Vehicles, tools, materials, and company property'") && runtime.includes("['6. Seguridad'") && runtime.includes("['7. Vehículos, herramientas, materiales y propiedad de la empresa'"));
-check('policy covers documentation and integrity', runtime.includes('Photos, documents, and job records') && runtime.includes('Integrity, privacy, and confidentiality') && runtime.includes('Fotos, documentos y registros de trabajo') && runtime.includes('Integridad, privacidad y confidencialidad'));
-check('policy acknowledgment status is versioned', runtime.includes('Number(r.version) === POLICY_VERSION') && runtime.includes("r.status === 'acknowledged'"));
-check('field employees remain mandatory-policy population', runtime.includes("u.role === 'field'") && runtime.includes('New field employees will be required'));
+for (const [name, ok] of validateHrPayroll(index, sw, runtime, policy)) check(name, ok);
+
+check('HR contains no duplicate policy body', !runtime.includes('Jobsite accountability and location') && !runtime.includes('Responsabilidad en el sitio y ubicación'));
+check('canonical policy covers attendance', policy.includes('SECTION 5 — Attendance and Punctuality') && policy.includes('SECCIÓN 5 — Asistencia y Puntualidad'));
+check('canonical policy covers truthful timekeeping', policy.includes('Falsifying time records') && policy.includes('Falsificar registros de tiempo'));
+check('canonical policy covers GPS / location accountability', policy.includes('GPS in Company Vehicles and Devices') && policy.includes('GPS en Vehículos y Dispositivos de la Empresa'));
+check('canonical policy covers photographic documentation', policy.includes('Photographic Documentation') && policy.includes('Documentación Fotográfica'));
+check('canonical policy covers workplace safety', policy.includes('SECTION 6 — Workplace Safety') && policy.includes('SECCIÓN 6 — Seguridad Laboral'));
+check('canonical policy covers company property and confidentiality', policy.includes('SECTION 8 — Company Property and Confidentiality') && policy.includes('SECCIÓN 8 — Propiedad de la Empresa y Confidencialidad'));
+check('canonical policy covers disciplinary conduct', policy.includes('SECTION 9 — Disciplinary Conduct') && policy.includes('SECCIÓN 9 — Conducta Disciplinaria'));
+check('canonical digital acknowledgment is bilingual', policy.includes('SECTION 10 — Digital Acknowledgment') && policy.includes('SECCIÓN 10 — Reconocimiento Digital') && policy.includes('Approved') && policy.includes('Aprobado'));
+check('acknowledgment status is versioned', runtime.includes('Number(r.version) === version') && runtime.includes("r.status === 'acknowledged'"));
+check('field employees remain mandatory-policy population', runtime.includes("u.role === 'field'") && runtime.includes('New field employees must review and approve'));
 check('workspace is responsive', runtime.includes('@media(max-width:900px)') && runtime.includes('@media(max-width:520px)'));
 check('workspace supports light and dark via OTTO tokens', runtime.includes('var(--ot-surface') && runtime.includes('var(--ot-text-2'));
+check('HR renders only the canonical final document', runtime.includes('__ottoFinalEmployeePolicy.render') && policy.includes('Source of truth: OTTO_Codigo_de_Conducta_Empleado_Final_2026'));
 
 console.log(`\nHR / Payroll: ${passed} passed, ${failed} failed`);
 if (failed) process.exit(1);
