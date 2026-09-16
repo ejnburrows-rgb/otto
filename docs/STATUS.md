@@ -1,12 +1,12 @@
 # STATUS — OTTO Plumbing CRM
 
-Updated: 2026-09-15. This file is the current release snapshot. Older implementation history remains in Git history and closed PRs; it is not active release guidance.
+Updated: 2026-09-16. This file is the current release snapshot. Older implementation history remains in Git history and closed PRs; it is not active release guidance.
 
 ## Production
 
 - Authoritative branch: `main`
 - Authoritative Vercel project: `otto`
-- Production URL: https://otto-kohl.vercel.app
+- Production URL: https://otto-crm-miami.vercel.app
 - Verified production source before this status-only update: `21b66e845911a2d324144506b14ef2a36e888018`
 - Verified Vercel deployment: `dpl_GioD4s4HagErRKzEPchTUiZfWRs4` — READY
 - The production version marker reported repository `ejnburrows-rgb/otto`, branch `main`, commit `21b66e845911a2d324144506b14ef2a36e888018`, and Supabase provider-backed server authentication.
@@ -88,7 +88,10 @@ A credentialed end-to-end customer-portal session with a real test account is an
 - Clean source build, full source test command, and qa-check passed locally.
 - Vercel deployment `dpl_8gna44gogLJqiTYsWVPk4PWGJXiS` is READY on team `ejn`, built from `de40e704770e321b443f830d92d8c6f7836acf3d`; public `/version.json` matches.
 - Public English and Spanish email/password sign-in screens verified. Anonymous `/api/data` correctly returns 401.
-- Blocking: POST `/api/register` returns 503 `auth_not_configured`. At least one of SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY is missing from the new Vercel project. Available connector tools cannot manage these secrets; no authenticated CRM acceptance is claimed.
-- Set production SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY for the existing otto-live project, set OTTO_APP_URL to https://otto-crm-miami.vercel.app, authorize that redirect in Supabase, and redeploy before owner/employee acceptance.
+- Resolved backend configuration: restored SUPABASE_URL and the existing service-role key in the new project. OTTO_APP_URL and Supabase Site URL/redirect allowlist now use https://otto-crm-miami.vercel.app.
+- Production deployment dpl_3KdrKiDzX9hNa5mqqHi9exhXQaEh from ef2679d completed its build/test gate. GET /api/health returned HTTP 200 with ready:true and database:connected after a real read-only database request; no record data or credentials are returned.
+- POST /api/register with an empty payload now returns 400 valid_email_required instead of 503. Anonymous business access remains denied.
+- Database read verified 10 active field profiles, one office profile, and one owner profile. The owner has a linked authentication account; the office and field profiles are not yet linked.
+- Remaining: authenticated owner/employee workflows and invitation delivery have not been verified in this session. The CRM secure login request was declined; Supabase administrative sign-in is complete but does not sign into the CRM. Existing accounts and business records were preserved.
 - Website form submission `web_mu4ld0oo_cc3a9cee` reached both CRM alerts and calls with the shared link; its attachment exists in the private job-photos bucket.
 - Owner clarification: everyone signs in initially; spreadsheet imports pre-create employee records visible to the owner, without bypassing employee authentication.
