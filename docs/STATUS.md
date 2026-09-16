@@ -43,6 +43,8 @@ The supplied Julio and Sarays personal backgrounds are limited to the personaliz
 
 ### 2026-09-16 restrained branding and startup repair
 
+- The dashboard Create Deployment workflow accepted a build when Git-triggered deploys reported a rate limit. That build exposed an extra closing parenthesis in the newly added account-login patch from main. The patch is corrected, uses a cross-platform entry point, and is now imported and compiled with first/repeated generated-login coverage in the full source tests.
+
 - Final production screenshot review also identified an excessively wide desktop sign-in button. The sign-in email, help copy, and button now share a centered 420px maximum width, responsive on phones.
 
 - The current persistence build emitted duplicate async modifiers in local-login redirect declarations, preventing all inline application code from executing. Function replacement now includes async modifiers and tests compile both first and repeated generated builds.
