@@ -85,5 +85,10 @@ A credentialed end-to-end customer-portal session with a real test account is an
 - New team is `ejn` (`team_Ixkx4gmJy9k2mvBVDEeFsTQH`); the old team is not a release target.
 - Fixed an extra parenthesis in account-login validation that stopped the production build before deployment.
 - Requested production alias: `otto-crm-miami.vercel.app`.
-- Source test command passed locally. Live deployment and authenticated acceptance are pending verification.
+- Clean source build, full source test command, and qa-check passed locally.
+- Vercel deployment `dpl_8gna44gogLJqiTYsWVPk4PWGJXiS` is READY on team `ejn`, built from `de40e704770e321b443f830d92d8c6f7836acf3d`; public `/version.json` matches.
+- Public English and Spanish email/password sign-in screens verified. Anonymous `/api/data` correctly returns 401.
+- Blocking: POST `/api/register` returns 503 `auth_not_configured`. At least one of SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY is missing from the new Vercel project. Available connector tools cannot manage these secrets; no authenticated CRM acceptance is claimed.
+- Set production SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY for the existing otto-live project, set OTTO_APP_URL to https://otto-crm-miami.vercel.app, authorize that redirect in Supabase, and redeploy before owner/employee acceptance.
+- Website form submission `web_mu4ld0oo_cc3a9cee` reached both CRM alerts and calls with the shared link; its attachment exists in the private job-photos bucket.
 - Owner clarification: everyone signs in initially; spreadsheet imports pre-create employee records visible to the owner, without bypassing employee authentication.
