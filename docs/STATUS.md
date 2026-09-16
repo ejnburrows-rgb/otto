@@ -41,6 +41,13 @@ The supplied Julio and Sarays personal backgrounds are limited to the personaliz
 
 ## Current release verification
 
+### 2026-09-16 navigation incident
+
+- Production interaction testing reproduced a DOM observer loop in the premium UI layer. On Schedule, the loop continuously replaced the Day/Week controls while the browser was trying to click them; the shared sync indicator and field-job action bar could also retrigger the same observer without any state change.
+- The UI layer now renders Schedule once per route entry, leaves an unchanged sync indicator in place, and leaves an unchanged field action bar in place. Day/Week changes still render immediately when the user selects them.
+- Regression checks now pin all three no-op guards, and the patch materializer handles both Windows and Unix line endings so the release suite can exercise the deployed layer consistently.
+- The complete repository test command passed with zero failures. A real-browser interaction sweep passed 66/66 checks covering desktop/mobile primary navigation, all 24 More destinations, Schedule Day/Week, Jobs filters, Operations tabs, customer context drawer, Search / Ask OTTO, EN/ES, light/dark, field/mobile, and customer portal, with zero JavaScript runtime errors.
+
 The authoritative Vercel production build for `21b66e8` completed successfully. Its build gate ran the full application test command, including live surfaces, owner shell, field workspace, unified intake, UI polish, QuickBooks handoff, Ask OTTO, location consent, OTTO Air, premium Operations, customer portal, merge/sync behavior, authentication, notifications, protected photos/files, roles, backups, UI regressions, and employee-policy acknowledgment. The build reported no failing test suite and completed deployment successfully.
 
 The production QA report for that build reported:

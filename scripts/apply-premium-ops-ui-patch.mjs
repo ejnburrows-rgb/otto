@@ -49,15 +49,17 @@ function patchShell(src){
  let out=src.replace("return Boolean(session) && session.role !== 'field';","return Boolean(session) && ['owner', 'office'].includes(session.role);");
  out=out.replace("if (item.view) return can(item.view) || item.view === 'settings' || item.view === 'assistant';","if (item.view) return can(item.view) || item.view === 'settings' || item.view === 'assistant' || item.view === 'otto_operations';");
  if(!out.includes("en: 'Operations', es: 'Operaciones'")){
-   const needle="en: 'Business', es: 'Negocio', items: [\n        { view: 'reports', icon: 'fa-chart-line', en: 'Reports', es: 'Reportes' },";
+   const newline=out.includes('\r\n')?'\r\n':'\n';
+   const needle=`en: 'Business', es: 'Negocio', items: [${newline}        { view: 'reports', icon: 'fa-chart-line', en: 'Reports', es: 'Reportes' },`;
    if(!out.includes(needle))throw new Error('business More group marker missing');
-   out=out.replace(needle,"en: 'Business', es: 'Negocio', items: [\n        { view: 'otto_operations', icon: 'fa-gauge-high', en: 'Operations', es: 'Operaciones' },\n        { view: 'reports', icon: 'fa-chart-line', en: 'Reports', es: 'Reportes' },");
+   out=out.replace(needle,`en: 'Business', es: 'Negocio', items: [${newline}        { view: 'otto_operations', icon: 'fa-gauge-high', en: 'Operations', es: 'Operaciones' },${newline}        { view: 'reports', icon: 'fa-chart-line', en: 'Reports', es: 'Reportes' },`);
  }
  return out;
 }
 function patchUi(src){
- const old="    portalCards();\n    enhanceOperationsInbox();";
- const next="    if (!(session() && session().role === 'customer')) portalCards();\n    enhanceOperationsInbox();";
+ const newline=src.includes('\r\n')?'\r\n':'\n';
+ const old=`    portalCards();${newline}    enhanceOperationsInbox();`;
+ const next=`    if (!(session() && session().role === 'customer')) portalCards();${newline}    enhanceOperationsInbox();`;
  if(src.includes(next))return src;
  if(!src.includes(old))throw new Error('customer portal enhancement marker missing');
  return src.replace(old,next);
