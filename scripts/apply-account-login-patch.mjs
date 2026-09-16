@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 const INDEX = new URL('../index.html', import.meta.url);
 
@@ -147,13 +148,13 @@ export function validateAccountLogin(source) {
   return [
     ['password sign-in is available', source.includes('signInWithPassword({ email, password })')],
     ['secure magic-link fallback remains available', source.includes('sendCloudMagicLink()') && source.includes('shouldCreateUser: false')],
-    ['first-owner account creation is available', source.includes('createCloudAccount()') && source.includes("fetch('/api/register'"))],
+    ['first-owner account creation is available', source.includes('createCloudAccount()') && source.includes("fetch('/api/register'")],
     ['local PIN setup is absent', !source.includes('onclick="showLocalSetup()"')],
     ['provider session remains persistent', source.includes('persistSession: true') && source.includes('storage: ottoAuthStorage')],
   ];
 }
 
-if (process.argv[1] && new URL(`file://${process.argv[1]}`).href === import.meta.url) {
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const index = fs.readFileSync(INDEX, 'utf8');
   const patched = patchAccountLogin(index);
   const failed = validateAccountLogin(patched).filter(([, ok]) => !ok);

@@ -90,6 +90,11 @@
     const style = document.createElement('style');
     style.id = 'otto-branding-style';
     style.textContent = `
+      #login > .field, #login > .btn, #login > p {
+        width: min(100%, 420px); max-width: 420px; margin-left: auto; margin-right: auto;
+      }
+      #login > .field { text-align: left; }
+      #login > .field input { width: 100%; box-sizing: border-box; }
       #login .otto-login-logo-wrap {
         text-align: center !important;
         margin: 0 auto 20px !important;
