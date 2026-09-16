@@ -130,6 +130,26 @@ const SAVE = `function save() {
     });
   }`;
 
+const CLOUD_ONLY_SETUP = `function showLocalSetup() {
+    showCloudLogin(lang === 'es'
+      ? 'La configuración del propietario usa una cuenta autorizada en la nube.'
+      : 'Owner setup uses an authorized cloud account.');
+  }`;
+
+const CLOUD_ONLY_COMPLETE_SETUP = `async function completeLocalSetup() {
+    showLocalSetup();
+  }`;
+
+const CLOUD_ONLY_LOGIN = `function showLocalLogin() {
+    showCloudLogin(lang === 'es'
+      ? 'Inicie sesión con el correo autorizado para continuar.'
+      : 'Sign in with the authorized email to continue.');
+  }`;
+
+const CLOUD_ONLY_SIGN_IN = `async function signInLocal() {
+    showLocalLogin();
+  }`;
+
 function functionBounds(source, name) {
   const needle = `function ${name}(`;
   const start = source.indexOf(needle);
@@ -197,6 +217,20 @@ export function patchIndex(source) {
     "      } else if (localSessionId && cloudOutcome.status === 'rejected') {"
   );
 
+  // Production authentication is cloud-only. The legacy device-local owner/PIN
+  // path created a second source of truth and could make a fresh browser look
+  // like a brand-new CRM. Keep the functions as harmless redirects so any stale
+  // cached markup cannot bypass provider authentication.
+  out = out.replace(/\n\s*<div style="text-align:center;margin-top:16px">\s*\n\s*<button class="btn ghost sm" onclick="showLocalSetup\(\)"[\s\S]*?<\/div>/, '');
+  out = replaceFunction(out, 'showLocalSetup', CLOUD_ONLY_SETUP);
+  out = replaceFunction(out, 'completeLocalSetup', CLOUD_ONLY_COMPLETE_SETUP);
+  out = replaceFunction(out, 'showLocalLogin', CLOUD_ONLY_LOGIN);
+  out = replaceFunction(out, 'signInLocal', CLOUD_ONLY_SIGN_IN);
+  out = out.replace(
+    "    if (session) startApp(); else {\n      const hasLocalUsers = (db.users || []).some(u => hasPin(u, 'pin'));\n      const why = cloudSessionMessage(cloudOutcome);\n      if (hasLocalUsers && !why) showLocalLogin(); else showCloudLogin(why);\n    }",
+    "    if (session) startApp(); else {\n      const why = cloudSessionMessage(cloudOutcome);\n      showCloudLogin(why);\n    }"
+  );
+
   // Never manufacture production business state before the authoritative pull.
   out = out.replace(
     /\n\s*\/\/ Auto-estimating workflow: ensure rate card and company profile are seeded[\s\S]*?\n\s*if \(_changed\) save\(\);\n\n\s*await calcAllWeeklyHours\(\);/,
@@ -224,7 +258,7 @@ export function patchDataApi(source) {
 }
 
 export function patchServiceWorker(source) {
-  let out = source.replace(/const CACHE = 'otto-crm-v\d+';/, "const CACHE = 'otto-crm-v30';");
+  let out = source.replace(/const CACHE = 'otto-crm-v\d+';/, "const CACHE = 'otto-crm-v31';");
   if (!out.includes("'./otto-persistence.js'")) {
     out = out.replace("'./', './index.html', './landing.html', './guide.html', './manifest.json', './logo.jpg',", "'./', './index.html', './landing.html', './guide.html', './manifest.json', './logo.jpg', './otto-persistence.js',");
   }
@@ -238,6 +272,9 @@ export function validateAuthoritativePersistence(index, dataApi, sw) {
     ['obsolete durability runtime removed', !index.includes('otto-durability.js')],
     ['Supabase session persistence enabled', index.includes('storage: ottoAuthStorage') && index.includes('persistSession: true')],
     ['only provider rejection clears remembered profile', index.includes("localSessionId && cloudOutcome.status === 'rejected'") && !index.includes("localSessionId && cloudOutcome.status !== 'unavailable'")],
+    ['device-local owner setup is not exposed', !index.includes('onclick="showLocalSetup()"') && !index.includes('Create the first owner profile. Choose a 4-digit PIN to sign in.')],
+    ['device-local PIN login is not used at boot', !index.includes('const hasLocalUsers = (db.users || []).some') && !index.includes('if (hasLocalUsers && !why) showLocalLogin()')],
+    ['legacy local auth functions only redirect to cloud sign-in', index.includes("function showLocalSetup() {\n    showCloudLogin") && index.includes("function showLocalLogin() {\n    showCloudLogin")],
     ['production does not seed business defaults before cloud pull', !index.includes('Auto-estimating workflow: ensure rate card and company profile are seeded')],
     ['one save function remains', (index.match(/function save\(/g) || []).length === 1],
     ['one cloud push function remains', (index.match(/function cloudPush\(/g) || []).length === 1],
