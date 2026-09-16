@@ -13,6 +13,22 @@
     catch (_) { return en; }
   }
 
+  function ensureStyle() {
+    if (document.querySelector('[data-otto-persistence-style]')) return;
+    const style = document.createElement('style');
+    style.dataset.ottoPersistenceStyle = '1';
+    style.textContent = `
+      .otto-save-status{display:inline-flex;align-items:center;gap:7px;min-height:34px;padding:5px 9px;border:1px solid var(--line,#e5e7eb);border-radius:999px;background:var(--card,#fff);color:var(--text2,#626872);font-size:12px;font-weight:650;line-height:1;white-space:nowrap}
+      .otto-save-dot{width:8px;height:8px;border-radius:50%;background:#17803D;flex:0 0 8px}
+      .otto-save-status[data-state="saving"] .otto-save-dot{background:#2563EB;animation:ottoSavePulse 1s ease-in-out infinite}
+      .otto-save-status[data-state="pending"] .otto-save-dot,.otto-save-status[data-state="error"] .otto-save-dot{background:#B76A00}
+      @keyframes ottoSavePulse{0%,100%{opacity:.45}50%{opacity:1}}
+      @media (prefers-reduced-motion:reduce){.otto-save-status[data-state="saving"] .otto-save-dot{animation:none}}
+      @media (max-width:480px){.otto-save-status{font-size:11px;padding:5px 7px;gap:5px}}
+    `;
+    document.head.appendChild(style);
+  }
+
   function fingerprint() {
     try {
       if (typeof db === 'undefined' || !db) return '';
@@ -25,6 +41,7 @@
   }
 
   function ensureBadge() {
+    ensureStyle();
     const top = document.querySelector('.topbar');
     if (!top || document.querySelector('[data-otto-save-status]')) return;
     const badge = document.createElement('div');
@@ -95,6 +112,7 @@
   });
 
   function boot() {
+    ensureStyle();
     ensureBadge();
     wrapToast();
     lastFingerprint = fingerprint();
