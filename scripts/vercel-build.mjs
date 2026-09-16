@@ -7,28 +7,24 @@ function run(command, args) {
   if (result.status !== 0) process.exit(result.status || 1);
 }
 
-// Vercel is the reliable push-triggered runner for this repository while
-// GitHub Actions is still failing before a runner is assigned. Run the complete
-// current source/unit suite here instead of a hand-picked subset.
+// Vercel is the push-triggered runner. Source tests first prove that the
+// authoritative persistence patch can be applied cleanly without mutating the
+// checkout; the patch is then materialized once for the deployed output.
 run('npm', ['test']);
 
-// Personal wallpaper binaries are reconstructed from their committed text
-// sources during the build. This lets the deployment serve the exact approved
-// artwork while keeping the repository update path deterministic.
 run(process.execPath, ['scripts/materialize-otto-wallpapers.mjs']);
 
-// Materialize every approved deployment layer before final QA so the checks run
-// against the exact HTML/service-worker surface Vercel will actually serve.
+// Materialize the single persistence/auth/data-authority layer before the UI
+// layers. It owns session durability, startup authority, autosave, batch cloud
+// writes, canonical URL metadata, and offline caching of the persistence guard.
+run(process.execPath, ['scripts/apply-authoritative-persistence-patch.mjs']);
 run(process.execPath, ['scripts/apply-photo-retry-patch.mjs']);
 run(process.execPath, ['scripts/apply-otto-home-patch.mjs']);
 run(process.execPath, ['scripts/apply-unified-intake-patch.mjs']);
-run(process.execPath, ['scripts/apply-session-persistence-patch.mjs']);
 run(process.execPath, ['scripts/apply-ui-polish-patch.mjs']);
 run(process.execPath, ['scripts/apply-quickbooks-handoff-patch.mjs']);
 run(process.execPath, ['scripts/apply-assistant-patch.mjs']);
 run(process.execPath, ['scripts/qa-check.mjs']);
 run(process.execPath, ['scripts/stamp-version.mjs']);
 
-// Test/tooling source is needed to build and verify, not to serve publicly.
-// Remove the entire directory after the checks and patches are complete.
 fs.rmSync('scripts', { recursive: true, force: true });
