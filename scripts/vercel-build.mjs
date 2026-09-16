@@ -11,6 +11,8 @@ function run(command, args) {
 // authoritative persistence patch can be applied cleanly without mutating the
 // checkout; the patch is then materialized once for the deployed output.
 run('npm', ['test']);
+run(process.execPath, ['--check', 'api/register.js']);
+run(process.execPath, ['--check', 'scripts/apply-account-login-patch.mjs']);
 
 run(process.execPath, ['scripts/materialize-otto-wallpapers.mjs']);
 
@@ -18,6 +20,7 @@ run(process.execPath, ['scripts/materialize-otto-wallpapers.mjs']);
 // layers. It owns session durability, startup authority, autosave, batch cloud
 // writes, canonical URL metadata, and offline caching of the persistence guard.
 run(process.execPath, ['scripts/apply-authoritative-persistence-patch.mjs']);
+run(process.execPath, ['scripts/apply-account-login-patch.mjs']);
 run(process.execPath, ['scripts/apply-photo-retry-patch.mjs']);
 run(process.execPath, ['scripts/apply-otto-home-patch.mjs']);
 run(process.execPath, ['scripts/apply-unified-intake-patch.mjs']);
