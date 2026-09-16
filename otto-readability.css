@@ -1,0 +1,455 @@
+/* OTTO Readability — larger, calmer, easier navigation across every CRM surface.
+   Loaded after OTTO Air so legacy and new screens inherit one accessible scale. */
+
+:root {
+  --otto-body-size: 16.5px;
+  --otto-nav-size: 15.5px;
+  --otto-control-size: 16px;
+  --otto-section-size: 19px;
+  --otto-page-size: clamp(26px, 2.6vw, 30px);
+  --otto-metric-size: clamp(20px, 2.2vw, 24px);
+  --otto-leading: 1.55;
+  --otto-space-1: 8px;
+  --otto-space-2: 12px;
+  --otto-space-3: 16px;
+  --otto-space-4: 20px;
+  --otto-space-5: 28px;
+}
+
+html,
+body,
+body.theme-app,
+body.otto-shell,
+body.otto-field,
+body.customer-portal,
+body[data-otto-role="customer"] {
+  font-size: var(--otto-body-size) !important;
+  line-height: var(--otto-leading) !important;
+  text-rendering: optimizeLegibility;
+}
+
+p,
+li,
+dd,
+dt,
+label,
+.help,
+.muted,
+.sub,
+.ot-row-sub,
+.ot-row-tech,
+.ui-timeline-copy span,
+.ui-facts span,
+.of-row-sub,
+.of-note-text,
+.portal-card p,
+.ui-portal-card p {
+  font-size: 16px !important;
+  line-height: 1.55 !important;
+}
+
+.pagehead h1,
+.ot-head h1,
+.ui-dispatch-head h1,
+.ui-record-head h1,
+.of-page h1,
+.portal-head h1,
+.login h1,
+.login h2 {
+  font-size: var(--otto-page-size) !important;
+  line-height: 1.16 !important;
+  font-weight: 680 !important;
+  letter-spacing: -.024em !important;
+}
+
+.ot-section-head h2,
+.of-panel-head h2,
+.ui-drawer-head h2,
+.ui-activity-card h2,
+.portal-card h2,
+.ui-portal-card h2,
+.card > h2,
+.panel > h2,
+section > h2 {
+  font-size: var(--otto-section-size) !important;
+  line-height: 1.28 !important;
+  font-weight: 660 !important;
+  letter-spacing: -.012em !important;
+}
+
+h3,
+.ot-more h3,
+.ui-drawer h3,
+.portal-card h3 {
+  font-size: 17px !important;
+  line-height: 1.35 !important;
+  font-weight: 650 !important;
+}
+
+.ot-stat b,
+.metric b,
+.metric strong,
+.kpi b,
+.kpi strong,
+.summary-number,
+.portal-amount,
+[class*="metric"] > b,
+[class*="metric"] > strong {
+  font-size: var(--otto-metric-size) !important;
+  line-height: 1.15 !important;
+}
+
+/* Navigation stays small in count, but large enough to scan without effort. */
+.ot-nav-item,
+.ot-sidebar-user,
+.ot-sidebar-search,
+.ot-dock-item,
+.of-dock-item,
+.of-wordmark,
+.bottomnav button,
+.topbar button,
+nav button {
+  font-size: var(--otto-nav-size) !important;
+  font-weight: 600 !important;
+}
+
+.ot-nav-item,
+.ot-sidebar-user {
+  min-height: 44px !important;
+  padding: 0 12px !important;
+  gap: 11px !important;
+}
+
+.ot-nav-item.is-active {
+  position: relative;
+}
+.ot-nav-item.is-active::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--air-accent);
+}
+
+.ot-sidebar-search {
+  min-height: 44px !important;
+  padding: 0 12px !important;
+}
+
+.ot-lang button,
+.of-lang button {
+  min-height: 44px !important;
+  min-width: 44px !important;
+  font-size: 14px !important;
+  font-weight: 650 !important;
+}
+
+/* Controls should never look tiny or require precise clicking. */
+button,
+.btn,
+.ot-btn,
+.ui-button,
+.back,
+input,
+select,
+textarea,
+[role="button"] {
+  font-size: var(--otto-control-size) !important;
+}
+
+button,
+.btn,
+.ot-btn,
+.ui-button,
+.back,
+input:not([type="checkbox"]):not([type="radio"]),
+select {
+  min-height: 44px !important;
+}
+
+.btn.primary,
+.btn.btn-primary,
+.ot-btn-primary,
+.ui-button.primary,
+button.primary,
+[data-primary="true"],
+.of-btn.is-primary {
+  min-height: 48px !important;
+  padding-left: 18px !important;
+  padding-right: 18px !important;
+  font-weight: 660 !important;
+}
+
+textarea {
+  min-height: 112px !important;
+  line-height: 1.5 !important;
+}
+
+input,
+select,
+textarea {
+  padding: 10px 12px !important;
+}
+
+/* Give information room to breathe instead of wrapping every fact in a card. */
+body.otto-shell #main,
+body.otto-shell #main.wrap {
+  padding-top: 32px !important;
+  padding-bottom: 72px !important;
+}
+
+.ot-page,
+.ui-dispatch-page,
+.of-page,
+.portal-shell,
+.otto-portal-shell {
+  max-width: 1080px !important;
+}
+
+.pagehead,
+.ot-head,
+.ui-dispatch-head,
+.ui-record-head {
+  gap: 18px !important;
+  margin-bottom: 28px !important;
+}
+
+.ot-section,
+.of-panel,
+.ui-activity-card,
+.portal-card,
+.ui-portal-card {
+  margin-bottom: 24px !important;
+}
+
+.ot-section + .ot-section,
+.of-panel + .of-panel {
+  margin-top: 28px !important;
+}
+
+.card,
+.panel,
+.ot-panel,
+.of-panel,
+.ui-activity-card,
+.ui-record-head,
+.ui-dispatch-lanes,
+.ui-dispatch-unassigned,
+.portal-card,
+.ui-portal-card {
+  padding: 18px !important;
+}
+
+/* Lists are the main reading surface: larger rows, clearer first and second lines. */
+.ot-row,
+.of-row,
+.row,
+.listrow,
+.list-row,
+.ui-timeline-row {
+  min-height: 58px !important;
+  padding: 13px 14px !important;
+  gap: 12px !important;
+}
+
+.ot-row-title,
+.of-row-title,
+.ui-timeline-copy strong,
+.row-title,
+.list-title {
+  font-size: 16.5px !important;
+  line-height: 1.35 !important;
+  font-weight: 650 !important;
+}
+
+.ot-row-sub,
+.of-row-sub,
+.ot-row-tech,
+.ui-timeline-copy span {
+  margin-top: 3px !important;
+}
+
+/* Tables remain compact but no longer force tiny labels. */
+table {
+  font-size: 15.5px !important;
+}
+th {
+  font-size: 13.5px !important;
+  line-height: 1.35 !important;
+  padding: 11px 12px !important;
+}
+td {
+  font-size: 15.5px !important;
+  line-height: 1.45 !important;
+  padding: 13px 12px !important;
+}
+
+/* Status stays informative without becoming visual noise. */
+.ot-badge,
+.badge,
+.pill,
+.status-pill,
+[class*="status-"] {
+  font-size: 13.5px !important;
+  line-height: 1.2 !important;
+  padding: 5px 9px !important;
+}
+
+/* Schedule is one of the few places where strong visual controls add value. */
+.ui-segmented {
+  gap: 4px !important;
+  padding: 4px !important;
+}
+.ui-segmented button,
+[data-mode="day"],
+[data-mode="week"] {
+  min-height: 44px !important;
+  padding: 0 16px !important;
+  font-size: 15.5px !important;
+  font-weight: 650 !important;
+}
+.ui-job-block {
+  min-height: 58px !important;
+  padding: 11px 12px !important;
+}
+
+/* Context drawer: details without losing where the user was. */
+.ui-drawer-inner {
+  width: min(520px, 100vw) !important;
+}
+.ui-drawer-head {
+  padding: 18px 20px !important;
+}
+.ui-drawer-body,
+.ui-drawer-content {
+  padding: 18px 20px !important;
+}
+.ui-drawer-actions {
+  padding: 12px 20px !important;
+}
+
+/* Customer portal deliberately has more room and fewer competing elements. */
+body[data-otto-role="customer"] .portal-card,
+body.customer-portal .portal-card,
+.ui-portal-card {
+  padding: 22px !important;
+}
+body[data-otto-role="customer"] button,
+body.customer-portal button,
+.ui-portal-card button {
+  min-height: 48px !important;
+}
+
+/* Field workspace uses the same scale; worker identity stays readable at a glance. */
+body.otto-field .of-who-name {
+  font-size: 15.5px !important;
+}
+body.otto-field .of-who-role {
+  font-size: 12px !important;
+}
+body.otto-field .of-wordmark {
+  font-size: 17px !important;
+}
+body.otto-field .of-panel-head {
+  min-height: 48px !important;
+}
+body.otto-field .of-btn {
+  min-height: 46px !important;
+  font-size: 16px !important;
+}
+
+/* Login needs to feel simple, branded and easy to complete. */
+.login {
+  font-size: 16.5px !important;
+}
+.login .field {
+  margin-top: 18px !important;
+}
+.login label {
+  font-size: 15.5px !important;
+  font-weight: 600 !important;
+}
+.login input,
+.login button {
+  min-height: 48px !important;
+  font-size: 16px !important;
+}
+
+/* Mobile: full-width content, thumb-sized navigation, no cramped desktop density. */
+@media (max-width: 900px) {
+  :root {
+    --otto-body-size: 16px;
+    --otto-nav-size: 14.5px;
+    --otto-section-size: 18px;
+    --otto-page-size: 26px;
+  }
+
+  body.otto-shell #main,
+  body.otto-shell #main.wrap {
+    padding: 22px 16px 104px !important;
+  }
+
+  .pagehead,
+  .ot-head,
+  .ui-dispatch-head,
+  .ui-record-head {
+    align-items: flex-start !important;
+    margin-bottom: 22px !important;
+  }
+
+  .ot-head-actions,
+  .page-actions,
+  .toolbar,
+  .filters,
+  .filterbar,
+  .filter-bar {
+    gap: 8px !important;
+  }
+
+  .ot-dock-item,
+  .of-dock-item,
+  .ot-mobile-nav button,
+  .bottomnav button {
+    min-height: 56px !important;
+    font-size: 13.5px !important;
+  }
+
+  .ot-row,
+  .of-row,
+  .row,
+  .listrow,
+  .list-row {
+    min-height: 64px !important;
+    padding: 14px 12px !important;
+  }
+
+  .card,
+  .panel,
+  .ot-panel,
+  .of-panel,
+  .portal-card,
+  .ui-portal-card {
+    padding: 16px !important;
+  }
+
+  .ui-dispatch-lane {
+    grid-template-columns: 96px minmax(0, 1fr) !important;
+  }
+
+  .ui-drawer-inner {
+    width: 100vw !important;
+  }
+}
+
+/* Motion communicates state changes only; never distracts. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
