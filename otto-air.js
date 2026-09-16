@@ -85,6 +85,122 @@
     } catch (_) {}
   }
 
+  function installBrandingStyles() {
+    if (document.getElementById('otto-branding-style')) return;
+    const style = document.createElement('style');
+    style.id = 'otto-branding-style';
+    style.textContent = `
+      #login .otto-login-logo-wrap {
+        text-align: center !important;
+        margin: 0 auto 30px !important;
+      }
+      #login img.otto-login-logo {
+        display: block !important;
+        width: min(360px, 82vw) !important;
+        max-width: 100% !important;
+        height: 112px !important;
+        margin: 0 auto !important;
+        aspect-ratio: 2.35 / 1 !important;
+        object-fit: cover !important;
+        object-position: 50% 49% !important;
+        border-radius: 16px !important;
+        background: #fff !important;
+        box-shadow: 0 10px 30px rgba(16,24,40,.10) !important;
+      }
+      #otto-global-brand {
+        position: fixed;
+        top: max(14px, env(safe-area-inset-top));
+        right: clamp(18px, 2.5vw, 36px);
+        z-index: 86;
+        width: clamp(205px, 18vw, 285px);
+        height: 82px;
+        padding: 7px 11px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--air-border, #E3E8EF);
+        border-radius: 16px;
+        background: var(--air-surface, #fff);
+        box-shadow: 0 8px 24px rgba(16,24,40,.08);
+        cursor: pointer;
+      }
+      #otto-global-brand img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        aspect-ratio: 2.35 / 1;
+        object-fit: cover;
+        object-position: 50% 49%;
+        border-radius: 11px;
+        background: #fff;
+      }
+      body.otto-shell.otto-global-brand-ready .ot-sidebar-brand { display: none !important; }
+      body.otto-shell.otto-global-brand-ready #main,
+      body.otto-shell.otto-global-brand-ready #main.wrap { padding-top: 112px !important; }
+      #otto-global-brand:focus-visible {
+        outline: 2px solid var(--air-accent, #4E74C8);
+        outline-offset: 3px;
+      }
+      @media (max-width: 900px) {
+        #login img.otto-login-logo { width: min(320px, 84vw) !important; height: 100px !important; }
+        #otto-global-brand { width: 158px; height: 56px; top: max(10px, env(safe-area-inset-top)); right: 12px; padding: 5px 8px; border-radius: 12px; }
+        body.otto-shell.otto-global-brand-ready #main,
+        body.otto-shell.otto-global-brand-ready #main.wrap { padding-top: 78px !important; }
+      }
+      @media (max-width: 480px) {
+        #login img.otto-login-logo { width: min(290px, 86vw) !important; height: 92px !important; }
+        #otto-global-brand { width: 142px; height: 50px; }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function ensureBranding() {
+    installBrandingStyles();
+
+    const login = document.getElementById('login');
+    if (login) {
+      let loginLogo = login.querySelector('img[src$="logo.jpg"]');
+      if (!loginLogo) {
+        const wrap = document.createElement('div');
+        wrap.className = 'otto-login-logo-wrap';
+        loginLogo = document.createElement('img');
+        loginLogo.src = './logo.jpg';
+        loginLogo.alt = 'OTTO Plumbing Inc.';
+        wrap.appendChild(loginLogo);
+        login.insertBefore(wrap, login.firstChild);
+      }
+      loginLogo.classList.add('otto-login-logo');
+      if (loginLogo.parentElement) loginLogo.parentElement.classList.add('otto-login-logo-wrap');
+    }
+
+    const app = document.getElementById('app');
+    const signedInShell = !!app && !app.classList.contains('hidden') && document.body.classList.contains('otto-shell');
+    let brand = document.getElementById('otto-global-brand');
+
+    if (signedInShell) {
+      if (!brand) {
+        brand = document.createElement('button');
+        brand.id = 'otto-global-brand';
+        brand.type = 'button';
+        brand.setAttribute('aria-label', currentLang() === 'es' ? 'Ir a inicio' : 'Go home');
+        brand.title = currentLang() === 'es' ? 'Ir a inicio' : 'Go home';
+        brand.innerHTML = '<img src="./logo.jpg" alt="OTTO Plumbing Inc." />';
+        brand.addEventListener('click', () => {
+          try { if (typeof nav === 'function') nav('home'); } catch (_) {}
+        });
+        app.appendChild(brand);
+      } else {
+        brand.setAttribute('aria-label', currentLang() === 'es' ? 'Ir a inicio' : 'Go home');
+        brand.title = currentLang() === 'es' ? 'Ir a inicio' : 'Go home';
+      }
+      document.body.classList.add('otto-global-brand-ready');
+    } else {
+      if (brand) brand.remove();
+      document.body.classList.remove('otto-global-brand-ready');
+    }
+  }
+
   function isUiTextNode(node) {
     const p = node && node.parentElement;
     if (!p) return false;
@@ -196,6 +312,7 @@
     syncAccessibility(scope);
     document.documentElement.lang = currentLang() === 'es' ? 'es' : 'en';
     document.body && document.body.classList.add('otto-air');
+    ensureBranding();
   }
 
   function schedule(root) {
