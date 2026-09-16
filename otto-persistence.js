@@ -7,6 +7,7 @@
   const CANONICAL_URL = 'https://otto-kohl.vercel.app';
   let lastFingerprint = '';
   let toastWrapped = false;
+  let recoveryShown = false;
 
   function tx(en, es) {
     try { return typeof lang !== 'undefined' && lang === 'es' ? es : en; }
@@ -105,11 +106,46 @@
     } catch (_) { }
   }
 
+  function showStartupRecovery(reason) {
+    if (recoveryShown) return;
+    const app = document.getElementById('app');
+    const login = document.getElementById('login');
+    const appVisible = app && !app.classList.contains('hidden');
+    const loginVisible = login && !login.classList.contains('hidden');
+    if (appVisible || loginVisible) return;
+    recoveryShown = true;
+    console.error('OTTO startup recovery', reason || 'unknown startup failure');
+    try {
+      if (typeof window.showCloudLogin === 'function') {
+        window.showCloudLogin(tx(
+          'OTTO could not finish loading. Your data is still in the cloud. Sign in again or reload this page.',
+          'OTTO no pudo terminar de cargar. Sus datos siguen en la nube. Inicie sesión de nuevo o recargue esta página.'
+        ));
+        return;
+      }
+    } catch (_) { }
+    if (login) {
+      login.classList.remove('hidden');
+      login.innerHTML = `<div class="card" style="max-width:520px;margin:40px auto;padding:24px"><h2>${tx('OTTO could not finish loading', 'OTTO no pudo terminar de cargar')}</h2><p>${tx('Your data remains stored in the cloud. Reload this page to try again.', 'Sus datos permanecen guardados en la nube. Recargue esta página para intentarlo de nuevo.')}</p><button class="btn block" onclick="location.reload()">${tx('Reload OTTO', 'Recargar OTTO')}</button></div>`;
+    }
+  }
+
   window.addEventListener('otto:save-state', event => {
     const d = event.detail || {};
     setState(d.state || 'saving', d);
     if (d.state === 'saved') lastFingerprint = fingerprint();
   });
+
+  // Never allow an initialization failure to leave a completely blank CRM.
+  // This is intentionally limited to startup: once either the app or login is
+  // visible, later workflow errors stay local and do not throw the user out.
+  window.addEventListener('unhandledrejection', event => {
+    setTimeout(() => showStartupRecovery(event && event.reason), 0);
+  });
+  window.addEventListener('error', event => {
+    setTimeout(() => showStartupRecovery(event && event.error), 0);
+  });
+  setTimeout(() => showStartupRecovery('startup timeout'), 12000);
 
   function boot() {
     ensureStyle();
@@ -130,5 +166,5 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot, { once: true });
   else boot();
 
-  window.__ottoPersistence = { canonicalUrl: CANONICAL_URL, fingerprint, retryPending };
+  window.__ottoPersistence = { canonicalUrl: CANONICAL_URL, fingerprint, retryPending, showStartupRecovery };
 })();
