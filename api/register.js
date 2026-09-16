@@ -1,6 +1,7 @@
 // First-run cloud account bootstrap for OTTO.
 // This endpoint only claims the existing unbound owner profile. Once an owner
 // auth identity is attached, public self-registration closes permanently.
+// Production account reset flow: preserve CRM data; reset only authentication.
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
