@@ -24,22 +24,28 @@
     });
   }
 
-  function renderReview(file, text, status, jobId, error='') {
+  function renderReview(file, text, status, jobId, error='', allowSave=true) {
     document.querySelector('#otto-file-plus-overlay')?.remove();
     const overlay = document.createElement('div');
     overlay.id = 'otto-file-plus-overlay';
     overlay.className = 'otto-intake-overlay';
+    const stateText = status === 'ready'
+      ? tx('Ready to save.','Listo para guardar.')
+      : allowSave
+        ? tx('File can be saved. Text extraction is not available for this format yet.','El archivo se puede guardar. La extracción de texto aún no está disponible para este formato.')
+        : tx('This file will not be saved.','Este archivo no se guardará.');
     overlay.innerHTML = `<section class="otto-intake-dialog" role="dialog" aria-modal="true">
       <header class="otto-intake-head"><h2>${esc(tx('Review document','Revisar documento'))}</h2><button class="otto-intake-close" type="button" data-file-plus-close aria-label="${esc(tx('Close','Cerrar'))}">×</button></header>
       <p class="otto-intake-muted">${esc(file.name)} · ${Math.max(1, Math.round(file.size/1024))} KB</p>
       ${error ? `<p class="otto-intake-error">${esc(error)}</p>` : ''}
       <div class="otto-intake-field"><label>${esc(tx('Extracted / searchable text','Texto extraído / buscable'))}</label><textarea data-file-plus-text>${esc(text || '')}</textarea></div>
-      <div class="otto-intake-actions"><button class="otto-intake-btn primary" type="button" data-file-plus-save>${esc(tx('Save document','Guardar documento'))}</button><button class="otto-intake-btn" type="button" data-file-plus-close>${esc(tx('Cancel','Cancelar'))}</button></div>
-      <div class="otto-intake-progress ${status === 'ready' ? 'otto-intake-ok' : ''}" data-file-plus-progress>${esc(status === 'ready' ? tx('Ready to save.','Listo para guardar.') : tx('File can be saved. Text extraction is not available for this format yet.','El archivo se puede guardar. La extracción de texto aún no está disponible para este formato.'))}</div>
+      <div class="otto-intake-actions">${allowSave ? `<button class="otto-intake-btn primary" type="button" data-file-plus-save>${esc(tx('Save document','Guardar documento'))}</button>` : ''}<button class="otto-intake-btn" type="button" data-file-plus-close>${esc(allowSave ? tx('Cancel','Cancelar') : tx('Close','Cerrar'))}</button></div>
+      <div class="otto-intake-progress ${status === 'ready' ? 'otto-intake-ok' : (allowSave ? '' : 'otto-intake-error')}" data-file-plus-progress>${esc(stateText)}</div>
     </section>`;
     const close = () => overlay.remove();
     overlay.addEventListener('click', e => { if (e.target === overlay || e.target.closest('[data-file-plus-close]')) close(); });
-    $('[data-file-plus-save]', overlay).addEventListener('click', async () => {
+    const saveButton = $('[data-file-plus-save]', overlay);
+    if (saveButton) saveButton.addEventListener('click', async () => {
       const p = $('[data-file-plus-progress]', overlay);
       try {
         p.className = 'otto-intake-progress'; p.textContent = tx('Saving…','Guardando…');
@@ -126,12 +132,12 @@
 
   async function handleGeneric(file, jobId) {
     const x = ext(file);
-    if (file.size > MAX_BYTES) return renderReview(file, '', 'stored_only', jobId, tx('Files must be 25 MB or smaller.','Los archivos deben medir 25 MB o menos.'));
-    if (BLOCKED_EXTS.has(x)) return renderReview(file, '', 'stored_only', jobId, tx('This unsafe file type is blocked.','Este tipo de archivo inseguro está bloqueado.'));
-    if (!SAFE_GENERIC_EXTS.has(x) && !(file.type || '').startsWith('image/')) return renderReview(file, '', 'stored_only', jobId, tx('This file type is not approved for OTTO storage.','Este tipo de archivo no está aprobado para almacenamiento en OTTO.'));
+    if (file.size > MAX_BYTES) return renderReview(file, '', 'blocked', jobId, tx('Files must be 25 MB or smaller.','Los archivos deben medir 25 MB o menos.'), false);
+    if (BLOCKED_EXTS.has(x)) return renderReview(file, '', 'blocked', jobId, tx('This unsafe file type is blocked.','Este tipo de archivo inseguro está bloqueado.'), false);
+    if (!SAFE_GENERIC_EXTS.has(x) && !(file.type || '').startsWith('image/')) return renderReview(file, '', 'blocked', jobId, tx('This file type is not approved for OTTO storage.','Este tipo de archivo no está aprobado para almacenamiento en OTTO.'), false);
     let text='', error='';
     try { text = await extractText(file); } catch (e) { console.warn('OTTO text extraction', e); error = tx('The file will still save, but text extraction could not finish.','El archivo se guardará, pero no se pudo terminar la extracción de texto.'); }
-    renderReview(file, text, text ? 'ready' : 'stored_only', jobId, error);
+    renderReview(file, text, text ? 'ready' : 'stored_only', jobId, error, true);
   }
 
   function spreadsheetChoice(file, jobId) {
@@ -147,7 +153,7 @@
   document.addEventListener('change', e => {
     const input=e.target.closest?.('[data-intake-file]'); if(!input || !input.files?.[0]) return;
     const file=input.files[0], x=ext(file);
-    if (['doc','docx','ppt','pptx','odt','ods','odp','txt','md','markdown','tsv','json','xml','yaml','yml','log','rtf'].includes(x)) {
+    if (['doc','docx','ppt','pptx','odt','ods','odp','txt','md','markdown','tsv','json','xml','yaml','yml','log','rtf','heic','heif'].includes(x)) {
       e.stopImmediatePropagation(); e.preventDefault(); const job=$('[data-intake-job]',input.closest('#otto-unified-intake-overlay'))?.value || ''; handleGeneric(file,job); return;
     }
     if (['csv','xls','xlsx'].includes(x)) {
@@ -158,7 +164,7 @@
   document.addEventListener('drop', e => {
     const drop=e.target.closest?.('[data-intake-drop]'); if(!drop || !drop.querySelector('[data-intake-file]')) return;
     const file=e.dataTransfer?.files?.[0]; if(!file) return; const x=ext(file);
-    if (['doc','docx','ppt','pptx','odt','ods','odp','txt','md','markdown','tsv','json','xml','yaml','yml','log','rtf','csv','xls','xlsx'].includes(x)) {
+    if (['doc','docx','ppt','pptx','odt','ods','odp','txt','md','markdown','tsv','json','xml','yaml','yml','log','rtf','csv','xls','xlsx','heic','heif'].includes(x)) {
       e.stopImmediatePropagation(); e.preventDefault(); const root=drop.closest('#otto-unified-intake-overlay'); const job=$('[data-intake-job]',root)?.value || '';
       if(['csv','xls','xlsx'].includes(x)) spreadsheetChoice(file,job); else handleGeneric(file,job);
     }
