@@ -4,6 +4,7 @@ const read = p => fs.readFileSync(new URL(`../${p}`, import.meta.url), 'utf8');
 const index = read('index.html');
 const sw = read('sw.js');
 const css = read('otto-air.css');
+const readable = read('otto-readability.css');
 const js = read('otto-air.js');
 let passed = 0, failed = 0;
 function check(name, ok) {
@@ -11,9 +12,11 @@ function check(name, ok) {
   else { failed++; console.error(`✗ ${name}`); }
 }
 
-check('OTTO Air stylesheet is wired last', index.includes('data-otto-air-style'));
+check('OTTO Air stylesheet is wired', index.includes('data-otto-air-style'));
+check('OTTO readability stylesheet is wired after Air', index.includes('data-otto-readability-style') && index.indexOf('data-otto-readability-style') > index.indexOf('data-otto-air-style'));
 check('OTTO Air runtime is wired', index.includes('data-otto-air-runtime'));
 check('OTTO Air assets are cached offline', sw.includes("'./otto-air.css'") && sw.includes("'./otto-air.js'"));
+check('OTTO readability is cached offline', sw.includes("'./otto-readability.css'"));
 check('light palette is airy', css.includes('--air-bg: #F6F8FB') && css.includes('--air-sidebar: #F2F6FA'));
 check('dark palette is soft slate rather than black', css.includes('--air-bg: #20262E') && css.includes('--air-sidebar: #232A33'));
 check('scheduled is red', css.includes('--air-scheduled: #C84C4C') && css.includes('.ui-job-block.status-scheduled { border-left-color: var(--air-scheduled)'));
@@ -36,5 +39,19 @@ check('reduced motion is supported', css.includes('prefers-reduced-motion'));
 check('mobile shares the design system', css.includes('@media (max-width: 900px)'));
 check('customer portal shares the design system', css.includes('body[data-otto-role="customer"]'));
 
-console.log(`OTTO Air: ${passed} passed, ${failed} failed`);
+check('body copy is globally larger and readable', readable.includes('--otto-body-size: 16.5px') && readable.includes('--otto-leading: 1.55'));
+check('navigation uses a readable 15.5px scale', readable.includes('--otto-nav-size: 15.5px') && readable.includes('.ot-nav-item'));
+check('page titles use the 26 to 30px hierarchy', readable.includes('--otto-page-size: clamp(26px, 2.6vw, 30px)'));
+check('section headings use a 19px hierarchy', readable.includes('--otto-section-size: 19px'));
+check('primary controls keep 48px targets', readable.includes('min-height: 48px !important'));
+check('general controls keep at least 44px targets', readable.includes('min-height: 44px !important'));
+check('schedule day and week controls are prominent', readable.includes('[data-mode="day"]') && readable.includes('[data-mode="week"]'));
+check('context drawer stays readable without losing page context', readable.includes('width: min(520px, 100vw)'));
+check('field workspace shares the readable scale', readable.includes('body.otto-field .of-who-name') && readable.includes('body.otto-field .of-btn'));
+check('customer portal shares larger targets', readable.includes('body[data-otto-role="customer"]') && readable.includes('.ui-portal-card button'));
+check('login uses the same larger control scale', readable.includes('.login input') && readable.includes('.login button'));
+check('mobile keeps thumb-sized bottom navigation', readable.includes('.ot-dock-item') && readable.includes('min-height: 56px !important'));
+check('readability layer respects reduced motion', readable.includes('@media (prefers-reduced-motion: reduce)'));
+
+console.log(`OTTO Air/readability: ${passed} passed, ${failed} failed`);
 if (failed) process.exit(1);
