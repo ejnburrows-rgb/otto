@@ -7,9 +7,9 @@ const SCRIPT_TAG = '  <script src="./otto-hr-payroll.js?v=1" data-otto-hr-payrol
 
 export function patchHrPayrollIndex(source) {
   if (source.includes('data-otto-hr-payroll-runtime')) return source;
-  const marker = '  <script src="./otto-field.js?v=1" data-otto-field-runtime></script>\n';
-  if (!source.includes(marker)) throw new Error('field runtime marker missing');
-  return source.replace(marker, marker + SCRIPT_TAG);
+  const marker = /(<script\b[^>]*src=["']\.\/otto-field\.js\?v=1["'][^>]*data-otto-field-runtime[^>]*><\/script>)/;
+  if (!marker.test(source)) throw new Error('field runtime marker missing');
+  return source.replace(marker, `$1\n${SCRIPT_TAG}`);
 }
 
 export function patchHrPayrollSw(source) {
