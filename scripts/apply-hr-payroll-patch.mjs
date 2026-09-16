@@ -26,16 +26,16 @@ export function validateHrPayroll(index, sw, runtime) {
     ['runtime is loaded exactly once', (index.match(/data-otto-hr-payroll-runtime/g) || []).length === 1],
     ['runtime loads after field workspace', index.indexOf('data-otto-field-runtime') < index.indexOf('data-otto-hr-payroll-runtime')],
     ['runtime is offline cached', sw.includes("'./otto-hr-payroll.js'")],
-    ['workspace route exists', runtime.includes("const VIEW = 'hr_payroll'")),
+    ['workspace route exists', runtime.includes("const VIEW = 'hr_payroll'")],
     ['policy stays on current version 2', runtime.includes('const POLICY_VERSION = 2;')],
     ['English policy exists', runtime.includes("title: 'Employee Accountability Code of Conduct'") && runtime.includes('Accurate timekeeping')],
     ['Spanish policy exists', runtime.includes("title: 'Código de Conducta y Responsabilidad del Empleado'") && runtime.includes('Registro exacto del tiempo')],
-    ['workspace reads existing acknowledgments', runtime.includes("data('consent_records')") && runtime.includes("type === 'employee_code_of_conduct'")),
+    ['workspace reads existing acknowledgments', runtime.includes("data('consent_records')") && runtime.includes("type === 'employee_code_of_conduct'")],
     ['field gate uses the same policy source', runtime.includes("document.getElementById('policy-scroll')") && runtime.includes('scroller.innerHTML = policyHtml(code)')],
-    ['desktop HR Payroll tab exists', runtime.includes('data-otto-hr-tab') && runtime.includes("nav(VIEW)")),
-    ['mobile More receives HR Payroll shortcut', runtime.includes('data-hr-more-shortcut') && runtime.includes('injectMoreShortcut')),
-    ['payroll remains one click away', runtime.includes("nav('payroll')")),
-    ['employee records remain one click away', runtime.includes("nav('team')")),
+    ['desktop HR Payroll tab exists', runtime.includes('data-otto-hr-tab') && runtime.includes('nav(VIEW)')],
+    ['mobile More receives HR Payroll shortcut', runtime.includes('data-hr-more-shortcut') && runtime.includes('injectMoreShortcut')],
+    ['payroll remains one click away', runtime.includes("nav('payroll')")],
+    ['employee records remain one click away', runtime.includes("nav('team')")],
   ];
 }
 
