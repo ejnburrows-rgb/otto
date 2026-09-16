@@ -79,3 +79,11 @@ A credentialed end-to-end customer-portal session with a real test account is an
 - `otto-prod-new` remains a non-authoritative Vercel project and must not be used as the release target.
 - Production customer-portal acceptance that requires a real mailbox/account remains a credentialed operational check until a dedicated test account is exercised against production.
 - Provider-backed email and Ask OTTO delivery depend on the relevant company credentials being present in the authoritative Vercel project. Code presence alone is not delivery proof.
+
+## 2026-09-16 new EJN Vercel team release
+
+- New team is `ejn` (`team_Ixkx4gmJy9k2mvBVDEeFsTQH`); the old team is not a release target.
+- Fixed an extra parenthesis in account-login validation that stopped the production build before deployment.
+- Requested production alias: `otto-crm-miami.vercel.app`.
+- Source test command passed locally. Live deployment and authenticated acceptance are pending verification.
+- Owner clarification: everyone signs in initially; spreadsheet imports pre-create employee records visible to the owner, without bypassing employee authentication.

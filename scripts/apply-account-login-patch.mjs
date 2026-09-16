@@ -147,7 +147,7 @@ export function validateAccountLogin(source) {
   return [
     ['password sign-in is available', source.includes('signInWithPassword({ email, password })')],
     ['secure magic-link fallback remains available', source.includes('sendCloudMagicLink()') && source.includes('shouldCreateUser: false')],
-    ['first-owner account creation is available', source.includes('createCloudAccount()') && source.includes("fetch('/api/register'"))],
+    ['first-owner account creation is available', source.includes('createCloudAccount()') && source.includes("fetch('/api/register'")],
     ['local PIN setup is absent', !source.includes('onclick="showLocalSetup()"')],
     ['provider session remains persistent', source.includes('persistSession: true') && source.includes('storage: ottoAuthStorage')],
   ];
