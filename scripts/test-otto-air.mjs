@@ -29,6 +29,9 @@ check('Spanish translation audit hook exists', js.includes('window.__ottoAirAudi
 check('sync language is plain English and Spanish', js.includes("'Sync successful':'Everything saved'") && js.includes("'Everything saved':'Todo guardado'"));
 check('status semantics never rely on color alone', js.includes("el.setAttribute('aria-label', labels[status])"));
 check('English fallback is mutation-idempotent', js.includes('const next = rewriteEnglish(node.nodeValue);') && js.includes('if (next !== node.nodeValue) node.nodeValue = next;') && !js.includes('node.nodeValue = rewriteEnglish(node.nodeValue);'));
+check('login always carries the approved OTTO logo', js.includes("login.querySelector('img[src$=\"logo.jpg\"]')") && js.includes("loginLogo.src = './logo.jpg'"));
+check('authenticated shell mounts a persistent top-right company mark', js.includes("brand.id = 'otto-global-brand'") && js.includes('right: clamp(18px, 2.5vw, 36px)'));
+check('prominent logo remains responsive on phone', js.includes('@media (max-width: 900px)') && js.includes('#otto-global-brand { width: 158px; height: 56px;'));
 check('reduced motion is supported', css.includes('prefers-reduced-motion'));
 check('mobile shares the design system', css.includes('@media (max-width: 900px)'));
 check('customer portal shares the design system', css.includes('body[data-otto-role="customer"]'));
