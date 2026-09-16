@@ -2,6 +2,11 @@
 
 A concise dated log of decisions that still govern the product. Historical implementation detail remains in Git history; superseded choices are not kept here as if they were still active.
 
+## 2026-09-16 — restrained company presentation
+
+- The owner requested smaller professional branding and a neutral presentation without personalization. Today no longer activates personal backgrounds. Identity and operational records remain intact.
+- Keep the approved OTTO logo compact at login and the top right. Show Powered by NBO discreetly at the bottom right, clear of navigation and sync status. Use text until actual NBO artwork is supplied; do not invent a logo asset, contact details, or ambiguous copy.
+
 ## 2026-08-11 — premium UI refinement
 
 - **Refine the current workspace; do not redesign it again.** The three-window owner/office model, wallpapers, personal accents, logo and operational workflows remain the product foundation.

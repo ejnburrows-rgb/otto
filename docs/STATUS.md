@@ -41,6 +41,13 @@ The supplied Julio and Sarays personal backgrounds are limited to the personaliz
 
 ## Current release verification
 
+### 2026-09-16 restrained branding and startup repair
+
+- The current persistence build emitted duplicate async modifiers in local-login redirect declarations, preventing all inline application code from executing. Function replacement now includes async modifiers and tests compile both first and repeated generated builds.
+- The new HR navigation observer repeatedly rewrote an unchanged label and froze authenticated screens. Labels now change only when their language changes, with a behavioral regression test. The login branding layer also reuses the normalized logo instead of adding another image.
+- Reduced OTTO header/login branding and typography while retaining touch targets; disabled personalized Today artwork; added a small Powered by NBO text credit and an owner Settings company/contact summary sourced from saved companyProfile fields. No business records were erased or replaced. NBO artwork and replacement contact details were not supplied.
+- Full source tests passed. The rebuilt app passed 66/66 desktop/mobile navigation smoke checks with zero JavaScript errors. Final production proof is recorded in the release conversation after deployment.
+
 ### 2026-09-16 navigation incident
 
 - Production interaction testing reproduced a DOM observer loop in the premium UI layer. On Schedule, the loop continuously replaced the Day/Week controls while the browser was trying to click them; the shared sync indicator and field-job action bar could also retrigger the same observer without any state change.

@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import vm from 'node:vm';
 import { patchHrPayrollIndex, patchHrPayrollSw, validateHrPayroll } from './apply-hr-payroll-patch.mjs';
 
 let passed = 0, failed = 0;
@@ -7,6 +8,19 @@ const check = (name, ok) => { if (ok) { passed++; console.log(`  ok   ${name}`);
 const rawIndex = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const rawSw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
 const runtime = fs.readFileSync(new URL('../otto-hr-payroll.js', import.meta.url), 'utf8');
+let labelWrites = 0;
+let labelText = 'HR / Payroll';
+const label = { get textContent() { return labelText; }, set textContent(value) { labelWrites++; labelText = value; } };
+const button = { querySelector: () => label, classList: { toggle() {} } };
+const navRoot = { querySelector: () => button };
+const navigation = runtime.slice(runtime.indexOf('  function ensureDesktopTab()'), runtime.indexOf('  function injectMoreShortcut()'));
+const context = { session: { role: 'owner' }, route: { view: 'home' }, VIEW: 'otto_hr_payroll', document: { querySelector: () => navRoot }, text: en => en };
+vm.createContext(context);
+vm.runInContext(navigation + '\nensureDesktopTab(); ensureDesktopTab();', context);
+check('unchanged HR navigation does not retrigger the DOM observer', labelWrites === 0);
+context.text = (_, es) => es;
+vm.runInContext('ensureDesktopTab(); ensureDesktopTab();', context);
+check('HR navigation updates language exactly once', labelWrites === 1 && labelText === 'RR. HH. / Nómina');
 const index = patchHrPayrollIndex(rawIndex);
 const sw = patchHrPayrollSw(rawSw);
 

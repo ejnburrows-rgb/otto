@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import vm from 'node:vm';
 import { patchIndex, patchDataApi, patchServiceWorker, validateAuthoritativePersistence } from './apply-authoritative-persistence-patch.mjs';
 
 let passed = 0, failed = 0;
@@ -11,6 +12,13 @@ const batchApi = fs.readFileSync(new URL('../api/save.js', import.meta.url), 'ut
 const runtime = fs.readFileSync(new URL('../otto-persistence.js', import.meta.url), 'utf8');
 
 const index = patchIndex(rawIndex);
+for (const [label, html] of [['first build', index], ['repeated build', patchIndex(index)]]) {
+  let syntaxError = '';
+  try {
+    for (const match of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) new vm.Script(match[1]);
+  } catch (error) { syntaxError = error.message; }
+  check(`${label} produces executable browser scripts${syntaxError ? ': ' + syntaxError : ''}`, !syntaxError);
+}
 const data = patchDataApi(rawData);
 const sw = patchServiceWorker(rawSw);
 for (const [name, ok] of validateAuthoritativePersistence(index, data, sw)) check(name, ok);

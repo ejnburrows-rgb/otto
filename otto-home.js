@@ -612,10 +612,18 @@
           ${hasPin(session, 'mfaPin') ? `<button class="btn ghost" type="button" onclick="clearMfa()"><i class="fas fa-xmark"></i> ${esc(words('Remove extra code', 'Quitar código extra'))}</button>` : ''}
         </div>
       </div>` : '';
+    const company = db.companyProfile || {};
+    const companyDetails = session.role === 'owner' ? `
+      <div class="section-title">${esc(words('Company & contact', 'Empresa y contacto'))}</div>
+      <div class="card otto-settings-card" style="padding:16px">
+        ${[['name', words('Company', 'Empresa')], ['phone', words('Phone', 'Teléfono')], ['email', words('Email', 'Correo electrónico')], ['address', words('Address', 'Dirección')], ['license', words('License', 'Licencia')], ['website', words('Website', 'Sitio web')]].filter(([key]) => company[key]).map(([key, label]) => `<div class="otto-worker-detail"><span>${esc(label)}</span><b>${esc(company[key])}</b></div>`).join('')}
+        <div class="otto-worker-detail"><span>${esc(words('Platform', 'Plataforma'))}</span><b>Powered by NBO</b></div>
+      </div>` : '';
     main.innerHTML = `${pageHead(t('settings'), '')}
       <div class="card otto-settings-card">
         <div class="list-item" style="cursor:default"><div class="avatar" style="background:var(--action)">${esc(initials(session.name))}</div><div class="li-main"><div class="li-title">${esc(session.name)}</div><div class="li-sub">${esc(t(session.role))}</div></div></div>
       </div>
+      ${companyDetails}
       <div class="section-title">${esc(words('Appearance', 'Apariencia'))}</div>
       <div class="card otto-settings-card"><button class="otto-settings-row" type="button" data-otto-action="theme"><i class="fas fa-${dark ? 'sun' : 'moon'}"></i><span>${esc(dark ? words('Light mode', 'Modo claro') : words('Dark mode', 'Modo oscuro'))}</span></button></div>
       ${can('team') ? `<div class="section-title">${esc(words('Team access', 'Acceso del equipo'))}</div><div class="card otto-settings-card"><button class="otto-settings-row" type="button"${navAttrs('team')}><i class="fas fa-user-gear"></i><span>${esc(t('team'))}</span></button></div>` : ''}

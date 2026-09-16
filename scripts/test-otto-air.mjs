@@ -32,17 +32,17 @@ check('Spanish translation audit hook exists', js.includes('window.__ottoAirAudi
 check('sync language is plain English and Spanish', js.includes("'Sync successful':'Everything saved'") && js.includes("'Everything saved':'Todo guardado'"));
 check('status semantics never rely on color alone', js.includes("el.setAttribute('aria-label', labels[status])"));
 check('English fallback is mutation-idempotent', js.includes('const next = rewriteEnglish(node.nodeValue);') && js.includes('if (next !== node.nodeValue) node.nodeValue = next;') && !js.includes('node.nodeValue = rewriteEnglish(node.nodeValue);'));
-check('login always carries the approved OTTO logo', js.includes("login.querySelector('img[src$=\"logo.jpg\"]')") && js.includes("loginLogo.src = './logo.jpg'"));
+check('login reuses the approved logo after artwork normalization', js.includes("login.querySelector('img.otto-login-logo, img[src$=\"logo.jpg\"]')") && js.includes("loginLogo.src = './logo.jpg'"));
 check('authenticated shell mounts a persistent top-right company mark', js.includes("brand.id = 'otto-global-brand'") && js.includes('right: clamp(18px, 2.5vw, 36px)'));
-check('prominent logo remains responsive on phone', js.includes('@media (max-width: 900px)') && js.includes('#otto-global-brand { width: 158px; height: 56px;'));
+check('compact logo retains a phone touch target', js.includes('@media (max-width: 900px)') && js.includes('#otto-global-brand { width: 120px; height: 44px;'));
 check('reduced motion is supported', css.includes('prefers-reduced-motion'));
 check('mobile shares the design system', css.includes('@media (max-width: 900px)'));
 check('customer portal shares the design system', css.includes('body[data-otto-role="customer"]'));
 
-check('body copy is globally larger and readable', readable.includes('--otto-body-size: 16.5px') && readable.includes('--otto-leading: 1.55'));
-check('navigation uses a readable 15.5px scale', readable.includes('--otto-nav-size: 15.5px') && readable.includes('.ot-nav-item'));
-check('page titles use the 26 to 30px hierarchy', readable.includes('--otto-page-size: clamp(26px, 2.6vw, 30px)'));
-check('section headings use a 19px hierarchy', readable.includes('--otto-section-size: 19px'));
+check('body copy uses a restrained readable scale', readable.includes('--otto-body-size: 15px') && readable.includes('--otto-leading: 1.55'));
+check('navigation uses a readable compact scale', readable.includes('--otto-nav-size: 14px') && readable.includes('.ot-nav-item'));
+check('page titles use the 22 to 26px hierarchy', readable.includes('--otto-page-size: clamp(22px, 2.2vw, 26px)'));
+check('section headings use a 17px hierarchy', readable.includes('--otto-section-size: 17px'));
 check('primary controls keep 48px targets', readable.includes('min-height: 48px !important'));
 check('general controls keep at least 44px targets', readable.includes('min-height: 44px !important'));
 check('schedule day and week controls are prominent', readable.includes('[data-mode="day"]') && readable.includes('[data-mode="week"]'));
