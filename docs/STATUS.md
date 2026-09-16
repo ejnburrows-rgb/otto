@@ -1,16 +1,17 @@
 # STATUS — OTTO Plumbing CRM
 
-Updated: 2026-09-15. This file is the current release snapshot. Older implementation history remains in Git history and closed PRs; it is not active release guidance.
+Updated: 2026-09-16. This file is the current release snapshot. Older implementation history remains in Git history and closed PRs; it is not active release guidance.
 
 ## Production
 
 - Authoritative branch: `main`
 - Authoritative Vercel project: `otto`
 - Production URL: https://otto-kohl.vercel.app
-- Verified production source before this status-only update: `21b66e845911a2d324144506b14ef2a36e888018`
-- Verified Vercel deployment: `dpl_GioD4s4HagErRKzEPchTUiZfWRs4` — READY
-- The production version marker reported repository `ejnburrows-rgb/otto`, branch `main`, commit `21b66e845911a2d324144506b14ef2a36e888018`, and Supabase provider-backed server authentication.
-- The previous Vercel Hobby build-rate limit is cleared. Current `main` builds and deploys normally to the authoritative `otto` project.
+- Verified production source: `df5273c8fa7d89dbc4e4bae98b16ae0e4d62a6f6`
+- Verified Vercel deployment: `dpl_46VduECjuLNrG18to2neX5Q9ph9m` — READY and aliased to `otto-kohl.vercel.app`.
+- Vercel deployment metadata confirms repository `ejnburrows-rgb/otto` and branch `main`. Production retains the navigation and branding repairs from PR #167.
+- New deployments are blocked by Vercel's 100-per-day Hobby quota. A dashboard-created preview initially started and exposed an account-login patch syntax error; that error is fixed and regression-tested in PR #168. The corrected retry was rejected with `api-deployments-free-per-day`, so manual creation is not an ongoing workaround. The latest pending source is not deployed. The account owner must change the hosting allowance or wait for quota renewal; do not create alternate projects to evade the limit.
+- At 20:00 UTC, the current production deployment had no error/fatal runtime logs in the preceding 30 minutes. Its isolated navigation smoke test passed 66 checks with no browser runtime errors; this is not credentialed end-to-end sign-in proof.
 - Normal deployment workflow: pushes to `main` produce production deployments in the `otto` Vercel project.
 
 A second Vercel project named `otto-prod-new` is not the authoritative customer/owner production project. It does not own the established `otto-kohl.vercel.app` production URL. It remains untouched until its environment/configuration can be compared conclusively; do not treat it as the release target.
