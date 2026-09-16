@@ -43,6 +43,8 @@ The supplied Julio and Sarays personal backgrounds are limited to the personaliz
 
 ### 2026-09-16 restrained branding and startup repair
 
+- Final production screenshot review also identified an excessively wide desktop sign-in button. The sign-in email, help copy, and button now share a centered 420px maximum width, responsive on phones.
+
 - The current persistence build emitted duplicate async modifiers in local-login redirect declarations, preventing all inline application code from executing. Function replacement now includes async modifiers and tests compile both first and repeated generated builds.
 - The new HR navigation observer repeatedly rewrote an unchanged label and froze authenticated screens. Labels now change only when their language changes, with a behavioral regression test. The login branding layer also reuses the normalized logo instead of adding another image.
 - Reduced OTTO header/login branding and typography while retaining touch targets; disabled personalized Today artwork; added a small Powered by NBO text credit and an owner Settings company/contact summary sourced from saved companyProfile fields. No business records were erased or replaced. NBO artwork and replacement contact details were not supplied.
