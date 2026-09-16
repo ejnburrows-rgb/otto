@@ -21,7 +21,7 @@ check('batch save authorizes every changed collection', batchApi.includes('await
 check('batch save uses the same per-record Supabase upsert', batchApi.includes('await saveOneCollection(url, headers, { collection, records })'));
 check('batch save returns exact saved and failed collections', batchApi.includes('res.status(200).json({ saved, failed, confirmedAt:'));
 check('persistent status names cloud truth, not button success', runtime.includes('Not saved to cloud — retrying') && runtime.includes("state === 'saved'"));
-check('premature generic Saved toast is suppressed', runtime.includes('only authoritative save indicator') && runtime.includes("message === 'Saved'"));
+check('premature generic Saved toast is suppressed', runtime.includes("message === 'Saved'") && runtime.includes('persistent save badge'));
 check('direct mutations feed the same save function', runtime.includes('detectDirectMutation') && runtime.includes('save();'));
 check('retry goes through the same save function', index.includes('window.__ottoRetryPendingSave = () => save();'));
 check('canonical app URL is singular in persistence runtime', runtime.includes("const CANONICAL_URL = 'https://otto-kohl.vercel.app'"));
@@ -29,6 +29,10 @@ check('browser cache is labelled recovery-only', runtime.includes('recovery cach
 check('startup rejection cannot leave both app and login hidden', runtime.includes('function showStartupRecovery') && runtime.includes("window.addEventListener('unhandledrejection'") && runtime.includes("window.addEventListener('error'"));
 check('startup stall has a visible recovery timeout', runtime.includes("showStartupRecovery('startup timeout')") && runtime.includes('12000'));
 check('startup recovery preserves cloud-data wording', runtime.includes('Your data is still in the cloud') && runtime.includes('Sus datos siguen en la nube'));
+check('logo treatment never crops the OTTO wordmark', runtime.includes('object-fit: contain !important') && runtime.includes('aspect-ratio: auto !important'));
+check('logo is cropped from actual artwork bounds rather than a guessed box', runtime.includes('function buildProfessionalLogo()') && runtime.includes('logo artwork not detected') && runtime.includes("cropped.toDataURL('image/png')"));
+check('login and global brand share the same normalized logo', runtime.includes('#login img.otto-login-logo') && runtime.includes('#otto-global-brand img') && runtime.includes('normalizeLogos();'));
+check('logo treatment follows dynamically rendered login and shell content', runtime.includes('new MutationObserver') && runtime.includes('normalizeLogos();'));
 
 // Most important rebuild guarantee: default company/rate-card seeding must not
 // happen before provider auth/cloud pull in the patched production source.
