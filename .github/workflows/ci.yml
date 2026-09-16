@@ -26,9 +26,9 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
 
-      # Playwright's browser is needed by the two browser stages of `verify`.
+      # Playwright's browser is needed by the browser stages of `verify`.
       - name: Install dependencies
         run: npm ci || npm install
 
@@ -47,6 +47,8 @@ jobs:
       # did and did not check.
       - name: Verify (source, app, and site)
         if: github.event_name == 'pull_request'
+        env:
+          QA_VISUAL_DIR: ${{ github.workspace }}/qa-visual-artifacts
         run: npm run verify -- --no-live
 
       # On main, after Vercel has had a chance to deploy the merge, the live
@@ -59,4 +61,20 @@ jobs:
 
       - name: Verify (everything, including the live deployment)
         if: github.event_name != 'pull_request'
+        env:
+          QA_VISUAL_DIR: ${{ github.workspace }}/qa-visual-artifacts
         run: npm run verify
+
+      # Keep the visual proof instead of throwing it away with the runner.
+      # The Playwright visual suite captures the screens it checks and verifies
+      # that Font Awesome glyphs really render rather than merely reporting a
+      # font-family name. `if: always()` preserves whatever evidence exists even
+      # when a later check fails.
+      - name: Upload visual QA proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: otto-visual-qa-${{ github.run_number }}
+          path: qa-visual-artifacts/
+          if-no-files-found: warn
+          retention-days: 30
