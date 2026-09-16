@@ -43,6 +43,7 @@ check('secure portal compatibility runtime wired',index.includes('data-otto-ui-i
 check('secure portal compatibility is cached offline',sw.includes("'./otto-ui-integrations-compat.js'")&&sw.includes("'./otto-ui-integrations-compat.css'"));
 check('universal record drawer covers customer job estimate and invoice',ui.includes('openDrawer(type, rid)')&&['customer','job','estimate','invoice'].every(k=>ui.includes(`type === '${k}'`)));
 check('dispatch supports day and week modes',ui.includes("dispatchMode: 'day'")&&ui.includes('data-mode="week"')&&ui.includes('ui-dispatch-lanes'));
+check('dispatch enhancement does not replace its own controls in a mutation loop',ui.includes("r.view === 'otto_schedule' && !document.querySelector('[data-ui-dispatch]')"));
 check('dispatch shows unassigned work and preparation alerts',ui.includes('ui-dispatch-unassigned')&&ui.includes('dispatchAttention(jobs)'));
 check('activity timeline combines real CRM collections',['notes','calls','emails','photos','documents','estimates','invoices','payments','job_events','audit_log'].every(k=>ui.includes(`arr('${k}')`)));
 check('field sticky actions reuse existing field business actions',ui.includes('data-of-action="check-in"')&&ui.includes('data-of-action="check-out"')&&ui.includes('data-of-action="add-photo"')&&ui.includes('data-of-action="add-note"'));
@@ -55,6 +56,8 @@ check('secure customer portal remains the source of truth',compat.includes('__ot
 check('secure portal keeps approved-file flow intact',js.includes('data-op-file')&&compat.includes('.otto-portal-shell'));
 check('drawer file grid feeds unified photo/document viewer',compat.includes('data-ui-file-photo')&&compat.includes('data-ui-file-document')&&compatCss.includes('.ui-drawer-file-grid'));
 check('offline and sync states are visible',ui.includes('navigator.onLine')&&ui.includes("'Offline · saved locally', 'Sin conexión · guardado local'")&&ui.includes("'Saved', 'Guardado'"));
+check('unchanged sync status does not retrigger the DOM observer',ui.includes('prior.dataset.syncKey === v.key && prior.dataset.syncText === v.text'));
+check('unchanged field actions do not retrigger the DOM observer',ui.includes('if (prior.outerHTML !== html) prior.outerHTML = html'));
 check('unified file viewer supports photos and documents',ui.includes('openFileViewer(kind, rid)')&&ui.includes("kind === 'photo'")&&ui.includes('ui-file-frame'));
 check('premium forms add sticky actions and validation',ui.includes('ui-sticky-form-actions')&&ui.includes("addEventListener('invalid'")&&ui.includes('reportValidity()'));
 check('new UI surfaces have paired English Spanish copy',[

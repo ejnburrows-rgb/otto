@@ -235,7 +235,9 @@
     const j = job(r.id); if (!j) return;
     const action = j.activeCheckIn ? `<button class="ui-field-primary" data-of-action="check-out" data-of-id="${esc(j.id)}"><i class="fas fa-flag-checkered"></i><span>${esc(tx('Complete', 'Completar'))}</span></button>` : `<button class="ui-field-primary" data-of-action="check-in" data-of-id="${esc(j.id)}"><i class="fas fa-play"></i><span>${esc(tx('Start', 'Empezar'))}</span></button>`;
     const html = `<div id="otto-field-sticky-actions" class="ui-field-actions">${action}<button data-of-action="add-photo" data-of-id="${esc(j.id)}"><i class="fas fa-camera"></i><span>${esc(tx('Photo', 'Foto'))}</span></button><button data-of-action="add-note" data-of-id="${esc(j.id)}"><i class="fas fa-note-sticky"></i><span>${esc(tx('Note', 'Nota'))}</span></button></div>`;
-    if (prior) prior.outerHTML = html; else document.body.insertAdjacentHTML('beforeend', html);
+    if (prior) {
+      if (prior.outerHTML !== html) prior.outerHTML = html;
+    } else document.body.insertAdjacentHTML('beforeend', html);
   }
 
   function portalCards() {
@@ -282,7 +284,9 @@
   function renderSyncStatus() {
     const s = session(); const prior = document.getElementById('otto-sync-status');
     if (!s) { if (prior) prior.remove(); return; }
-    const v = syncState(); const html = `<div id="otto-sync-status" class="ui-sync ${v.key}" role="status"><i class="fas ${v.icon}" aria-hidden="true"></i><span>${esc(v.text)}</span></div>`;
+    const v = syncState();
+    if (prior && prior.dataset.syncKey === v.key && prior.dataset.syncText === v.text) return;
+    const html = `<div id="otto-sync-status" class="ui-sync ${v.key}" role="status" data-sync-key="${esc(v.key)}" data-sync-text="${esc(v.text)}"><i class="fas ${v.icon}" aria-hidden="true"></i><span>${esc(v.text)}</span></div>`;
     if (prior) prior.outerHTML = html; else document.body.insertAdjacentHTML('beforeend', html);
   }
 
@@ -315,7 +319,7 @@
   function enhanceCurrentView() {
     applyPersonalToday();
     const r = route(); const s = session();
-    if (s && ['owner', 'office'].includes(s.role) && r.view === 'otto_schedule') renderDispatch();
+    if (s && ['owner', 'office'].includes(s.role) && r.view === 'otto_schedule' && !document.querySelector('[data-ui-dispatch]')) renderDispatch();
     enhanceRecordPage();
     fieldStickyActions();
     portalCards();
