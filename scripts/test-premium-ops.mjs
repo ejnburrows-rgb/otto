@@ -49,7 +49,7 @@ check('activity timeline combines real CRM collections',['notes','calls','emails
 check('field sticky actions reuse existing field business actions',ui.includes('data-of-action="check-in"')&&ui.includes('data-of-action="check-out"')&&ui.includes('data-of-action="add-photo"')&&ui.includes('data-of-action="add-note"'));
 check('smart record headers cover key records',ui.includes('smartHeaderMarkup(type, rid)')&&['customer','job','estimate','invoice'].every(k=>ui.includes(`type === '${k}'`)));
 check('command palette gets customer job estimate quick-create',ui.includes('data-ui-quick="customer"')&&ui.includes('data-ui-quick="job"')&&ui.includes('data-ui-quick="estimate"'));
-check('personal Today uses supplied Julio and Sarays backgrounds',uiCss.includes('julio-pablo.avif')&&uiCss.includes('sarays.avif')&&ui.includes("['julio', 'sarays'].includes(key)"));
+check('Today keeps a neutral company presentation',ui.includes("document.body.classList.remove('otto-personal-today')"));
 check('Operations is presented as a work inbox',ui.includes('enhanceOperationsInbox()')&&ui.includes("'Operational inbox', 'Bandeja operativa'"));
 check('customer portal has premium cards and request service',ui.includes('ui-portal-grid')&&ui.includes("'Request service', 'Solicitar servicio'")&&ui.includes("source: 'customer_portal'"));
 check('secure customer portal remains the source of truth',compat.includes('__ottoPremiumOps.renderOps()')&&compat.includes("s.role!=='customer'")&&compat.includes('uiSecurePortalSummary'));

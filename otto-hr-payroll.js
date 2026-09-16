@@ -150,7 +150,9 @@
       button.addEventListener('click', () => { try { nav(VIEW); } catch (_) {} });
       navRoot.appendChild(button);
     }
-    button.querySelector('span').textContent = text('HR / Payroll','RR. HH. / Nómina');
+    const label = button.querySelector('span');
+    const title = text('HR / Payroll','RR. HH. / Nómina');
+    if (label.textContent !== title) label.textContent = title;
     button.classList.toggle('is-active', !!(typeof route !== 'undefined' && route && route.view === VIEW));
   }
 

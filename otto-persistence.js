@@ -48,29 +48,29 @@
         display: flex !important;
         justify-content: center !important;
         align-items: center !important;
-        min-height: 118px !important;
-        margin: 0 auto 26px !important;
+        min-height: 72px !important;
+        margin: 0 auto 20px !important;
       }
       #login img.otto-login-logo,
       #login img.otto-logo-professional {
-        width: min(390px, 86vw) !important;
+        width: min(220px, 70vw) !important;
         height: auto !important;
-        max-height: 150px !important;
+        max-height: 72px !important;
         border-radius: 12px !important;
-        box-shadow: 0 8px 24px rgba(16,24,40,.09) !important;
+        box-shadow: none !important;
       }
       #otto-global-brand {
-        width: clamp(220px, 20vw, 310px) !important;
+        width: 144px !important;
         height: auto !important;
-        min-height: 76px !important;
-        padding: 10px 14px !important;
+        min-height: 48px !important;
+        padding: 4px 8px !important;
         overflow: visible !important;
       }
       #otto-global-brand img,
       #otto-global-brand img.otto-logo-professional {
         width: 100% !important;
         height: auto !important;
-        max-height: 96px !important;
+        max-height: 40px !important;
         border-radius: 8px !important;
       }
       .ot-sidebar-brand { overflow: visible !important; }
@@ -89,13 +89,12 @@
         max-height: 72px !important;
       }
       @media (max-width:900px){
-        #login img.otto-login-logo,#login img.otto-logo-professional{width:min(340px,88vw)!important;max-height:132px!important}
-        #otto-global-brand{width:174px!important;min-height:58px!important;padding:7px 9px!important}
-        #otto-global-brand img,#otto-global-brand img.otto-logo-professional{max-height:72px!important}
+        #login img.otto-login-logo,#login img.otto-logo-professional{width:min(200px,70vw)!important;max-height:66px!important}
+        #otto-global-brand{width:120px!important;min-height:44px!important;padding:4px 6px!important}
+        #otto-global-brand img,#otto-global-brand img.otto-logo-professional{max-height:36px!important}
       }
       @media (max-width:480px){
-        #login img.otto-login-logo,#login img.otto-logo-professional{width:min(315px,90vw)!important;max-height:124px!important}
-        #otto-global-brand{width:154px!important;min-height:52px!important;padding:6px 8px!important}
+        #login img.otto-login-logo,#login img.otto-logo-professional{width:min(200px,70vw)!important;max-height:66px!important}
       }
     `;
     document.head.appendChild(style);

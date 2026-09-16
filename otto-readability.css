@@ -2,11 +2,11 @@
    Loaded after OTTO Air so legacy and new screens inherit one accessible scale. */
 
 :root {
-  --otto-body-size: 16.5px;
-  --otto-nav-size: 15.5px;
+  --otto-body-size: 15px;
+  --otto-nav-size: 14px;
   --otto-control-size: 16px;
-  --otto-section-size: 19px;
-  --otto-page-size: clamp(26px, 2.6vw, 30px);
+  --otto-section-size: 17px;
+  --otto-page-size: clamp(22px, 2.2vw, 26px);
   --otto-metric-size: clamp(20px, 2.2vw, 24px);
   --otto-leading: 1.55;
   --otto-space-1: 8px;
@@ -44,7 +44,7 @@ label,
 .of-note-text,
 .portal-card p,
 .ui-portal-card p {
-  font-size: 16px !important;
+  font-size: 15px !important;
   line-height: 1.55 !important;
 }
 

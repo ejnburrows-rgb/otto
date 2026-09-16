@@ -152,8 +152,11 @@ const CLOUD_ONLY_SIGN_IN = `async function signInLocal() {
 
 function functionBounds(source, name) {
   const needle = `function ${name}(`;
-  const start = source.indexOf(needle);
+  let start = source.indexOf(needle);
   if (start < 0) throw new Error(`Missing function ${name}()`);
+  // Replace the declaration including its async modifier, not just "function".
+  const modifier = source.slice(0, start).match(/(?:async\s+)+$/);
+  if (modifier) start -= modifier[0].length;
   const open = source.indexOf('{', start);
   if (open < 0) throw new Error(`Missing body for ${name}()`);
   let depth = 0;
@@ -189,7 +192,7 @@ function replaceFunction(source, name, replacement) {
 }
 
 export function patchIndex(source) {
-  let out = source;
+  let out = source.replace(/\r\n/g, '\n');
 
   // One public link, declared in the document itself.
   if (!out.includes('rel="canonical" href="https://otto-kohl.vercel.app/"')) {

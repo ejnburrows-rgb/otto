@@ -92,36 +92,36 @@
     style.textContent = `
       #login .otto-login-logo-wrap {
         text-align: center !important;
-        margin: 0 auto 30px !important;
+        margin: 0 auto 20px !important;
       }
       #login img.otto-login-logo {
         display: block !important;
-        width: min(360px, 82vw) !important;
+        width: min(220px, 70vw) !important;
         max-width: 100% !important;
-        height: 112px !important;
+        height: 72px !important;
         margin: 0 auto !important;
         aspect-ratio: 2.35 / 1 !important;
         object-fit: cover !important;
         object-position: 50% 49% !important;
-        border-radius: 16px !important;
+        border-radius: 8px !important;
         background: #fff !important;
-        box-shadow: 0 10px 30px rgba(16,24,40,.10) !important;
+        box-shadow: none !important;
       }
       #otto-global-brand {
         position: fixed;
         top: max(14px, env(safe-area-inset-top));
         right: clamp(18px, 2.5vw, 36px);
         z-index: 86;
-        width: clamp(205px, 18vw, 285px);
-        height: 82px;
-        padding: 7px 11px;
+        width: 144px;
+        height: 48px;
+        padding: 4px 8px;
         display: flex;
         align-items: center;
         justify-content: center;
         border: 1px solid var(--air-border, #E3E8EF);
-        border-radius: 16px;
+        border-radius: 8px;
         background: var(--air-surface, #fff);
-        box-shadow: 0 8px 24px rgba(16,24,40,.08);
+        box-shadow: none;
         cursor: pointer;
       }
       #otto-global-brand img {
@@ -136,20 +136,32 @@
       }
       body.otto-shell.otto-global-brand-ready .ot-sidebar-brand { display: none !important; }
       body.otto-shell.otto-global-brand-ready #main,
-      body.otto-shell.otto-global-brand-ready #main.wrap { padding-top: 112px !important; }
+      body.otto-shell.otto-global-brand-ready #main.wrap { padding-top: 80px !important; }
+      #otto-provider-credit {
+        position: fixed; right: 18px; bottom: 10px; z-index: 30;
+        display: flex; align-items: center; gap: 6px; pointer-events: none;
+        padding: 4px 8px; border-radius: 5px;
+        background: var(--air-surface, #fff); color: var(--air-text, #566273);
+        font: 11px/1.4 var(--ot-font, Arial, sans-serif);
+      }
+      #otto-provider-credit strong { font-size: 12px; letter-spacing: .08em; }
+      #otto-sync-status { bottom: 42px; }
+      @media print { #otto-provider-credit { display: none; } }
       #otto-global-brand:focus-visible {
         outline: 2px solid var(--air-accent, #4E74C8);
         outline-offset: 3px;
       }
       @media (max-width: 900px) {
-        #login img.otto-login-logo { width: min(320px, 84vw) !important; height: 100px !important; }
-        #otto-global-brand { width: 158px; height: 56px; top: max(10px, env(safe-area-inset-top)); right: 12px; padding: 5px 8px; border-radius: 12px; }
+        #login img.otto-login-logo { width: min(200px, 70vw) !important; height: 66px !important; }
+        #otto-global-brand { width: 120px; height: 44px; top: max(10px, env(safe-area-inset-top)); right: 12px; padding: 4px 6px; border-radius: 8px; }
         body.otto-shell.otto-global-brand-ready #main,
-        body.otto-shell.otto-global-brand-ready #main.wrap { padding-top: 78px !important; }
+        body.otto-shell.otto-global-brand-ready #main.wrap { padding-top: 68px !important; }
+        #otto-provider-credit { right: 10px; bottom: calc(82px + env(safe-area-inset-bottom)); }
+        #otto-sync-status { bottom: calc(112px + env(safe-area-inset-bottom)); }
+        body:not(.otto-shell):not(.otto-field) #otto-provider-credit { bottom: max(10px, env(safe-area-inset-bottom)); }
       }
       @media (max-width: 480px) {
-        #login img.otto-login-logo { width: min(290px, 86vw) !important; height: 92px !important; }
-        #otto-global-brand { width: 142px; height: 50px; }
+        #login img.otto-login-logo { width: min(200px, 70vw) !important; height: 66px !important; }
       }
     `;
     document.head.appendChild(style);
@@ -157,10 +169,16 @@
 
   function ensureBranding() {
     installBrandingStyles();
+    if (!document.getElementById('otto-provider-credit')) {
+      const credit = document.createElement('div');
+      credit.id = 'otto-provider-credit';
+      credit.innerHTML = '<span>Powered by</span><strong>NBO</strong>';
+      document.body.appendChild(credit);
+    }
 
     const login = document.getElementById('login');
     if (login) {
-      let loginLogo = login.querySelector('img[src$="logo.jpg"]');
+      let loginLogo = login.querySelector('img.otto-login-logo, img[src$="logo.jpg"]');
       if (!loginLogo) {
         const wrap = document.createElement('div');
         wrap.className = 'otto-login-logo-wrap';

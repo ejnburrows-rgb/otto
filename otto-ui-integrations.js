@@ -45,7 +45,7 @@
     const r = route();
     const key = currentUserKey();
     if (key) document.body.dataset.ottoUser = key; else delete document.body.dataset.ottoUser;
-    document.body.classList.toggle('otto-personal-today', !!s && ['owner', 'office'].includes(s.role) && r.view === 'home' && ['julio', 'sarays'].includes(key));
+    document.body.classList.remove('otto-personal-today');
   }
 
   function recordStatus(record) {
@@ -322,7 +322,7 @@
     if (s && ['owner', 'office'].includes(s.role) && r.view === 'otto_schedule' && !document.querySelector('[data-ui-dispatch]')) renderDispatch();
     enhanceRecordPage();
     fieldStickyActions();
-    portalCards();
+    if (!(session() && session().role === 'customer')) portalCards();
     enhanceOperationsInbox();
     injectQuickCreate();
     enhanceForms();
