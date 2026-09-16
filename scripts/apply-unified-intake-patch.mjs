@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const INDEX = new URL('../index.html', import.meta.url);
+const RUNTIME = new URL('../otto-unified-intake.js', import.meta.url);
 export const INTAKE_ASSET_VERSION = '3';
 const SCRIPT = `<script src="./otto-unified-intake.js?v=${INTAKE_ASSET_VERSION}" data-otto-unified-intake></script>`;
 const PLUS = `<script src="./otto-file-intake-plus.js?v=${INTAKE_ASSET_VERSION}" data-otto-file-intake-plus></script>`;
@@ -23,7 +24,21 @@ export function patchUnifiedIntake(source) {
   return out;
 }
 
-export function validateUnifiedIntake(source) {
+export function patchUnifiedRuntime(source) {
+  let out = source;
+  const oldImage = `    if (file.type.startsWith('image/')) return runOCR(file, jobId);`;
+  const newImage = `    if (file.type.startsWith('image/')) return window.ottoFileIntakePlus?.handleGeneric ? window.ottoFileIntakePlus.handleGeneric(file, jobId) : runOCR(file, jobId);`;
+  if (out.includes(oldImage)) out = out.replace(oldImage, newImage);
+
+  const oldPdf = `    $('[data-pdf-ocr]', root).addEventListener('click', () => runOCR(file, $('[data-pdf-job]', root).value));`;
+  const newPdf = `    $('[data-pdf-ocr]', root).addEventListener('click', () => { const job = $('[data-pdf-job]', root).value; return window.ottoFileIntakePlus?.handleGeneric ? window.ottoFileIntakePlus.handleGeneric(file, job) : runOCR(file, job); });`;
+  if (out.includes(oldPdf)) out = out.replace(oldPdf, newPdf);
+
+  if (!out.includes(newImage) || !out.includes(newPdf)) throw new Error('broad OCR/document routing was not applied');
+  return out;
+}
+
+export function validateUnifiedIntake(source, runtime = '') {
   return [
     ['unified intake bridge wired', source.includes('data-otto-unified-intake-bridge')],
     ['unified intake runtime wired', source.includes(`otto-unified-intake.js?v=${INTAKE_ASSET_VERSION}`)],
@@ -35,18 +50,25 @@ export function validateUnifiedIntake(source) {
     ['employee imports forced to field worker', source.includes("col === 'users' ? { ...obj, role: 'field' } : obj") && source.includes("col === 'users' ? { ...patch, role: 'field' } : patch")],
     ['existing CAD analysis exposed instead of duplicated', source.includes('analyzeDrawing: id => analyzeDrawing(id)')],
     ['existing local file storage exposed instead of duplicated', source.includes('storeFile: (file, mime) => storeFile(file, mime)')],
-    ['legitimate imported users survive reload cleanup', source.includes(SAFE_USER_PRUNE) && !source.includes(UNSAFE_USER_PRUNE)]
+    ['legitimate imported users survive reload cleanup', source.includes(SAFE_USER_PRUNE) && !source.includes(UNSAFE_USER_PRUNE)],
+    ['images use searchable broad intake when available', !runtime || runtime.includes("window.ottoFileIntakePlus?.handleGeneric ? window.ottoFileIntakePlus.handleGeneric(file, jobId) : runOCR(file, jobId)")],
+    ['PDF document route uses native text/OCR broad intake when available', !runtime || runtime.includes("window.ottoFileIntakePlus?.handleGeneric ? window.ottoFileIntakePlus.handleGeneric(file, job) : runOCR(file, job)")]
   ];
 }
 
 function run() {
-  const path = fileURLToPath(INDEX);
-  const before = fs.readFileSync(path, 'utf8');
-  const after = patchUnifiedIntake(before);
-  const failed = validateUnifiedIntake(after).filter(([, ok]) => !ok);
+  const indexPath = fileURLToPath(INDEX);
+  const runtimePath = fileURLToPath(RUNTIME);
+  const indexBefore = fs.readFileSync(indexPath, 'utf8');
+  const runtimeBefore = fs.readFileSync(runtimePath, 'utf8');
+  const indexAfter = patchUnifiedIntake(indexBefore);
+  const runtimeAfter = patchUnifiedRuntime(runtimeBefore);
+  const failed = validateUnifiedIntake(indexAfter, runtimeAfter).filter(([, ok]) => !ok);
   if (failed.length) throw new Error(`Unified intake patch failed: ${failed.map(([name]) => name).join(', ')}`);
-  if (after !== before) fs.writeFileSync(path, after);
-  console.log(`Unified intake patch: ${after === before ? 'already applied' : 'applied'}; validated`);
+  if (indexAfter !== indexBefore) fs.writeFileSync(indexPath, indexAfter);
+  if (runtimeAfter !== runtimeBefore) fs.writeFileSync(runtimePath, runtimeAfter);
+  const changed = indexAfter !== indexBefore || runtimeAfter !== runtimeBefore;
+  console.log(`Unified intake patch: ${changed ? 'applied' : 'already applied'}; validated`);
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) run();
