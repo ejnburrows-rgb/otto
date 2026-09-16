@@ -26,6 +26,9 @@ check('direct mutations feed the same save function', runtime.includes('detectDi
 check('retry goes through the same save function', index.includes('window.__ottoRetryPendingSave = () => save();'));
 check('canonical app URL is singular in persistence runtime', runtime.includes("const CANONICAL_URL = 'https://otto-kohl.vercel.app'"));
 check('browser cache is labelled recovery-only', runtime.includes('recovery caches only'));
+check('startup rejection cannot leave both app and login hidden', runtime.includes('function showStartupRecovery') && runtime.includes("window.addEventListener('unhandledrejection'") && runtime.includes("window.addEventListener('error'"));
+check('startup stall has a visible recovery timeout', runtime.includes("showStartupRecovery('startup timeout')") && runtime.includes('12000'));
+check('startup recovery preserves cloud-data wording', runtime.includes('Your data is still in the cloud') && runtime.includes('Sus datos siguen en la nube'));
 
 // Most important rebuild guarantee: default company/rate-card seeding must not
 // happen before provider auth/cloud pull in the patched production source.
