@@ -5,6 +5,7 @@ let passed = 0, failed = 0;
 function check(name, ok) { if (ok) { passed++; console.log(`✓ ${name}`); } else { failed++; console.error(`✗ ${name}`); } }
 
 const runtime = fs.readFileSync(new URL('../otto-unified-intake.js', import.meta.url), 'utf8');
+const plus = fs.readFileSync(new URL('../otto-file-intake-plus.js', import.meta.url), 'utf8');
 const index = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const patched = patchUnifiedIntake(index);
 
@@ -27,6 +28,21 @@ check('PIN fields are not imported', !runtime.includes('pin:') && runtime.includ
 check('attendance roster does not fabricate check-ins', runtime.includes("type:'attendance_roster'") && !runtime.includes("type:'check_in'"));
 check('OCR review can feed employee review', runtime.includes('Use as employee list') && runtime.includes('reviewEmployees(rows,file.name)'));
 check('OCR output remains reviewable before saving', runtime.includes('Extracted text') && runtime.includes('Review the text before saving or importing.'));
+
+check('broad picker includes requested text formats', plus.includes('.md') && plus.includes('.csv') && plus.includes('.json') && plus.includes('.txt'));
+check('broad picker includes Office formats', plus.includes('.docx') && plus.includes('.xlsx') && plus.includes('.pptx'));
+check('broad picker includes PDF and images', plus.includes('.pdf') && plus.includes('image/*'));
+check('unsafe executable/script formats stay blocked', plus.includes("'exe'") && plus.includes("'js'") && plus.includes("'ps1'") && plus.includes("'zip'"));
+check('files remain capped at 25 MB', plus.includes('25 * 1024 * 1024'));
+check('text-native files are read directly', plus.includes('await file.text()'));
+check('DOCX/PPTX text extraction uses zipped Office XML', plus.includes('JSZip.loadAsync') && plus.includes("x === 'docx'") && plus.includes("x === 'pptx'"));
+check('spreadsheet document extraction uses SheetJS', plus.includes('XLSX.utils.sheet_to_csv'));
+check('PDF reads native text before OCR fallback', plus.includes('getTextContent()') && plus.includes('extractOCRText(file)'));
+check('generic image extraction reuses bilingual OCR', plus.includes("file.type.startsWith('image/')") && plus.includes('extractOCRText(file)'));
+check('extracted text is persisted on document records', plus.includes('extractedText: searchable') && plus.includes('ocr: searchable'));
+check('extraction status is persisted honestly', plus.includes("extractionStatus: searchable ? 'complete' : 'stored_only'"));
+check('spreadsheet can be imported or stored as searchable document', plus.includes('Import employee data') && plus.includes('Save/read as a document'));
+check('broad file intake is wired into the same front door', patched.includes('data-otto-file-intake-plus'));
 
 console.log(`\nUnified intake: ${passed} passed, ${failed} failed`);
 if (failed) process.exit(1);
