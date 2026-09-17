@@ -172,6 +172,86 @@
     </main>`;
   }
 
+  let providerAccessPromise = null;
+
+  function activeProfile() {
+    try {
+      if (typeof session !== 'undefined' && session && session.id) return session;
+    } catch (_) { }
+    const remembered = (() => { try { return localStorage.getItem('otto_session') || ''; } catch (_) { return ''; } })();
+    return ensureProfiles().find((user) => user && user.id === remembered && user.active !== false) || null;
+  }
+
+  function requestProviderAccess() {
+    if (providerAccessPromise) return providerAccessPromise;
+    const profile = activeProfile();
+    if (!profile || !['owner', 'office'].includes(profile.role)) return Promise.resolve(false);
+
+    providerAccessPromise = new Promise((resolve) => {
+      const existing = document.querySelector('.nbo-provider-access-layer');
+      if (existing) existing.remove();
+
+      const layer = document.createElement('div');
+      layer.className = 'nbo-provider-access-layer';
+      layer.innerHTML = `<section class="nbo-provider-access-card" role="dialog" aria-modal="true" aria-labelledby="nbo-provider-access-title">
+        <p class="nbo-profile-eyebrow">${esc(words('Secure provider access', 'Acceso seguro a proveedores'))}</p>
+        <h2 id="nbo-provider-access-title">${esc(words('Enable AI and messaging', 'Activar IA y mensajería'))}</h2>
+        <p>${esc(words('Enter the NBO provider access key once on this device. The key is not stored in CRM data.', 'Ingresa una vez en este dispositivo la clave de acceso de proveedores NBO. La clave no se guarda en los datos del CRM.'))}</p>
+        <form data-nbo-provider-form>
+          <label for="nbo-provider-key">${esc(words('Provider access key', 'Clave de acceso'))}</label>
+          <input id="nbo-provider-key" name="accessKey" type="password" autocomplete="current-password" required>
+          <div class="nbo-provider-access-error" role="alert" hidden></div>
+          <div class="nbo-provider-access-actions">
+            <button type="button" class="btn ghost" data-nbo-provider-cancel>${esc(words('Cancel', 'Cancelar'))}</button>
+            <button type="submit" class="btn">${esc(words('Enable', 'Activar'))}</button>
+          </div>
+        </form>
+      </section>`;
+      document.body.appendChild(layer);
+
+      const finish = (value) => {
+        providerAccessPromise = null;
+        layer.remove();
+        resolve(value);
+      };
+      layer.querySelector('[data-nbo-provider-cancel]').addEventListener('click', () => finish(false));
+      const form = layer.querySelector('[data-nbo-provider-form]');
+      const input = layer.querySelector('#nbo-provider-key');
+      const error = layer.querySelector('.nbo-provider-access-error');
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const accessKey = String(input.value || '').trim();
+        if (!accessKey) return;
+        const submit = form.querySelector('button[type="submit"]');
+        submit.disabled = true;
+        error.hidden = true;
+        try {
+          const response = await fetch('/api/local-session', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json', 'X-NBO-Profile': profile.id },
+            body: JSON.stringify({ accessKey })
+          });
+          input.value = '';
+          if (response.ok) return finish(true);
+          const payload = await response.json().catch(() => ({}));
+          error.textContent = payload.error === 'too_many_attempts'
+            ? words('Too many attempts. Try again later.', 'Demasiados intentos. Intenta más tarde.')
+            : words('That access key was not accepted.', 'Esa clave de acceso no fue aceptada.');
+          error.hidden = false;
+        } catch (_) {
+          error.textContent = words('Provider access could not be enabled while offline.', 'No se pudo activar el acceso sin conexión.');
+          error.hidden = false;
+        } finally {
+          submit.disabled = false;
+          input.focus();
+        }
+      });
+      requestAnimationFrame(() => input.focus());
+    });
+    return providerAccessPromise;
+  }
+
   function switchProfile() {
     showProfileChooser(words('Choose another local profile.', 'Elige otro perfil local.'));
   }
@@ -203,12 +283,14 @@
     showProfileChooser,
     selectProfile,
     switchProfile,
-    roleLabel
+    roleLabel,
+    requestProviderAccess
   };
 
   window.__nboLocalMode = api;
   window.__nboEnsureProfiles = ensureProfiles;
   window.__nboShowProfileChooser = showProfileChooser;
   window.__nboSwitchProfile = switchProfile;
+  window.__nboRequestProviderAccess = requestProviderAccess;
   document.body.classList.add('nbo-local-mode');
 })();
