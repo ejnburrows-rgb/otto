@@ -58,7 +58,17 @@ for (const [name, ok] of validateLocalBuild(localIndex, localSw)) check(`transfo
 check('transformed build does not push CRM records to the cloud', !localIndex.includes("serverFetch('/api/save'"));
 check('transformed build persists local records in IndexedDB', localIndex.includes("idbPut('kv', 'db', snapshot)"));
 check('transformed build uses local profile chooser for sign-out', localIndex.includes('__nboShowProfileChooser'));
-check('materializer is idempotent', patchIndex(localIndex) === localIndex && patchServiceWorker(localSw) === localSw);
+const secondIndex = patchIndex(localIndex);
+const secondSw = patchServiceWorker(localSw);
+if (secondIndex !== localIndex) {
+  let at = 0;
+  while (at < localIndex.length && at < secondIndex.length && localIndex[at] === secondIndex[at]) at++;
+  console.error('  index idempotence diff at', at);
+  console.error('  once :', JSON.stringify(localIndex.slice(Math.max(0, at - 100), at + 220)));
+  console.error('  twice:', JSON.stringify(secondIndex.slice(Math.max(0, at - 100), at + 220)));
+}
+check('index materializer is idempotent', secondIndex === localIndex);
+check('service-worker materializer is idempotent', secondSw === localSw);
 
 check('hybrid CSS keeps a restrained neutral product palette', hybridCss.includes('--nbo-bg') && hybridCss.includes('--nbo-surface') && hybridCss.includes('--nbo-accent'));
 check('hybrid CSS includes visible focus treatment', /focus-visible/.test(hybridCss));
