@@ -70,9 +70,9 @@ for (const collection of ['customers', 'jobs', 'invoices', 'payments', 'estimate
   check('role comes from server business profile', res.body.profile.role, 'owner');
 }
 {
-  calls = []; const res = response(); await notifyRoute(request({ authorization: 'Bearer valid-field' }, { method: 'POST', body: {} }), res);
-  check('field account cannot send owner notifications', res.statusCode, 403);
-  check('editable user metadata cannot elevate the field account', res.body.error, 'forbidden');
+  calls = []; const res = response(); await notifyRoute(request({ host: 'otto.example', origin: 'https://otto.example', 'x-nbo-profile': 'owner-1' }, { method: 'POST', body: {} }), res);
+  check('provider notifications require the local secure provider session', res.statusCode, 401);
+  check('provider notification denial requests enrollment', res.body.error, 'local_provider_access_required');
 }
 {
   calls = []; const res = response();
