@@ -1,48 +1,65 @@
 import { chromium } from 'playwright';
-import { spawn } from 'node:child_process';
-import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const PORT = Number(process.env.NBO_QA_PORT || 8123);
-const BASE = `http://127.0.0.1:${PORT}`;
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const BASE = 'https://nbo.local';
 const results = [];
+const MIME = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'application/javascript; charset=utf-8',
+  '.mjs': 'application/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.svg': 'image/svg+xml',
+  '.avif': 'image/avif',
+  '.webp': 'image/webp',
+  '.ico': 'image/x-icon',
+  '.woff2': 'font/woff2'
+};
+
 const check = (name, ok, detail = '') => {
   results.push({ name, ok, detail });
   console.log(`  ${ok ? 'ok  ' : 'FAIL'} ${name}${detail ? ' — ' + detail : ''}`);
 };
 
-const waitForServer = async () => {
-  for (let i = 0; i < 50; i++) {
-    const up = await new Promise((resolve) => {
-      const req = http.get(`${BASE}/index.html`, (res) => { res.resume(); resolve(res.statusCode === 200); });
-      req.on('error', () => resolve(false));
-      req.setTimeout(500, () => { req.destroy(); resolve(false); });
-    });
-    if (up) return true;
-    await new Promise((r) => setTimeout(r, 200));
-  }
-  return false;
-};
-
-const server = spawn(process.execPath, ['scripts/local-server.js'], {
-  stdio: 'ignore',
-  env: { ...process.env, PORT: String(PORT) }
-});
+function localFile(url) {
+  const parsed = new URL(url);
+  const relative = decodeURIComponent(parsed.pathname === '/' ? '/index.html' : parsed.pathname).replace(/^\/+/, '');
+  const candidate = path.resolve(ROOT, relative);
+  if (!candidate.startsWith(ROOT + path.sep) && candidate !== path.join(ROOT, 'index.html')) return null;
+  return candidate;
+}
 
 let browser;
 try {
-  if (!(await waitForServer())) throw new Error('local server did not start');
   browser = await chromium.launch({ headless: true });
-  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 }, ignoreHTTPSErrors: true });
   const page = await context.newPage();
   const runtimeErrors = [];
   const retiredCloudRequests = [];
+
+  await page.route(`${BASE}/**`, async (route) => {
+    const file = localFile(route.request().url());
+    if (!file || !fs.existsSync(file) || !fs.statSync(file).isFile()) {
+      await route.fulfill({ status: 404, contentType: 'text/plain', body: 'Not found' });
+      return;
+    }
+    const ext = path.extname(file).toLowerCase();
+    await route.fulfill({ status: 200, contentType: MIME[ext] || 'application/octet-stream', body: fs.readFileSync(file) });
+  });
+
   page.on('pageerror', (error) => runtimeErrors.push(error.message));
   page.on('request', (request) => {
     const url = request.url();
     if (/\/api\/(data|save|photos)(?:\?|$)/.test(url)) retiredCloudRequests.push(url);
   });
 
-  await page.goto(BASE, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE}/index.html`, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('.nbo-profile-login', { timeout: 10000 });
   check('local profile chooser renders', await page.locator('.nbo-profile-login').isVisible());
   check('exactly four management profiles are offered', await page.locator('[data-nbo-profile-id]').count() === 4);
@@ -52,7 +69,7 @@ try {
     window.__nboEnsureProfiles?.();
     const state = typeof db !== 'undefined' ? db : null;
     const workers = state && Array.isArray(state.users) ? state.users.filter((u) => u && u.role === 'field') : [];
-    return { count: workers.length, names: workers.map((u) => u.name), rates: workers.some((u) => Object.prototype.hasOwnProperty.call(u, 'hourlyRate')) };
+    return { count: workers.length, rates: workers.some((u) => Object.prototype.hasOwnProperty.call(u, 'hourlyRate')) };
   });
   check('ten existing field employees are preconfigured', teamSeed.count >= 10, String(teamSeed.count));
   check('fresh seed does not expose compensation', teamSeed.rates === false);
@@ -81,7 +98,6 @@ try {
   check('browser QA executed', false, error && error.message ? error.message : String(error));
 } finally {
   if (browser) await browser.close();
-  server.kill();
 }
 
 const failed = results.filter((result) => !result.ok);
