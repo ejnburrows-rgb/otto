@@ -2,11 +2,11 @@
 // POST { channel: 'sms'|'email', to, subject?, body, html?, replyTo?, cc?,
 //        inReplyTo?, references?, attachments?: [{ filename, type, content }] }
 
-import { requireServerAuth } from './_lib/serverAuth.js';
+import { requireLocalProviderAuth } from './_lib/localProviderAuth.js';
 
 // Only authenticated owner/office accounts may reach Twilio or SendGrid.
 export default async function handler(req, res) {
-  const identity = await requireServerAuth(req, res, { roles: ['owner', 'office'] });
+  const identity = await requireLocalProviderAuth(req, res, { roles: ['owner', 'office'] });
   if (!identity) return;
   if (req.method === 'GET') return integrationStatus(res);
   return notifyHandler(req, res);
@@ -14,23 +14,9 @@ export default async function handler(req, res) {
 
 async function integrationStatus(res) {
   const sendingConfigured = !!(process.env.SENDGRID_API_KEY && process.env.SENDGRID_FROM);
+  const smsConfigured = !!(process.env.TWILIO_SID && process.env.TWILIO_AUTH && process.env.TWILIO_FROM);
   const inboundConfigured = !!process.env.INBOUND_WEBHOOK_TOKEN;
-  let lastInboundAt = null;
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (url && key) {
-    try {
-      const r = await fetch(`${url}/rest/v1/emails?select=data&order=updated_at.desc&limit=50`, {
-        headers: { apikey: key, Authorization: `Bearer ${key}` },
-      });
-      if (r.ok) {
-        const rows = await r.json();
-        const inbound = rows.map(row => row.data).find(email => email && email.direction !== 'outgoing');
-        lastInboundAt = inbound && (inbound.date || inbound.created) || null;
-      }
-    } catch (_) { /* status remains useful even if the history check fails */ }
-  }
-  return res.status(200).json({ sendingConfigured, inboundConfigured, lastInboundAt });
+  return res.status(200).json({ sendingConfigured, smsConfigured, inboundConfigured, lastInboundAt: null });
 }
 
 // The send logic remains separate so provider behavior stays fully testable.
