@@ -200,7 +200,7 @@ export function validateLocalBuild(index, sw) {
     ['local runtime wired', index.includes('data-nbo-local-runtime')],
     ['hybrid UI wired', index.includes('data-nbo-hybrid-styles') && index.includes('data-nbo-hybrid-runtime')],
     ['cloud auth boot replaced', index.includes("async function initCloudAuth() {\n    if (typeof window.__nboEnsureProfiles")],
-    ['local save is authoritative', index.includes("db.meta.storageMode = 'local'") && !index.includes("serverFetch('/api/save'"))],
+    ['local save is authoritative', index.includes("db.meta.storageMode = 'local'") && !index.includes("serverFetch('/api/save'")],
     ['cloud pull is a no-op', index.includes("async function cloudPull() {\n    _cloudAvailable = false;")],
     ['cloud push is a no-op', index.includes("function cloudPush() {\n    _cloudAvailable = false;")],
     ['local file resolver avoids remote fallback', index.includes("const stored = await idbGet('files', fileId)")],
