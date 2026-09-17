@@ -15,6 +15,26 @@ const LOCAL_AUTH = `async function initCloudAuth() {
     return { status: localProfile ? 'authenticated' : 'local', profile: localProfile };
   }`;
 
+const LOCAL_SERVER_FETCH = `async function serverFetch(url, options = {}) {
+    const headers = new Headers(options.headers || {});
+    if (session && session.id) headers.set('X-NBO-Profile', session.id);
+    const requestOptions = { ...options, headers, credentials: 'same-origin' };
+    let response = await fetch(url, requestOptions);
+
+    if (response.status === 401) {
+      let payload = {};
+      try { payload = await response.clone().json(); } catch (_) { }
+      if (payload && payload.error === 'local_provider_access_required') {
+        const requestLocalProviderAccess = window.__nboRequestProviderAccess;
+        const enabled = typeof requestLocalProviderAccess === 'function'
+          ? await requestLocalProviderAccess()
+          : false;
+        if (enabled) response = await fetch(url, requestOptions);
+      }
+    }
+    return response;
+  }`;
+
 const LOCAL_LOGIN = `function showCloudLogin(message = '') {
     if (typeof window.__nboShowProfileChooser === 'function') {
       window.__nboShowProfileChooser(message);
@@ -163,6 +183,7 @@ export function patchIndex(source) {
   out = wireRuntime(out);
 
   out = replaceFunction(out, 'initCloudAuth', LOCAL_AUTH, true);
+  out = replaceFunction(out, 'serverFetch', LOCAL_SERVER_FETCH, true);
   out = replaceFunction(out, 'showCloudLogin', LOCAL_LOGIN, true);
   out = replaceFunction(out, 'showLocalSetup', LOCAL_SETUP);
   out = replaceFunction(out, 'completeLocalSetup', LOCAL_COMPLETE_SETUP);
@@ -200,6 +221,7 @@ export function validateLocalBuild(index, sw) {
     ['local runtime wired', index.includes('data-nbo-local-runtime')],
     ['hybrid UI wired', index.includes('data-nbo-hybrid-styles') && index.includes('data-nbo-hybrid-runtime')],
     ['cloud auth boot replaced', index.includes("async function initCloudAuth() {\n    if (typeof window.__nboEnsureProfiles")],
+    ['provider requests use local enrollment', index.includes("headers.set('X-NBO-Profile', session.id)") && index.includes('local_provider_access_required') && index.includes('__nboRequestProviderAccess')],
     ['local save is authoritative', index.includes("db.meta.storageMode = 'local'") && !index.includes("serverFetch('/api/save'")],
     ['cloud pull is a no-op', index.includes("async function cloudPull() {\n    _cloudAvailable = false;")],
     ['cloud push is a no-op', index.includes("function cloudPush() {\n    _cloudAvailable = false;")],
