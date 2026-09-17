@@ -1,154 +1,134 @@
 # OTTO Repository Control Center
 
-This is the current control point for the repository. It is not a restart. It tells every agent what to read, what the project is trying to finish, what must not be changed casually, and how completion is proven.
+This file is the current product/control truth for `ejnburrows-rgb/otto`. Historical handoffs, old audits, superseded specs, and dormant cloud code do not override it.
 
 ## Read order
 
-1. `AGENTS.md` — permanent safety and working rules.
-2. This file — current objective, priorities, and authority.
-3. `docs/STATUS.md` — factual product state and incident history.
-4. `docs/DECISIONS.md` — why major technical choices were made.
-5. `docs/UNIFIED-FILE-INTAKE.md` — authoritative when working on uploads, imports, OCR, or Plans & AutoCAD.
-6. Other task-specific files only when they are named by the current objective.
-
-No other Markdown file may silently become a competing source of truth. Historical reports, old task queues, and tool-specific prompts are reference material only unless this file explicitly activates them.
+1. `AGENTS.md`
+2. this file
+3. `docs/STATUS.md`
+4. `docs/DECISIONS.md`
+5. `DESIGN.md`
+6. `UX-CONTRACT.md`
+7. `docs/UNIFIED-FILE-INTAKE.md` when working on uploads/OCR/plans
 
 ## Current objective
 
-Finish OTTO as a dependable, demo-ready and production-ready plumbing CRM without redoing completed work.
+Finish OTTO as the first reusable **NBO hybrid CRM archetype**: the full business operating capability already built in OTTO, with a calm, context-first interface influenced by Tucker's strongest visual/interaction qualities.
 
-The current UI objective is explicit, and the director changed it on 2026-08-14. Owner and office users use a **minimal application shell**: a dark left sidebar on desktop carrying five primary destinations — Today, Schedule, Jobs, Customers, Money — one Search / Ask OTTO command entry (⌘K), and a **More** menu that holds every secondary feature; phones use a bottom bar with Today, Schedule, Jobs, Customers, More so working content receives the full phone width. Home is a Today screen: a short summary, today's jobs as the dominant section, Needs attention, and Recent activity, all read from real records. The wallpaper-first workspace with three floating windows and minimize/maximize/full-screen controls is **superseded** and must not be restored as the default; its runtime is retained in `otto-home.js` / `otto-home.css` and must not be deleted. Drag/reorder stays excluded because the earlier drag implementation interfered with normal scrolling. The remaining UI work is refinement, not another redesign, and the shell has not yet been propagated to secondary screens beyond inheriting its palette and typography.
+Do not confuse simple with limited. The CRM remains the business database for customers, work, money, HR, payroll, employees, communications, files, field operations, reporting, audit, backups, plans, and AI-assisted work.
 
-For file handling, use one **Upload / Import** intake model. Spreadsheets are parsed directly, photos/scans use bilingual browser OCR, CAD files reuse the existing job drawing pipeline, and PDF asks one simple document-vs-plan choice because it is ambiguous. All applicable flows end in review before save. Do not restore separate provider-key OCR or competing upload systems.
+## Active architecture
 
-## Current product truth
+The active CRM path is local-first for this release.
 
-- The owner/office UI contract is the minimal application shell described above.
-- Desktop keeps a left sidebar; phones use a bottom bar. Do not force the desktop sidebar into the narrow phone width.
-- The shell uses one fixed neutral palette (`#F7F7F8` page, `#FFFFFF` surface, `#111214` sidebar, `#2563EB` accent) and one typeface (Geist, falling back to Inter). Owner/office screens are light-only while the shell is active. Julio (`owner-2`), Saray (`ops-1`) and Otto keep their identity data and wallpaper assets, but the per-person accent and wallpaper treatment does not apply inside the shell.
-- The supplied OTTO Plumbing wordmark (`logo.jpg`) remains the CRM logo. Do not substitute the wrench/person app icon as the top-bar brand.
-- Today has subtle operational priority, but the interface remains restrained. Do not add excessive glass, animation, heavy shadows, neon effects, or decorative dashboards to make the app look more “premium.”
-- Secondary screens must feel like the same product as Home: consistent Geist hierarchy, spacing, cards, lists, forms, focus treatment, buttons, wrapped filters/tabs, and intentional empty/error/confirmation states.
-- Worker information is intentionally operational and compact: current job, next job, actual hours recorded from job check-in/check-out, and time-off status. Do not restore random heatmaps, fabricated KPI hours, vanity location counts, login-history cards, or fake charts as worker performance information.
-- The whole field crew has a Crew Hours view showing real recorded hours today, real recorded hours this week, and how many workers are currently clocked in.
-- Plans & AutoCAD is a first-class work entry point. It accepts PDF, DWG, DXF, DWF and DGN through the existing job-document/drawing pipeline; do not bury this capability only inside a job tab.
-- Upload/import/OCR follows `docs/UNIFIED-FILE-INTAKE.md`: one front door, direct spreadsheet parsing, browser bilingual OCR for images/scans, existing CAD analysis for plans, explicit PDF routing, review before save, Field Worker-only employee imports, no PIN import, and no fabricated attendance.
-- More stays a restrained launcher for everything outside the five primary destinations. Secondary technical screens must not be promoted into primary navigation merely because they exist in code.
-- Admin Settings is intentionally simplified. Keep appearance, team access, owner security, data safety and sign-out visible. Provider keys and unfinished setup stubs do not belong in the normal owner/office settings experience.
-- The local/offline CRM and built-in demo are present.
-- Supabase-backed identity and server-controlled OTTO roles are implemented on current `main`. Anonymous requests fail before provider/business access, and field records are restricted to the employee and assigned work.
-- The older auth attempt in PR #103 was reviewed and closed unmerged; it must not be resurrected wholesale.
-- Photo upload must never silently abandon a locally stored job photo; pending uploads stay queued and visibly pending until they succeed or the user takes an explicit action.
-- Live Supabase currently contains only Julio, Sarays, and Otto administrator profiles; customer and job collections are empty.
-- QuickBooks is a manual handoff only: copy/export data and open the official site separately. Do not add Intuit OAuth, API synchronization, background syncing, credentials, or duplicate accounting logic.
-- GitHub Actions cannot be trusted as release evidence until a successful current run is proven. If Actions is unable to start because of an account/billing condition, record that as an external verification blocker rather than calling the code failed.
+- IndexedDB is the working business database.
+- `localStorage` may remain as the existing recovery/session mirror.
+- Core startup, profile selection, CRUD, HR/payroll, scheduling, money, field work, and local files must operate without Supabase or network access.
+- `scripts/apply-nbo-hybrid-local-patch.mjs` is the final materializer and therefore the active authority after historical OTTO materializers run.
+- Previous Supabase server modules/migrations may remain as dormant rollback/reference material, but they are not current product truth and must not be restored into the active boot/save flow without a new owner decision.
+- The remote Supabase project is not deleted by this release.
+- Optional external providers such as AI/email may remain separately configured and must fail without breaking core local work.
 
-## Priority order
+## Profiles
 
-1. **Finish and prove the owner/office UI refinement** — keep the minimal shell while proving the desktop sidebar, the phone bottom bar, the Search / Ask OTTO command entry, restrained hierarchy, consistent secondary screens, practical touch targets, bilingual parity and accessibility.
-2. **Unified file intake** — one Upload / Import surface for spreadsheet employee import, bilingual OCR, and job-linked plans; no conflicting old user-facing scan/upload flows; prove review-before-save behavior.
-3. **Photo-upload reliability** — never silently abandon a locally stored job photo; keep retrying and show a clear pending/not-sent state.
-4. **Production release** — publish the current provider-authenticated build and prove anonymous denial plus authorized owner access.
-5. **Cross-device proof** — prove authorized records and photo bytes reach the correct owner/office/field users without exposing unrelated records.
-6. **Administrator activation** — keep Otto's confirmed email and add confirmed emails for Julio and Sarays; never invent addresses.
-7. **Provider delivery proof** — test notifications and server AI only when their company credentials are configured. QuickBooks remains manual handoff only.
-8. **Final production readiness** — fresh tests, real-browser verification, demo verification, deployment proof, and director sign-off.
+Preserve these protected local identities and IDs:
 
-Do not jump to a later item while an earlier item is unresolved unless the earlier item is genuinely blocked and the next item is independent.
+- `owner-1` — Otto — Owner
+- `owner-2` — Julio — Owner
+- `ops-1` — Sarays — Office Manager (`office` role)
+- `it-admin-ejn` — EJN — NBO Administrator using the existing owner-level role
 
-## Decision rights
+Do not invent passwords, PINs, emails, or other identity data. Existing active field-worker records stay in the local Team database and remain available to the field experience.
 
-The director approves:
+Local profile selection is a deliberate temporary operating model, not a claim of internet-grade authentication.
 
-- authentication changes,
-- deletion of live data,
-- payments or accounting behavior,
-- new paid services or dependencies,
-- production deployment,
-- client-facing commitments,
-- and irreversible cleanup.
+## UI contract
 
-Agents may investigate, recommend, implement approved work on branches, verify it, open pull requests, and integrate approved work under the rules in `AGENTS.md`.
+Owner/office users have exactly five primary destinations:
+
+1. Today
+2. Schedule
+3. Jobs
+4. Customers
+5. Money
+
+Everything else stays available under **More**. Desktop uses the left rail. Phone uses bottom navigation and full-width working content.
+
+The interaction model is contextual:
+
+- customer records bring together the customer's connected work, money, communications, files, notes, and history;
+- job records bring together customer, schedule, crew, files/photos, checklist, estimate/invoice, time, communications, and AI context;
+- employee records bring together profile/role, assignments, hours, payroll records, PTO, policy acknowledgments, documents, and messages.
+
+Do not duplicate business logic to create context. Reuse canonical records/actions.
+
+`DESIGN.md` owns visual intent. `UX-CONTRACT.md` owns observable product behavior.
 
 ## UI non-regression rules
 
-The following are product requirements, not optional design suggestions:
+- Do not restore the wallpaper-first/floating-window owner workspace as the default.
+- Do not add primary destinations merely because a feature exists.
+- Do not force desktop navigation into phone width.
+- Do not reintroduce generic drag/reorder on operational cards/lists.
+- Do not invent fake KPIs, worker heatmaps, vanity charts, attendance, or business data.
+- Crew Hours comes from real check-in/check-out records.
+- Plans & AutoCAD remains a first-class work capability and keeps job context.
+- Keep one Upload / Import front door; do not recreate competing spreadsheet/OCR/CAD upload flows.
+- Keep Settings restrained; provider internals are not normal owner-facing controls.
+- Keep the supplied OTTO Plumbing wordmark as the CRM brand asset.
+- Keep English/Spanish parity.
+- Keep visible keyboard focus, practical touch targets, intentional empty/error/confirmation states, and reduced-motion support.
+- Do not add neon, excessive glass, wallpaper clutter, heavy shadows, or decorative dashboard complexity to signal “premium.”
 
-1. Do not restore the wallpaper-first workspace, the floating windows, or the desktop-window controls as the owner/office home. They were superseded by the director on 2026-08-14.
-2. Do not delete `otto-home.js` or `otto-home.css`; the superseded runtime is retained so its information and behavior stay recoverable.
-3. Desktop uses the left sidebar; phone uses the bottom bar. Do not force the desktop sidebar into the narrow phone width.
-4. Do not reintroduce generic drag/reorder behavior on scrollable cards or lists.
-5. Keep primary navigation to five destinations. Secondary features belong in More; do not promote them back into the sidebar.
-6. Do not invent an Otto wallpaper; no wallpaper sits behind operational content in the shell.
-7. Do not hide Plans & AutoCAD solely inside a job detail screen.
-8. Do not calculate hours from placeholder formulas. Crew hours come from recorded check-in/check-out time.
-9. Do not present random/demo chart values as worker performance.
-10. Do not replace the supplied OTTO Plumbing logo with the app icon.
-11. Do not expose technical integration setup simply to make Settings look fuller.
-12. Do not restore separate spreadsheet/OCR/CAD upload experiences that compete with the unified intake model.
-13. Do not add visual effects at the expense of hierarchy, readability, touch usability, or consistent secondary screens.
+## Feature preservation
 
-## Definition of done
+The NBO hybrid change must not remove working capability. Preserve, where already implemented:
 
-A task is complete only when all applicable evidence exists:
+- customers and jobs/work orders;
+- schedule/dispatch and field workspace;
+- estimates, invoices, payments, checks, and pricing;
+- Team/HR, payroll intake, crew hours, PTO, policies, acknowledgments;
+- photos/documents and local file handling;
+- unified import/OCR and Plans & AutoCAD;
+- Inbox, calls, follow-ups, workflows, alerts, knowledge;
+- reports, audit/history, backups/export;
+- Search / Ask OTTO and contextual record tools;
+- bilingual and offline PWA behavior.
 
-- the full current test suite passes with zero failures,
-- `node scripts/qa-check.mjs` reports a passing result,
-- the real app is opened and exercised in a browser,
-- no new JavaScript errors, broken images, or mobile overflow appear,
-- UI work is checked at desktop and phone widths,
-- desktop sidebar and phone bottom-bar behavior are both exercised,
-- the Search / Ask OTTO command entry is opened and used,
-- representative secondary screens, forms, tabs, empty states, dialogs and confirmations are checked for consistent hierarchy and keyboard/touch usability,
-- Plans & AutoCAD upload is opened through the dedicated hub and linked to a job,
-- unified intake is exercised with a spreadsheet, an image/scan, a PDF in both routing modes, and a plan format; review-before-save is verified,
-- Crew Hours is checked against known check-in/check-out records,
-- a screenshot or equivalent direct evidence proves the visible result,
-- the pull request is reviewed against the stated acceptance criteria,
-- and `docs/STATUS.md` receives one factual dated update.
+Provider-dependent delivery is never claimed merely because provider code exists.
 
-Never hardcode a test count into permanent instructions. Report the actual result from the run.
+## Data safety
 
-## Reporting format
+- Never commit secrets, credentials, fallback passwords/PINs, or provider keys.
+- Never delete remote/live records or the dormant Supabase project without explicit approval for that exact destructive action.
+- Local file/photo operations must not silently discard user data.
+- Recoverable deletion/backup behavior stays intact unless explicitly redesigned and approved.
+- Payments/accounting behavior is not casually altered as part of UI work.
 
-Every agent report must state, in plain language:
+## Verification
 
-- **Works** — verified with evidence.
-- **Broken** — confirmed fault and impact.
-- **Blocked** — exact dependency and who controls it.
-- **Changed** — files and behavior changed.
-- **Not done yet** — remaining work.
+A release is accepted only with direct evidence appropriate to the change:
 
-No evidence receipt means the work is not accepted.
+- complete current source/test gate passes;
+- `node scripts/qa-check.mjs` passes;
+- NBO local-hybrid contract test passes;
+- the deployed preview/build is READY;
+- changed UI is checked at desktop and phone widths when a browser runner is available;
+- English/Spanish, navigation, context, profile switching, runtime errors, broken images, and horizontal overflow are checked;
+- core local work is verified without depending on Supabase/network access;
+- `docs/STATUS.md` receives a factual dated release update.
 
-## Branch and pull-request rules
+GitHub Actions that never obtain a runner are an external CI limitation, not application evidence. Use an actually executing build/test environment for proof and state any browser-proof limitation explicitly.
 
-- `main` is the production source of truth.
-- Never commit directly to `main`.
-- Never force-push or rewrite shared history.
-- Work on a focused branch and open a pull request.
-- Do not bulk-delete branches from an old report or script. Generate the deletion list from current GitHub evidence.
-- An open pull-request branch stays until the pull request is resolved.
-- A closed-unmerged branch must be checked for unique useful work before deletion.
-- A merged branch may be deleted only after confirming its useful work is present in `main`.
+## Git/release rule
 
-## Instruction-file policy
+`main` remains the production source of truth. Work on a focused branch/PR, review the actual diff, and merge only after the executing verification gate is clean. Never force-push shared history.
 
-`AGENTS.md` and this file are the controlling documents.
+## Reporting
 
-Tool entry files such as `CLAUDE.md`, `GEMINI.md`, `.cursorrules`, and `.github/copilot-instructions.md` must remain short pointers. They must not duplicate changing facts such as commit IDs, line counts, test totals, branch counts, or task queues.
+Final execution reports stay short and factual:
 
-`docs/PASTE-ME.md` is for environments that do not load repository instructions. It must be regenerated whenever this control system changes materially.
-
-`LOOP-CLAUDE.md` and old autonomous task queues are historical unless explicitly reactivated here. Obsolete tool-specific handoff files that contradict current product decisions should be removed rather than left looking actionable.
-
-## Realignment completion standard
-
-The repository is considered realigned when:
-
-- all agent entry files point to the same read order,
-- no active instruction file contains stale test totals or contradictory merge rules,
-- obsolete autonomous loops are clearly marked historical or removed,
-- the current objective and priority order are documented here,
-- branch cleanup uses a current evidence-based inventory,
-- and the reusable process in `docs/REALIGNMENT-TEMPLATE.md` can be applied to another repository.
+- what changed;
+- what was verified and where;
+- what remains genuinely unverified or dormant.

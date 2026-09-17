@@ -1,0 +1,17 @@
+{
+  "profile": "product-admin",
+  "sourceRoots": ["."],
+  "locale": "en-US/es-US",
+  "canonicalMap": "UX-CONTRACT.md",
+  "requiredCapabilities": ["Form", "Scrollbar", "Toast", "CRUD"],
+  "requiredCommands": ["unit", "visual", "qa"],
+  "commands": {
+    "unit": "npm test",
+    "visual": "npm run qa:visual",
+    "qa": "node scripts/qa-check.mjs"
+  },
+  "evidence": {
+    "crudFullFlow": "scripts/qa-visual.mjs",
+    "failurePaths": "scripts/test-ui-regressions.mjs"
+  }
+}

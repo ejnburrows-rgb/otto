@@ -38,6 +38,11 @@ jobs:
       - name: Start the local server
         run: npm start &
 
+      # The NBO archetype contract is deliberately separate from the historical
+      # OTTO source tests so this architectural change has a clear red/green gate.
+      - name: Verify NBO hybrid local contract
+        run: node scripts/test-nbo-hybrid-local.mjs
+
       # On a pull request, everything except the live stage. The live stage
       # checks production for changes this pull request has not deployed yet —
       # that the working documents have stopped being published, for instance —
