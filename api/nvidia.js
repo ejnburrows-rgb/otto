@@ -13,7 +13,7 @@
 // scan). The models can be overridden with the NVIDIA_MODEL and
 // NVIDIA_VISION_MODEL environment variables.
 
-import { requireServerAuth } from './_lib/serverAuth.js';
+import { requireLocalProviderAuth } from './_lib/localProviderAuth.js';
 
 const NVIDIA_URL = process.env.NVIDIA_URL || 'https://integrate.api.nvidia.com/v1/chat/completions';
 const DEFAULT_MODEL = 'meta/llama-3.3-70b-instruct';
@@ -97,7 +97,7 @@ function hasImagePart(body) {
 export default async function handler(req, res) {
   // Authorization happens before anything is parsed, counted or forwarded, so an
   // unauthorized caller never reaches the provider or the rate-limit table.
-  const identity = await requireServerAuth(req, res, { roles: ['owner', 'office'] });
+  const identity = await requireLocalProviderAuth(req, res, { roles: ['owner', 'office'] });
   if (!identity) return;
   return nvidiaHandler(req, res, identity);
 }
