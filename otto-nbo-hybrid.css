@@ -241,3 +241,71 @@ html[data-theme="dark"] body.otto-shell tbody tr:hover { background:#1C2026; }
     animation-iteration-count:1 !important;
   }
 }
+
+.nbo-provider-access-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(15, 17, 19, .54);
+}
+
+.nbo-provider-access-card {
+  width: min(520px, 100%);
+  padding: 26px;
+  border: 1px solid var(--nbo-line);
+  border-radius: 14px;
+  background: var(--nbo-surface);
+  color: var(--nbo-ink);
+  box-shadow: 0 24px 70px rgba(15, 17, 19, .22);
+}
+
+.nbo-provider-access-card h2 {
+  margin: 0;
+  font-size: 25px;
+  letter-spacing: -.03em;
+}
+
+.nbo-provider-access-card > p:not(.nbo-profile-eyebrow) {
+  margin: 10px 0 20px;
+  color: var(--nbo-muted);
+  line-height: 1.55;
+}
+
+.nbo-provider-access-card label {
+  display: block;
+  margin-bottom: 7px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.nbo-provider-access-card input {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 12px;
+  border: 1px solid var(--nbo-line);
+  border-radius: 9px;
+  background: #fff;
+  color: #17191c;
+}
+
+.nbo-provider-access-error {
+  margin-top: 10px;
+  color: #b42318;
+  font-size: 13px;
+}
+
+.nbo-provider-access-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: 18px;
+}
+
+@media (max-width: 560px) {
+  .nbo-provider-access-card { padding: 21px 17px; }
+  .nbo-provider-access-actions { flex-direction: column-reverse; }
+  .nbo-provider-access-actions .btn { width: 100%; }
+}
