@@ -14,6 +14,7 @@ run('npm', ['test']);
 run(process.execPath, ['--check', 'api/register.js']);
 run(process.execPath, ['--check', 'scripts/apply-account-login-patch.mjs']);
 run(process.execPath, ['--check', 'scripts/apply-nbo-hybrid-local-patch.mjs']);
+run(process.execPath, ['--check', 'scripts/qa-nbo-hybrid.mjs']);
 run(process.execPath, ['--check', 'otto-local-runtime.js']);
 run(process.execPath, ['--check', 'otto-nbo-hybrid.js']);
 
@@ -33,6 +34,7 @@ run(process.execPath, ['scripts/apply-assistant-patch.mjs']);
 run(process.execPath, ['scripts/apply-hr-payroll-patch.mjs']);
 run(process.execPath, ['scripts/apply-nbo-hybrid-local-patch.mjs']);
 run(process.execPath, ['scripts/test-nbo-hybrid-local.mjs']);
+run(process.execPath, ['scripts/qa-nbo-hybrid.mjs']);
 run(process.execPath, ['--check', 'otto-hr-payroll.js']);
 run(process.execPath, ['scripts/test-hr-payroll.mjs']);
 run(process.execPath, ['scripts/qa-check.mjs']);
