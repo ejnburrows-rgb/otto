@@ -119,7 +119,30 @@ function functionBounds(source, name) {
   if (start < 0) return null;
   const modifier = source.slice(0, start).match(/(?:async\s+)+$/);
   if (modifier) start -= modifier[0].length;
-  const open = source.indexOf('{', start);
+  const paramsOpen = source.indexOf('(', start);
+  if (paramsOpen < 0) return null;
+  let paramsDepth = 0;
+  let paramsQuote = '';
+  let paramsEscape = false;
+  let open = -1;
+  for (let i = paramsOpen; i < source.length; i++) {
+    const c = source[i];
+    if (paramsQuote) {
+      if (paramsEscape) { paramsEscape = false; continue; }
+      if (c === '\\') { paramsEscape = true; continue; }
+      if (c === paramsQuote) paramsQuote = '';
+      continue;
+    }
+    if (c === "'" || c === '"' || c === '`') { paramsQuote = c; continue; }
+    if (c === '(') paramsDepth++;
+    else if (c === ')') {
+      paramsDepth--;
+      if (paramsDepth === 0) {
+        open = source.indexOf('{', i + 1);
+        break;
+      }
+    }
+  }
   if (open < 0) return null;
   let depth = 0;
   let quote = '';
