@@ -35,9 +35,9 @@ run(process.execPath, ['scripts/apply-hr-payroll-patch.mjs']);
 run(process.execPath, ['scripts/apply-nbo-hybrid-local-patch.mjs']);
 run(process.execPath, ['scripts/test-nbo-hybrid-local.mjs']);
 
-// Vercel caches node_modules but not the Playwright browser binary. Install the
-// exact Chromium build required by this lockfile before exercising the real UI.
-run('npx', ['playwright', 'install', 'chromium']);
+// Install both the exact Chromium build and its system libraries before the real
+// browser gate. Vercel's base image does not include libnspr4 and related libs.
+run('npx', ['playwright', 'install', '--with-deps', 'chromium']);
 run(process.execPath, ['scripts/qa-nbo-hybrid.mjs']);
 
 run(process.execPath, ['--check', 'otto-hr-payroll.js']);
