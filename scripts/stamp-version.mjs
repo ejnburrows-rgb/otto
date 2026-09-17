@@ -16,9 +16,10 @@ const marker = {
   commit,
   shortCommit: commit.slice(0, 7),
   builtAt: new Date().toISOString(),
-  // Keep the stable field name for existing deployment tooling. Its value now
-  // states the active NBO local-first identity mode rather than dormant cloud auth.
-  serverAuth: 'local-profile',
+  // Dormant server routes still retain their provider-authenticated fail-closed
+  // boundary, while the active CRM operating path is local-first below.
+  serverAuth: 'supabase-provider',
+  activeMode: 'local-profile',
   storageMode: 'indexeddb-local',
 };
 
