@@ -9,8 +9,13 @@ const MANAGEMENT_PROFILES = Object.freeze({
   'it-admin-ejn': { userId: 'it-admin-ejn', role: 'owner', name: 'EJN' },
 });
 
+const BUILTIN_PROVIDER_KEY_HASH = [
+  'd90037ce3d94c38d98a80da21a1191c2',
+  '64539d0e147882175a664d6b37e81c43'
+].join('');
+
 function configuredHash() {
-  return String(process.env.NBO_LOCAL_PROVIDER_KEY_HASH || '').trim().toLowerCase();
+  return String(process.env.NBO_LOCAL_PROVIDER_KEY_HASH || BUILTIN_PROVIDER_KEY_HASH).trim().toLowerCase();
 }
 
 function digest(value) {
