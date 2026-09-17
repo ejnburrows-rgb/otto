@@ -1,89 +1,61 @@
-# DECISIONS — OTTO Plumbing CRM
+# DECISIONS — OTTO / NBO Hybrid CRM
 
-A concise dated log of decisions that still govern the product. Historical implementation detail remains in Git history; superseded choices are not kept here as if they were still active.
+This file records only decisions that still govern the product. Superseded implementation detail remains in Git history.
 
-## 2026-09-16 — restrained company presentation
+## 2026-09-17 — NBO hybrid archetype and local-first operating mode
 
-- The owner requested smaller professional branding and a neutral presentation without personalization. Today no longer activates personal backgrounds. Identity and operational records remain intact.
-- Keep the approved OTTO logo compact at login and the top right. Show Powered by NBO discreetly at the bottom right, clear of navigation and sync status. Use text until actual NBO artwork is supplied; do not invent a logo asset, contact details, or ambiguous copy.
+- **OTTO becomes the first reusable NBO CRM archetype.** Preserve OTTO's complete business operating capability while applying a calmer, context-first interaction model informed by Tucker's strongest UI qualities.
+- **Simple does not mean limited.** Customers, jobs, scheduling, estimates/invoices/payments, HR, payroll, employees, files, communications, reports, audit, backups, field workflows, plans, and AI-assisted work remain part of the product.
+- **Context is the primary simplification mechanism.** Customer, job, and employee records should gather related information/actions so users do not have to think in disconnected modules.
+- **Primary navigation stays small.** Owner/office keeps Today, Schedule, Jobs, Customers, Money. Secondary capabilities stay under More. Desktop uses the left rail; phone uses bottom navigation.
+- **The active CRM is local-first for this release.** IndexedDB is the working database; existing local recovery/session mirrors may remain. Core startup, profile selection, CRUD, HR/payroll, scheduling, money, field work, and local file lookup do not depend on Supabase.
+- **Previous Supabase integration is dormant, not destroyed.** Historical server modules/migrations and the remote project may remain as rollback/reference material, but they are not the active product path. Re-activating cloud auth/sync requires a new explicit owner decision.
+- **The final materializer owns active runtime truth.** `scripts/apply-nbo-hybrid-local-patch.mjs` runs after historical OTTO materializers so legacy cloud assumptions cannot silently become active again.
+- **Protected local profiles stay stable.** Otto (`owner-1`) and Julio (`owner-2`) remain Owners; Sarays (`ops-1`) remains Office Manager; EJN (`it-admin-ejn`) is the NBO Administrator using the existing owner-level role. No passwords, PINs, or invented emails are hardcoded.
+- **Existing field employees are preserved.** The change does not invent or replace employee records.
+- **Local profile selection is intentionally not presented as internet-grade authentication.** It is the operating model for this local-first phase.
+- **Optional providers remain optional.** AI/email integrations may exist independently, but provider failure must not break core local CRM work.
 
-## 2026-08-11 — premium UI refinement
+## 2026-09-17 — durable UI/UX contract
 
-- **Refine the current workspace; do not redesign it again.** The three-window owner/office model, wallpapers, personal accents, logo and operational workflows remain the product foundation.
-- **Desktop and phone may present navigation differently.** Desktop keeps the left-side workspace rail; on phones the same primary actions move to a compact bottom dock so working content receives the full screen width instead of being squeezed beside a desktop rail.
-- **Hierarchy must be obvious and restrained.** Today receives subtle priority, secondary screens share the same typography/spacing/card/form language, and decorative motion, heavy shadows, excessive glass and unnecessary visual effects are reduced rather than expanded.
-- **Controls must be practical in the field.** Important desktop controls use at least 40px targets where appropriate; phone controls use at least 36px targets, action rows may stack for thumb use, and filters/tabs wrap instead of hiding choices offscreen.
-- **Accessibility is part of the finished UI.** Dynamic dialogs expose dialog semantics, keep keyboard focus inside while open, close predictably with Escape, and restore focus. Toasts announce status/errors, the logo is keyboard-accessible Home navigation, and window state is exposed to assistive technology.
+- `DESIGN.md` is the durable visual intent for the NBO archetype.
+- `UX-CONTRACT.md` is the durable observable behavior contract.
+- The visual direction is a calm service-business operations desk: strong hierarchy, generous breathing room, restrained surfaces, clear rows/forms, visible focus, practical touch targets, and limited purposeful motion.
+- Do not restore wallpaper-first owner workspaces, floating-window metaphors, neon/glass-heavy presentation, fake KPI walls, or decorative complexity.
+- The memorable interaction is the contextual workspace, not a decorative dashboard.
 
-## 2026-08-11 — unified file intake
+## Active file/intake decisions
 
-- **One Upload / Import front door is the required file-intake model.** Do not restore separate competing spreadsheet, OCR, scan, and CAD upload experiences.
-- **Spreadsheets are parsed directly.** `.xlsx`, `.xls`, and `.csv` use their structured cells; OCR is not used on real spreadsheet files.
-- **Photos and scans use bilingual browser OCR.** English + Spanish OCR runs locally in the browser and leaves extracted text visible for review before anything is saved or imported.
-- **PDF is explicitly routed because the format is ambiguous.** Ask whether it is a text/scanned document or a plan/drawing instead of guessing silently.
-- **Plans reuse the existing job drawing pipeline.** DWG, DXF, DWF, DGN and plan PDFs remain attached to the selected job and use existing document storage plus drawing analysis rather than a second file system.
-- **All employee intake is review-first and least-privilege.** Spreadsheet/OCR employee intake ends in the same editable review table; imported people are Field Worker only, PINs are never imported, and attendance is never fabricated.
-- **The old provider-key/Claude OCR path is retired as the normal user workflow.** Historical code may remain where unrelated legacy features still depend on it, but it must not appear as a competing file-intake experience or be described as the current process.
+- **One Upload / Import front door.** Do not restore separate competing spreadsheet/OCR/CAD upload experiences.
+- **Spreadsheets are parsed directly.** `.xlsx`, `.xls`, and `.csv` use structured cells rather than OCR.
+- **Photos/scans use bilingual browser OCR.** Extracted text is reviewable before save/import.
+- **PDF asks document vs. plan.** Do not guess silently.
+- **Plans remain job-linked.** PDF, DWG, DXF, DWF, and DGN reuse the existing drawing/document pipeline.
+- **Employee imports are review-first and least-privilege.** Imports create Field Worker records only, never credentials, and never fabricated attendance.
 
-## 2026-08-10 — owner / office workspace
+## Active worker/field decisions
 
-- **Three simultaneous primary windows are the required home model.** Today, Field Workers, and Inbox open together over the wallpaper. A prior one-panel-at-a-time redesign is superseded.
-- **Window controls stay.** Each primary window supports minimize/restore, maximize inside the workspace, and full screen. Desktop restores minimized windows from the left rail; phone uses the bottom dock defined by the 2026-08-11 refinement.
-- **Generic drag/reorder stays out.** An earlier drag implementation attached to scrollable cards and interfered with normal phone scrolling. Window controls are useful; draggable content is not.
-- **Personal accents are functional identity, not a different product.** Julio uses green accents, Saray pink accents, Otto the blue OTTO identity. Permissions and workflows stay the same.
-- **The supplied OTTO Plumbing wordmark remains the CRM logo.** The app icon is not a substitute for the approved brand mark.
+- Worker information stays operational: current job, next job, real today/week hours, and time-off status.
+- Crew Hours derives from actual job check-in/check-out records.
+- Random heatmaps, login-history presentation, vanity location counts, fake performance charts, and placeholder-hour formulas are excluded.
+- Job photos/files save locally first. Local file access must continue working without network access.
+- Work-location behavior remains limited to approved work context/consent rules already in the field workflow.
 
-## 2026-08-10 — worker information and hours
+## Money and accounting
 
-- **Worker information is intentionally small.** The owner needs current job, next job, actual today/week hours, and time-off status. Random heatmaps, login-history presentation, vanity location counts, fake KPI formulas, and mock charts add noise and are not approved worker information.
-- **Crew hours come from job check-in/check-out records.** Do not derive hours from placeholder multipliers or random/demo chart values.
-- **The whole crew must be visible together.** Crew Hours shows total recorded time today, total recorded time this week, currently clocked-in count, and per-worker today/week totals.
+- OTTO owns operational estimates, invoices, payments, checks, payroll intake, and exports already implemented.
+- QuickBooks remains a manual handoff. Do not add Intuit OAuth/background synchronization or duplicate accounting logic without a new explicit requirement.
 
-## 2026-08-10 — Plans & AutoCAD
+## AI
 
-- **Plans & AutoCAD is a first-class entry point.** It is visible from the owner/office primary launcher and in Tools instead of being buried only inside Job → Documents.
-- **Reuse the existing drawing pipeline.** PDF, DWG, DXF, DWF and DGN uploads continue through the existing job document/drawing-analysis flow rather than creating a second competing file system.
-- **A drawing belongs to a job folder.** The upload hub asks for the job first so plans remain attached to the correct customer/work context.
+- Search deterministic local records first.
+- External AI is optional and provider keys remain server-side.
+- AI may interpret, summarize, extract, or draft; consequential proposed record changes require preview/confirmation.
+- Provider unavailability must degrade to local search/manual work rather than making the CRM unusable.
 
-## 2026-08-10 — simplified navigation and Settings
+## Data and safety
 
-- **Tools is a launcher, not another dashboard.** Promote daily operational modules only. Secondary technical/admin screens may remain reachable where appropriate without occupying prime workspace space.
-- **Owner/office Settings is restrained.** Keep appearance, team access, owner extra-code security, data safety, and sign out. Do not expose provider keys or unfinished integration setup merely to fill the page.
-- **Field Settings keeps the existing worker actions.** Time-off and urgent-contact workflows are operational worker features and are not removed by the owner/office simplification.
-
-## 2026-08-10 — documentation and regression control
-
-- **The repository must remember the owner’s UI contract.** `docs/REPO-CONTROL.md`, README, the user guide, paste-in brief, status, and automated home checks all describe the same three-window model so a future agent cannot silently simplify it back to one panel.
-- **Do not treat infrastructure failures as code failures.** A GitHub Actions job that never starts because of account billing, or a Vercel deployment rejected for a platform build-rate limit, is recorded as an external verification blocker. It does not become a passing test, but it also must not be misreported as an application defect.
-
-## Active platform / security decisions
-
-- **Offline-first data remains the primary operating mode.** IndexedDB holds the working data with a localStorage mirror; cloud access is an additional layer, not a requirement for field use.
-- **Sensitive server routes stay fail-closed until issue #70.** Local PIN unlock is not sufficient server authorization. The replacement must use provider-backed identity plus explicit role and record/job-level authorization.
-- **Do not resurrect the older PR #103 authentication attempt wholesale.** It was reviewed and closed because its scope and authorization model were stale.
-- **No live-data deletion without backup and exact approval.** Duplicate/demo reconciliation is tracked under issue #111.
-- **QuickBooks is out of scope.** OTTO keeps its native estimates, invoices, payments, checks, payroll intake, and generic exports. Intuit routes/UI/credentials are not restored without a new explicit requirement.
-- **AI/provider keys belong server-side.** Do not commit or expose paid provider credentials in browser-visible files.
-
-## Photo and file decisions
-
-- **Job photos save locally first.** Field work must remain usable with poor signal.
-- **Failed photo uploads remain queued.** The app must never silently remove a retry entry and leave the worker believing a photo reached the office.
-- **Cloud photo access must remain private.** Browser code does not receive the Supabase service-role key.
-- **Documents and drawings remain job-context files.** Do not create a second unrelated storage workflow for the AutoCAD hub.
-
-## Data / sync decisions
-
-- **Record conflicts use most-recently-edited whole-record resolution.** Field-level merge complexity is not justified for the current small-team workflow.
-- **Deletes are recoverable/soft at the local CRM layer.** An accidental delete should not immediately destroy business history.
-- **Cloud polling is deliberately modest rather than permanently connected.** Reliable offline field operation and safe authorization matter more than pretending every update is instant.
-
-## Product foundations that remain active
-
-- Progressive Web App rather than native app-store builds.
-- English/Spanish parity.
-- Vercel as the application host.
-- Supabase as the current managed database/storage platform behind server-side access controls.
-- One existing CRM codebase rather than parallel replacement applications.
-
-When a future decision supersedes one of these, add the new dated decision and update `docs/REPO-CONTROL.md` at the same time.
+- Never commit secrets, API keys, passwords, PINs, or fallback credentials.
+- Never delete remote/live data or the dormant Supabase project without explicit approval for that exact action.
+- Preserve recoverable deletion/backups and existing business records unless explicitly changed.
+- Do not claim provider delivery, browser behavior, deployment success, or production state without direct evidence.
