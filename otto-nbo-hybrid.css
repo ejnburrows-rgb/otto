@@ -1,0 +1,243 @@
+/* OTTO / NBO hybrid UI lift.
+   OTTO keeps its complete operating system. This layer makes the product calmer,
+   more contextual, and visually consistent without adding another navigation model. */
+
+body.otto-shell,
+body.nbo-local-mode {
+  --nbo-bg: #F7F7F8;
+  --nbo-surface: #FFFFFF;
+  --nbo-accent: #2563EB;
+  --nbo-ink: #15171A;
+  --nbo-muted: #626872;
+  --nbo-line: #E5E7EA;
+  --nbo-soft: #F1F4F8;
+  --nbo-focus: rgba(37, 99, 235, .22);
+  --nbo-motion: 150ms cubic-bezier(.2, 0, 0, 1);
+}
+
+body.otto-shell #main,
+body.otto-shell #main.wrap {
+  padding: 36px clamp(28px, 3.4vw, 56px) 64px;
+}
+
+body.otto-shell .ot-head,
+body.otto-shell .pagehead,
+body.otto-shell .page-head {
+  margin-bottom: 24px;
+}
+
+body.otto-shell .ot-head h1,
+body.otto-shell .pagehead h1,
+body.otto-shell .page-head h1 {
+  font-size: clamp(27px, 2.25vw, 36px);
+  line-height: 1.08;
+  letter-spacing: -.035em;
+  font-weight: 720;
+}
+
+body.otto-shell .ot-head p,
+body.otto-shell .pagehead p,
+body.otto-shell .page-head p {
+  max-width: 760px;
+  line-height: 1.55;
+}
+
+body.otto-shell .ot-section {
+  margin-bottom: 26px;
+}
+
+body.otto-shell .ot-section-head h2,
+body.otto-shell .section-title,
+body.otto-shell .card h2,
+body.otto-shell .panel h2 {
+  letter-spacing: -.018em;
+}
+
+body.otto-shell .ot-panel,
+body.otto-shell .card,
+body.otto-shell .panel,
+body.otto-shell .table-wrap {
+  border-color: var(--nbo-line) !important;
+  box-shadow: 0 1px 2px rgba(17,18,20,.035) !important;
+}
+
+body.otto-shell .ot-row {
+  min-height: 56px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+body.otto-shell .ot-row:hover,
+body.otto-shell .list-item:hover,
+body.otto-shell tbody tr:hover {
+  background: #F8FAFC;
+}
+
+body.otto-shell button,
+body.otto-shell a,
+body.otto-shell input,
+body.otto-shell select,
+body.otto-shell textarea,
+body.nbo-local-mode button {
+  transition: border-color var(--nbo-motion), background var(--nbo-motion), color var(--nbo-motion), box-shadow var(--nbo-motion), transform var(--nbo-motion);
+}
+
+body.otto-shell button:focus-visible,
+body.otto-shell a:focus-visible,
+body.otto-shell input:focus-visible,
+body.otto-shell select:focus-visible,
+body.otto-shell textarea:focus-visible,
+body.nbo-local-mode button:focus-visible {
+  outline: 3px solid var(--nbo-focus) !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 1px var(--nbo-accent) !important;
+}
+
+body.otto-shell input,
+body.otto-shell select,
+body.otto-shell textarea {
+  border-color: var(--nbo-line);
+  background: var(--nbo-surface);
+}
+
+body.otto-shell textarea {
+  resize: none;
+}
+
+body.otto-shell .ot-nav-item.is-active,
+body.otto-shell .ot-nav-item[aria-current="page"] {
+  position: relative;
+}
+
+body.otto-shell .ot-nav-item.is-active::before,
+body.otto-shell .ot-nav-item[aria-current="page"]::before {
+  content: '';
+  position: absolute;
+  left: -12px;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: #60A5FA;
+}
+
+.nbo-context-kicker {
+  margin: 0 0 7px;
+  color: var(--nbo-accent);
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+
+.nbo-profile-switch {
+  width: calc(100% - 16px);
+  margin: auto 8px 4px;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 10px;
+  background: rgba(255,255,255,.045);
+  color: #F3F4F6;
+  text-align: left;
+  cursor: pointer;
+}
+
+.nbo-profile-switch:hover { background: rgba(255,255,255,.08); }
+.nbo-profile-switch strong { display:block; font-size:13px; line-height:1.25; }
+.nbo-profile-switch small { display:block; margin-top:2px; color:#9BA1AB; font-size:11px; }
+.nbo-profile-switch .nbo-profile-avatar { width:30px; height:30px; }
+.nbo-profile-switch > i { margin-left:auto; color:#8D949F; font-size:11px; }
+
+.nbo-profile-login {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 28px 18px;
+  background: linear-gradient(180deg, #F7F8FA 0%, #EFF2F6 100%);
+  color: var(--nbo-ink);
+  font-family: Geist, Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+.nbo-profile-login-card {
+  width: min(720px, 100%);
+  padding: clamp(24px, 5vw, 42px);
+  border: 1px solid #E1E5EA;
+  border-radius: 18px;
+  background: #FFFFFF;
+  box-shadow: 0 20px 65px rgba(28,35,45,.10);
+}
+
+.nbo-profile-brand {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  padding-bottom:20px;
+  border-bottom:1px solid #E7E9ED;
+}
+
+.nbo-profile-brand img { width:min(180px,45vw); max-height:58px; object-fit:contain; object-position:left center; }
+.nbo-profile-brand span { color:#777E88; font-size:12px; font-weight:650; }
+.nbo-profile-heading { padding:28px 0 20px; }
+.nbo-profile-eyebrow { margin:0 0 8px; color:var(--nbo-accent); font-size:11px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; }
+.nbo-profile-heading h1 { margin:0; font-size:clamp(29px,5vw,42px); line-height:1.04; letter-spacing:-.045em; }
+.nbo-profile-heading > p:not(.nbo-profile-eyebrow) { margin:12px 0 0; max-width:580px; color:#646B75; line-height:1.55; }
+.nbo-profile-message { margin-top:14px; padding:10px 12px; border-radius:9px; background:#F1F5FF; color:#315AAB; font-size:13px; }
+.nbo-profile-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+
+.nbo-profile-card {
+  min-height:72px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:11px 13px;
+  border:1px solid #E1E5EA;
+  border-radius:12px;
+  background:#FFFFFF;
+  color:#17191C;
+  text-align:left;
+  cursor:pointer;
+}
+
+.nbo-profile-card:hover { border-color:#B9C7E6; background:#F8FAFF; transform:translateY(-1px); }
+.nbo-profile-avatar { width:38px; height:38px; flex:0 0 auto; display:grid; place-items:center; border-radius:50%; background:#EEF4FF; color:#245CC5; font-size:14px; font-weight:800; }
+.nbo-profile-copy { min-width:0; }
+.nbo-profile-copy strong { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:14px; }
+.nbo-profile-copy small { display:block; margin-top:3px; color:#777E88; font-size:12px; }
+.nbo-profile-card > i { margin-left:auto; color:#A0A6AF; font-size:11px; }
+.nbo-profile-lang { display:flex; justify-content:flex-end; gap:5px; margin-top:20px; }
+.nbo-profile-lang button { min-width:42px; min-height:34px; border:1px solid #E1E5EA; border-radius:8px; background:#FFF; color:#6C737D; font-weight:700; cursor:pointer; }
+.nbo-profile-lang button.is-active { border-color:#A9BDE9; background:#EEF4FF; color:#245CC5; }
+
+html[data-theme="dark"] body.otto-shell .ot-row:hover,
+html[data-theme="dark"] body.otto-shell .list-item:hover,
+html[data-theme="dark"] body.otto-shell tbody tr:hover { background:#1C2026; }
+
+@media (max-width: 900px) {
+  body.otto-shell #main,
+  body.otto-shell #main.wrap { padding:22px 16px calc(92px + env(safe-area-inset-bottom)); }
+  body.otto-shell .ot-head h1,
+  body.otto-shell .pagehead h1,
+  body.otto-shell .page-head h1 { font-size:27px; }
+  body.otto-shell .ot-head { gap:14px; }
+  body.otto-shell button { min-height:40px; }
+  .nbo-profile-switch { display:none; }
+  .nbo-profile-grid { grid-template-columns:1fr; }
+  .nbo-profile-login-card { padding:24px 18px; border-radius:14px; }
+  .nbo-profile-brand { align-items:flex-start; flex-direction:column; }
+  .nbo-profile-card { min-height:68px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.otto-shell *,
+  body.nbo-local-mode * {
+    scroll-behavior:auto !important;
+    transition-duration:.01ms !important;
+    animation-duration:.01ms !important;
+    animation-iteration-count:1 !important;
+  }
+}
