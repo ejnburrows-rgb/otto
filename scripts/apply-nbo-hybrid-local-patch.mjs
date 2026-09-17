@@ -184,7 +184,7 @@ export function patchIndex(source) {
 }
 
 export function patchServiceWorker(source) {
-  let out = source.replace(/const CACHE = 'otto-crm-v(\d+)';/, (_, version) => `const CACHE = 'otto-crm-v${Math.max(Number(version) + 1, 32)}';`);
+  let out = source.replace(/const CACHE = 'otto-crm-v(\d+)';/, (_, version) => `const CACHE = 'otto-crm-v${Math.max(Number(version), 32)}';`);
   const assets = ['./otto-local-runtime.js', './otto-nbo-hybrid.css', './otto-nbo-hybrid.js'];
   for (const asset of assets) {
     if (out.includes(`'${asset}'`)) continue;
