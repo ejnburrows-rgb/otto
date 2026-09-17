@@ -36,6 +36,13 @@ for (const [id, name, role] of [
   check(`${name} protected profile is declared`, runtime.includes(id) && runtime.includes(name) && runtime.includes(role));
 }
 
+for (let i = 1; i <= 10; i++) {
+  const suffix = String(i).padStart(2, '0');
+  check(`field employee ${suffix} is preconfigured`, runtime.includes(`employee-pay-sheet-${suffix}`));
+}
+check('preconfigured field profiles are not login shortcuts', runtime.includes('loginAccess: false') && runtime.includes('user.loginAccess === true'));
+check('employee compensation is not embedded in public source', !runtime.includes('hourlyRate'));
+
 check('runtime declares local mode', runtime.includes('__nboLocalMode'));
 check('runtime does not contain a Supabase client', !/createClient|supabase\.co|SUPABASE_/i.test(runtime));
 check('runtime never hardcodes a password or PIN', !/password\s*:|pin\s*:/i.test(runtime));
