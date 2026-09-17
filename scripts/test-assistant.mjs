@@ -26,7 +26,7 @@ assert.match(vercelBuild, /apply-assistant-patch\.mjs[\s\S]*qa-check\.mjs/, 'Ver
 assert.match(runtime, /ASSISTANT_ROLES = new Set\(\['owner', 'office'\]\)/, 'the assistant is gated by role, not by a hardcoded account list');
 assert.match(runtime, /ASSISTANT_ROLES\.has\(s\.role\)/, 'the role gate is the one isAllowed() actually applies');
 assert.doesNotMatch(runtime, /it-admin-ejn/, 'no individual account is special-cased any more');
-assert.match(nvidiaApi, /requireServerAuth\(req, res, \{ roles: \['owner', 'office'\] \}\)/, 'the server independently refuses any role but owner/office');
+assert.match(nvidiaApi, /requireLocalProviderAuth\\(req, res, \\{ roles: \\['owner', 'office'\\] \\}\\)/, 'the server independently refuses any role but owner/office through local provider auth');
 
 /* Ask OTTO used to run a local search and stop, so it listed records but could
    never answer a question. These assert the one real path and the absence of a
