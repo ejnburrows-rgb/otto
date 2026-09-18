@@ -16,9 +16,10 @@ const marker = {
   commit,
   shortCommit: commit.slice(0, 7),
   builtAt: new Date().toISOString(),
-  // Dormant server routes still retain their provider-authenticated fail-closed
-  // boundary, while the active CRM operating path is local-first below.
-  serverAuth: 'supabase-provider',
+  // Core CRM identity/data are local-first. Optional provider-backed actions
+  // (AI and messaging) use the separate secure local-provider session.
+  serverAuth: 'local-provider-session',
+  legacyCloudAuth: 'supabase-dormant',
   activeMode: 'local-profile',
   storageMode: 'indexeddb-local',
 };
