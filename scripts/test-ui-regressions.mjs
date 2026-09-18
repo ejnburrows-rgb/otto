@@ -460,8 +460,8 @@ console.log('\nthe deployed build must be able to say which commit it is');
   const FIELDS = ['repository', 'sourceBranch', 'commit', 'shortCommit', 'builtAt', 'serverAuth'];
   check('the stamper writes every marker field',
     FIELDS.filter((f) => !stamper.includes(f)), []);
-  check('the marker records provider-backed server authentication',
-    stamper.includes('supabase-provider'), true);
+  check('the marker records local provider server authentication',
+    stamper.includes('local-provider-session') && stamper.includes('supabase-dormant'), true);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
