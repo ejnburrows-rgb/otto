@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 const INDEX = new URL('../index.html', import.meta.url);
 
@@ -153,7 +154,7 @@ export function validateAccountLogin(source) {
   ];
 }
 
-if (process.argv[1] && new URL(`file://${process.argv[1]}`).href === import.meta.url) {
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const index = fs.readFileSync(INDEX, 'utf8');
   const patched = patchAccountLogin(index);
   const failed = validateAccountLogin(patched).filter(([, ok]) => !ok);
