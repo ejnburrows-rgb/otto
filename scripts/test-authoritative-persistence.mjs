@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import vm from 'node:vm';
+import { patchAccountLogin, validateAccountLogin } from './apply-account-login-patch.mjs';
 import { patchIndex, patchDataApi, patchServiceWorker, validateAuthoritativePersistence } from './apply-authoritative-persistence-patch.mjs';
 
 let passed = 0, failed = 0;
@@ -12,7 +13,9 @@ const batchApi = fs.readFileSync(new URL('../api/save.js', import.meta.url), 'ut
 const runtime = fs.readFileSync(new URL('../otto-persistence.js', import.meta.url), 'utf8');
 
 const index = patchIndex(rawIndex);
-for (const [label, html] of [['first build', index], ['repeated build', patchIndex(index)]]) {
+const accountIndex = patchAccountLogin(index);
+for (const [name, ok] of validateAccountLogin(accountIndex)) check(name, ok);
+for (const [label, html] of [['first build', index], ['repeated build', patchIndex(index)], ['account login build', accountIndex], ['repeated account login build', patchAccountLogin(accountIndex)]]) {
   let syntaxError = '';
   try {
     for (const match of html.matchAll(/<script>([\s\S]*?)<\/script>/g)) new vm.Script(match[1]);
